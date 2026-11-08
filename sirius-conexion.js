@@ -59,8 +59,27 @@
     return { hora: reloj(e.hora), accion: e.accion, detalle: e.detalle || '', actor: actor, rol: e.rol || (e.actor_tipo === 'Cliente' ? 'Portal del cliente' : '') }; }
 
   // ---------- Contrato SIRIUS_CONEXION ----------
+  // ---------- P-6b · evidencias (fotos reales con URL firmada), controles e informes ----------
+  function firmar(rutas) { var reales = rutas.filter(function (r) { return r && r.indexOf('(') !== 0; }); if (!reales.length) return Promise.resolve({});
+    return renovar().then(function () { return fetch(URLB + '/storage/v1/object/sign/evidencias', { method: 'POST', headers: cab(), body: JSON.stringify({ expiresIn: 3600, paths: reales }) }); })
+      .then(function (r) { return r.ok ? r.json() : []; }).then(function (arr) { var m = {}; (arr || []).forEach(function (x) { if (x && x.path && x.signedURL) m[x.path] = URLB + '/storage/v1' + x.signedURL; }); return m; }).catch(function () { return {}; }); }
+  var FIRMAS = {}, FIRMADO = 0;
+  function cargarEvidencias(idPorCaso) {
+    return Promise.all([
+      get('evidencias?select=caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas&order=hora'),
+      get('controles?select=caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'),
+      get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
+    ]).then(function (res) {
+      var evs = res[0], ctr = res[1], inf = res[2], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
+      var refrescar = Date.now() - FIRMADO > 45 * 60000; if (refrescar) { FIRMAS = {}; rutas = evs.map(function (e) { return e.ruta; }); }
+      return firmar(rutas).then(function (m) { Object.keys(m).forEach(function (k) { FIRMAS[k] = m[k]; }); if (refrescar) FIRMADO = Date.now();
+        var E = {}, C = {}, I = {};
+        evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
+        ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado) }); });
+        inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_clave + ' v' + x.plantilla_version, respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en) }); });
+        return { evidencias: E, controles: C, informes: I }; }); }); }
   var oyentes = [], huella = '';
-  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {},
+  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     accion: function (tipo) { return Promise.resolve({ ok: false, mensaje: 'Disponible en la próxima etapa (P-6c): «' + tipo + '»' }); },
     cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; } };
@@ -80,8 +99,12 @@
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });
-      var E = window.SIRIUS_EJEMPLO, det = {}; if (E && E.detallesCasos) nuevo.casos.forEach(function (c) { if (E.detallesCasos[c.id]) det[c.id] = E.detallesCasos[c.id]; });
-      var h = JSON.stringify(nuevo); if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; return true;
+      var E = window.SIRIUS_EJEMPLO, det = {}, idPorCaso = {}; if (E && E.detallesCasos) nuevo.casos.forEach(function (c) { if (E.detallesCasos[c.id]) det[c.id] = E.detallesCasos[c.id]; });
+      casos.forEach(function (k) { idPorCaso[k.id] = String(k.numero); });
+      return cargarEvidencias(idPorCaso).catch(function (e) { console.warn('[SIRIUS] evidencias:', e.message); return { evidencias: CX.evidencias, controles: CX.controles, informes: CX.informes }; }).then(function (ev) {
+        nuevo.evidencias = ev.evidencias; nuevo.controles = ev.controles; nuevo.informes = ev.informes;
+        var h = JSON.stringify([nuevo.casos, nuevo.eventos, Object.keys(ev.evidencias).map(function (k) { return k + ev.evidencias[k].length; }), ev.controles, ev.informes]);
+        if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; CX.evidencias = ev.evidencias; CX.controles = ev.controles; CX.informes = ev.informes; return true; });
     });
   }
 
