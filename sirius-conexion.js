@@ -67,7 +67,7 @@
   function cargarEvidencias(idPorCaso) {
     return Promise.all([
       get('evidencias?select=caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas&order=hora'),
-      get('controles?select=caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'),
+      get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'),
       get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
     ]).then(function (res) {
       var evs = res[0], ctr = res[1], inf = res[2], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
@@ -75,13 +75,15 @@
       return firmar(rutas).then(function (m) { Object.keys(m).forEach(function (k) { FIRMAS[k] = m[k]; }); if (refrescar) FIRMADO = Date.now();
         var E = {}, C = {}, I = {};
         evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
-        ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado) }); });
+        ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado) }); });
         inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_clave + ' v' + x.plantilla_version, respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en) }); });
         return { evidencias: E, controles: C, informes: I }; }); }); }
   var oyentes = [], huella = '';
   var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
-    accion: function (tipo) { return Promise.resolve({ ok: false, mensaje: 'Disponible en la próxima etapa (P-6c): «' + tipo + '»' }); },
+    // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
+    accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
+      return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
     cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; } };
   // Aviso visible si la base no responde (para diagnosticar en la copia publicada sin abrir la consola).
   function aviso(txt) { try { var d = document.getElementById('sirius-aviso-conexion') || document.createElement('div'); d.id = 'sirius-aviso-conexion';

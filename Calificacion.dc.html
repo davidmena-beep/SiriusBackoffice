@@ -288,10 +288,11 @@
 <sc-for list="{{ evid }}" as="e" hint-placeholder-count="6">
 <li style="min-width:0">
 <button type="button" onClick="{{ e.open }}" aria-label="{{ e.aria }}" style="width:100%;display:flex;flex-direction:column;gap:6px;padding:0;border:none;background:transparent;cursor:zoom-in;text-align:left;font-family:var(--font-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">
-<span style="width:100%;aspect-ratio:4 / 3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm);background:var(--neutral-100);color:var(--neutral-500)">
+<sc-if value="{{ e.hasImg }}" hint-placeholder-val="{{ false }}"><img src="{{ e.src }}" alt="" loading="lazy" style="display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;border-radius:var(--radius-sm);background:var(--neutral-100)"></sc-if>
+<sc-if value="{{ e.noImg }}" hint-placeholder-val="{{ true }}"><span style="width:100%;aspect-ratio:4 / 3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm);background:var(--neutral-100);color:var(--neutral-500)">
 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ e.icon }}"></path></svg>
-<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ e.kind }}</span>
-</span>
+<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center">{{ e.kind }}</span>
+</span></sc-if>
 <span style="font-size:13px;font-weight:700;line-height:1.3;color:var(--text-strong)">{{ e.titulo }}</span>
 <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">{{ e.cuando }}</span>
 <sc-if value="{{ e.hasGps }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-variant-numeric:tabular-nums">GPS {{ e.gps }}</span></sc-if>
@@ -350,10 +351,12 @@
 </x-import>
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ viewerOpen }}" on-close="{{ closeViewer }}" size="lg" align="left" title="{{ vw.titulo }}" footer="{{ viewerFooter }}" hint-size="0px,0px">
 <div style="display:flex;flex-direction:column;gap:16px">
-<div style="width:100%;aspect-ratio:16 / 10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:var(--radius-md);background:var(--neutral-100);color:var(--neutral-500)">
+<sc-if value="{{ vw.hasImg }}" hint-placeholder-val="{{ false }}"><img src="{{ vw.src }}" alt="{{ vw.alt }}" style="display:block;width:100%;max-height:56vh;object-fit:contain;border-radius:var(--radius-md);background:#0b1220"></sc-if>
+<sc-if value="{{ vw.noImg }}" hint-placeholder-val="{{ true }}"><div style="width:100%;aspect-ratio:16 / 10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:var(--radius-md);background:var(--neutral-100);color:var(--neutral-500)">
 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ vw.icon }}"></path></svg>
 <span style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ vw.kind }}</span>
-</div>
+</div></sc-if>
+<sc-if value="{{ vw.hasMapa }}" hint-placeholder-val="{{ false }}"><a href="{{ vw.mapa }}" target="_blank" rel="noopener" style="align-self:flex-start;font-size:14px;font-weight:700">Ver en el mapa</a></sc-if>
 <dl style="margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px"><sc-for list="{{ vw.meta }}" as="m" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:{{ m.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ m.label }}</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong);white-space:{{ m.ws }};font-variant-numeric:tabular-nums">{{ m.value }}</dd></div></sc-for></dl>
 <span style="font-size:13px;color:var(--text-muted)">{{ vw.pos }}</span>
 </div>
@@ -679,9 +682,10 @@ class Component extends DCLogic {
       stickyTop: p.stickyTop || '24px',
       asideMaxH: 'calc(100vh - ' + (parseInt(p.stickyTop || '24', 10) + 24) + 'px)',
       evidCount: evid.filter(e => e.tipo === 'foto').length + ' fotos · ' + evid.filter(e => e.tipo === 'doc').length + ' documentos',
-      evid: evid.map((e, i) => ({ titulo: e.titulo, kind: e.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[e.tipo], cuando: e.fecha + ' · ' + e.hora, gps: e.gps || '', hasGps: !!e.gps, aria: 'Ampliar ' + (e.tipo === 'doc' ? 'documento ' : 'foto ') + e.titulo, open: () => this.setState({ viewer: i }) })),
+      // Etapa P-6c · con la conexión, las evidencias traen la foto (src), «Imagen de prueba» y sus datos (meta); en demostración no cambian.
+      evid: evid.map((e, i) => ({ titulo: e.titulo, kind: e.prueba ? 'Imagen de prueba' : e.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[e.tipo], hasImg: !!e.src, noImg: !e.src, src: e.src || '', cuando: e.cuando || (e.fecha + ' · ' + e.hora), gps: e.gps || '', hasGps: !!e.gps, aria: 'Ampliar ' + (e.tipo === 'doc' ? 'documento ' : 'foto ') + e.titulo, open: () => this.setState({ viewer: i }) })),
       viewerOpen: !!ve,
-      vw: ve ? { meta: this.evMeta(ve),  titulo: ve.titulo, kind: ve.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[ve.tipo], fecha: ve.fecha, hora: ve.hora, gps: ve.gps || 'Sin GPS', pos: (vi + 1) + ' de ' + evid.length } : { meta: [], titulo: '', kind: '', icon: '', fecha: '', hora: '', gps: '', pos: '' },
+      vw: ve ? { meta: ve.meta || this.evMeta(ve),  titulo: ve.titulo, kind: ve.prueba ? 'Imagen de prueba' : ve.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[ve.tipo], hasImg: !!ve.src, noImg: !ve.src, src: ve.src || '', alt: 'Foto · ' + ve.titulo, hasMapa: !!ve.mapa, mapa: ve.mapa || '', fecha: ve.fecha, hora: ve.hora, gps: ve.gps || 'Sin GPS', pos: (vi + 1) + ' de ' + evid.length } : { meta: [], titulo: '', kind: '', icon: '', hasImg: false, noImg: true, src: '', alt: '', hasMapa: false, mapa: '', fecha: '', hora: '', gps: '', pos: '' },
       closeViewer: () => this.setState({ viewer: null }),
       viewerFooter: React.createElement(React.Fragment, null,
         btn('secondary', 'Anterior', () => this.setState({ viewer: (vi - 1 + evid.length) % evid.length })),

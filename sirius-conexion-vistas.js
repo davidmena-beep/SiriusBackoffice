@@ -2,6 +2,8 @@
 // · SiriusCxEvidencias: galería de evidencias[id] agrupada por canal y ordenada por los pasos de la plantilla presencial
 //   (SIRIUS_EJEMPLO.plantillas['Vehículos livianos v1']) o de la autoinspección (SIRIUS_AUTOINSPECCION.pasos.vehiculos), con visor.
 // · SiriusCxControles: controles[id] con su evidencia, «Conforme» / «Requiere acción» y comentario (guardar → accion('revisarControl')).
+//   Etapa P-6c: el estado guardado de cada control llega del back-office (prop revisiones { [índice]: { estado, comentario, por, hora } }),
+//   que lo marca al guardar y lo revierte si la conexión responde { ok: false }; la foto del control abre el visor.
 // · SiriusCxInforme: informes[id] tal como los envía la app (valor, origen y confianza de cada campo; estado general; extras; daños;
 //   observaciones; determinación, motivo, quién y cuándo).
 (function () {
@@ -54,27 +56,33 @@
     if (/llegada|geocerca|radio/.test(t) || d.distancia != null || d.metros != null) { var m = d.distancia != null ? d.distancia : d.metros; return 'Llegada a ' + (m != null ? m + ' m' : 'distancia sin dato') + ' de la dirección' + (d.radio != null ? ' (fuera del radio de ' + d.radio + ' m)' : ' (fuera del radio)') + (d.motivo ? ' · motivo del inspector: ' + d.motivo : ' · sin motivo'); }
     return Object.keys(d).filter(function (k) { return k !== 'paso' && typeof d[k] !== 'object'; }).map(function (k) { return k + ': ' + d[k]; }).join(' · ') || 'Sin detalle'; }
   var SEV = { Alta: 'danger', Media: 'warning', Baja: 'neutral' }, EST = { Pendiente: 'warning', Conforme: 'success', 'Requiere acción': 'danger' };
-  function SiriusCxControles(p) { var L = p.controles || [], s = R().useState({}), loc = s[0], setLoc = s[1], s2 = R().useState({}), msg = s2[0], setMsg = s2[1], evs = p.evidencias || [];
-    var pend = L.filter(function (c, i) { return ((loc[i] || {}).estado || c.estado || 'Pendiente') === 'Pendiente'; }).length;
-    var set = function (i, o) { setLoc(Object.assign({}, loc, { [i]: Object.assign({}, loc[i] || {}, o) })); };
+  function estadoDe(p, c, i) { var rv = (p.revisiones || {})[i]; return (rv && rv.estado) || c.estado || 'Pendiente'; }
+  function SiriusCxControles(p) { var L = p.controles || [], s = R().useState({}), loc = s[0], setLoc = s[1], s3 = R().useState(null), ver = s3[0], setVer = s3[1], evs = p.evidencias || [], M = W.SiriusModal;
+    var pend = L.filter(function (c, i) { return estadoDe(p, c, i) === 'Pendiente'; }).length, altas = L.filter(function (c, i) { return c.severidad === 'Alta' && estadoDe(p, c, i) === 'Pendiente'; }).length;
+    var set = function (i, o) { setLoc(function (cur) { return Object.assign({}, cur, { [i]: Object.assign({}, cur[i] || {}, o) }); }); };
+    var visor = ver && M ? h(M, { key: 'vv', open: true, onClose: function () { setVer(null); }, size: 'lg', align: 'left', title: etiqueta(ver.paso), description: (ver.canal || 'Sin canal') + (ver.hora ? ' · ' + ver.hora : ''), footer: boton('primary', 'Cerrar', function () { setVer(null); }, { key: 'c' }) },
+      h('div', { 'data-cx-visor': ver.paso, style: { display: 'flex', flexDirection: 'column', gap: 12 } }, ver.url ? h('img', { src: ver.url, alt: 'Foto · ' + etiqueta(ver.paso), style: { width: '100%', maxHeight: '56vh', objectFit: 'contain', borderRadius: 8, background: '#0b1220' } }) : h('div', { style: { height: 240, borderRadius: 8, border: '1.5px dashed var(--border-default)', background: 'var(--surface-subtle)', display: 'grid', placeItems: 'center', fontSize: 16, fontWeight: 700, color: 'var(--text-muted)' } }, ver.prueba ? 'Imagen de prueba' : 'Sin imagen'),
+        h('span', { style: ST.muted }, gpsTxt(ver.gps) ? h('span', null, nw('GPS ' + gpsTxt(ver.gps), 'g'), ' · ', h('a', { href: mapaUrl(ver.gps), target: '_blank', rel: 'noopener' }, 'Ver en el mapa')) : 'Sin GPS', ' · ', validacionTxt(ver.validacion)))) : null;
     if (!L.length) return null;
     return h('section', { 'aria-labelledby': 'cx-ctl-t', 'data-cx-controles': p.caso, style: Object.assign({}, ST.card, { marginBottom: 20 }) },
       h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 } }, h('h3', { id: 'cx-ctl-t', style: ST.h3 }, 'Revisión de controles'), badge(pend ? 'warning' : 'success', pend ? (pend === 1 ? '1 pendiente' : pend + ' pendientes') : 'Todos revisados', 'p')),
+      altas && p.puede ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-danger)' } }, (altas === 1 ? '1 control de severidad alta pendiente' : altas + ' controles de severidad alta pendientes') + ': la calificación se habilita al revisarlos.') : null,
       h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, 'Controles que llegaron por la conexión de la prueba, con su evidencia cuando aplica. Marca cada uno «Conforme» o «Requiere acción» (con comentario).'),
-      h('ol', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 } }, L.map(function (c, i) { var lc = loc[i] || {}, est = lc.guardado || c.estado || 'Pendiente', dec = lc.dec || '', com = lc.com != null ? lc.com : (c.comentario || ''), d = c.detalle || {}, ev = d.paso ? evs.find(function (x) { return x.paso === d.paso; }) : null, sinCom = dec === 'Requiere acción' && !String(com).trim();
+      h('ol', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 } }, L.map(function (c, i) { var lc = loc[i] || {}, rv = (p.revisiones || {})[i] || null, est = estadoDe(p, c, i), dec = lc.dec || '', com = lc.com != null ? lc.com : ((rv && rv.comentario) || c.comentario || ''), d = c.detalle || {}, ev = d.paso ? evs.find(function (x) { return x.paso === d.paso; }) : null, sinCom = dec === 'Requiere acción' && !String(com).trim();
         return h('li', { key: i, 'data-cx-control': i, style: { display: 'flex', flexWrap: 'wrap', gap: 16, padding: '14px 16px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)' } },
-          ev ? h(Miniatura, { ev: ev, w: 140, onClick: function () {} }) : null,
+          ev ? h(Miniatura, { ev: ev, w: 140, onClick: function () { setVer(ev); } }) : null,
           h('div', { style: { flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 } },
             h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 } }, h('strong', { style: { fontSize: 15, color: 'var(--text-strong)' } }, c.tipo || 'Control'), badge(SEV[c.severidad] || 'neutral', 'Severidad ' + String(c.severidad || '—').toLowerCase(), 's'), badge(EST[est] || 'neutral', est, 'e'), c.hora ? h('span', { style: ST.muted }, nw(c.hora, 'h')) : null),
             h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, detalleTxt(c)),
-            lc.msg || msg[i] ? h('p', { role: 'status', style: { margin: 0, fontSize: 13, fontWeight: 700, color: lc.ok === false ? 'var(--color-danger)' : 'var(--text-muted)' } }, lc.msg || msg[i]) : null,
+            rv && rv.por && est !== 'Pendiente' ? h('p', { style: Object.assign({ margin: 0 }, ST.muted) }, 'Revisado por ' + rv.por + (rv.hora ? ' · ' : ''), rv.hora ? nw(rv.hora, 'rh') : null, rv.comentario ? ' · «' + rv.comentario + '»' : '') : null,
+            lc.msg ? h('p', { role: lc.ok === false ? 'alert' : 'status', style: { margin: 0, fontSize: 13, fontWeight: 700, color: lc.ok === false ? 'var(--color-danger)' : 'var(--text-muted)' } }, lc.msg) : null,
             p.puede ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
               h('div', { role: 'radiogroup', 'aria-label': 'Resultado de la revisión', style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, ['Conforme', 'Requiere acción'].map(function (o) { var on = dec === o; return h('button', { key: o, type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', onClick: function () { set(i, { dec: o }); }, style: { minHeight: 36, padding: '0 14px', borderRadius: 999, border: '1.5px solid ' + (on ? 'var(--color-brand)' : 'var(--border-default)'), background: on ? 'var(--color-brand)' : '#FFFFFF', color: on ? '#FFFFFF' : 'var(--text-strong)', fontFamily: 'var(--font-brand)', fontSize: 14, fontWeight: 700, cursor: 'pointer' } }, o); })),
               h('label', { htmlFor: 'cx-ctl-c' + i, style: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Comentario', dec === 'Requiere acción' ? h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *') : null),
               h('textarea', { id: 'cx-ctl-c' + i, rows: 2, value: com, 'aria-invalid': lc.tried && sinCom ? 'true' : 'false', onChange: function (e) { set(i, { com: e.target.value }); }, style: { width: '100%', padding: '8px 12px', border: '1.5px solid ' + (lc.tried && sinCom ? 'var(--color-danger)' : 'var(--input-outlined-border)'), borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-brand)', fontSize: 15, resize: 'vertical' } }),
               lc.tried && sinCom ? h('span', { role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, 'Escribe qué acción hace falta.') : null,
-              h('div', null, boton('primary', 'Guardar revisión', function () { if (!dec) return; if (sinCom) { set(i, { tried: true }); return; } var r = p.onGuardar ? p.onGuardar(c, i, dec, String(com).trim()) : null; Promise.resolve(r).then(function (x) { x = x || {}; var o = { msg: x.mensaje || (x.ok === false ? 'No se pudo guardar.' : 'Revisión guardada.'), ok: x.ok !== false, tried: false }; if (x.ok !== false && !x.pendiente) o.guardado = dec; set(i, o); }); }, { key: 'g', size: 'sm', reason: dec ? '' : 'Elige «Conforme» o «Requiere acción»' })))
-              : h('p', { style: Object.assign({ margin: 0 }, ST.muted) }, 'Solo lectura: la revisión la hace quien califica el caso.'))); })));
+              h('div', null, boton('primary', 'Guardar revisión', function () { if (!dec) return; if (sinCom) { set(i, { tried: true }); return; } var r = p.onGuardar ? p.onGuardar(c, i, dec, String(com).trim()) : null; set(i, { msg: 'Guardando…', ok: true, tried: false }); Promise.resolve(r).then(function (x) { x = x || {}; set(i, { msg: x.ok === false ? (x.mensaje || 'No se pudo guardar.') + ' Se deshizo el cambio.' : (x.mensaje || 'Revisión guardada.'), ok: x.ok !== false, dec: x.ok === false ? dec : '' }); }); }, { key: 'g', size: 'sm', reason: dec ? '' : 'Elige «Conforme» o «Requiere acción»' })))
+              : h('p', { style: Object.assign({ margin: 0 }, ST.muted) }, 'Solo lectura: la revisión la hace quien califica el caso.'))); })), visor);
   }
   W.SiriusCxControles = SiriusCxControles;
 
@@ -100,5 +108,5 @@
           [['Determinación', detTxt(inf.determinacion)], inf.motivo ? ['Motivo', inf.motivo] : null, ['Enviado por', inf.enviadoPor || '—'], ['Enviado el', nw(inf.enviadoEn || '—', 'f')]].filter(Boolean).map(function (x, i) { return [h('dt', { key: 'k' + i, style: { color: 'var(--text-muted)' } }, x[0]), h('dd', { key: 'v' + i, style: { margin: 0, fontWeight: 700, color: 'var(--text-strong)' } }, x[1])]; }))); }));
   }
   W.SiriusCxInforme = SiriusCxInforme;
-  W.SiriusCxVistas = { etiqueta: etiqueta, validacionTxt: validacionTxt, origenTxt: origenTxt };
+  W.SiriusCxVistas = { etiqueta: etiqueta, validacionTxt: validacionTxt, origenTxt: origenTxt, gpsTxt: gpsTxt, confTxt: confTxt, detTxt: detTxt, lecturasDe: lecturasDe, orden: orden, CAMPOS: CAMPOS, ESTADOS: ESTADOS, TABLA: TABLA }; /* etapa P-6c: también los usa la calificación */
 })();
