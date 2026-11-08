@@ -64,6 +64,10 @@
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     accion: function (tipo) { return Promise.resolve({ ok: false, mensaje: 'Disponible en la próxima etapa (P-6c): «' + tipo + '»' }); },
     cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; } };
+  // Aviso visible si la base no responde (para diagnosticar en la copia publicada sin abrir la consola).
+  function aviso(txt) { try { var d = document.getElementById('sirius-aviso-conexion') || document.createElement('div'); d.id = 'sirius-aviso-conexion';
+    d.setAttribute('role', 'alert'); d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;max-width:560px;background:#fdecea;color:#b42318;border:1px solid #f1b7b0;border-radius:10px;padding:10px 14px;font:600 13px/1.4 Mulish,system-ui,sans-serif;box-shadow:0 6px 18px #0002';
+    d.textContent = 'Conexión con la base: ' + txt; if (!d.parentNode) (document.body || document.documentElement).appendChild(d); } catch (e) {} }
   function avisar() { oyentes.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } }); }
   function salir(motivo) { localStorage.removeItem(CLAVE); location.href = INGRESO + '?motivo=' + encodeURIComponent(motivo); }
 
@@ -89,5 +93,5 @@
       return Promise.all([rpc('configuracion_vigente', {}).then(function (c) { CONFIG = c || {}; Object.keys(ARCH).forEach(aplicar); }).catch(function (e) { console.warn('[SIRIUS] configuración de la base no disponible:', e.message); }), cargarCasos()]);
     })
     .then(function () { avisar(); setInterval(function () { cargarCasos().then(function (c) { if (c) avisar(); }).catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); }); }, SONDEO_MS); })
-    .catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); else console.error('[SIRIUS] conexión:', e); });
+    .catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); else { console.error('[SIRIUS] conexión:', e); aviso('no se pudieron leer los casos (' + String(e.message || e).slice(0, 220) + ')'); } });
 })();

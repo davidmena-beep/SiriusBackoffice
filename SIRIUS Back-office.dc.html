@@ -139,6 +139,7 @@
 </div>
 </header>
 <main style="position:relative;flex:1;min-width:0;padding:{{ mainPad }};display:flex;flex-direction:column;gap:24px">
+<sc-if value="{{ cxDemoAviso }}" hint-placeholder-val="{{ false }}"><div role="note" data-cx-demo="1" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--radius-sm);background:var(--alert-warning-bg,#FDF3DC);color:var(--text-strong);font-size:14px;font-weight:700"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4 M12 17h.01 M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>Datos de demostración: este módulo se conecta en una etapa siguiente</div></sc-if>
 <sc-if value="{{ linkLoading }}" hint-placeholder-val="{{ false }}"><div role="status" aria-live="polite" style="position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding-top:160px;background:#FFFFFF"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Spinner" size="lg" hint-size="40px,40px"></x-import><span style="font-size:16px;color:var(--text-body)">{{ linkLoadText }}</span></div></sc-if>
 <sc-if value="{{ hasLinkErr }}" hint-placeholder-val="{{ false }}"><div role="alert" style="position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:120px 24px 24px;background:#FFFFFF;text-align:center"><h1 style="margin:0;font-size:28px;font-weight:300;color:var(--text-strong)">{{ linkErrTitle }}</h1><p style="margin:0;max-width:520px;font-size:16px;line-height:1.5;color:var(--text-body)">{{ linkErrText }}</p><button type="button" onClick="{{ goBandejaFromErr }}" style="border:none;background:transparent;padding:6px 0;cursor:pointer;font-family:var(--font-brand);font-size:16px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Volver a la bandeja</button></div></sc-if>
 <sc-if value="{{ isBandeja }}" hint-placeholder-val="{{ true }}">
@@ -826,7 +827,7 @@
 </div>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ garTabNodes }}" active="{{ garTabIndex }}" on-change="{{ onGarTab }}" hint-size="100%,44px"></x-import>
 <sc-if value="{{ hasGarSel }}" hint-placeholder-val="{{ false }}"><div role="status" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-subtle, #F3F5F8);font-size:14px;color:var(--text-strong)"><span>Desde Inicio: <strong>{{ garSelTitulo }}</strong> · {{ garSelN }}</span><button type="button" onClick="{{ quitarGarSel }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Quitar y ver todas</button></div></sc-if>
-<dc-import name="DataTable" columns="{{ garCols }}" rows="{{ garRows }}" row-actions="{{ garActions }}" selectable="{{ false }}" expandable="{{ true }}" expanded-ids="{{ garExpanded }}" demo-tip="{{ garDemoTip }}" on-toggle-expand="{{ onGarExpand }}" on-row-action="{{ onGarAction }}" page-size="{{ pageSize }}" default-sort-key="{{ garSortKey }}" default-sort-dir="asc" storage-key="{{ garStorageKey }}" item-noun="{{ itemNoun }}" empty-title="No hay casos en esta pestaña" empty-text="Prueba con otra pestaña de seguimiento." hint-size="100%,520px"></dc-import>
+<dc-import name="DataTable" columns="{{ garCols }}" rows="{{ garRows }}" row-actions="{{ garActions }}" selectable="{{ false }}" expandable="{{ true }}" expanded-ids="{{ garExpanded }}" demo-tip="{{ garDemoTip }}" on-toggle-expand="{{ onGarExpand }}" on-row-action="{{ onGarAction }}" page-size="{{ pageSize }}" default-sort-key="{{ garSortKey }}" default-sort-dir="asc" storage-key="{{ garStorageKey }}" item-noun="{{ itemNoun }}" empty-title="{{ garVacioT }}" empty-text="{{ garVacioX }}" hint-size="100%,520px"></dc-import>
 </section>
 </sc-if>
 <sc-if value="{{ isGarPol }}" hint-placeholder-val="{{ false }}">
@@ -1449,11 +1450,24 @@ class Component extends DCLogic {
   cxEventos() { const E = (this.CXO && this.CXO.eventos) || {}, out = {}; Object.keys(E).forEach(id => { out[id] = (Array.isArray(E[id]) ? E[id] : []).map(x => [x.hora || '', (x.accion || '') + (x.detalle ? ' · ' + x.detalle : ''), (x.actor || '') + (x.rol ? ' · ' + x.rol : '')]); }); return out; }
   cxEvidencias(id) { const E = (this.CXO && this.CXO.evidencias) || {}; return Array.isArray(E[id]) ? E[id] : []; } // P-6b
   // Lo llama la conexión (suscribir): vuelve a leer y a dibujar sin tocar la pestaña, el caso abierto ni los filtros del usuario.
-  cxRecargar() { if (!this.cxCargar()) return; this.setState(st => ({ extraEvents: this.cxEventos(), cxV: (st.cxV || 0) + 1 })); }
+  cxRecargar() { if (!this.cxCargar()) return; this.setState(st => ({ extraEvents: this.cxEventos(), gar: this.cxGarantias(), notifs: this.cxNotifs(st.notifs), cxV: (st.cxV || 0) + 1 })); }
   // Punto de llamada de las acciones (P-6c): intento de contacto, enviar enlace, agendar visita, revisar control y calificar. Sin conexión no hace nada.
   cxAccion(tipo, datos) { const X = this.CXO; if (!X || !tipo) return Promise.resolve({ ok: true, mensaje: '', local: true }); if (typeof X.accion !== 'function') return Promise.resolve({ ok: false, mensaje: 'La conexión no define accion()' });
     let p; try { p = Promise.resolve(X.accion(tipo, datos)); } catch (er) { p = Promise.reject(er); }
     return p.then(r => { r = r || { ok: true }; if (r.ok === false) this.toast(r.mensaje || 'No se pudo guardar en la conexión'); return r; }, (er) => { const r = { ok: false, mensaje: String((er && er.message) || er || 'Error de la conexión') }; this.toast('No se pudo guardar: ' + r.mensaje); return r; }); }
+  // Etapa P-6a2 · robustez: con la conexión, un caso que no está en la base no abre paneles ni navega (aviso); en demostración no cambia nada.
+  cxHay(id) { if (!this.CXO || !id || this.caseById(id)) return true; this.toast('El caso ' + id + ' no está en la base de la prueba'); return false; }
+  cxFalta(id, patch) { if (this._cxFaltaT) return; this._cxFaltaT = setTimeout(() => { this._cxFaltaT = null; this.setState(patch); this.toast('El caso ' + id + ' no está en la base de la prueba'); }, 0); }
+  cxNotifs(prev) { const X = this.CXO, L = X && Array.isArray(X.notificaciones) ? X.notificaciones : [], leidas = {}; (prev || []).forEach(n => { if (n.read) leidas[n.id] = true; }); const K = ['adj', 'ok', 'reject', 'visita', 'exc']; return L.map((n, i) => { const x = Object.assign({ id: 'cx' + i, aud: '*', kind: 'adj', text: '', caseId: '', ts: '', read: false }, JSON.parse(JSON.stringify(n)), leidas[n.id] ? { read: true } : {}); if (K.indexOf(x.kind) < 0) x.kind = 'adj'; delete x.monId; delete x.confId; return x; }).filter(n => n.text); }
+  cxGarantias() { const X = this.CXO, G = X && X.garantias && typeof X.garantias === 'object' ? JSON.parse(JSON.stringify(X.garantias)) : {}; Object.keys(G).forEach(k => { const g = G[k]; if (!g || !g.base || !Array.isArray(g.garantias) || !Array.isArray(g.documentos)) delete G[k]; else g.preexistencias = g.preexistencias || []; }); return G; }
+  // Si la conexión se activa después de montar (por ejemplo, tras iniciar sesión), se quitan las semillas de demostración que ya estaban.
+  cxActivar() { const X = window.SIRIUS_CONEXION; if (!X || X.activo !== true || this.CXO === X) return false; this.CXO = X; this.cxCargar(); this._ejDone = true; this.escena = ''; this.demoPanels = false;
+    const u = this.cxUsuario(), SU0 = window.SiriusUsuarios, x = SU0 && SU0.rol ? SU0.rol(u.rol) : null;
+    this.setState({ gar: this.cxGarantias(), childCases: [], notifs: this.cxNotifs(), visits: {}, overrides: {}, riesgoOv: {}, extraEvents: this.cxEventos(), gpOpen: false, gpCase: null, quickOpen: false, portal: null, insp: null, escPickOpen: false, bExpanded: [], role: x && x.base ? x.base : u.rol, roleCustom: x && x.sistema === false ? u.rol : null, asUser: null, meCustom: null, cxListo: !X.listo });
+    this.cxSuscribir(); return true; }
+  cxSuscribir() { const X = this.CXO; if (!X || this._cxSus === X) return; this._cxSus = X;
+    if (X.listo && typeof X.listo.then === 'function') X.listo.then(() => { this.cxRecargar(); this.setState({ cxListo: true }); }, (er) => { this.setState({ cxListo: true }); this.toast('No se pudo preparar la conexión: ' + ((er && er.message) || er)); });
+    if (typeof X.suscribir === 'function') { try { this._cxOff = X.suscribir(() => this.cxRecargar()); } catch (er) {} } }
   cxCerrar = () => { this.setState({ rolesOpen: false }); try { if (this.CXO && typeof this.CXO.cerrarSesion === 'function') this.CXO.cerrarSesion(); } catch (er) {} };
   demoPanels = !this.CXO && this.demoInit && this.urlq.get('demo') !== 'off';
   presetW = this.urlq.get('w') ? Object.fromEntries(this.urlq.get('w').split(',').map(p => { const [k, v] = p.split(':'); return [k, Number(v)]; })) : undefined;
@@ -1521,8 +1535,8 @@ class Component extends DCLogic {
     { id: 'n5', aud: 'Ejecutivo comercial', kind: 'ok', text: 'Verónica Lema marcó como cumplido facturas-mercaderia.pdf', caseId: '20158', ts: '2026-10-02T11:05', read: true },
     { id: 'n6', aud: 'Ejecutivo de inspecciones', kind: 'adj', text: 'Santiago Ortiz adjuntó facturas-mercaderia.pdf', caseId: '20158', ts: '2026-10-01T09:30', read: true },
   ];
-  state = { simOn: null, linkLoading: !!(this.urlq.get('escena') || this.urlq.get('caso')), linkErrSt: this.linkErr, gar: this.CXO ? {} : JSON.parse(JSON.stringify(this.garSeed)), childCases: this.CXO ? [] : this.childSeed.slice(), garTab: this.urlq.get('gtab') ? Number(this.urlq.get('gtab')) : (this.urlq.get('rol') === 'Ejecutivo de inspecciones' ? 2 : 0), garExpanded: this.isG ? ['20137'] : [], gpCase: this.escena === 'garpanel' ? '20137' : null, gpOpen: this.escena === 'garpanel', dm: null, dmObs: '', dmErr: '', sm: ['gsolicitar', 'gsolicitar2'].includes(this.escena) ? '20178' : null, smObs: '', smUseAse: this.escena !== 'gsolicitar2', smTouched: this.escena === 'gsolicitar2' ? { nombre: true, cel: true } : {}, smContact: this.escena === 'gsolicitar2' ? { nombre: '', cargo: '', cel: '', fijo: '', correo: '', horario: '', dir: this.garSeed['20178'].dir } : Object.assign({ dir: this.garSeed['20178'].dir }, this.garSeed['20178'].contacto),
-    asUser: this.urlq.get('usuario') && !this.U_INT[this.urlq.get('usuario')] ? this.urlq.get('usuario') : null, infSel: this.urlq.get('riesgo') || null, evInit: this.urlq.get('visor') === '1', notifs: this.CXO ? [] : this.notifSeed.slice(), notifOpen: ['notif', 'notifcom'].includes(this.escena), notifFilter: 'todas',
+  state = { simOn: null, linkLoading: !!(this.urlq.get('escena') || this.urlq.get('caso')), linkErrSt: this.linkErr, gar: this.CXO ? this.cxGarantias() : JSON.parse(JSON.stringify(this.garSeed)), childCases: this.CXO ? [] : this.childSeed.slice(), garTab: this.urlq.get('gtab') ? Number(this.urlq.get('gtab')) : (this.urlq.get('rol') === 'Ejecutivo de inspecciones' ? 2 : 0), garExpanded: this.isG ? ['20137'] : [], gpCase: this.escena === 'garpanel' ? '20137' : null, gpOpen: this.escena === 'garpanel', dm: null, dmObs: '', dmErr: '', sm: ['gsolicitar', 'gsolicitar2'].includes(this.escena) ? '20178' : null, smObs: '', smUseAse: this.escena !== 'gsolicitar2', smTouched: this.escena === 'gsolicitar2' ? { nombre: true, cel: true } : {}, smContact: this.escena === 'gsolicitar2' ? { nombre: '', cargo: '', cel: '', fijo: '', correo: '', horario: '', dir: this.garSeed['20178'].dir } : Object.assign({ dir: this.garSeed['20178'].dir }, this.garSeed['20178'].contacto),
+    asUser: this.urlq.get('usuario') && !this.U_INT[this.urlq.get('usuario')] ? this.urlq.get('usuario') : null, infSel: this.urlq.get('riesgo') || null, evInit: this.urlq.get('visor') === '1', notifs: this.CXO ? this.cxNotifs() : this.notifSeed.slice(), notifOpen: ['notif', 'notifcom'].includes(this.escena), notifFilter: 'todas',
     detail: this.initCase, dtab: this.urlq.get('pestana') === 'informe' ? 2 : this.escena === 'riesgos' ? 6 : this.escena.startsWith('coord') ? 1 : this.escena && !this.isG && !['inicio', 'g1det'].includes(this.escena) ? 4 : 0, bExpanded: this.escena === 'bandejaexp' ? ['20196'] : [], coordNonce: 0, riesgoOv: this.escena === 'coordvis' ? { '20196-V1': { estado: 'Agendado' }, '20196-V2': { estado: 'Agendado' }, '20196-V3': { estado: 'Agendado' } } : {},
     visits: {
       '20196': this.escena === 'coordvis' ? [{ id: 'V1', mod: 'Presencial', inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '11:00', hFin: '12:30', dir: 'Av. Eloy Alfaro N45-210, Quito · patio de la empresa', inter: 'De los Juncos', ref: 'Ingreso por la puerta 2', riesgos: ['20196-V1', '20196-V2'], estado: 'Agendada', cName: 'Ramiro Paz', cCel: '0998124470', cMail: 'flota@andinaalimentos.ec' }, { id: 'V2', mod: 'Autoinspección', inspector: '', fecha: '', hIni: '', hFin: '', validez: '48 horas', enlace: 'sirius.ec/ai/20196-V2', vence: '2026-10-18T11:00', dir: 'Concesionario Kia Granados · Av. Granados E12-70, Quito', riesgos: ['20196-V3'], estado: 'Agendada', cName: 'Ramiro Paz', cCel: '0998124470', cMail: 'flota@andinaalimentos.ec' }] : [] }, menuOpen: false, cancelOpen: false, cancelReason: '', cancelErr: '', overrides: ['n1', 'catalogo'].includes(this.escena) ? { '20137': { estado: 'Pendiente calificación', responsable: 'Verónica Lema' } } : this.escena === 'n2done' ? { '20137': { estado: 'Inspeccionado' } } : {}, calEdit: {}, califRes: ['n2done', 'editenvio'].includes(this.escena) ? { '20137': { n2Full: { estado: 'Aprobado', obs: 'Se ratifica la aprobación; la garantía de extintores se reemplaza por su certificado de mantenimiento.', user: 'Ricardo Almeida', fecha: '15/10/26 · 10:12', plazo: 30, responsable: 'Verónica Lema', baseDate: '2026-10-14', items: {
@@ -1955,10 +1969,10 @@ class Component extends DCLogic {
     return !c.extra;
   }
   quickVals(canCoord) {
-    const c = this.caseById(this.state.quick) || this.cases[0];
+    const c = this.caseById(this.state.quick) || this.cases[0] || { id: '', estado: '', asegurado: '', ident: '', ramo: '', bien: '', orden: '', origen: '', broker: '', sucursal: '', fecha: '', responsable: '', backoffice: '' }; // etapa P-6a2: sin casos no falla
     const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
-    const s = this.slaCell(c);
-    const open = this.state.quickOpen;
+    const s = c.id ? this.slaCell(c) : null;
+    const open = this.state.quickOpen && !!c.id;
     const done = (fn) => () => { this.setState({ quickOpen: false }); fn(); };
     return {
       qv: {
@@ -3114,7 +3128,7 @@ class Component extends DCLogic {
     if (go.k === 'reasignar') return this.calReasignar(go);
     const run = () => this.calAbrir(go); if (!this.notifGuard(run)) run(); return null; }
   // «Calificar» / «Editar» / «Abrir»: abre el caso en la pestaña de destino con el riesgo elegido y deja el foco en la sección (regla de foco).
-  calAbrir(go) { const c = this.caseById(go.caso); if (!c) return; const veh = c.tipoRiesgo !== 'Ramos Generales' && (c.ramo === 'Vehículos' || c.tipoRiesgo === 'Vehículos'), multi = this.multi(c), dtab = go.dtab === 6 && !multi ? 2 : (go.dtab || 4);   // revisión de control de un caso con un solo riesgo (sin pestaña «Riesgos»): abre el informe
+  calAbrir(go) { if (!this.cxHay(go.caso)) return; const c = this.caseById(go.caso); if (!c) return; const veh = c.tipoRiesgo !== 'Ramos Generales' && (c.ramo === 'Vehículos' || c.tipoRiesgo === 'Vehículos'), multi = this.multi(c), dtab = go.dtab === 6 && !multi ? 2 : (go.dtab || 4);   // revisión de control de un caso con un solo riesgo (sin pestaña «Riesgos»): abre el informe
     this.setState(s => ({ calBack: go.back ? Object.assign({}, go.back, { caso: go.caso }) : null, mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: null, detail: go.caso, dtab, menuOpen: false, quickOpen: false, formGo: null, calGo: null, nivGo: null, usuIr: null, garSel: null, iaGo: null, calrgFoco: '',
       calVeh: veh && multi && go.riesgo ? go.riesgo : s.calVeh, vehEdit: go.k === 'editar' && veh && go.riesgo ? Object.assign({}, s.vehEdit, { [go.riesgo]: true }) : s.vehEdit }));
     try { window.scrollTo(0, 0); } catch (er) {}
@@ -3139,8 +3153,8 @@ class Component extends DCLogic {
   inicioIr(go) { if (!go) return; const top = () => { try { window.scrollTo(0, 0); } catch (er) {} }, limpia = { detail: null, formGo: null, calGo: null, nivGo: null, usuIr: null, inicioSel: null, garSel: null, iaGo: null, calIr: null };
     const run = () => {
       if (go.k === 'bandeja') this.setState(Object.assign({}, limpia, { mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: { titulo: go.titulo, ids: go.ids.slice() } }));
-      else if (go.k === 'caso') { this.setState(Object.assign({}, limpia, { mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0 })); this.openCase(go.id); this.setState({ dtab: go.tab || 0 }); }
-      else if (go.k === 'garantias') this.setState(Object.assign({}, limpia, { mod: 'garantias', child: null, garTab: go.tab || 0, garSel: go.ids ? { titulo: go.titulo, ids: go.ids.slice() } : null, gpCase: go.caso || null, gpOpen: !!go.caso }));
+      else if (go.k === 'caso') { if (!this.cxHay(go.id)) return; this.setState(Object.assign({}, limpia, { mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0 })); this.openCase(go.id); this.setState({ dtab: go.tab || 0 }); }
+      else if (go.k === 'garantias') this.setState(Object.assign({}, limpia, { mod: 'garantias', child: null, garTab: go.tab || 0, garSel: go.ids ? { titulo: go.titulo, ids: go.ids.slice() } : null, gpCase: go.caso && this.cxHay(go.caso) ? go.caso : null, gpOpen: !!go.caso && !!this.caseById(go.caso) }));
       else if (go.k === 'conflictos') this.setState(Object.assign({}, limpia, { mod: 'administracion', child: 'conflictos' }));
       else if (go.k === 'usuarios') this.setState(Object.assign({}, limpia, { mod: 'administracion', child: 'usuarios', usuIr: Object.assign({ n: (this._uirN = (this._uirN || 0) + 1) }, go) }));
       else if (go.k === 'motores') this.setState(Object.assign({}, limpia, { mod: 'administracion', child: 'motores', iaGo: 'cnx' }));
@@ -3336,7 +3350,7 @@ class Component extends DCLogic {
     this.toast('Ampliación aprobada · nueva fecha límite ' + this.fmtDate(q.nuevaFecha));
   }
   diasText(diff) { return diff > 1 ? diff + ' días restantes' : diff === 1 ? '1 día restante' : diff === 0 ? 'Vence hoy' : 'Vencido hace ' + (-diff) + (diff === -1 ? ' día' : ' días'); }
-  goCaseFromGar(id) { this.setState({ mod: 'solicitudes', child: 'bandeja', gpOpen: false }); this.openCase(id); }
+  goCaseFromGar(id) { if (!this.cxHay(id)) return; this.setState({ mod: 'solicitudes', child: 'bandeja', gpOpen: false }); this.openCase(id); }
   garVals(role) {
     const isCom = role === 'Ejecutivo comercial';
     const reviewer = ['Ejecutivo de inspecciones', 'Suscriptor', 'Administrador'].includes(role);
@@ -3365,7 +3379,7 @@ class Component extends DCLogic {
         hideActions: i.pend.length && canReq ? [] : ['solicitar'],
       };
     });
-    const gpI = this.state.gpCase && this.state.gar[this.state.gpCase] ? Object.assign({ id: this.state.gpCase, c: this.caseById(this.state.gpCase) }, this.garInfo(this.state.gpCase)) : null;
+    const gpI = this.state.gpCase && this.state.gar[this.state.gpCase] && this.caseById(this.state.gpCase) ? Object.assign({ id: this.state.gpCase, c: this.caseById(this.state.gpCase) }, this.garInfo(this.state.gpCase)) : null;
     const open = this.state.gpOpen && !!gpI;
     const st = (e) => ({ estado: e, tone: this.segTone[e] || 'neutral' });
     const gp = gpI ? {
@@ -3420,7 +3434,7 @@ class Component extends DCLogic {
       garSortKey: this.state.garTab === 2 ? '' : 'limite',
       garDemoTip: this.escena === 'gactiva' ? '20137:solicitar' : undefined,
       onGarExpand: (id) => this.setState(s => ({ garExpanded: s.garExpanded.includes(id) ? s.garExpanded.filter(x => x !== id) : s.garExpanded.concat(id) })),
-      onGarAction: (a, r) => a === 'ver' ? this.setState({ gpCase: r.id, gpOpen: true }) : a === 'solicitar' ? this.openSm(r.id) : this.goCaseFromGar(r.id),
+      onGarAction: (a, r) => !this.cxHay(r.id) ? null : a === 'ver' ? this.setState({ gpCase: r.id, gpOpen: true }) : a === 'solicitar' ? this.openSm(r.id) : this.goCaseFromGar(r.id),
       garStorageKey: 'sirius.garantias.widths.' + this.me + '.' + role,
       gp, gpTransform: open ? 'translateX(0)' : 'translateX(100%)', gpVisibility: open ? 'visible' : 'hidden', gpHidden: open ? undefined : 'true', gpScrim: open ? 1 : 0, gpPointer: open ? 'auto' : 'none',
       closeGp: () => this.setState({ gpOpen: false }),
@@ -3562,7 +3576,8 @@ class Component extends DCLogic {
   }
   notifVals(role) {
     const SMn = window.SiriusMonitor; if (SMn && !SMn._detectado) { SMn._extras = this.monitorExtras(); SMn._extrasN = (SMn._extrasN || 0) + 1; SMn.detectar(this.monitorCasos(), this.stampIso()); } // etapa 16f-3: cuellos de severidad alta
-    const Zc = window.SiriusConflictos, cfN = (Zc ? Zc.campana : []).concat(SMn ? SMn.campana : []), mio = (n) => n.aud === role && (!n.user || n.user === this.me);
+    const Zc = window.SiriusConflictos, cfN = this.CXO ? [] : (Zc ? Zc.campana : []).concat(SMn ? SMn.campana : []), // etapa P-6a2: con la conexión, solo las suyas
+      mio = (n) => (n.aud === role || (this.CXO && n.aud === '*')) && (!n.user || n.user === this.me);
     const mine = this.state.notifs.concat(cfN).filter(mio).sort((a, b) => a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0);
     const unread = mine.filter(n => !n.read).length;
     const list = this.state.notifFilter === 'sinleer' ? mine.filter(n => !n.read) : mine;
@@ -3574,10 +3589,10 @@ class Component extends DCLogic {
       markAllRead: () => { cfN.forEach(n => { if (mio(n)) n.read = true; }); this.setState(s => ({ notifs: s.notifs.map(n => n.aud === role ? Object.assign({}, n, { read: true }) : n) })); },
       nfAll: { pressed: this.state.notifFilter === 'todas' ? 'true' : 'false', bg: this.state.notifFilter === 'todas' ? 'var(--surface-subtle)' : 'transparent', fw: this.state.notifFilter === 'todas' ? 700 : 500, pick: () => this.setState({ notifFilter: 'todas' }) },
       nfUnread: { pressed: this.state.notifFilter === 'sinleer' ? 'true' : 'false', bg: this.state.notifFilter === 'sinleer' ? 'var(--surface-subtle)' : 'transparent', fw: this.state.notifFilter === 'sinleer' ? 700 : 500, pick: () => this.setState({ notifFilter: 'sinleer' }), label: 'Sin leer (' + unread + ')' },
-      notifEmpty: list.length === 0, notifEmptyText: this.state.notifFilter === 'sinleer' ? 'No tienes notificaciones sin leer.' : 'No tienes notificaciones.',
+      notifEmpty: list.length === 0, notifEmptyText: this.state.notifFilter === 'sinleer' ? 'No tienes notificaciones sin leer.' : this.CXO ? 'Sin notificaciones' : 'No tienes notificaciones.',
       notifList: list.map((n, i) => ({ text: n.text, meta: (n.monId ? 'Monitor del proceso' : n.confId ? 'Conflictos de configuración' : 'Caso ' + n.caseId) + ' · ' + this.rel(n.ts), unread: !n.read, d: ic[n.kind][0], chipBg: ic[n.kind][1], chipFg: ic[n.kind][2], border: i === 0 ? 'none' : '1px solid var(--border-subtle)', bg: n.read ? '#FFFFFF' : 'var(--color-brand-wash)', fw: n.read ? 400 : 600,
         aria: n.text + (n.monId ? ' · Monitor del proceso · ' : n.confId ? ' · Conflictos de configuración · ' : ' · Caso ' + n.caseId + ' · ') + this.rel(n.ts) + (n.read ? '' : ' · sin leer'),
-        open: () => n.monId ? (n.read = true, this.setState({ notifOpen: false, mod: 'administracion', child: 'flujo', detail: null, monIr: { n: Date.now(), cuello: n.monId } })) : n.confId ? (n.read = true, this.setState({ notifOpen: false, mod: 'administracion', child: 'conflictos', detail: null })) : this.setState(s => Object.assign({ notifOpen: false, notifs: s.notifs.map(x => x.id === n.id ? Object.assign({}, x, { read: true }) : x) }, n.kind === 'visita' || n.kind === 'exc' ? { mod: 'solicitudes', child: 'bandeja', detail: n.caseId, dtab: n.kind === 'exc' ? 6 : 1 } : { mod: 'garantias', child: null, detail: null, gpCase: n.caseId, gpOpen: true })) })),
+        open: () => n.monId ? (n.read = true, this.setState({ notifOpen: false, mod: 'administracion', child: 'flujo', detail: null, monIr: { n: Date.now(), cuello: n.monId } })) : n.confId ? (n.read = true, this.setState({ notifOpen: false, mod: 'administracion', child: 'conflictos', detail: null })) : !this.cxHay(n.caseId) ? this.setState({ notifOpen: false }) : this.setState(s => Object.assign({ notifOpen: false, notifs: s.notifs.map(x => x.id === n.id ? Object.assign({}, x, { read: true }) : x) }, n.kind === 'visita' || n.kind === 'exc' ? { mod: 'solicitudes', child: 'bandeja', detail: n.caseId, dtab: n.kind === 'exc' ? 6 : 1 } : { mod: 'garantias', child: null, detail: null, gpCase: n.caseId, gpOpen: true })) })),
     };
   }
   notifRef = React.createRef();
@@ -4088,9 +4103,8 @@ class Component extends DCLogic {
   // Etapa 12d-2b · el texto «by aseguradora del sur» vive dentro del bloque del logo (el que se desplaza con el menú), expandido o contraído (el CSS lo oculta contraído).
   bySync() { const sc = document.querySelector('.ads-sidenav__scroll'), bl = sc && sc.firstElementChild; if (!bl) return; if (!bl.style.position) bl.style.position = 'relative'; if (!bl.querySelector('.bo-by')) { const sp = document.createElement('span'); sp.className = 'bo-by'; sp.setAttribute('aria-hidden', 'true'); sp.textContent = 'by aseguradora del sur'; bl.appendChild(sp); } }
   componentDidMount() { this.bySync(); this.escenaMontaje();
-    if (this.CXO) { const X = this.CXO; if (!this.state.extraEvents || !Object.keys(this.state.extraEvents).length) this.setState({ extraEvents: this.cxEventos() }); // etapa P-6a
-      if (X.listo && typeof X.listo.then === 'function') X.listo.then(() => { this.cxRecargar(); this.setState({ cxListo: true }); }, (er) => { this.setState({ cxListo: true }); this.toast('No se pudo preparar la conexión: ' + ((er && er.message) || er)); });
-      if (typeof X.suscribir === 'function') { try { this._cxOff = X.suscribir(() => this.cxRecargar()); } catch (er) {} } }
+    if (this.CXO) { if (!this.state.extraEvents || !Object.keys(this.state.extraEvents).length) this.setState({ extraEvents: this.cxEventos() }); this.cxSuscribir(); } // etapa P-6a
+    this._cxPoll = setInterval(() => { const X = window.SIRIUS_CONEXION; if (X && X.activo === true && this.CXO !== X) this.cxActivar(); }, 1000); // etapa P-6a2: conexión que se activa después
     this.onPtResize = () => { if (this.state.portal) this.setState({ ptVw: window.innerWidth, ptVh: window.innerHeight }); }; window.addEventListener('resize', this.onPtResize);
     this.onVw = () => { const w = window.innerWidth; if ((w >= 1440) !== ((this.state.vw || 0) >= 1440) || !this.state.vw) this.setState({ vw: w }); }; window.addEventListener('resize', this.onVw); this.onVw();
     if (this.state.linkLoading) { const chk = () => { if (!this._ejDone) { this.applyEjemplo(); if (!this._ejDone) { setTimeout(chk, 100); return; } } const d = this.state.detail; const miss = d && !this.caseById(d); this.setState({ linkLoading: false, linkErrSt: this.state.linkErrSt || (miss ? { kind: 'caso', id: d } : null), detail: miss ? null : d }); }; setTimeout(chk, 450); }
@@ -4126,6 +4140,9 @@ class Component extends DCLogic {
     document.removeEventListener('keydown', this.onKey);
   }
   renderVals() {
+    if (this.CXO) { const d0 = this.state.detail, g0 = this.state.gpOpen ? this.state.gpCase : null; // etapa P-6a2: caso que no está en la base de la prueba
+      if (d0 && !this.state.linkLoading && !this.caseById(d0)) this.cxFalta(d0, { detail: null });
+      if (g0 && !(this.state.gar[g0] && this.caseById(g0))) this.cxFalta(g0, { gpOpen: false, gpCase: null }); }
     const mod = this.state.mod === 'perfil' ? { id: 'perfil', label: 'Mi perfil' } : this.navItems.find(m => m.id === this.state.mod) || this.navItems[0];
     const child = (mod.children || []).find(c => c.id === this.state.child);
     const role = this.state.role || this.props.defaultRole || 'Coordinador de inspecciones';
@@ -4193,7 +4210,7 @@ class Component extends DCLogic {
       isNiveles, nivEscena: this.state.nivGo || (this.escena.startsWith('niv') ? this.escena.slice(3) : ''),
       isCampos, camposEscena: this.camposScenes.includes(this.escena) ? this.escena.slice(5) : '', camposCasos: isCampos ? this.cases.map(c => this.caseById(c.id)).concat(this.children().map(k => this.finish(k))) : [],
       honPropOpen: !!this.state.honProp, honPropId: this.state.honProp || '', closeHonProp: this._chp || (this._chp = () => this.setState({ honProp: null })),
-      isAgenda, agendaDatos: isAgenda ? this.agendaDatos(role, roleRaw) : null, agendaEscena: ['agendamover', 'agendaok'].includes(this.escena) ? this.escena : '', agendaIr: this.state.agendaIr || null, agendaMoverFn: this._amf || (this._amf = (v, dst, mot) => this.agendaMover(v, dst, mot)), agendaAbrirFn: this._aaf || (this._aaf = (id) => { this.setState({ mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: null }); this.openCase(id); this.setState({ dtab: 1 }); }),
+      isAgenda, agendaDatos: isAgenda ? this.agendaDatos(role, roleRaw) : null, agendaEscena: ['agendamover', 'agendaok'].includes(this.escena) ? this.escena : '', agendaIr: this.state.agendaIr || null, agendaMoverFn: this._amf || (this._amf = (v, dst, mot) => this.agendaMover(v, dst, mot)), agendaAbrirFn: this._aaf || (this._aaf = (id) => { if (!this.cxHay(id)) return; this.setState({ mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: null }); this.openCase(id); this.setState({ dtab: 1 }); }),
       isCal, calDatos: isCal ? this.calDatos(role, roleRaw) : null, calIr: this.state.calIr || null, calAccionFn: this._caf || (this._caf = (go) => this.calAccion(go)), onCalCrumb: this._occal || (this._occal = (c) => { if ((this.state.calCrumb || '') !== (c || '')) this.setState({ calCrumb: c || '' }); }),
       isLiq, liqDatos: isLiq ? this.liqDatos(role, roleRaw) : null, liqEscena: ['liqdetalle', 'liqfactura', 'liqtarifas', 'tarifarios', 'tarifarioeur', 'honoragencia', 'facturagrupo', 'honorsubasta', 'montodecimal', 'honorporliquidar', 'agenciapagos', 'cuentainspector', 'cuentaaprobar'].includes(this.escena) ? this.escena : '', liqIr: this.state.liqIr || null, onLiqCrumb: this._olc || (this._olc = (c) => { if ((this.state.liqCrumb || '') !== (c || '')) this.setState({ liqCrumb: c || '' }); }),
       isInicio: this.state.mod === 'inicio' && !this.state.linkLoading, inicioModelo: this.state.mod === 'inicio' ? this.inicioModelo(role, roleRaw) : null, inicioIrFn: this._iir || (this._iir = (go) => this.inicioIr(go)),
@@ -4209,7 +4226,7 @@ class Component extends DCLogic {
       flujoIr: this.state.flujoIr || null, confResaltar: this.state.confResaltar || null,
       flujoConflicto: this._fcf || (this._fcf = (key) => { const Z = window.SiriusConflictos; if (Z && Z.K && Z.K()) Z.sync({ que: 'Validación de un borrador de flujo', quien: this.me }); this.setState({ mod: 'administracion', child: 'conflictos', detail: null, confResaltar: { n: (this._crN = (this._crN || 0) + 1), key } }); try { window.scrollTo(0, 0); } catch (er) {} }),
       flujoRol: roleRaw, monitorCasos: isFlujo ? this.monitorCasos() : [], monitorExtras: isFlujo ? this.monitorExtras() : null,
-      monitorCasoFn: this._mcf || (this._mcf = (id) => { if (window.SiriusMonitor && window.SiriusMonitor.esEjemplo(id)) this.setState({ monCron: id }); else { this.setState({ mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: null }); this.openCase(id); } }),
+      monitorCasoFn: this._mcf || (this._mcf = (id) => { if (!this.cxHay(id)) return; if (window.SiriusMonitor && window.SiriusMonitor.esEjemplo(id)) this.setState({ monCron: id }); else { this.setState({ mod: 'solicitudes', child: 'bandeja', filters: {}, search: '', tab: 0, inicioSel: null }); this.openCase(id); } }),
       monitorReasignarFn: this._mrf || (this._mrf = (d) => this.monitorReasignar(d)), monitorIr: this.state.monIr || null,
       monitorBandeja: this._mbj || (this._mbj = (x) => { this.setState({ mod: 'solicitudes', child: 'bandeja', detail: null, filters: {}, search: '', tab: 0, inicioSel: { titulo: x.titulo, ids: x.ids.slice(), pref: 'Filtro:', monitor: true } }); this.busy(); try { window.scrollTo(0, 0); } catch (er) {} }),
       monCronOn: !!this.state.monCron && !!window.SiriusMonitor, monCronId: this.state.monCron || '', monCronCasos: this.state.monCron ? this.monitorCasos() : [], monCronClose: this._mcc || (this._mcc = () => this.setState({ monCron: null })),
@@ -4322,7 +4339,7 @@ class Component extends DCLogic {
       startCollapsed: this.startCol(),
       onNavigate: (m, c) => { const go = () => this.nsDirty && isNueva && !(m === 'solicitudes' && c === 'nueva') ? this.setState({ discardOpen: true, pendingNav: [m, c] }) : this.setState(m === 'garantias' && this.state.mod !== 'garantias' ? { mod: m, child: c, catGo: null, catCarr: '', detail: null, formGo: null, calGo: null, nivGo: null, usuIr: null, inicioSel: null, garSel: null, iaGo: null, agendaIr: null, liqIr: null, calIr: null, garTab: role === 'Ejecutivo de inspecciones' ? 2 : 0 } : { mod: m, child: c, catGo: null, catCarr: '', detail: null, formGo: null, calGo: null, nivGo: null, usuIr: null, inicioSel: null, garSel: null, iaGo: null, agendaIr: null, liqIr: null, calIr: null });
         if (!this.notifGuard(go, m === this.state.mod && c === this.state.child && c === 'notificaciones')) go(); },
-      openCaseFromAdmin: this._ocfa || (this._ocfa = (id) => { this.setState({ mod: 'solicitudes', child: 'bandeja', detail: id, dtab: 0 }); window.scrollTo(0, 0); }),
+      openCaseFromAdmin: this._ocfa || (this._ocfa = (id) => { if (!this.cxHay(id)) return; this.setState({ mod: 'solicitudes', child: 'bandeja', detail: id, dtab: 0 }); window.scrollTo(0, 0); }),
       onIaCrumb: this._oic || (this._oic = (c) => this.setState({ iaCrumb: c })),
       onFormCrumb: this._ofc || (this._ofc = (c) => this.setState({ formCrumb: c })),
       pageLabel: child ? child.label : mod.label,
@@ -4331,7 +4348,8 @@ class Component extends DCLogic {
       rolesOpen: this.state.rolesOpen,
       roleRef: this.roleRef,
       toggleRoles: () => this.setState(s => ({ rolesOpen: !s.rolesOpen })),
-      cxOn: !!this.CXO, cxCerrar: this.cxCerrar, demoMenuDisp: this.CXO ? 'none' : 'block', conexionAviso: this.escena === 'conexion',
+      cxOn: !!this.CXO, cxCerrar: this.cxCerrar, cxDemoAviso: !!this.CXO && (['agenda', 'liquidaciones', 'inicio'].includes(this.state.mod) || (this.state.mod === 'administracion' && this.state.child === 'flujo')),
+      garVacioT: this.CXO && !Object.keys(this.state.gar || {}).length ? 'Sin garantías en seguimiento' : 'No hay casos en esta pestaña', garVacioX: this.CXO && !Object.keys(this.state.gar || {}).length ? 'Las garantías llegan por la conexión de la prueba.' : 'Prueba con otra pestaña de seguimiento.', demoMenuDisp: this.CXO ? 'none' : 'block', conexionAviso: this.escena === 'conexion',
       userName: this.me, rolesTitle: this.rolesOf(this.me).length > 1 ? 'Tus roles' : 'Tu rol',
       escPickOpen: !!this.state.escPickOpen, openEscPick: this.openEscPick, closeEscPick: this.closeEscPick, pickEsc: this.pickEsc, escActual: this.escena,
       ...this.demoSelector(),
