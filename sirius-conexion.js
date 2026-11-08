@@ -37,13 +37,23 @@
   var p2 = function (n) { return String(n).padStart(2, '0'); };
   function reloj(iso) { if (!iso) return ''; var d = new Date(iso); return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() + ' · ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
   function fechaIso(iso) { var d = new Date(iso); return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+  // Forma del prototipo. Los 14 casos de ejemplo toman como base su ficha del prototipo (riesgos, informe, ramos…) y la base manda en estado,
+  // responsable, contacto e intentos; los casos nuevos se arman solo con la base. Con varios riesgos se arma «riesgos» con id (lo exige la Bandeja).
+  function fichaEjemplo(id) { var E = window.SIRIUS_EJEMPLO; return E && Array.isArray(E.casos) ? E.casos.filter(function (x) { return String(x.id) === id; })[0] : null; }
   function aCaso(k, evs) {
-    var a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} }, placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean);
-    return { id: String(k.numero), orden: d.orden || '', ramo: k.ramo, estado: k.estado, asegurado: a.nombre || '', ident: a.identificacion || '', placa: placas[0] || '', placas: placas.length > 1 ? placas : undefined,
-      bien: r0.descripcion || '', fecha: fechaIso(k.creado), responsable: (k.responsable && k.responsable.nombre) || (k.visitas && k.visitas[0] && k.visitas[0].inspector && k.visitas[0].inspector.nombre) || '',
-      comercial: d.comercial || '', backoffice: d.backoffice || '', broker: d.broker || 'Directo', sucursal: d.sucursal || '', origen: k.origen || 'Manual',
-      contacto: c.nombre || '', tel: c.celular || '', correo: c.correo || '', nota: d.nota || (k.subestado || ''),
-      intentos: (evs || []).filter(function (e) { return e.accion === 'Intento de contacto'; }).map(function (e) { var p = (e.detalle || '').split(' · '); return { by: (e.actor && e.actor.nombre) || '', fecha: (e.hora || '').slice(0, 16), medio: p[0] || '', resultado: p[1] || '', obs: p.slice(2).join(' · ') }; }) };
+    var id = String(k.numero), a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} },
+        placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || (k.visitas && k.visitas[0] && k.visitas[0].inspector && k.visitas[0].inspector.nombre) || '';
+    var x = base ? JSON.parse(JSON.stringify(base)) : {};
+    x.id = id; x.ramo = k.ramo; x.estado = k.estado; x.asegurado = a.nombre || x.asegurado || ''; x.ident = a.identificacion || x.ident || '';
+    x.orden = d.orden || x.orden || ''; x.fecha = x.fecha || fechaIso(k.creado); x.responsable = resp || x.responsable || '';
+    x.comercial = d.comercial || x.comercial || ''; x.backoffice = d.backoffice || x.backoffice || ''; x.broker = d.broker || x.broker || 'Directo'; x.sucursal = d.sucursal || x.sucursal || '';
+    x.origen = k.origen || x.origen || 'Manual'; x.contacto = c.nombre || x.contacto || ''; x.tel = c.celular || x.tel || ''; x.correo = c.correo || x.correo || '';
+    x.nota = d.nota || k.subestado || x.nota || '';
+    if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
+      if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), detalle: r.descripcion || '', estado: k.estado, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
+    var ints = (evs || []).filter(function (e) { return e.accion === 'Intento de contacto'; }).map(function (e) { var p = (e.detalle || '').split(' · '); return { by: (e.actor && e.actor.nombre) || '', fecha: new Date(e.hora).toISOString().slice(0, 16), medio: p[0] || '', resultado: p[1] || '', obs: p.slice(2).join(' · ') }; });
+    if (ints.length || !base) x.intentos = ints;
+    return x;
   }
   function aEvento(e) { var actor = (e.actor && e.actor.nombre) || (e.actor_tipo === 'Cliente' ? 'Cliente' : e.actor_tipo === 'Sistema' ? 'SIRIUS' : e.actor_tipo || '');
     return { hora: reloj(e.hora), accion: e.accion, detalle: e.detalle || '', actor: actor, rol: e.rol || (e.actor_tipo === 'Cliente' ? 'Portal del cliente' : '') }; }
@@ -59,14 +69,15 @@
 
   function cargarCasos() {
     return Promise.all([
-      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion),visitas(estado,inicio,inspector:usuarios!visitas_inspector_id_fkey(nombre))&order=numero'),
+      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,inspector:usuarios!visitas_inspector_id_fkey(nombre))&order=numero'),
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora')
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });
-      var h = JSON.stringify(nuevo); if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; return true;
+      var E = window.SIRIUS_EJEMPLO, det = {}; if (E && E.detallesCasos) nuevo.casos.forEach(function (c) { if (E.detallesCasos[c.id]) det[c.id] = E.detallesCasos[c.id]; });
+      var h = JSON.stringify(nuevo); if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; return true;
     });
   }
 
