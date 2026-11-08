@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-siluetas.js"></script><script src="datos-captura-danos.js"></script><script src="sirius-siluetas-ui.js"></script><script src="datos-autoinspeccion.js"></script><script src="sirius-autoinspeccion.js"></script><script src="sirius-portal-cliente.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-agenda.js"></script><script src="datos-portal-cliente.js"></script><script src="sirius-portal-caso.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#E9EEF3;font-family:var(--font-brand)}.pt-wrap{min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px}.pt-frame{width:390px;max-width:100%;min-height:780px;display:flex;flex-direction:column;border:10px solid #1b232d;border-radius:28px;overflow:hidden;background:#FFFFFF;box-shadow:0 12px 40px rgba(11,46,89,.18)}@media (max-width:520px){.pt-wrap{padding:0}.pt-frame{width:100%;min-height:100vh;border:none;border-radius:0;box-shadow:none}}</style>
+</helmet>
+<div data-screen-label="Portal del cliente · Autoinspección" class="pt-wrap">
+<div class="pt-frame">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+<x-import component-from-global-scope="SiriusPortal" from="./sirius-portal.js" token="{{ token }}" hint-size="390px,780px" style="flex:1;display:flex;flex-direction:column"></x-import>
+</sc-if>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+<div role="status" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">Cargando…</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:860},&quot;token&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20186-AI&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+// Etapa 12b · Portal del cliente (autoinspección). Página propia: se entra con el enlace temporal ?token=… (sin contraseña). Etapa 14: el enlace del caso (presencial o virtual guiada) abre Mi inspección, Agenda y Documentos (sirius-portal-caso.js).
+// Marco de celular de 390 px en escritorio; a pantalla completa en un celular. El componente vive en sirius-portal.js.
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() { const NS = 'AseguradoraDelSurDesignSystem_4fbf29'; this._poll = setInterval(() => { if (window[NS] && window[NS].Button && window.SIRIUS_SILUETAS && window.SiriusSiluetasUI) { clearInterval(this._poll); this.setState({ ready: true }); } }, 50); }
+  componentWillUnmount() { clearInterval(this._poll); }
+  renderVals() { const q = new URLSearchParams(location.search); return { ready: this.state.ready, loading: !this.state.ready, token: q.has('token') ? (q.get('token') || '') : (this.props.token ?? '20186-AI') }; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+/* ===========================================================================
+   SPACING · RADIUS · SHADOWS · MOTION — Aseguradora del Sur
+   Spacing on a 4px base grid. Shadows & transitions taken verbatim from the
+   Figma "Sombras" and "Transitions" foundation specs.
+   =========================================================================== */
+:root {
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Radii */
+  --radius-xs:  4px;    /* document cards, small media */
+  --radius-sm:  8px;    /* ★ buttons, inputs, chips */
+  --radius-md:  16px;   /* content cards */
+  --radius-lg:  24px;   /* feature cards */
+  --radius-xl:  40px;   /* hero / specimen cards */
+  --radius-pill: 999px; /* pills, FABs, avatars */
+
+  /* Elevation — from the "Sombras" spec */
+  --shadow-button: 0px 4px 8px rgba(0, 174, 239, 0.24);  /* cyan glow on CTAs */
+  --shadow-sm:     0px 4px 8px rgba(1, 30, 65, 0.12);    /* "Cajita" small card */
+  --shadow-md:     0px 12px 20px rgba(1, 30, 65, 0.08);  /* "Caja" card */
+  --shadow-modal:  0px 20px 80px rgba(1, 30, 65, 0.12);  /* "Modal" */
+  --shadow-soft:   0px 20px 40px rgba(1, 30, 65, 0.08);  /* large specimen card */
+
+  /* Scrim / overlay backgrounds */
+  --scrim-submenu: rgba(0, 0, 0, 0.12);
+  --scrim-modal:   rgba(0, 0, 0, 0.40);
+  --scrim-drawer:  rgba(0, 0, 0, 0.20);
+
+  /* Motion — from the "Transitions" spec */
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1); /* @kind other */  /* ease-out */
+  --ease-gentle:   cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --dur-loading: 240ms; /* @kind other */  /* linear loaders */
+  --dur-fast:    200ms; /* @kind other */  /* snack bars (move-in) */
+  --dur-action:  320ms; /* @kind other */  /* buttons, selects, tooltips, submenus, modals */
+  --dur-drawer:  800ms; /* @kind other */  /* side modals (gentle move-in) */
+
+  --transition-action: all var(--dur-action) var(--ease-standard);
+
+  /* Layout */
+  --container-max: 1200px;
+  --content-max:   1000px;
+}

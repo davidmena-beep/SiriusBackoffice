@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="datos-compania.js"></script><script src="sirius-monto.js"></script><script src="sirius-motivo.js"></script>
+<script src="sirius-fecha.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script>
+<script src="datos-informe-rg.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
+</helmet>
+<section data-screen-label="BO-21 Niveles de calificación" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
+<div style="flex:1 1 420px;display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Niveles de calificación</h1>
+<p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">Quién califica cada ramo, qué puede determinar el inspector y cuándo un riesgo debe pasar a calificación.</p>
+</div>
+<div style="flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:8px;white-space:nowrap">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" icon-left="{{ histIcon }}" on-click="{{ openHist }}" hint-size="210px,40px">Historial de cambios</x-import>
+<sc-if value="{{ hasPrimary }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ onPrimary }}" hint-size="190px,40px">{{ primaryLabel }}</x-import></sc-if>
+</div>
+</div>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
+<div role="search" aria-label="Filtrar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<label for="adm-aplica" style="font-size:14px;font-weight:700;color:var(--text-strong)">Aplica a</label>
+<span id="nv-aplica-why" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">{{ aplicaWhy }}</span><select id="adm-aplica" key="{{ tab }}-{{ aplicaVal }}" defaultValue="{{ aplicaVal }}" onChange="{{ onAplica }}" disabled="{{ aplicaDis }}" aria-describedby="nv-aplica-why" style="height:40px;min-width:200px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ aplicaOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select>
+<div style="position:relative;flex:0 1 340px;min-width:220px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:12px;top:11px"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.3-4.3"></path></svg><input type="search" aria-label="{{ searchPh }}" placeholder="{{ searchPh }}" value="{{ q }}" onChange="{{ onQ }}" style="width:100%;height:40px;padding:0 12px 0 38px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></div>
+<span style="flex:1 1 200px;font-size:13px;color:var(--text-muted)">{{ aplicaNote }}</span>
+<sc-if value="{{ tabReg }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ openSim }}" hint-size="150px,40px">Probar reglas</x-import></sc-if>
+</div>
+
+<sc-if value="{{ tabNiv }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">El nivel 2 solo interviene cuando se cumple su condición. Cada cambio pide un motivo y queda en el historial del módulo.</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ nivCols }}" rows="{{ nivRows }}" row-actions="{{ nivActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onNivAction }}" page-size="{{ 10 }}" item-noun="{{ nivNoun }}" storage-key="sirius.adm.niveles" empty-title="Sin resultados" empty-text="Prueba con otro tipo de riesgo o búsqueda." hint-size="100%,340px"></dc-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabFac }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+<section aria-labelledby="ci-label" style="display:flex;flex-direction:column;gap:16px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 20px">
+<div style="flex:0 1 360px;min-width:240px;display:flex;flex-direction:column;gap:6px"><label id="ci-label" for="ci-in" style="font-size:17px;font-weight:700;color:var(--text-strong)">Consultar inspector</label><div style="position:relative"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:12px;top:11px"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.3-4.3"></path></svg><input id="ci-in" type="search" list="ci-list" autoComplete="off" placeholder="Nombre del inspector" value="{{ ci.q }}" onChange="{{ ci.onQ }}" style="width:100%;height:40px;padding:0 12px 0 38px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><datalist id="ci-list"><sc-for list="{{ ci.opts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}"></option></sc-for></datalist></div></div>
+<sc-if value="{{ ci.none }}" hint-placeholder-val="{{ true }}"><span style="flex:1 1 260px;padding-bottom:10px;font-size:14px;color:var(--text-muted)">Elige un inspector para ver su facultad efectiva y de qué nivel la hereda.</span></sc-if>
+</div>
+<sc-if value="{{ ci.has }}" hint-placeholder-val="{{ false }}">
+<div aria-live="polite" style="display:flex;flex-direction:column;gap:14px;padding:16px 20px;border-radius:var(--radius-md);background:var(--surface-subtle)">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 24px">
+<dl style="margin:0;display:flex;flex-wrap:wrap;gap:12px 40px">
+<div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Facultad efectiva de {{ ci.name }}</dt><dd style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ ci.fac }}</dd></div>
+<div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Muestreo de control</dt><dd style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ ci.mue }}</dd><dd style="margin:0;font-size:12px;color:var(--text-body)">{{ ci.mueFrom }}</dd></div>
+<div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Tipo de inspector</dt><dd style="margin:0;font-size:15px;line-height:1.6;color:var(--text-strong)">{{ ci.who }}</dd></div>
+</dl>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ ci.edit }}" hint-size="220px,36px">Editar facultad del inspector</x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span id="ci-chain" style="font-size:13px;color:var(--text-muted)">Cadena de herencia · manda el nivel más específico con excepción vigente</span>
+<ol aria-labelledby="ci-chain" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+<sc-for list="{{ ci.chain }}" as="c" hint-placeholder-count="3"><li style="display:flex;align-items:center;gap:6px"><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></sc-if><span aria-current="{{ c.cur }}" style="display:flex;flex-direction:column;gap:2px;padding:6px 12px;border:1.5px {{ c.bstyle }} {{ c.border }};border-radius:var(--radius-sm);background:{{ c.bg }}"><span style="font-size:14px;font-weight:{{ c.fw }};color:{{ c.lColor }};white-space:nowrap">{{ c.l }}</span><span style="font-size:12px;font-style:{{ c.sfs }};color:{{ c.subColor }};white-space:nowrap">{{ c.sub }}</span></span></li></sc-for>
+</ol>
+</div>
+</div>
+</sc-if>
+</section>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:stretch">
+<section aria-labelledby="g-title" style="flex:1 1 340px;display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="g-title" style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Valor global</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ openGlobal }}" hint-size="90px,36px">Editar</x-import></div>
+<dl style="margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 20px;font-size:14px">
+<dt style="color:var(--text-muted)">Facultad</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ g.fac }}</dd>
+<dt style="color:var(--text-muted)">Muestreo de control</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ g.mue }}</dd>
+<dt style="color:var(--text-muted)">Última modificación</dt><dd style="margin:0;color:var(--text-body)">{{ g.mod }}</dd>
+</dl>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--text-muted)">Muestreo: porcentaje de riesgos determinados por el inspector que pasan a revisión posterior del Ejecutivo de inspecciones. No bloquea el envío al BPM. Provisional.</p>
+</section>
+<section aria-labelledby="lv-title" style="flex:2 1 520px;display:flex;flex-direction:column;gap:12px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<h2 id="lv-title" style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Orden de evaluación</h2>
+<ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 8px">
+<sc-for list="{{ flow }}" as="s" hint-placeholder-count="4"><li style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="display:flex;align-items:center;gap:6px"><span aria-hidden="true" style="width:26px;height:26px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:50%;background:{{ s.bg }};font-size:13px;font-weight:700;color:{{ s.fg }}">{{ s.n }}</span><sc-if value="{{ s.notLast }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="flex:1;height:2px;background:var(--border-subtle)"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--neutral-500)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;margin-left:-8px"><path d="m9 18 6-6-6-6"></path></svg></sc-if></span><span style="font-size:14px;font-weight:700;line-height:1.3;color:var(--text-strong)">{{ s.t }}</span><span style="font-size:13px;line-height:1.45;color:var(--text-body);text-wrap:pretty">{{ s.d }}</span></li></sc-for>
+</ol>
+<p style="margin:0;font-size:13px;color:var(--text-muted)">La facultad se asigna en cuatro niveles y manda el más específico: Inspector › Agencia › Tipo de inspector › Global.</p>
+</section>
+</div>
+<section aria-labelledby="pv-title" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 id="pv-title" style="margin:0;font-size:20px;font-weight:500;color:var(--text-strong)">Puntaje visible para el inspector</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">Panel de puntaje provisional del informe de Ramos Generales, por tipo de inspector. El inspector nunca ve banda, severidad ni políticas; el Ejecutivo de inspecciones, el Suscriptor y el Administrador siempre lo ven con la banda.</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ pvCols }}" rows="{{ pvRows }}" row-actions="{{ pvActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onPvAction }}" page-size="{{ 10 }}" item-noun="{{ pvNoun }}" storage-key="sirius.adm.pv" empty-title="Sin tipos de inspector" empty-text="" hint-size="100%,220px"></dc-import>
+</section>
+<section aria-labelledby="ex-title" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 id="ex-title" style="margin:0;font-size:20px;font-weight:500;color:var(--text-strong)">Excepciones</h2>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ excCols }}" rows="{{ excRows }}" row-actions="{{ excActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onExcAction }}" page-size="{{ 10 }}" item-noun="{{ excNoun }}" storage-key="sirius.adm.exc" empty-title="Sin excepciones" empty-text="Todos los inspectores heredan el valor global." hint-size="100%,260px"></dc-import>
+</section>
+<section aria-labelledby="in-title" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 id="in-title" style="margin:0;font-size:20px;font-weight:500;color:var(--text-strong)">Facultad efectiva por inspector</h2>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ insCols }}" rows="{{ insRows }}" row-actions="{{ insActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onInsAction }}" page-size="{{ 10 }}" item-noun="{{ insNoun }}" storage-key="sirius.adm.ins" empty-title="Sin inspectores" empty-text="" hint-size="100%,300px"></dc-import>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabReg }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+<section aria-label="Indicadores de los últimos 30 días" style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Últimos 30 días · {{ kpiScope }}</span>
+<dl style="margin:0;display:flex;flex-wrap:wrap;gap:12px">
+<sc-for list="{{ kpiA }}" as="k" hint-placeholder-count="1"><div style="flex:1 1 150px;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:var(--radius-md);background:var(--surface-subtle);min-width:0"><dt style="font-size:13px;line-height:1.3;color:var(--text-body)">{{ k.l }}</dt><dd style="margin:0;font-size:{{ k.fs }};font-weight:300;line-height:1.15;color:var(--text-strong);text-wrap:balance">{{ k.v }}</dd><sc-if value="{{ k.hasSub }}" hint-placeholder-val="{{ false }}"><dd style="margin:0;font-size:12px;line-height:1.35;color:var(--text-muted)">{{ k.sub }}</dd></sc-if></div></sc-for>
+<sc-if value="{{ comp.has }}" hint-placeholder-val="{{ true }}">
+<div style="flex:2.6 1 400px;display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--radius-md);background:var(--surface-subtle);min-width:0">
+<dt style="font-size:13px;line-height:1.3;color:var(--text-body)">Resolución de los riesgos evaluados</dt>
+<dd style="margin:0;position:relative;padding-top:6px">
+<div role="group" aria-label="Composición de los riesgos evaluados. Suma 100 %." style="display:flex;gap:2px;height:16px">
+<sc-for list="{{ comp.bar }}" as="s" hint-placeholder-count="4"><span tabIndex="0" role="img" aria-label="{{ s.tip }}" onMouseEnter="{{ s.show }}" onMouseLeave="{{ comp.hide }}" onFocus="{{ s.show }}" onBlur="{{ comp.hide }}" style="flex:{{ s.flex }} 1 0px;min-width:4px;height:100%;border-radius:3px;background:{{ s.color }};cursor:default" style-focus="outline:2px solid var(--text-strong);outline-offset:2px"></span></sc-for>
+</div>
+<sc-if value="{{ comp.hasTip }}" hint-placeholder-val="{{ false }}"><span role="tooltip" style="position:absolute;bottom:28px;left:{{ comp.tipLeft }};transform:translateX(-50%);padding:6px 10px;border-radius:var(--radius-sm);background:var(--blue-900);color:#FFFFFF;font-size:12px;line-height:1.3;white-space:nowrap;pointer-events:none;z-index:2;box-shadow:var(--shadow-sm)">{{ comp.tip }}</span></sc-if>
+</dd>
+<dd style="margin:0"><ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px"><sc-for list="{{ comp.segs }}" as="s" hint-placeholder-count="4"><li style="display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.3;color:var(--text-body);white-space:nowrap"><span aria-hidden="true" style="width:10px;height:10px;flex:0 0 auto;border-radius:2px;background:{{ s.color }}"></span>{{ s.l }}<strong style="color:var(--text-strong)">{{ s.pct }}</strong></li></sc-for></ul></dd>
+<dd style="margin:0;font-size:12px;line-height:1.35;color:var(--text-muted)">Por facultad: sin facultad, o No asegurable con facultad «solo Asegurable».</dd>
+</div>
+</sc-if>
+<sc-for list="{{ kpiB }}" as="k" hint-placeholder-count="2"><div style="flex:1 1 170px;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:var(--radius-md);background:var(--surface-subtle);min-width:0"><dt style="font-size:13px;line-height:1.3;color:var(--text-body)">{{ k.l }}</dt><dd style="margin:0;font-size:{{ k.fs }};font-weight:300;line-height:1.15;color:var(--text-strong);text-wrap:balance">{{ k.v }}</dd><sc-if value="{{ k.hasSub }}" hint-placeholder-val="{{ false }}"><dd style="margin:0;font-size:12px;line-height:1.35;color:var(--text-muted)">{{ k.sub }}</dd></sc-if></div></sc-for>
+</dl>
+</section>
+<section aria-labelledby="rs-rev" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px">
+<h2 id="rs-rev" style="margin:0"><button type="button" aria-expanded="{{ rs.rev.exp }}" aria-controls="rsb-rev" onClick="{{ rs.rev.toggle }}" style="display:inline-flex;align-items:center;gap:8px;border:none;background:transparent;padding:4px 0;cursor:pointer;font-family:var(--font-brand);font-size:18px;font-weight:500;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px;border-radius:var(--radius-sm)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ rs.rev.rot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg>Requieren revisión<span style="font-size:14px;font-weight:700;color:var(--text-muted)">{{ rs.rev.count }}</span></button></h2>
+<sc-if value="{{ rs.rev.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ rs.rev.revisar }}" hint-size="110px,36px">Revisar</x-import></sc-if>
+</div>
+<sc-if value="{{ rs.rev.exp1 }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body)">Usan un campo que no existe en alguna versión del formulario. No se evalúan en los informes de esa versión; en las demás siguen funcionando.</p></sc-if>
+
+<sc-if value="{{ rs.rev.exp1 }}" hint-placeholder-val="{{ true }}"><div id="rsb-rev"><dc-import name="DataTable" fill="{{ true }}" columns="{{ ruleCols }}" rows="{{ rs.rev.rows }}" row-actions="{{ rs.rev.actions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onRuleAction }}" page-size="{{ 20 }}" item-noun="{{ ruleNoun }}" storage-key="sirius.adm.reglas3b" empty-title="Sin reglas" empty-text="No hay reglas en este grupo para el alcance o la búsqueda." hint-size="100%,200px"></dc-import></div></sc-if>
+</section>
+<section aria-labelledby="rs-cfg" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px">
+<h2 id="rs-cfg" style="margin:0"><button type="button" aria-expanded="{{ rs.cfg.exp }}" aria-controls="rsb-cfg" onClick="{{ rs.cfg.toggle }}" style="display:inline-flex;align-items:center;gap:8px;border:none;background:transparent;padding:4px 0;cursor:pointer;font-family:var(--font-brand);font-size:18px;font-weight:500;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px;border-radius:var(--radius-sm)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ rs.cfg.rot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg>Configuradas<span style="font-size:14px;font-weight:700;color:var(--text-muted)">{{ rs.cfg.count }}</span></button></h2>
+
+</div>
+
+
+<sc-if value="{{ rs.cfg.exp1 }}" hint-placeholder-val="{{ true }}"><div id="rsb-cfg"><dc-import name="DataTable" fill="{{ true }}" columns="{{ ruleCols }}" rows="{{ rs.cfg.rows }}" row-actions="{{ rs.cfg.actions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onRuleAction }}" page-size="{{ 20 }}" item-noun="{{ ruleNoun }}" storage-key="sirius.adm.reglas3b" empty-title="Sin reglas" empty-text="No hay reglas en este grupo para el alcance o la búsqueda." hint-size="100%,200px"></dc-import></div></sc-if>
+</section>
+<section aria-labelledby="rs-sys" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px">
+<h2 id="rs-sys" style="margin:0"><button type="button" aria-expanded="{{ rs.sys.exp }}" aria-controls="rsb-sys" onClick="{{ rs.sys.toggle }}" style="display:inline-flex;align-items:center;gap:8px;border:none;background:transparent;padding:4px 0;cursor:pointer;font-family:var(--font-brand);font-size:18px;font-weight:500;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px;border-radius:var(--radius-sm)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ rs.sys.rot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg>Del sistema<span style="font-size:14px;font-weight:700;color:var(--text-muted)">{{ rs.sys.count }}</span></button></h2>
+
+</div>
+
+<sc-if value="{{ rs.sys.exp1 }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body)">Vienen con SIRIUS: no se pueden eliminar y sus condiciones son fijas. Desactivarlas pide motivo.</p></sc-if>
+<sc-if value="{{ rs.sys.exp1 }}" hint-placeholder-val="{{ false }}"><div id="rsb-sys"><dc-import name="DataTable" fill="{{ true }}" columns="{{ ruleCols }}" rows="{{ rs.sys.rows }}" row-actions="{{ rs.sys.actions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onRuleAction }}" page-size="{{ 20 }}" item-noun="{{ ruleNoun }}" storage-key="sirius.adm.reglas3b" empty-title="Sin reglas" empty-text="No hay reglas en este grupo para el alcance o la búsqueda." hint-size="100%,200px"></dc-import></div></sc-if>
+</section>
+</div>
+</sc-if>
+
+<div aria-hidden="true" onClick="{{ closePanel }}" style="position:fixed;inset:0;z-index:1500;background:var(--scrim-drawer);opacity:{{ pScrim }};pointer-events:{{ pPointer }};transition:opacity var(--dur-action) var(--ease-standard)"></div>
+<aside role="dialog" aria-modal="true" aria-labelledby="p-title" aria-hidden="{{ pHidden }}" onKeyDown="{{ onPanelKey }}" style="position:fixed;top:0;right:0;z-index:1501;height:100vh;width:560px;max-width:100vw;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal);transform:{{ pTransform }};visibility:{{ pVis }};transition:transform var(--dur-drawer) var(--ease-standard), visibility var(--dur-drawer)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 32px 20px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">{{ p.eyebrow }}</span><h2 id="p-title" style="margin:0;font-size:24px;font-weight:300;line-height:1.15;color:var(--text-strong)">{{ p.title }}</h2></div>
+<button type="button" aria-label="Cerrar" onClick="{{ closePanel }}" style="width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text-strong);cursor:pointer" style-hover="background:var(--color-brand-wash)" style-focus="outline:2px solid var(--color-brand)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button>
+</div>
+<div tabIndex="0" aria-label="Contenido del panel" style="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:18px;padding:24px 32px;outline:none" style-focus="box-shadow:inset 0 0 0 2px var(--cyan-300)">
+
+<sc-if value="{{ p.isNivel }}" hint-placeholder-val="{{ false }}">
+<dl style="margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 20px;font-size:14px"><dt style="color:var(--text-muted)">Tipo de riesgo</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ p.tipo }}</dd><dt style="color:var(--text-muted)">Ramo</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ p.ramo }}</dd></dl>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-n1" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nivel 1</label><select id="p-n1" key="{{ p.k }}n1" defaultValue="{{ p.n1 }}" onChange="{{ p.onN1 }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ p.roles }}" as="r" hint-placeholder-count="2"><option value="{{ r }}">{{ r }}</option></sc-for></select></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-n2" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nivel 2</label><select id="p-n2" key="{{ p.k }}n2" defaultValue="{{ p.n2 }}" onChange="{{ p.onN2 }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ p.roles2 }}" as="r" hint-placeholder-count="3"><option value="{{ r }}">{{ r }}</option></sc-for></select></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-cond" style="font-size:13px;font-weight:700;color:var(--text-strong)">Condición para el nivel 2</label><select id="p-cond" key="{{ p.k }}c{{ p.n2 }}" defaultValue="{{ p.cond }}" onChange="{{ p.onCond }}" disabled="{{ p.condDis }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ p.conds }}" as="c" hint-placeholder-count="2"><option value="{{ c }}">{{ c }}</option></sc-for></select></div>
+<div style="display:flex;flex-direction:column;gap:6px"><button type="button" role="switch" aria-checked="{{ p.detAria }}" aria-describedby="p-det-note" onClick="{{ p.toggleDet }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:12px;padding:4px 0;border:none;background:transparent;cursor:pointer;font-family:var(--font-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:3px;border-radius:var(--radius-sm)"><span aria-hidden="true" style="position:relative;width:44px;height:24px;flex:0 0 auto;border-radius:var(--radius-pill);background:{{ p.detBg }};transition:background var(--dur-action) var(--ease-standard)"><span style="position:absolute;top:2px;left:{{ p.detLeft }};width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(1,30,65,.3);transition:left var(--dur-action) var(--ease-standard)"></span></span><span style="font-size:16px;color:var(--text-body)">Determinación del inspector</span><span style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ p.detTxt }}</span></button><span id="p-det-note" style="font-size:13px;line-height:1.45;color:var(--text-muted);padding-left:56px">{{ p.detNote }}</span></div>
+<sc-if value="{{ p.isVeh }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><button type="button" role="switch" aria-checked="{{ p.otroAria }}" aria-describedby="p-otro-imp" onClick="{{ p.toggleOtro }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:12px;padding:4px 0;border:none;background:transparent;cursor:pointer;font-family:var(--font-brand);text-align:left" style-focus="outline:2px solid var(--color-brand);outline-offset:3px;border-radius:var(--radius-sm)"><span aria-hidden="true" style="position:relative;width:44px;height:24px;flex:0 0 auto;border-radius:var(--radius-pill);background:{{ p.otroBg }};transition:background var(--dur-action) var(--ease-standard)"><span style="position:absolute;top:2px;left:{{ p.otroLeft }};width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(1,30,65,.3);transition:left var(--dur-action) var(--ease-standard)"></span></span><span style="font-size:16px;color:var(--text-body)">Exigir otro calificador si el calificador registró el informe</span><span style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ p.otroTxt }}</span></button><div id="p-otro-imp" aria-live="polite" style="display:flex;flex-direction:column;gap:4px;margin-left:56px;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Impacto estimado · últimos 30 días</span><span style="font-size:15px;line-height:1.45;color:var(--text-strong);text-wrap:pretty">{{ p.otroImp }}</span></div></div></sc-if>
+</sc-if>
+
+<sc-if value="{{ p.isGlobal }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-gfac" style="font-size:13px;font-weight:700;color:var(--text-strong)">Facultad global</label><select aria-describedby="p-gfac-help" id="p-gfac" key="{{ p.k }}gf" defaultValue="{{ p.fac }}" onChange="{{ p.onFac }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ facOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select><ul id="p-gfac-help" style="list-style:none;margin:2px 0 0;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><li style="font-size:13px;line-height:1.45;color:var(--text-body)"><strong style="color:var(--text-strong)">{{ l.t }}:</strong> {{ l.d }}</li></sc-for></ul></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-gmue" style="font-size:13px;font-weight:700;color:var(--text-strong)">Muestreo de control (%)</label><input id="p-gmue" type="number" min="0" max="100" value="{{ p.mue }}" onChange="{{ p.onMue }}" style="width:140px;height:44px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><span style="font-size:12px;color:var(--text-muted)">Entre 0 y 100. Se aplica a los inspectores sin muestreo propio.</span></div>
+<span style="font-size:13px;line-height:1.45;color:var(--text-body)">{{ p.impact }}</span>
+</sc-if>
+
+<sc-if value="{{ p.isExc }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ p.editing }}" hint-placeholder-val="{{ false }}"><p id="nv-ro-niv" style="margin:0;font-size:13px;color:var(--text-muted)">{{ p.nivWhy }}</p></sc-if><div role="group" aria-labelledby="p-niv" style="display:flex;flex-direction:column;gap:6px"><span id="p-niv" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nivel</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ p.levels }}" as="lv" hint-placeholder-count="3"><button type="button" aria-pressed="{{ lv.pressed }}" data-motivo="{{ p.nivWhy }}" onClick="{{ lv.pick }}" style="height:38px;padding:0 16px;border:1.5px solid var(--color-brand);border-radius:var(--radius-pill);background:{{ lv.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:{{ lv.fg }};cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ lv.l }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-name" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ p.nameLbl }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select aria-describedby="nv-ro-niv" id="p-name" key="{{ p.k }}{{ p.level }}" defaultValue="{{ p.name }}" onChange="{{ p.onName }}" disabled="{{ p.editing }}" aria-invalid="{{ p.nameInvalid }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ p.nameBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><option value="">Selecciona</option><sc-for list="{{ p.names }}" as="n" hint-placeholder-count="3"><option value="{{ n.v }}">{{ n.l }}</option></sc-for></select><sc-if value="{{ p.hasNameErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ p.nameErr }}</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-efac" style="font-size:13px;font-weight:700;color:var(--text-strong)">Facultad</label><select id="p-efac" aria-describedby="p-efac-help" key="{{ p.k }}ef" defaultValue="{{ p.fac }}" onChange="{{ p.onFac }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ facOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select><ul id="p-efac-help" style="list-style:none;margin:2px 0 0;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><li style="font-size:13px;line-height:1.45;color:var(--text-body)"><strong style="color:var(--text-strong)">{{ l.t }}:</strong> {{ l.d }}</li></sc-for></ul></div>
+<sc-if value="{{ p.isInsp }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="p-emue" style="font-size:13px;font-weight:700;color:var(--text-strong)">Muestreo de control propio (%)</label><input id="p-emue" type="number" min="0" max="100" value="{{ p.mue }}" onChange="{{ p.onMue }}" placeholder="{{ p.muePh }}" style="width:140px;height:44px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><span style="font-size:12px;color:var(--text-muted)">Vacío: usa el muestreo global.</span></div></sc-if>
+<div style="display:flex;flex-wrap:wrap;gap:12px 16px">
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-desde" style="font-size:13px;font-weight:700;color:var(--text-strong)">Vigente desde <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><x-import component-from-global-scope="SiriusFecha" id="p-desde" value="{{ p.desde }}" on-change="{{ p.onDesde }}" modo="fecha" formato="iso" width="190px" req="{{ true }}" hint-size="190px,44px"></x-import></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-hasta" style="font-size:13px;font-weight:700;color:var(--text-strong)">Hasta (opcional)</label><x-import component-from-global-scope="SiriusFecha" id="p-hasta" value="{{ p.hasta }}" on-change="{{ p.onHasta }}" modo="fecha" formato="iso" width="190px" min="{{ p.desde }}" min-label="«Vigente desde»" invalid="{{ p.hastaInvalid }}" hint-size="190px,44px"></x-import></div>
+</div>
+<sc-if value="{{ p.hasHastaErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">La fecha final debe ser igual o posterior a la inicial.</span></sc-if>
+<span style="font-size:13px;line-height:1.45;color:var(--text-body)">{{ p.impact }}</span>
+</sc-if>
+
+<sc-if value="{{ p.isRule }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ rp.hasReview }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="warning" size="sm" hint-size="100%,72px"><span style="display:flex;flex-direction:column;gap:2px"><strong>Requiere revisión</strong><span>{{ rp.reviewTxt }}</span></span></x-import></sc-if>
+<sc-if value="{{ rp.hasMeta }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-muted)">{{ rp.meta }}</span></sc-if>
+<sc-if value="{{ rp.sys }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="info" size="sm" hint-size="100%,56px">Regla del sistema: no se puede eliminar y sus condiciones son fijas. Puedes cambiar el motivo del envío, la vigencia y el estado; desactivarla pide motivo.</x-import><p id="nv-ro-note" style="margin:0;font-size:13px;color:var(--text-muted)">{{ rp.roWhy }}</p></sc-if>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="r-name" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nombre <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><input aria-describedby="nv-ro-note" id="r-name" value="{{ rp.name }}" onChange="{{ rp.onName }}" disabled="{{ rp.sys }}" aria-invalid="{{ rp.nameInvalid }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ rp.nameBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ rp.hasNameErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el nombre de la regla.</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="r-desc" style="font-size:13px;font-weight:700;color:var(--text-strong)">Descripción</label><textarea aria-describedby="nv-ro-note" id="r-desc" rows="2" value="{{ rp.desc }}" onChange="{{ rp.onDesc }}" disabled="{{ rp.sys }}" placeholder="Opcional. Para qué existe la regla." style="width:100%;padding:10px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></div>
+<div style="display:flex;flex-wrap:wrap;gap:12px 16px">
+<div style="flex:1 1 160px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:700;color:var(--text-strong)">Tipo de riesgo o ramo</span><span style="height:44px;display:flex;align-items:center;font-size:15px;color:var(--text-strong)">{{ rp.scopeName }}</span></div>
+<div style="flex:1 1 200px;display:flex;flex-direction:column;gap:6px"><label for="r-form" style="font-size:13px;font-weight:700;color:var(--text-strong)">Formulario</label><select aria-describedby="nv-ro-note" id="r-form" key="{{ rp.k }}f" defaultValue="{{ rp.form }}" onChange="{{ rp.onForm }}" disabled="{{ rp.sys }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ rp.forms }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select></div>
+</div>
+<div role="radiogroup" aria-labelledby="r-ver" style="display:flex;flex-direction:column;gap:6px"><span id="r-ver" style="font-size:13px;font-weight:700;color:var(--text-strong)">Aplica al veredicto</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ rp.vers }}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{ o.on }}" data-motivo="{{ rp.roWhy }}" onClick="{{ o.pick }}" style="height:38px;padding:0 16px;border:1.5px solid var(--color-brand);border-radius:var(--radius-pill);background:{{ o.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:{{ o.fg }};cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</button></sc-for></div></div>
+<section aria-labelledby="r-cond" style="display:flex;flex-direction:column;gap:12px">
+<h3 id="r-cond" style="margin:0;font-size:13px;font-weight:700;color:var(--text-strong)">Condiciones</h3>
+<sc-for list="{{ rp.groups }}" as="g" hint-placeholder-count="1">
+<sc-if value="{{ g.hasJoin }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px"><button type="button" aria-label="{{ g.joinAria }}" data-motivo="{{ rp.roWhy }}" onClick="{{ rp.toggleRoot }}" style="min-width:44px;height:30px;padding:0 12px;border:1.5px solid var(--color-brand);border-radius:var(--radius-pill);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ rp.rootWord }}</button><span style="flex:1;height:1px;background:var(--border-subtle)"></span></div></sc-if>
+<div role="group" aria-label="{{ g.aria }}" style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-subtle)">
+<sc-for list="{{ g.conds }}" as="c" hint-placeholder-count="1">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 8px">
+<sc-if value="{{ c.isFirst }}" hint-placeholder-val="{{ true }}"><span style="height:38px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ c.lead }}</span></sc-if>
+<sc-if value="{{ c.isJoin }}" hint-placeholder-val="{{ false }}"><button type="button" aria-label="{{ c.joinAria }}" data-motivo="{{ rp.roWhy }}" onClick="{{ g.toggleMode }}" style="min-width:38px;height:38px;padding:0 10px;border:1.5px solid var(--color-brand);border-radius:var(--radius-pill);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ g.word }}</button></sc-if>
+<select aria-describedby="nv-ro-note" aria-label="{{ c.vAria }}" key="{{ c.kV }}" defaultValue="{{ c.v }}" onChange="{{ c.onV }}" disabled="{{ rp.sys }}" style="flex:1 1 170px;min-width:0;height:38px;padding:0 6px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><sc-for list="{{ rp.varGroups }}" as="vg" hint-placeholder-count="3"><optgroup label="{{ vg.l }}"><sc-for list="{{ vg.items }}" as="it" hint-placeholder-count="4"><option value="{{ it.k }}">{{ it.l }}</option></sc-for></optgroup></sc-for></select>
+<select aria-describedby="nv-ro-note" aria-label="{{ c.oAria }}" key="{{ c.kO }}" defaultValue="{{ c.op }}" onChange="{{ c.onOp }}" disabled="{{ rp.sys }}" style="flex:0 1 150px;min-width:0;height:38px;padding:0 6px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><sc-for list="{{ c.ops }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select>
+<div style="flex:1 1 150px;display:flex;flex-direction:column;gap:4px;min-width:0">
+<sc-if value="{{ c.isNum }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:6px"><input aria-describedby="nv-ro-note" type="number" aria-label="{{ c.aAria }}" value="{{ c.a }}" onChange="{{ c.onA }}" disabled="{{ rp.sys }}" aria-invalid="{{ c.invalid }}" style="flex:1;min-width:0;height:38px;padding:0 8px;border:1.5px solid {{ c.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><sc-if value="{{ c.isBetween }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:var(--text-body)">y</span><input aria-describedby="nv-ro-note" type="number" aria-label="{{ c.bAria }}" value="{{ c.b }}" onChange="{{ c.onB }}" disabled="{{ rp.sys }}" style="flex:1;min-width:0;height:38px;padding:0 8px;border:1.5px solid {{ c.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"></sc-if><span style="font-size:13px;color:var(--text-muted);white-space:nowrap">{{ c.unit }}</span></div></sc-if>
+<sc-if value="{{ c.isMoney }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:6px"><x-import component-from-global-scope="SiriusMonto" id="{{ c.aId }}" aria-label="{{ c.aAria }}" value="{{ c.aNum }}" on-change="{{ c.onAM }}" disabled="{{ rp.sys }}" invalid="{{ c.hasErr }}" alto="{{ 38 }}" hint-size="150px,38px"></x-import><sc-if value="{{ c.isBetween }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:var(--text-body)">y</span><x-import component-from-global-scope="SiriusMonto" id="{{ c.bId }}" aria-label="{{ c.bAria }}" value="{{ c.bNum }}" on-change="{{ c.onBM }}" disabled="{{ rp.sys }}" invalid="{{ c.hasErr }}" alto="{{ 38 }}" hint-size="150px,38px"></x-import></sc-if><span style="font-size:13px;color:var(--text-muted);white-space:nowrap">{{ c.unit }}</span></div></sc-if>
+<sc-if value="{{ c.isSel }}" hint-placeholder-val="{{ false }}"><select aria-describedby="nv-ro-note" aria-label="{{ c.aAria }}" key="{{ c.kS }}" defaultValue="{{ c.a }}" onChange="{{ c.onA }}" disabled="{{ rp.sys }}" aria-invalid="{{ c.invalid }}" style="width:100%;height:38px;padding:0 6px;border:1.5px solid {{ c.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><option value="">Selecciona</option><sc-for list="{{ c.opts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select></sc-if>
+<sc-if value="{{ c.isText }}" hint-placeholder-val="{{ false }}"><input aria-describedby="nv-ro-note" aria-label="{{ c.aAria }}" value="{{ c.a }}" onChange="{{ c.onA }}" disabled="{{ rp.sys }}" aria-invalid="{{ c.invalid }}" style="width:100%;height:38px;padding:0 8px;border:1.5px solid {{ c.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"></sc-if>
+<sc-if value="{{ c.isMulti }}" hint-placeholder-val="{{ false }}"><div role="group" aria-label="{{ c.aAria }}" style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="4"><button type="button" aria-pressed="{{ ch.pressed }}" data-motivo="{{ rp.roWhy }}" onClick="{{ ch.toggle }}" style="height:30px;padding:0 10px;border:1.5px solid {{ ch.border }};border-radius:var(--radius-pill);background:{{ ch.bg }};font-family:var(--font-brand);font-size:12px;font-weight:{{ ch.fw }};color:var(--text-strong);cursor:pointer">{{ ch.l }}</button></sc-for></div></sc-if>
+<sc-if value="{{ c.hasErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:12px;color:var(--color-danger)">Completa el valor.</span></sc-if>
+</div>
+<sc-if value="{{ c.canRemove }}" hint-placeholder-val="{{ false }}"><button type="button" aria-label="{{ c.rmAria }}" title="{{ c.rmAria }}" onClick="{{ c.remove }}" style="width:32px;height:38px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--neutral-600);cursor:pointer" style-hover="background:var(--color-danger-bg);color:var(--color-danger)" style-focus="outline:2px solid var(--color-brand)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></sc-if>
+</div>
+</sc-for>
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+<sc-if value="{{ rp.editable }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ g.add }}" style="display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;padding:2px 0;cursor:pointer;font-family:var(--font-brand);font-size:13px;font-weight:700;color:var(--text-link)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Agregar condición</button></sc-if>
+<sc-if value="{{ g.canRemove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ g.remove }}" style="border:none;background:transparent;padding:2px 0;cursor:pointer;font-family:var(--font-brand);font-size:13px;font-weight:700;color:var(--color-danger)">Quitar grupo</button></sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ rp.editable }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ rp.addGroup }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;padding:2px 0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Agregar grupo</button></sc-if>
+<div aria-live="polite" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--color-brand-wash)"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-strong)">Resumen de la regla</span><span style="font-size:15px;line-height:1.5;color:var(--text-strong);text-wrap:pretty">{{ rp.sentence }}</span></div>
+<div aria-live="polite" style="display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
+<span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Impacto estimado · últimos 30 días</span>
+<span style="font-size:15px;line-height:1.45;color:var(--text-strong)">{{ rp.impTxt }}</span>
+<sc-if value="{{ rp.hasImpEx }}" hint-placeholder-val="{{ false }}"><ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column"><sc-for list="{{ rp.impEx }}" as="x" hint-placeholder-count="3"><li style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:6px 0;border-top:1px solid var(--border-subtle)"><sc-if value="{{ x.real }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ x.open }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Caso {{ x.caso }} · {{ x.placa }}</button></sc-if><sc-if value="{{ x.fake }}" hint-placeholder-val="{{ false }}"><span style="padding:1px 8px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:12px;font-weight:700;color:var(--text-strong);white-space:nowrap">Ejemplo</span></sc-if><span style="font-size:13px;color:var(--text-body)">{{ x.txt }}</span></li></sc-for></ul></sc-if>
+<sc-if value="{{ rp.hasFake }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">Ejemplo: riesgo de la muestra que cumple la condición, sin un caso del prototipo que lo respalde.</span></sc-if>
+</div>
+</section>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="r-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo del envío <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="r-mot" rows="2" value="{{ rp.motivo }}" onChange="{{ rp.onMotivo }}" aria-invalid="{{ rp.motInvalid }}" aria-describedby="r-mot-help" style="width:100%;padding:10px 12px;border:1.5px solid {{ rp.motBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ rp.hasMotErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el texto que verá el calificador.</span></sc-if><span id="r-mot-help" style="font-size:12px;color:var(--text-muted)">Lo verá el calificador cuando la regla se cumpla.</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:12px 16px">
+<div style="display:flex;flex-direction:column;gap:6px"><label for="r-desde" style="font-size:13px;font-weight:700;color:var(--text-strong)">Vigente desde</label><x-import component-from-global-scope="SiriusFecha" id="r-desde" value="{{ rp.desde }}" on-change="{{ rp.onDesde }}" modo="fecha" formato="iso" width="190px" hint-size="190px,44px"></x-import></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="r-hasta" style="font-size:13px;font-weight:700;color:var(--text-strong)">Hasta (opcional)</label><x-import component-from-global-scope="SiriusFecha" id="r-hasta" value="{{ rp.hasta }}" on-change="{{ rp.onHasta }}" modo="fecha" formato="iso" width="190px" min="{{ rp.desde }}" min-label="«Vigente desde»" invalid="{{ rp.hastaInvalid }}" hint-size="190px,44px"></x-import></div>
+</div>
+<sc-if value="{{ rp.hasHastaErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">La fecha final debe ser igual o posterior a la inicial.</span></sc-if>
+<button type="button" role="switch" aria-checked="{{ rp.actAria }}" onClick="{{ rp.toggleAct }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:12px;padding:4px 0;border:none;background:transparent;cursor:pointer;font-family:var(--font-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:3px;border-radius:var(--radius-sm)"><span aria-hidden="true" style="position:relative;width:44px;height:24px;flex:0 0 auto;border-radius:var(--radius-pill);background:{{ rp.actBg }};transition:background var(--dur-action) var(--ease-standard)"><span style="position:absolute;top:2px;left:{{ rp.actLeft }};width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(1,30,65,.3);transition:left var(--dur-action) var(--ease-standard)"></span></span><span style="font-size:16px;color:var(--text-body)">Estado</span><span style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ rp.actTxt }}</span></button>
+</sc-if>
+<sc-if value="{{ p.isHist }}" hint-placeholder-val="{{ false }}">
+<ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+<sc-for list="{{ hist }}" as="h" hint-placeholder-count="3"><li style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:12px;padding-bottom:18px"><span style="display:flex;flex-direction:column;align-items:center"><span style="width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--color-brand)"></span><span style="flex:1;width:2px;margin-top:4px;background:var(--border-subtle)"></span></span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;color:var(--text-muted)">{{ h.when }} · {{ h.by }} · {{ h.tab }}</span><span style="font-size:15px;font-weight:700;line-height:1.35;color:var(--text-strong)">{{ h.what }}</span><sc-if value="{{ h.hasDetail }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;line-height:1.4;color:var(--text-body)">{{ h.detail }}</span></sc-if><span style="font-size:13px;line-height:1.4;color:var(--text-body)">Motivo: {{ h.motivo }}</span></span></li></sc-for>
+</ol>
+</sc-if>
+
+<sc-if value="{{ p.needsMotivo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px;padding-top:16px;border-top:1px solid var(--border-subtle)">
+<label for="p-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo del cambio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="p-mot" rows="3" value="{{ p.motivo }}" onChange="{{ p.onMotivo }}" aria-invalid="{{ p.motInvalid }}" aria-describedby="p-mot-help" placeholder="Ej. Aprobado en comité técnico del 14/10/26" style="width:100%;padding:10px 12px;border:1.5px solid {{ p.motBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ p.hasMotErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo para guardar.</span></sc-if>
+<span id="p-mot-help" style="font-size:12px;color:var(--text-muted)">Queda registrado en el historial del módulo.</span>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ p.needsMotivo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;padding:16px 32px;border-top:1px solid var(--border-subtle)">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ closePanel }}" hint-size="110px,40px">Cancelar</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ p.onSave }}" hint-size="110px,40px">Guardar</x-import>
+</div>
+</sc-if>
+</aside>
+
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ dm.open }}" on-close="{{ closeModal }}" size="sm" align="left" title="{{ dm.title }}" description="{{ dm.desc }}" footer="{{ dm.footer }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:6px;text-align:left">
+<sc-if value="{{ dm.hasImp }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Impacto · últimos 30 días</span><span style="font-size:15px;line-height:1.45;color:var(--text-strong)">{{ dm.impTxt }}</span></div></sc-if>
+<label for="dm-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="dm-mot" rows="3" value="{{ dm.motivo }}" onChange="{{ dm.onMotivo }}" aria-invalid="{{ dm.invalid }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ dm.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ dm.err }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo para continuar.</span></sc-if>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ pvm.open }}" on-close="{{ pvm.close }}" size="md" align="left" title="{{ pvm.title }}" description="Parámetro por tipo de inspector. Cada cambio pide un motivo y queda en el historial del módulo." footer="{{ pvm.footer }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:16px;text-align:left">
+<fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px"><legend style="padding:0;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--text-strong)">Puntaje visible para el inspector</legend>
+<div style="display:flex;flex-wrap:wrap;gap:8px 24px"><sc-for list="{{ pvm.opts }}" as="o" hint-placeholder-count="2"><label style="display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:15px;color:var(--text-strong);cursor:pointer"><input type="radio" name="pv-val" checked="{{ o.on }}" onChange="{{ o.pick }}" style="width:18px;height:18px;margin:0;accent-color:var(--color-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</label></sc-for></div>
+</fieldset>
+<div aria-live="polite" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Impacto</span><span style="font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ pvm.imp }}</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="pv-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo del cambio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="pv-mot" rows="3" value="{{ pvm.motivo }}" onChange="{{ pvm.onMotivo }}" aria-invalid="{{ pvm.invalid }}" aria-describedby="pv-mot-help" style="width:100%;padding:10px 12px;border:1.5px solid {{ pvm.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ pvm.err }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pvm.errTxt }}</span></sc-if>
+<span id="pv-mot-help" style="font-size:12px;color:var(--text-muted)">Queda registrado en el historial del módulo.</span></div>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ sim.open }}" on-close="{{ closeSim }}" size="lg" align="left" title="Probar reglas" description="Simula la evaluación con los datos de un caso existente o con datos ingresados a mano. No modifica el caso." footer="{{ sim.footer }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:18px;text-align:left">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px">
+<div role="radiogroup" aria-label="Fuente de los datos" style="display:flex;gap:6px"><sc-for list="{{ sim.modes }}" as="m" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{ m.on }}" onClick="{{ m.pick }}" style="height:38px;padding:0 16px;border:1.5px solid var(--color-brand);border-radius:var(--radius-pill);background:{{ m.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:{{ m.fg }};cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ m.l }}</button></sc-for></div>
+<sc-if value="{{ sim.isCaso }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:6px"><label for="s-caso" style="font-size:13px;font-weight:700;color:var(--text-strong)">Caso</label><select id="s-caso" key="{{ sim.caso }}" defaultValue="{{ sim.caso }}" onChange="{{ sim.onCaso }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><sc-for list="{{ sim.casos }}" as="o" hint-placeholder-count="1"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="s-riesgo" style="font-size:13px;font-weight:700;color:var(--text-strong)">Riesgo</label><select id="s-riesgo" key="{{ sim.riesgo }}" defaultValue="{{ sim.riesgo }}" onChange="{{ sim.onRiesgo }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong)"><sc-for list="{{ sim.riesgos }}" as="o" hint-placeholder-count="2"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="s-ver" style="font-size:13px;font-weight:700;color:var(--text-strong)">Veredicto del inspector</label><select id="s-ver" key="{{ sim.ver }}" defaultValue="{{ sim.ver }}" onChange="{{ sim.onVer }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><option value="Asegurable">Asegurable</option><option value="No asegurable">No asegurable</option></select></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+<section aria-labelledby="s-data" style="flex:1 1 280px;display:flex;flex-direction:column;gap:10px;min-width:0">
+<h3 id="s-data" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Datos evaluados</h3>
+<span style="font-size:13px;color:var(--text-muted)">{{ sim.dataNote }}</span>
+<dl style="margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;align-items:center;font-size:14px">
+<sc-for list="{{ sim.fields }}" as="f" hint-placeholder-count="10"><dt style="color:var(--text-muted)"><label for="{{ f.id }}">{{ f.l }}</label></dt><dd style="margin:0;min-width:0"><sc-if value="{{ f.ro }}" hint-placeholder-val="{{ true }}"><span id="{{ f.id }}" style="font-weight:700;color:var(--text-strong)">{{ f.txt }}</span></sc-if><sc-if value="{{ f.isMoney }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusMonto" id="{{ f.id }}" aria-label="{{ f.l }}" value="{{ f.num }}" on-change="{{ f.onChange }}" ancho="{{ 180 }}" alto="{{ 34 }}" hint-size="180px,34px"></x-import></sc-if><sc-if value="{{ f.isNum }}" hint-placeholder-val="{{ false }}"><input id="{{ f.id }}" type="number" value="{{ f.val }}" onChange="{{ f.onChange }}" style="width:100%;max-width:180px;height:34px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"></sc-if><sc-if value="{{ f.isSel }}" hint-placeholder-val="{{ false }}"><select id="{{ f.id }}" key="{{ f.k }}" defaultValue="{{ f.val }}" onChange="{{ f.onChange }}" style="width:100%;max-width:220px;height:34px;padding:0 6px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)"><sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select></sc-if></dd></sc-for>
+</dl>
+</section>
+<section aria-labelledby="s-res" style="flex:1.3 1 340px;display:flex;flex-direction:column;gap:14px;min-width:0">
+<h3 id="s-res" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Resultado</h3>
+<div style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)"><span style="font-size:13px;color:var(--text-muted)">Facultad efectiva de {{ sim.insp }}</span><span style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ sim.fac }}</span><span style="font-size:13px;color:var(--text-body)">{{ sim.from }}</span></div>
+<div aria-live="polite"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="{{ sim.tone }}" size="md" hint-size="100%,56px"><span style="display:flex;flex-direction:column;gap:2px"><strong>{{ sim.result }}</strong><sc-if value="{{ sim.hasResultSub }}" hint-placeholder-val="{{ false }}"><span>{{ sim.resultSub }}</span></sc-if></span></x-import></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ sim.rulesTitle }}</span>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+<sc-for list="{{ sim.rules }}" as="r" hint-placeholder-count="6"><li style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--border-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ r.color }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top:1px"><path d="{{ r.icon }}"></path></svg><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:{{ r.fw }};color:{{ r.nameColor }}">{{ r.name }}</span><span style="font-size:13px;line-height:1.4;color:{{ r.txtColor }}">{{ r.status }}</span></span></li></sc-for>
+</ul></div>
+</section>
+</div>
+</div>
+</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Snackbar" open="{{ snackOpen }}" message="{{ snack }}" on-close="{{ closeSnack }}" hint-size="0px,0px"></x-import>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  FAC = ['Sin facultad', 'Determinar solo Asegurable', 'Determinar Asegurable y No asegurable'];
+  LEGEND = [
+    { t: 'Sin facultad', d: 'Solo puede enviar a calificación.' },
+    { t: 'Determinar solo Asegurable', d: 'Determina Asegurable o envía a calificación. Si su veredicto es No asegurable, el riesgo va siempre a calificación con su recomendación.' },
+    { t: 'Determinar Asegurable y No asegurable', d: 'Determina cualquiera de los dos o envía a calificación. No asegurable exige un motivo de catálogo y una observación.' },
+  ];
+  ROLES = ['Ejecutivo de inspecciones', 'Suscriptor'];
+  CONDS = ['Si el nivel 1 marca Requerir evaluación de suscripción', 'Siempre'];
+  TIPOS = ['Interno', 'Externo', 'Agencia'];
+  AGENCIAS = ['Eurosurvey', 'Inspecciones Andinas', 'Peritajes del Pacífico'];
+  get INSP() { const D = window.SIRIUS_EJEMPLO; return D && D.inspectores ? D.inspectores : []; }
+  LVL = { tipo: 'Tipo de inspector', agencia: 'Agencia', insp: 'Inspector' };
+  get RG() { return (window.SIRIUS_EJEMPLO || {}).ramosRG || []; }
+  state = (() => {
+    const mod = { d: '2026-09-15', by: 'Andrea Salazar' };
+    const niv = [{ id: 'veh', tipo: 'Vehículos', ramo: 'Todos los vehículos', n1: 'Ejecutivo de inspecciones', n2: '—', cond: '', det: true, otroCal: false, mod }]
+      .concat(this.RG.map(r => ({ id: this.slug(r), tipo: 'Ramos Generales', ramo: r, n1: 'Ejecutivo de inspecciones', n2: 'Suscriptor', cond: this.CONDS[0], det: false, mod })));
+    const fac = this.seedFac(); Object.keys(fac).forEach(k => { fac[k].mod = fac[k].mod || mod; });
+    const hist = [
+      { when: '2026-10-01T09:12', by: 'Andrea Salazar', tab: 'Facultad del inspector', what: 'Agregó la excepción de Inspector Paola Vinueza', detail: 'Determinar solo Asegurable · muestreo 25 % · hasta 31/12/26', motivo: 'Periodo de acompañamiento tras su ingreso.' },
+      { when: '2026-10-01T09:05', by: 'Andrea Salazar', tab: 'Facultad del inspector', what: 'Agregó las excepciones de Tipo de inspector Interno y Agencia Eurosurvey', detail: '', motivo: 'Arranque de la determinación del inspector en Vehículos.' },
+      { when: '2026-09-15T16:40', by: 'Andrea Salazar', tab: 'Niveles por ramo', what: 'Cargó la configuración inicial de niveles de calificación', detail: 'Vehículos y 3 ramos de Ramos Generales', motivo: 'Configuración inicial.' },
+    ];
+    const tab = this.props.escena === 'fac' ? 1 : ['reg', 'sim'].includes(this.props.escena) ? 2 : 0;
+    return { tab, niv, fac, hist, rules: this.seedRules(), sim: this.props.escena === 'sim' ? { mode: 'caso', caso: '20196', riesgo: 'PBA4521', ver: 'Asegurable', manual: null } : null, scope: 'veh', nivTipo: 'all', q: '', panel: null, draft: {}, err: {}, modal: null, motivo: '', motErr: false, snack: '', consult: this.props.escena === 'fac' ? 'Paola Vinueza' : null, consultQ: this.props.escena === 'fac' ? 'Paola Vinueza' : '', compTip: null };
+  })();
+  componentDidMount() { if (!window.SIRIUS_EJEMPLO) { this._dataPoll = setInterval(() => { if (window.SIRIUS_EJEMPLO) { clearInterval(this._dataPoll); this._sample = null; if (!this.state.rules.length) this.setState(s => { const fac = this.seedFac(); Object.keys(fac).forEach(k => { fac[k].mod = fac[k].mod || s.fac.veh.mod; }); return { rules: this.seedRules(), fac }; }); const iv = this.VARS.find(x => x.k === 'inspector'); if (iv) iv.opts = this.INSP.map(i => i.n); this.forceUpdate(); } }, 100); } }
+  componentWillUnmount() { clearInterval(this._dataPoll); }
+  seedRules() { const D = window.SIRIUS_EJEMPLO; return D && D.reglas ? JSON.parse(JSON.stringify(D.reglas)) : []; }
+  seedFac() { const D = window.SIRIUS_EJEMPLO, F = D && D.facultades; return F ? JSON.parse(JSON.stringify(F)) : { veh: { fac: 'Sin facultad', mue: 10, exc: [] } }; }
+  match(parts) { const q = (this.state.q || '').trim().toLowerCase(); return !q || parts.filter(Boolean).join(' ').toLowerCase().includes(q); }
+  slug(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_'); }
+  user() { return this.props.userName || 'Andrea Salazar'; }
+  today() { const d = window.SIRIUS_EJEMPLO.ahora(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  now() { const d = window.SIRIUS_EJEMPLO.ahora(); return this.today() + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  fmt(d) { if (!d) return '—'; const [y, m, dd] = d.slice(0, 10).split('-'); return dd + '/' + m + '/' + y.slice(2); }
+  fmtT(d) { return this.fmt(d) + ' ' + d.slice(11, 16); }
+  excLabel(e) { return e.level === 'tipo' ? 'Tipo de inspector ' + e.name.toLowerCase() : e.level === 'agencia' ? 'Agencia ' + e.name : 'Inspector ' + e.name; }
+  active(e) { const t = this.today(); return e.desde <= t && (!e.hasta || e.hasta >= t); }
+  effective(i, F) {
+    const ex = F.exc.filter(e => this.active(e));
+    const own = ex.find(e => e.level === 'insp' && e.name === i.n);
+    const ag = i.ag && ex.find(e => e.level === 'agencia' && e.name === i.ag);
+    const tp = ex.find(e => e.level === 'tipo' && e.name === i.tipo);
+    const src = own || ag || tp;
+    const fac = src ? src.fac : F.fac;
+    const from = own ? 'asignada al inspector' : src ? 'heredada de ' + this.excLabel(src) : 'heredada del valor global';
+    const mueOwn = own && own.mue !== '' && own.mue != null;
+    const mue = fac === 'Sin facultad' ? 'No aplica' : (mueOwn ? own.mue : F.mue) + ' %' + (mueOwn ? ' · del inspector' : ' · global');
+    return { fac, from, mue };
+  }
+  scopes() { return this.state.niv.filter(r => r.det).map(r => ({ v: r.id, l: r.id === 'veh' ? 'Vehículos' : r.ramo })); }
+  F() { const st = this.state; return st.fac[st.scope] || st.fac.veh; }
+  log(tab, what, detail, motivo) { return [{ when: this.now(), by: this.user(), tab, what, detail, motivo }].concat(this.state.hist); }
+  toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); }
+  openPanel(panel, draft) { this.lastFocus = document.activeElement; this.setState({ panel, draft, err: {}, motivo: '', motErr: false }); setTimeout(() => { const el = document.querySelector('[aria-labelledby="p-title"] select:not([disabled]), [aria-labelledby="p-title"] input, [aria-labelledby="p-title"] button'); el && el.focus(); }, 350); }
+  closePanel() { this.setState({ panel: null }); const f = this.lastFocus; setTimeout(() => f && f.focus && f.focus(), 50); }
+  setD(o) { this.setState(s => ({ draft: Object.assign({}, s.draft, o), err: Object.assign({}, s.err, Object.keys(o).reduce((a, k) => (a[k] = '', a), {})) })); }
+  otroImpact() { const E = window.SIRIUS_EJEMPLO || {}, hit = (E.vehiculos || []).filter(v => v.calificacion && v.informe && [v.informe.registradoPor, v.informe.enviadoPor].includes(v.calificacion.by)), M = (this._kpiCal || {}).veh;
+    if (!M) return 'Aún no hay riesgos calificados en los últimos 30 días para estimar el impacto.';
+    return hit.length + ' de ' + M + ' riesgos calificados en los últimos 30 días habría' + (hit.length === 1 ? '' : 'n') + ' requerido otro calificador' + (hit.length ? ': ' + hit.map(v => 'caso ' + v.caso + ' · ' + v.placa + ' (' + v.calificacion.by + ')').join(', ') : '') + '.'; }
+  save() {
+    const st = this.state, d = st.draft, motivo = st.motivo.trim(), err = {};
+    if (st.panel === 'rule') return this.saveRule(motivo);
+    if (st.panel === 'exc') {
+      if (!d.name) err.name = 'Selecciona a quién aplica.';
+      else if (!d.id && this.F().exc.some(e => e.level === d.level && e.name === d.name)) err.name = 'Ya existe una excepción para ' + this.excLabel(d) + '. Edítala desde la tabla.';
+      if (d.hasta && d.hasta < d.desde) err.hasta = true;
+    }
+    if (!motivo) err.mot = true;
+    if (Object.keys(err).length) { this.setState({ err, motErr: !!err.mot }); setTimeout(() => { const el = document.querySelector('[aria-labelledby="p-title"] [aria-invalid="true"]'); el && el.focus(); }, 30); return; }
+    const mod = { d: this.today(), by: this.user() };
+    if (st.panel === 'nivel') {
+      const old = st.niv.find(r => r.id === d.id), ch = [];
+      if (old.n1 !== d.n1) ch.push('Nivel 1: ' + old.n1 + ' → ' + d.n1);
+      if (old.n2 !== d.n2) ch.push('Nivel 2: ' + old.n2 + ' → ' + d.n2);
+      if ((old.cond || '') !== (d.n2 === '—' ? '' : d.cond)) ch.push('Condición del nivel 2');
+      if (!!old.otroCal !== !!d.otroCal) ch.push('Exigir otro calificador si el calificador registró el informe: ' + (old.otroCal ? 'Activo' : 'Apagado') + ' → ' + (d.otroCal ? 'Activo' : 'Apagado'));
+      if (old.det !== d.det) ch.push('Determinación del inspector: ' + (old.det ? 'Activa' : 'Apagada') + ' → ' + (d.det ? 'Activa' : 'Apagada'));
+      if (!ch.length) { this.closePanel(); return; }
+      const niv = st.niv.map(r => r.id === d.id ? Object.assign({}, r, { n1: d.n1, n2: d.n2, cond: d.n2 === '—' ? '' : d.cond, det: d.det, otroCal: !!d.otroCal, mod }) : r);
+      const fac = Object.assign({}, st.fac);
+      if (d.det && !fac[d.id]) fac[d.id] = { fac: 'Sin facultad', mue: st.fac.veh.mue, mod, exc: [] };
+      this.setState({ niv, fac, hist: this.log('Niveles por ramo', 'Editó ' + old.ramo, ch.join(' · '), motivo), panel: null, scope: !d.det && st.scope === d.id ? 'veh' : st.scope });
+      this.toast(old.ramo + ' actualizado');
+    } else if (st.panel === 'global') {
+      const F = this.F(), mue = Math.max(0, Math.min(100, Number(d.mue) || 0));
+      const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { fac: d.fac, mue, mod }) });
+      this.setState({ fac, hist: this.log('Facultad del inspector', 'Editó el valor global', d.fac + ' · muestreo ' + mue + ' %', motivo), panel: null });
+      this.toast('Valor global actualizado');
+    } else if (st.panel === 'exc') {
+      const F = this.F(), e = { id: d.id || 'e' + Date.now().toString(36), level: d.level, name: d.name, fac: d.fac, mue: d.level === 'insp' && d.mue !== '' ? Math.max(0, Math.min(100, Number(d.mue))) : '', desde: d.desde, hasta: d.hasta, by: this.user() };
+      const exc = d.id ? F.exc.map(x => x.id === d.id ? e : x) : F.exc.concat(e);
+      const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { exc }) });
+      this.setState({ fac, hist: this.log('Facultad del inspector', (d.id ? 'Editó' : 'Agregó') + ' la excepción de ' + this.excLabel(e), e.fac + (e.mue !== '' ? ' · muestreo ' + e.mue + ' %' : '') + ' · desde ' + this.fmt(e.desde) + (e.hasta ? ' hasta ' + this.fmt(e.hasta) : ''), motivo), panel: null });
+      this.toast('Excepción ' + (d.id ? 'actualizada' : 'agregada'));
+    }
+  }
+  delExc() {
+    const st = this.state, m = st.modal, F = this.F(), e = F.exc.find(x => x.id === m.id);
+    if (!st.motivo.trim()) { this.setState({ motErr: true }); return; }
+    const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { exc: F.exc.filter(x => x.id !== m.id) }) });
+    this.setState({ fac, modal: null, hist: this.log('Facultad del inspector', 'Eliminó la excepción de ' + this.excLabel(e), '', st.motivo.trim()), motivo: '' });
+    this.toast('Excepción eliminada');
+  }
+  VARS = [
+    { k: 'sucursal', pl: 'la sucursal', l: 'Sucursal', g: 'Del caso', t: 'list', opts: ((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato'] },
+    { k: 'broker', pl: 'el broker', l: 'Broker', g: 'Del caso', t: 'list', opts: ['Broker Pacífico', 'Austro Brokers', 'Tecniseguros', 'Directo'] },
+    { k: 'modalidad', pl: 'la modalidad', l: 'Modalidad', g: 'Del caso', t: 'list', opts: ['Presencial', 'Virtual guiada', 'Autoinspección', 'Documental'] },
+    { k: 'agencia', pl: 'la agencia de inspección', l: 'Agencia de inspección', g: 'Del caso', t: 'list', opts: ['Eurosurvey', 'Inspecciones Andinas', 'Peritajes del Pacífico'] },
+    { k: 'inspector', pl: 'el inspector', l: 'Inspector', g: 'Del caso', t: 'list', opts: this.INSP.map(i => i.n) },
+    { k: 'tipo_insp', pl: 'el tipo de inspector', l: 'Tipo de inspector', g: 'Del caso', t: 'list', opts: ['Interno', 'Externo', 'Agencia'] },
+    { k: 'cobertura', pl: 'la cobertura solicitada', l: 'Cobertura solicitada', g: 'Del caso', t: 'list', opts: ['Todo riesgo', 'Pérdida total', 'Daños propios y RC'] },
+    { k: 'marca', pl: 'la marca', l: 'Marca', g: 'Del formulario', t: 'list', opts: ['Chevrolet', 'Kia', 'Hyundai', 'Toyota', 'Mazda', 'Renault', 'Nissan'] },
+    { k: 'modelo', pl: 'el modelo', l: 'Modelo o versión', g: 'Del formulario', t: 'text' },
+    { k: 'anio', pl: 'el año del modelo', l: 'Año del modelo', g: 'Del formulario', t: 'num' },
+    { k: 'antig', pl: 'la antigüedad', l: 'Antigüedad (calculada)', g: 'Del formulario', t: 'num', unit: 'años' },
+    { k: 'km', pl: 'el kilometraje', l: 'Kilometraje', g: 'Del formulario', t: 'num', unit: 'km' },
+    { k: 'valor_sug', pl: 'el valor sugerido del casco', l: 'Valor sugerido del casco', g: 'Del formulario', t: 'money', unit: (window.SIRIUS_COMPANIA ? SIRIUS_COMPANIA.moneda.codigo : 'USD') },
+    { k: 'dif', pl: 'la diferencia del casco (sugerido vs. asegurado)', l: 'Diferencia del casco', g: 'Del formulario', t: 'pct', unit: '%' },
+    { k: 'clase', pl: 'la clase', l: 'Clase', g: 'Del formulario', t: 'list', opts: ['Automóvil', 'Jeep', 'Camioneta', 'Furgoneta'] },
+    { k: 'carroceria', pl: 'el tipo de carrocería', l: 'Tipo de carrocería', g: 'Del formulario', t: 'list', opts: ['Sedán', 'Hatchback', 'SUV', 'Camioneta cabina simple', 'Camioneta doble cabina', 'Otros'] },
+    { k: 'uso', pl: 'el uso', l: 'Uso', g: 'Del formulario', t: 'list', opts: ['Particular', 'Comercial', 'Público', 'Cuenta propia', 'Alquiler'] },
+    { k: 'blindaje', pl: 'el blindaje', l: 'Blindaje', g: 'Del formulario', t: 'yesno', opts: ['Sí', 'No'] },
+    { k: 'averias', pl: 'el número de averías', l: 'Número de averías', g: 'Del formulario', t: 'num' },
+    { k: 'gravedad', pl: 'la gravedad máxima de las averías', l: 'Gravedad máxima', g: 'Del formulario', t: 'list', opts: ['Baja', 'Media', 'Alta'] },
+    { k: 'contrato', pl: 'el contrato de compraventa', l: '¿Presenta contrato de compraventa?', g: 'Del formulario', t: 'yesno', opts: ['Sí', 'No'] },
+    { k: 'galeria', pl: 'las fotos cargadas desde la galería', l: 'Fotos cargadas desde la galería', g: 'De la evidencia', t: 'num' },
+    { k: 'discrep', pl: 'las discrepancias entre fuentes sin resolver', l: 'Discrepancias entre fuentes sin resolver', g: 'De la evidencia', t: 'num' },
+    { k: 'porconf', pl: 'los campos «Por confirmar» sin confirmar', l: 'Campos «Por confirmar» sin confirmar', g: 'De la evidencia', t: 'num' },
+    { k: 'vext', pl: 'alguna verificación externa con novedad', l: 'Verificación externa con novedad', g: 'De la evidencia', t: 'yesno', opts: ['Sí', 'No'] },
+  ];
+  OPS = { num: ['igual', 'distinto', 'mayor', 'menor', 'entre', 'está vacío'], list: ['igual', 'distinto', 'está en la lista', 'no está en la lista', 'está vacío'], text: ['igual', 'distinto', 'está vacío'], yesno: ['igual', 'distinto', 'está vacío'] };
+  get CASES() {
+    const D = window.SIRIUS_EJEMPLO, risks = {};
+    (D ? D.vehiculos.filter(v => v.caso === '20196') : []).forEach(v => { const k = v.placa || v.label; risks[k] = Object.assign({ blindaje: 'No', averias: 0, gravedad: 'Baja', contrato: 'Sí', galeria: 0, discrep: 0, porconf: 0, vext: 'No' }, v, v.placa ? {} : { label: v.label + ' · sin placa' }); });
+    return { '20196': { label: '20196 · Distribuidora Andina de Alimentos S.A.', inspector: 'Marco Tapia', modalidad: 'Presencial', sucursal: 'Quito Norte', broker: 'Broker Pacífico', agencia: '', cobertura: 'Todo riesgo', form: 'Vehículos livianos', version: 1, risks } };
+  }
+  varOf(k) { return this.VARS.find(x => x.k === k) || this.VARS[0]; }
+  opsOf(v) { return this.OPS[['num', 'money', 'pct'].includes(v.t) ? 'num' : v.t]; }
+  OPL = { igual: 'es', distinto: 'no es', mayor: 'es mayor que', menor: 'es menor que', entre: 'está entre', 'está en la lista': 'es uno de', 'no está en la lista': 'no es ninguno de', 'está vacío': 'está vacío' };
+  phraseCond(c, same) { const v = this.varOf(c.v), o = c.op, subj = same ? '' : v.pl + ' ';
+    if (o === 'está vacío') return subj + 'está vacío';
+    if (v.t === 'yesno' && ['igual', 'distinto'].includes(o) && ['galeria', 'discrep', 'vext'].indexOf(c.v) < 0) return subj + (o === 'igual' ? 'es «' + (c.a || '…') + '»' : 'no es «' + (c.a || '…') + '»');
+    if (c.v === 'vext' && o === 'igual') return c.a === 'No' ? 'ninguna verificación externa tiene novedad' : 'alguna verificación externa tiene novedad';
+    if (['galeria', 'discrep', 'porconf'].includes(c.v) && o === 'mayor' && Number(c.a) === 0) return 'hay ' + v.pl.replace(/^(las|los) /, '');
+    if (o === 'entre') return subj + 'está entre ' + this.valTxt(v, c.a) + ' y ' + this.valTxt(v, c.b);
+    if (o.includes('lista')) return subj + this.OPL[o] + ' ' + (c.list.join(', ') || '…');
+    return subj + this.OPL[o] + ' ' + (v.t === 'list' || v.t === 'text' ? '«' + (c.a || '…') + '»' : this.valTxt(v, c.a)); }
+  sentence(r, withTail) {
+    const gs = r.groups.map(g => { const parts = g.conds.map((c, i) => this.phraseCond(c, i > 0 && g.conds[i - 1].v === c.v)); const t = parts.join(g.mode === 'all' ? ' y ' : ' o '); return r.groups.length > 1 && parts.length > 1 ? '(' + t + ')' : t; });
+    let s = 'Envía a calificación cuando ' + (gs.join(r.root === 'all' ? ' y ' : ' o ') || '…');
+    if (r.ver && r.ver !== 'Ambos') s += ', si el veredicto del inspector es ' + r.ver;
+    s += '.';
+    if (withTail) s += ' Aplica a ' + (r.form === 'Todos los formularios' ? 'todos los formularios de ' + this.scopeLabel(r.scope) : 'el formulario ' + r.form) + '. ' + (r.active ? 'Activa' : 'Inactiva') + (r.hasta ? ', vigente del ' + this.fmt(r.desde) + ' al ' + this.fmt(r.hasta) : ', vigente desde el ' + this.fmt(r.desde)) + '.';
+    return s; }
+  scopeLabel(id) { const n = this.state.niv.find(x => x.id === id); return id === 'veh' ? 'Vehículos' : n ? n.ramo : id; }
+  sample() {
+    if (this._sample) return this._sample;
+    let s = 20196; const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const pick = (arr, w) => { let x = rnd() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < arr.length; i++) { x -= w[i]; if (x <= 0) return arr[i]; } return arr[arr.length - 1]; };
+    const D = window.SIRIUS_EJEMPLO; if (!D) return [];
+    const DEF = { modalidad: 'Presencial', blindaje: 'No', contrato: 'Sí', galeria: 0, discrep: 0, porconf: 0, vext: 'No', uso: 'Comercial', averias: 0, gravedad: 'Baja', clase: 'Automóvil', carroceria: 'SUV', cobertura: 'Todo riesgo', broker: 'Directo', ver: 'Asegurable', send: false };
+    const real = D.vehiculos.map(x => { const ip = this.INSP.find(p => p.n === x.inspector) || {}; return Object.assign({}, DEF, x, { real: true, det: x.resultado === 'determinado', placa: x.placa || '', tipo_insp: ip.tipo || '', agencia: ip.ag || '', antig: 2026 - x.anio, valor_sug: x.sug, dif: Math.round((x.sug - x.aseg) / x.aseg * 1000) / 10 }); });
+    const models = { Chevrolet: ['D-Max', 'Sail', 'Tracker'], Kia: ['Sportage', 'Rio', 'Seltos'], Hyundai: ['Tucson', 'Accent', 'Creta'], Toyota: ['Hilux', 'Corolla Cross', 'Fortuner'], Mazda: ['CX-5', 'BT-50'], Renault: ['Duster', 'Logan'], Nissan: ['Frontier', 'Kicks'] };
+    const out = [];
+    for (let i = 0; i < 300; i++) {
+      const marca = pick(Object.keys(models), [26, 20, 16, 16, 8, 8, 6]), modelo = models[marca][Math.floor(rnd() * models[marca].length)];
+      const antig = Math.min(18, Math.floor(Math.pow(rnd(), 1.9) * 16)), anio = 2026 - antig;
+      let km = Math.round((antig * (8000 + rnd() * 12000) + rnd() * 6000) / 100) * 100; if (antig > 2 && rnd() < 0.012) km = Math.round(rnd() * 900);
+      const valor_sug = Math.round((34000 * Math.pow(0.91, antig) * (0.5 + rnd() * 0.85)) / 100) * 100;
+      const g = (rnd() + rnd() + rnd() - 1.5) * 11.5; const dif = Math.round(g * 10) / 10;
+      const tipo_insp = pick(['Interno', 'Agencia', 'Externo'], [50, 30, 20]);
+      out.push({ caso: null, marca, modelo, anio, antig, km, valor_sug, dif, tipo_insp, modalidad: pick(['Presencial', 'Virtual guiada', 'Autoinspección', 'Documental'], [64, 16, 12, 8]), sucursal: pick(['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato'], [30, 15, 35, 10, 5, 5]), blindaje: rnd() < 0.015 ? 'Sí' : 'No', contrato: rnd() < 0.04 ? 'No' : 'Sí', galeria: rnd() < 0.02 ? 1 : 0, discrep: rnd() < 0.04 ? 1 : 0, porconf: rnd() < 0.06 ? 1 : 0, vext: rnd() < 0.02 ? 'Sí' : 'No', uso: pick(['Particular', 'Comercial', 'Público', 'Cuenta propia', 'Alquiler'], [62, 22, 6, 6, 4]), averias: Math.floor(rnd() * 4), gravedad: pick(['Baja', 'Media', 'Alta'], [60, 30, 10]), clase: 'Automóvil', carroceria: 'SUV', cobertura: 'Todo riesgo', broker: 'Directo', agencia: tipo_insp === 'Agencia' ? pick(this.AGENCIAS, [45, 35, 20]) : '', inspector: '', ver: rnd() < 0.1 ? 'No asegurable' : 'Asegurable', send: rnd() < 0.05 });
+    }
+    return (this._sample = real.concat(out));
+  }
+  impactOf(r) { if (r.scope !== 'veh') return { n: 0, total: 0, hits: [] }; const S = this.sample(); const hits = S.filter(x => this.evalRule(r, x)); return { n: hits.length, total: S.length, hits }; }
+  pctTxt(n, t) { return t ? (Math.round(n / t * 1000) / 10).toString().replace('.', ',') + ' %' : '—'; }
+  num(n) { const s = Math.abs(Number(n)).toFixed(Number(n) % 1 ? 1 : 0).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return (Number(n) < 0 ? '−' : '') + s; }
+  valTxt(v, a) { if (a === '' || a == null) return '…'; if (v.t === 'money') return (window.SIRIUS_COMPANIA ? SIRIUS_COMPANIA.formatoMonto(Number(a)) : 'USD ' + this.num(a)); if (['num', 'pct'].includes(v.t)) return this.num(a) + (v.unit ? (v.unit === '%' ? ' %' : ' ' + v.unit) : ''); return a; }
+  condTxt(c) { const v = this.varOf(c.v), o = c.op;
+    if (o === 'está vacío') return v.l + ' está vacío';
+    if (o === 'entre') return v.l + ' entre ' + this.valTxt(v, c.a) + ' y ' + this.valTxt(v, c.b);
+    if (o === 'está en la lista' || o === 'no está en la lista') return v.l + (o === 'está en la lista' ? ' en ' : ' no en ') + '(' + (c.list.join(', ') || '…') + ')';
+    return v.l + ' ' + ({ igual: '=', distinto: '≠', mayor: '>', menor: '<' }[o]) + ' ' + this.valTxt(v, c.a); }
+  ruleSummary(r) { const gs = r.groups.map(g => { const t = g.conds.map(c => this.condTxt(c)).join(g.mode === 'all' ? ' y ' : ' o '); return r.groups.length > 1 && g.conds.length > 1 ? '(' + t + ')' : t; }); return gs.join(r.root === 'all' ? ' y ' : ' o ') || 'Sin condiciones'; }
+  evalCond(c, vals) { const x = vals[c.v];
+    if (c.op === 'está vacío') return x === '' || x == null;
+    if (x === '' || x == null) return false;
+    const n = Number(x), a = Number(c.a), b = Number(c.b);
+    switch (c.op) { case 'igual': return String(x) === c.a; case 'distinto': return String(x) !== c.a; case 'mayor': return n > a; case 'menor': return n < a; case 'entre': return n >= Math.min(a, b) && n <= Math.max(a, b); case 'está en la lista': return c.list.includes(String(x)); case 'no está en la lista': return !c.list.includes(String(x)); }
+    return false; }
+  evalRule(r, vals) { const gs = r.groups.map(g => g.mode === 'all' ? g.conds.every(c => this.evalCond(c, vals)) : g.conds.some(c => this.evalCond(c, vals))); return r.root === 'all' ? gs.every(Boolean) : gs.some(Boolean); }
+  inWindow(r) { const t = this.today(); return r.desde <= t && (!r.hasta || r.hasta >= t); }
+  newCond(k) { const v = this.varOf(k || 'km'); return { v: v.k, op: this.opsOf(v)[v.t === 'list' || v.t === 'yesno' || v.t === 'text' ? 0 : 2], a: '', b: '', list: [] }; }
+  setR(fn) { this.setState(s => { const d = JSON.parse(JSON.stringify(s.draft)); fn(d); return { draft: d, err: Object.assign({}, s.err, { conds: null }) }; }); }
+  saveRule(motivo) {
+    const st = this.state, d = st.draft, err = {};
+    if (!d.name.trim()) err.name = true;
+    if (!d.motivo.trim()) err.motEnv = true;
+    if (d.hasta && d.hasta < d.desde) err.hasta = true;
+    const bad = []; d.groups.forEach((g, gi) => g.conds.forEach((c, ci) => { const empty = c.op === 'está vacío' ? false : (c.op.includes('lista') ? !c.list.length : c.a === '' || (c.op === 'entre' && c.b === '')); if (empty) bad.push(gi + '-' + ci); }));
+    if (bad.length) err.conds = bad;
+    if (!motivo) err.mot = true;
+    if (Object.keys(err).length) { this.setState({ err, motErr: !!err.mot }); setTimeout(() => { const el = document.querySelector('[aria-labelledby="p-title"] [aria-invalid="true"]'); el && el.focus(); }, 30); return; }
+    const old = st.rules.find(x => x.id === d.id), mod = { d: this.today(), by: this.user() };
+    const r = Object.assign({}, d, { name: d.name.trim(), motivo: d.motivo.trim(), mod });
+    const ch = [];
+    if (old) { if (old.active !== r.active) ch.push('Estado: ' + (old.active ? 'Activa' : 'Inactiva') + ' → ' + (r.active ? 'Activa' : 'Inactiva')); if (this.ruleSummary(old) !== this.ruleSummary(r)) ch.push('Condiciones: ' + this.ruleSummary(r)); if (old.motivo !== r.motivo) ch.push('Motivo del envío'); if (old.desde !== r.desde || old.hasta !== r.hasta) ch.push('Vigencia'); if (old.ver !== r.ver) ch.push('Veredicto: ' + r.ver); if (old.name !== r.name) ch.push('Nombre: ' + r.name); if (old.form !== r.form) ch.push('Formulario: ' + r.form); }
+    if (old && !ch.length) { this.closePanel(); return; }
+    const rules = old ? st.rules.map(x => x.id === d.id ? r : x) : st.rules.concat(r);
+    this.setState({ rules, panel: null, hist: this.log('Reglas de envío a calificación', (old ? 'Editó' : 'Creó') + ' la regla «' + r.name + '»', old ? ch.join(' · ') : this.ruleSummary(r), motivo) });
+    this.toast('Regla «' + r.name + '» ' + (old ? 'actualizada' : 'creada'));
+  }
+  ruleVals(F, scopeName) {
+    const st = this.state, rules = st.rules.filter(r => r.scope === st.scope);
+    const t = this.today(), S = st.scope === 'veh' ? this.sample() : [], N = S.length;
+    const imp = {}; rules.forEach(r => { imp[r.id] = this.impactOf(r); });
+    const active = rules.filter(r => r.active && this.inWindow(r) && !r.review || (r.active && r.review));
+    const cnt = { det: 0, reg: 0, fac: 0, dec: 0 };
+    S.forEach(x => { const hit = active.some(r => (r.ver === 'Ambos' || r.ver === x.ver) && this.evalRule(r, x)); let k = x.real ? { determinado: 'det', regla: 'reg', facultad: 'fac', decision: 'dec' }[x.resultado] : null;
+      if (k) { } else if (x.modalidad === 'Autoinspección') k = hit ? 'reg' : 'fac';
+      else { const fc = this.effective({ n: x.inspector || '', tipo: x.tipo_insp, ag: x.agencia }, F).fac; k = fc === 'Sin facultad' || (x.ver === 'No asegurable' && fc === 'Determinar solo Asegurable') ? 'fac' : hit ? 'reg' : x.send ? 'dec' : 'det'; }
+      cnt[k]++; });
+    this._kpiCal = Object.assign({}, this._kpiCal, { [st.scope]: S.length - cnt.det });
+    const det = cnt.det;
+    const SEG = [['det', 'Determinados por el inspector', 'var(--cyan-500)'], ['reg', 'Enviados por reglas', 'var(--blue-700)'], ['fac', 'Enviados por facultad', 'var(--teal-500)'], ['dec', 'Enviados por decisión del inspector', 'var(--purple-500)']];
+    const raw = SEG.map(([k]) => N ? cnt[k] / N * 1000 : 0), fl = raw.map(Math.floor); let rem = N ? 1000 - fl.reduce((a, b) => a + b, 0) : 0;
+    raw.map((x, i) => [x - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rem > 0) { fl[i]++; rem--; } });
+    let acc = 0;
+    const segs = SEG.map(([k, l, color], i) => { const n = cnt[k], w = fl[i] / 10, mid = acc + w / 2; acc += w; const pct = String(w).replace('.', ',') + ' %'; return { k, l, color, n, pct, mid, flex: String(n), tip: l + ': ' + pct + ' · ' + n + (n === 1 ? ' riesgo' : ' riesgos'), show: () => this.setState({ compTip: k }) }; });
+    const tipSeg = segs.find(s => s.k === st.compTip);
+    const comp = { has: N > 0, segs, bar: segs.filter(s => s.n > 0), hasTip: !!tipSeg, tip: tipSeg ? tipSeg.tip : '', tipLeft: tipSeg ? Math.max(14, Math.min(86, tipSeg.mid)) + '%' : '0', hide: () => this.setState({ compTip: null }) };
+    const top = active.slice().sort((a, b) => imp[b.id].n - imp[a.id].n)[0];
+    const ctlPend = st.scope === 'veh' ? S.filter(x => x.real && x.control && !x.control.revisado) : [];
+    const icoEdit = { id: 'edit', label: 'Editar', icon: 'edit' };
+    const menu = [{ id: 'dup', label: 'Duplicar', path: 'M8 8h12v12H8z M4 16V4h12', menu: true }, { id: 'activate', label: 'Activar', path: 'M18.36 6.64a9 9 0 1 1-12.73 0 M12 2v10', menu: true }, { id: 'deactivate', label: 'Desactivar', path: 'M18.36 6.64a9 9 0 1 1-12.73 0 M12 2v10', menu: true }, { id: 'del', label: 'Eliminar', path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', menu: true, danger: true }];
+    const maxN = Math.max(1, ...rules.map(r => imp[r.id].n));
+    const row = (r) => { const win = this.inWindow(r), I = imp[r.id]; const est = r.active ? 'Activa' : 'Inactiva';
+      const note = r.review ? 'Requiere revisión' : r.active && !win ? (r.desde > t ? 'Aún no vigente' : 'Vigencia terminada') : '';
+      const vig = r.hasta ? this.fmt(r.desde) + ' – ' + this.fmt(r.hasta) : 'desde ' + this.fmt(r.desde);
+      return { id: r.id, ariaName: 'regla ' + r.name,
+        regla: Object.assign({ label: r.name, sort: r.name, sub: this.sentence(r), title: 'Vigencia: ' + vig + ' · Última modificación: ' + this.fmt(r.mod.d) + ' · ' + r.mod.by }, r.sys ? { tag: { label: 'Regla del sistema', tone: 'brand' } } : {}),
+        alcance: { label: scopeName + ' · ' + r.form, sort: r.form },
+        imp: { label: N ? String(I.n) : '—', pct: N ? this.pctTxt(I.n, N) + (r.active ? '' : ' · estimado') : 'Sin datos', bar: Math.round(I.n / maxN * 100), barMuted: !r.active, sort: I.n },
+        estado: Object.assign({ label: est, tone: r.active ? 'success' : 'neutral', sort: est }, note ? { note, noteKind: r.review ? 'mix' : 'none' } : {}),
+        hideActions: r.active ? ['activate'] : ['deactivate'], disabledActions: r.sys ? { del: 'Las reglas del sistema no se pueden eliminar', dup: 'Las reglas del sistema no se duplican' } : {} }; };
+    const q = (r) => this.match([r.name, r.form, this.sentence(r)]);
+    const grp = (key, list, acts, def) => { const o = st.ruleOpen && st.ruleOpen[key] !== undefined ? st.ruleOpen[key] : def; const rows = list.filter(q).map(row); return { exp: o ? 'true' : 'false', exp1: o, rot: o ? 'rotate(90deg)' : 'none', count: '(' + rows.length + ')', rows, actions: acts, has: rows.length > 0, toggle: () => this.setState(s2 => ({ ruleOpen: Object.assign({}, s2.ruleOpen, { [key]: !o }) })) }; };
+    const rev = rules.filter(r => r.review), cfg = rules.filter(r => !r.review && !r.sys), sys = rules.filter(r => r.sys && !r.review);
+    const rs = { rev: grp('rev', rev, [Object.assign({}, icoEdit, { label: 'Revisar' })].concat(menu), true), cfg: grp('cfg', cfg, [icoEdit].concat(menu), true), sys: grp('sys', sys, [icoEdit].concat(menu), false) };
+    rs.rev.revisar = () => rev[0] && this.openPanel('rule', JSON.parse(JSON.stringify(rev[0])));
+    return {
+      ruleNoun: ['regla', 'reglas'], rs, kpiScope: scopeName, comp,
+      kpiA: N ? [{ l: 'Riesgos evaluados', fs: '24px', v: String(N), sub: '', hasSub: false }] : [{ l: 'Riesgos evaluados', fs: '24px', v: '0', sub: 'La determinación del inspector se activó hace poco en este ramo.', hasSub: true }],
+      kpiB: N ? [
+        { l: 'Regla de mayor impacto', fs: '18px', v: top ? top.name : '—', sub: top ? imp[top.id].n + ' riesgos · ' + this.pctTxt(imp[top.id].n, N) : '', hasSub: !!top },
+        { l: 'Revisiones de control pendientes', fs: '24px', v: String(ctlPend.length), sub: ctlPend.length ? ctlPend.map(x => x.placa + ' · caso ' + x.caso).join(', ') : 'Todas las revisiones de control están hechas.', hasSub: true },
+      ] : [],
+      openNewRule: () => this.openPanel('rule', { id: null, name: '', desc: '', sys: false, scope: st.scope, form: 'Todos los formularios', ver: 'Ambos', root: 'all', groups: [{ mode: 'all', conds: [this.newCond('km')] }], motivo: '', desde: t, hasta: '', active: true, n30: 0, review: null }),
+      openSim: () => this.setState({ sim: { mode: 'caso', caso: '20196', riesgo: 'GSE1098', ver: 'Asegurable', manual: null } }),
+      ruleCols: [
+        { key: 'regla', label: 'Regla', type: 'rule', linkAction: 'edit', sortable: true, minWidth: 470, flex: true, sticky: true },
+        { key: 'alcance', label: 'Alcance', sortable: true, minWidth: 170, flex: true },
+        { key: 'imp', label: 'Impacto 30 días', type: 'impact', sortable: true, width: 140 },
+        { key: 'estado', label: 'Estado', type: 'badge', sortable: true, width: 150 },
+      ],
+      onRuleAction: (a, row) => { const r = st.rules.find(x => x.id === row.id); if (a === 'edit') this.openPanel('rule', JSON.parse(JSON.stringify(r))); else if (a === 'dup') this.openPanel('rule', Object.assign(JSON.parse(JSON.stringify(r)), { id: null, name: r.name + ' (copia)', active: false, n30: 0, review: null })); else this.setState({ modal: { kind: a === 'del' ? 'delRule' : 'toggleRule', id: r.id }, motivo: '', motErr: false }); },
+    };
+  }
+  rpVals(d, scopeName) {
+    const err = this.state.err, sys = d.sys, bad = err.conds || [];
+    const pill = (on) => ({ on: on ? 'true' : 'false', bg: on ? 'var(--color-brand)' : '#FFFFFF', fg: on ? '#FFFFFF' : 'var(--text-strong)' });
+    const forms = d.scope === 'veh' ? ['Todos los formularios', 'Vehículos livianos', 'Motos', 'Pesados'] : ['Todos los formularios', scopeName];
+    const groupsV = {}; this.VARS.forEach(v => { (groupsV[v.g] = groupsV[v.g] || []).push({ k: v.k, l: v.l }); });
+    const k = (d.id || 'new');
+    return { k, sys, roWhy: sys ? 'Solo lectura: regla del sistema; sus condiciones son fijas' : undefined, editable: !sys, hasReview: !!d.review, reviewTxt: d.review ? 'Usa el campo «' + d.review.field + '» (' + d.review.key + '), que no existe en la versión ' + d.review.version + ' de ' + d.review.form + '. No se evalúa en los informes de esa versión y sigue funcionando en la ' + d.review.others + '. Reemplaza la condición o limita la regla a las versiones que tienen el campo.' : '',
+      name: d.name, onName: (e) => { const val = e.target.value; this.setR(x => { x.name = val; }); this.setState(s => ({ err: Object.assign({}, s.err, { name: false }) })); }, hasNameErr: !!err.name, nameInvalid: err.name ? 'true' : 'false', nameBorder: err.name ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      desc: d.desc, onDesc: (e) => { const val = e.target.value; this.setR(x => { x.desc = val; }); },
+      scopeName, forms, form: d.form, onForm: (e) => { const val = e.target.value; this.setR(x => { x.form = val; }); },
+      vers: ['Asegurable', 'No asegurable', 'Ambos'].map(l => Object.assign({ l, pick: () => this.setR(x => { x.ver = l; }) }, pill(d.ver === l))),
+      rootWord: d.root === 'all' ? 'y' : 'o', toggleRoot: () => this.setR(x => { x.root = x.root === 'all' ? 'any' : 'all'; }),
+      sentence: this.sentence(d, true), hasMeta: !!d.id && !!d.mod, meta: d.mod ? 'Última modificación: ' + this.fmt(d.mod.d) + ' · ' + d.mod.by : '',
+      ...(() => { const I = this.impactOf(d), N = I.total; if (!N) return { impTxt: 'Aún no hay riesgos evaluados en este alcance para estimar el impacto.', hasImpEx: false, impEx: [], hasFake: false }; return { impTxt: 'Con esta regla habrían pasado a calificación ' + I.n + ' de ' + N + ' riesgos (' + this.pctTxt(I.n, N) + ').', hasImpEx: I.n > 0, ...(() => { const R = I.hits.filter(x => x.real && !x.det), F2 = I.hits.filter(x => !x.real), ex = R.concat(F2).slice(0, 3); return { hasFake: ex.some(x => !x.real), exList: ex }; })(), impEx: I.hits.filter(x => x.real && !x.det).concat(I.hits.filter(x => !x.real)).slice(0, 3).map(x => ({ real: !!x.real, fake: !x.real, caso: x.caso || '', placa: x.placa || 'sin placa', txt: x.marca + ' ' + x.modelo + ' ' + x.anio + ' · ' + this.num(x.km) + ' km · valor sugerido del casco USD ' + this.num(x.valor_sug) + ' · diferencia del casco ' + (x.dif > 0 ? '+' : '') + this.num(x.dif) + ' %', open: () => this.props.onOpenCase && this.props.onOpenCase(x.caso) })) }; })(),
+      multiGroup: d.groups.length > 1, rootModes: [['all', 'Todas se cumplen'], ['any', 'Alguna se cumple']].map(([m, l]) => Object.assign({ l, pick: () => this.setR(x => { x.root = m; }) }, pill(d.root === m))),
+      varGroups: Object.keys(groupsV).map(g => ({ l: g, items: groupsV[g] })),
+      groups: d.groups.map((g, gi) => ({ hasJoin: gi > 0, joinAria: 'Relación entre grupos: ' + (d.root === 'all' ? 'y' : 'o') + '. Cambiar', word: g.mode === 'all' ? 'y' : 'o', toggleMode: () => this.setR(x => { x.groups[gi].mode = x.groups[gi].mode === 'all' ? 'any' : 'all'; }), title: 'Grupo ' + (gi + 1), aria: 'Grupo ' + (gi + 1) + ' de condiciones', modeAria: 'Relación entre las condiciones del grupo ' + (gi + 1),
+        modes: [['all', 'Todas se cumplen'], ['any', 'Alguna se cumple']].map(([m, l]) => Object.assign({ l, pick: () => this.setR(x => { x.groups[gi].mode = m; }) }, pill(g.mode === m))),
+        canRemove: !sys && d.groups.length > 1, remove: () => this.setR(x => { x.groups.splice(gi, 1); }),
+        add: () => this.setR(x => { x.groups[gi].conds.push(this.newCond('km')); }),
+        conds: g.conds.map((c, ci) => { const v = this.varOf(c.v), isErr = bad.includes(gi + '-' + ci), n = 'condición ' + (ci + 1) + ' del grupo ' + (gi + 1);
+          const isNum = ['num', 'pct'].includes(v.t) && c.op !== 'está vacío', isMoney = v.t === 'money' && c.op !== 'está vacío', isMulti = c.op.includes('lista'), isSel = !isMulti && (v.t === 'list' || v.t === 'yesno') && c.op !== 'está vacío';
+          return { isFirst: gi === 0 && ci === 0, lead: 'Envía a calificación cuando', isJoin: ci > 0, joinAria: 'Relación entre condiciones del grupo ' + (gi + 1) + ': ' + (g.mode === 'all' ? 'y' : 'o') + '. Cambiar', v: c.v, op: c.op, ops: this.opsOf(v).map(o => ({ v: o, l: this.OPL[o] })), a: c.a, b: c.b, kV: k + gi + ci + 'v' + c.v, kO: k + gi + ci + 'o' + c.v + c.op, kS: k + gi + ci + 's' + c.v + c.op, vAria: 'Variable de la ' + n, oAria: 'Operador de la ' + n, aAria: 'Valor de la ' + n, bAria: 'Valor final de la ' + n, rmAria: 'Quitar la ' + n,
+            onV: (e) => { const nv = e.target.value; this.setR(x => { x.groups[gi].conds[ci] = this.newCond(nv); }); },
+            onOp: (e) => { const val = e.target.value; this.setR(x => { Object.assign(x.groups[gi].conds[ci], { op: val, a: '', b: '', list: [] }); }); },
+            onAM: (n) => { this.setR(x => { x.groups[gi].conds[ci].a = n == null ? '' : String(n); }); }, onBM: (n) => { this.setR(x => { x.groups[gi].conds[ci].b = n == null ? '' : String(n); }); }, aNum: c.a === '' || c.a == null || isNaN(Number(c.a)) ? null : Number(c.a), bNum: c.b === '' || c.b == null || isNaN(Number(c.b)) ? null : Number(c.b), aId: 'nv-m-a-' + gi + '-' + ci, bId: 'nv-m-b-' + gi + '-' + ci,
+            onA: (e) => { const val = e.target.value; this.setR(x => { x.groups[gi].conds[ci].a = val; }); }, onB: (e) => { const val = e.target.value; this.setR(x => { x.groups[gi].conds[ci].b = val; }); },
+            isNum, isMoney, isBetween: c.op === 'entre', unit: v.unit || '', isSel, opts: v.opts || [], isText: v.t === 'text' && c.op !== 'está vacío', isMulti, isNone: c.op === 'está vacío',
+            chips: (v.opts || []).map(o => { const on = c.list.includes(o); return { l: o, pressed: on ? 'true' : 'false', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF', border: on ? 'var(--color-brand)' : 'var(--border-default)', fw: on ? 700 : 400, toggle: () => this.setR(x => { const L = x.groups[gi].conds[ci].list; const i = L.indexOf(o); if (i >= 0) L.splice(i, 1); else L.push(o); }) }; }),
+            hasErr: isErr, invalid: isErr ? 'true' : 'false', border: isErr ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+            canRemove: !sys && (g.conds.length > 1 || d.groups.length > 1), remove: () => this.setR(x => { x.groups[gi].conds.splice(ci, 1); if (!x.groups[gi].conds.length) x.groups.splice(gi, 1); }) }; }) })),
+      addGroup: () => this.setR(x => { x.groups.push({ mode: 'all', conds: [this.newCond('km')] }); }),
+      summary: this.ruleSummary(d),
+      motivo: d.motivo, onMotivo: (e) => { const val = e.target.value; this.setR(x => { x.motivo = val; }); this.setState(s => ({ err: Object.assign({}, s.err, { motEnv: false }) })); }, hasMotErr: !!err.motEnv, motInvalid: err.motEnv ? 'true' : 'false', motBorder: err.motEnv ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      desde: d.desde, hasta: d.hasta, onDesde: (e) => { const val = e.target.value; this.setR(x => { x.desde = val; }); }, onHasta: (e) => { const val = e.target.value; this.setR(x => { x.hasta = val; }); this.setState(s => ({ err: Object.assign({}, s.err, { hasta: false }) })); },
+      hasHastaErr: !!err.hasta, hastaInvalid: err.hasta ? 'true' : 'false', hastaBorder: err.hasta ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      actAria: d.active ? 'true' : 'false', actBg: d.active ? 'var(--color-brand)' : 'var(--neutral-300)', actLeft: d.active ? '22px' : '2px', actTxt: d.active ? 'Activa' : 'Inactiva', toggleAct: () => this.setR(x => { x.active = !x.active; }) };
+  }
+  simVals(F) {
+    const st = this.state, s = st.sim;
+    if (!s) return { open: false, modes: [], casos: [], riesgos: [], fields: [], rules: [], dataNote: '', insp: '', fac: '', from: '', result: '', resultSub: '', rulesTitle: '', tone: 'info' };
+    const set = (o) => this.setState(x => ({ sim: Object.assign({}, x.sim, o) }));
+    const C = this.CASES[s.caso];
+    const base = s.mode === 'caso' ? Object.assign({ inspector: C.inspector, sucursal: C.sucursal, modalidad: C.modalidad }, C.risks[s.riesgo]) : s.manual;
+    const insp = this.INSP.find(i => i.n === base.inspector) || null;
+    const vals = Object.assign({}, base, { modalidad: base.modalidad || C.modalidad, broker: C.broker, agencia: insp ? insp.ag : '', cobertura: C.cobertura, tipo_insp: insp ? insp.tipo : '', antig: 2026 - Number(base.anio), valor_sug: Number(base.sug), dif: Math.round(((Number(base.sug) - Number(base.aseg)) / Number(base.aseg)) * 1000) / 10 });
+    const eff = insp ? this.effective(insp, F) : { fac: 'No aplica', from: 'autoinspección: la realiza el cliente, sin inspector' };
+    const version = s.mode === 'caso' ? C.version : 1;
+    const ev = st.rules.filter(r => r.scope === 'veh').map(r => {
+      if (r.form !== 'Todos los formularios' && r.form !== C.form) return { r, st: 'na', txt: 'No aplica a este formulario' };
+      if (!r.active) return { r, st: 'off', txt: 'Inactiva · no se evalúa' };
+      if (!this.inWindow(r)) return { r, st: 'off', txt: 'Fuera de vigencia · no se evalúa' };
+      if (r.review && r.review.version === version) return { r, st: 'nav', txt: 'No aplica en esta versión' };
+      if (r.ver !== 'Ambos' && r.ver !== s.ver) return { r, st: 'na', txt: 'No aplica al veredicto ' + s.ver };
+      const hit = this.evalRule(r, vals);
+      const detail = Array.from(new Set([].concat(...r.groups.map(g => g.conds.map(c => { const v = this.varOf(c.v); return v.l + ': ' + this.valTxt(v, vals[c.v]); }))))).join(' · ');
+      return { r, st: hit ? 'hit' : 'ok', txt: (hit ? 'Se cumple · ' : 'No se cumple · ') + detail };
+    });
+    const hits = ev.filter(e => e.st === 'hit');
+    let result, sub = '', tone;
+    if (!insp) { if (hits.length) { result = 'Pasa a calificación por: ' + hits.map(e => e.r.name).join(', '); sub = hits.map(e => 'Motivo del envío: ' + e.r.motivo).join(' '); } else { result = 'Pasa a calificación: no hay inspector que pueda determinar'; } tone = 'warning'; }
+    else if (eff.fac === 'Sin facultad') { result = 'Pasa a calificación: el inspector no tiene facultad para determinar'; tone = 'warning'; }
+    else if (s.ver === 'No asegurable' && eff.fac === 'Determinar solo Asegurable') { result = 'Pasa a calificación con la recomendación del inspector'; sub = 'Su facultad solo le permite determinar Asegurable.'; tone = 'warning'; }
+    else if (hits.length) { result = 'Pasa a calificación por: ' + hits.map(e => e.r.name).join(', '); sub = hits.map(e => 'Motivo del envío: ' + e.r.motivo).join(' '); tone = 'warning'; }
+    else { result = 'Puede determinarlo el inspector'; sub = 'Ninguna regla se cumple y su facultad permite el veredicto ' + s.ver + '.'; tone = 'success'; }
+    const order = { hit: 0, ok: 1, nav: 2, na: 3, off: 4 };
+    const ICON = { hit: 'M12 9v4 M12 17h.01 M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z', ok: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', nav: 'M6 12h12', na: 'M6 12h12', off: 'M6 12h12' };
+    const COL = { hit: 'var(--color-warning)', ok: 'var(--neutral-500)', nav: 'var(--neutral-500)', na: 'var(--neutral-500)', off: 'var(--neutral-500)' };
+    const ro = s.mode === 'caso';
+    const fld = (id, l, txt, val, kind, opts, onChange) => ({ id: 'sim-' + id, k: 'sim-' + id + s.mode, l, ro, txt, val: String(val), isNum: !ro && kind === 'num', isMoney: !ro && kind === 'money', num: val === '' || val == null || isNaN(Number(val)) ? null : Number(val), isSel: !ro && kind === 'sel', opts: opts || [], onChange });
+    const setM = (key, num) => (e) => { const v = num ? Number(e.target.value) : e.target.value; this.setState(x => ({ sim: Object.assign({}, x.sim, { manual: Object.assign({}, x.sim.manual, { [key]: v }) }) })); };
+    const setMM = (key) => (n) => { this.setState(x => ({ sim: Object.assign({}, x.sim, { manual: Object.assign({}, x.sim.manual, { [key]: n == null ? 0 : n }) }) })); };
+    const startManual = () => set({ mode: 'manual', manual: s.manual || Object.assign({ inspector: C.inspector, sucursal: C.sucursal, modalidad: C.modalidad }, C.risks[s.riesgo]) });
+    return { open: true, isCaso: ro, caso: s.caso, riesgo: s.riesgo, ver: s.ver,
+      modes: [['caso', 'Caso existente', () => set({ mode: 'caso' })], ['manual', 'Datos a mano', startManual]].map(([m, l, pick]) => ({ l, pick, on: s.mode === m ? 'true' : 'false', bg: s.mode === m ? 'var(--color-brand)' : '#FFFFFF', fg: s.mode === m ? '#FFFFFF' : 'var(--text-strong)' })),
+      casos: Object.keys(this.CASES).map(k => ({ v: k, l: this.CASES[k].label })), onCaso: (e) => set({ caso: e.target.value }),
+      riesgos: Object.keys(C.risks).map(k => ({ v: k, l: C.risks[k].label || k + ' · ' + C.risks[k].marca + ' ' + C.risks[k].modelo })), onRiesgo: (e) => set({ riesgo: e.target.value }), onVer: (e) => set({ ver: e.target.value }),
+      dataNote: ro ? C.form + ' · versión ' + C.version + ' · ' + (insp ? 'visita ' + vals.modalidad.toLowerCase() + ' de ' + insp.n : 'autoinspección del cliente') : 'Modifica los valores para probar otros escenarios. Se evalúa con la versión 1 de Vehículos livianos.',
+      fields: [
+        fld('insp', 'Inspector de la visita', insp ? insp.n + ' · ' + insp.tipo.toLowerCase() : 'Sin inspector', base.inspector || '', 'sel', [''].concat(this.INSP.map(i => i.n)), setM('inspector')),
+        fld('mod', 'Modalidad', vals.modalidad, vals.modalidad, 'sel', this.varOf('modalidad').opts, setM('modalidad')),
+        fld('suc', 'Sucursal', vals.sucursal, base.sucursal, 'sel', this.varOf('sucursal').opts, setM('sucursal')),
+        fld('marca', 'Marca y modelo', base.marca + ' ' + base.modelo, base.marca, 'sel', this.varOf('marca').opts, setM('marca')),
+        fld('anio', 'Año del modelo', base.anio + ' · ' + vals.antig + ' años', base.anio, 'num', null, setM('anio', true)),
+        fld('km', 'Kilometraje', this.num(base.km) + ' km', base.km, 'num', null, setM('km', true)),
+        fld('aseg', 'Valor asegurado del casco', (window.SIRIUS_COMPANIA ? SIRIUS_COMPANIA.formatoMonto(base.aseg) : 'USD ' + this.num(base.aseg)), base.aseg, 'money', null, setMM('aseg')),
+        fld('sug', 'Valor sugerido del casco', (window.SIRIUS_COMPANIA ? SIRIUS_COMPANIA.formatoMonto(base.sug) : 'USD ' + this.num(base.sug)), base.sug, 'money', null, setMM('sug')),
+        { id: 'sim-dif', k: 'sim-dif', l: 'Diferencia del casco', ro: true, txt: (vals.dif > 0 ? '+' : '') + this.num(vals.dif) + ' %', val: '', isNum: false, isSel: false, opts: [] },
+        fld('bl', 'Blindaje', base.blindaje, base.blindaje, 'sel', ['Sí', 'No'], setM('blindaje')),
+        fld('disc', 'Discrepancias sin resolver', String(base.discrep), base.discrep, 'num', null, setM('discrep', true)),
+        fld('gal', 'Fotos desde galería', String(base.galeria), base.galeria, 'num', null, setM('galeria', true)),
+        fld('vext', 'Verificación externa con novedad', base.vext, base.vext, 'sel', ['Sí', 'No'], setM('vext')),
+      ],
+      insp: insp ? insp.n : 'la visita', fac: eff.fac, from: eff.from.charAt(0).toUpperCase() + eff.from.slice(1), result, resultSub: sub, hasResultSub: !!sub, tone,
+      rulesTitle: 'Reglas evaluadas · ' + hits.length + (hits.length === 1 ? ' se cumple' : ' se cumplen'),
+      rules: ev.sort((a, b) => order[a.st] - order[b.st]).map(e => ({ name: e.r.name + (e.r.sys ? ' · Regla del sistema' : ''), status: e.txt, color: COL[e.st], icon: ICON[e.st], nameColor: e.st === 'hit' ? 'var(--text-strong)' : 'var(--text-muted)', txtColor: e.st === 'hit' ? 'var(--text-body)' : 'var(--text-muted)', fw: e.st === 'hit' ? 700 : 600 })),
+      footer: React.createElement('div', { style: { display: 'flex', justifyContent: 'flex-end', width: '100%' } }, this.btn('Cerrar', 'primary', () => this.setState({ sim: null }))) };
+  }
+  // Puntaje visible para el inspector (Envío 5E): por tipo de inspector, por defecto Sí. Se comparte con el informe en window.SIRIUS_EJEMPLO.puntajeVisible.
+  pvGet() { if (this.state.pv) return this.state.pv; const P = (window.SIRIUS_EJEMPLO || {}).puntajeVisible || {}, o = {}; ['Interno', 'Externo', 'Agencia'].forEach(t => { const x = P[t]; o[t] = x && typeof x === 'object' ? x : { on: x !== false, d: '', by: '' }; }); return o; }
+  pvSet(nx) { const E = window.SIRIUS_EJEMPLO; if (E) E.puntajeVisible = nx; }
+  pvInformes(tipo) { const C = ((window.SIRIUS_INFORMES_RG || {}).casos) || {}; return Object.keys(C).filter(id => { const x = C[id], vi = (x.caso || {}).visita || {}; return vi.agencia === tipo && !['Enviado', 'Inspeccionado'].includes((x.informe || {}).estado); }).map(id => id + ' · ' + (((C[id].caso || {}).visita || {}).inspector || '')); }
+  btn(label, variant, onClick) { const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {}; return NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick }, label) : null; }
+  renderVals() {
+    const st = this.state, NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
+    if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
+    const F = this.F(), scopes = this.scopes(), scopeName = (scopes.find(s => s.v === st.scope) || scopes[0] || {}).l;
+    const editPath = 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z';
+    const v = {
+      tabs: ['Niveles por ramo', 'Facultad del inspector', 'Reglas de envío a calificación'], tab: st.tab, onTab: (i) => this.setState({ tab: i, q: '' }),
+      tabNiv: st.tab === 0, tabFac: st.tab === 1, tabReg: st.tab === 2, showScope: false,
+      histIcon: this.histIcon || (this.histIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' }))),
+      hasPrimary: st.tab > 0, primaryLabel: st.tab === 1 ? 'Agregar excepción' : 'Nueva regla', onPrimary: () => st.tab === 1 ? v.openNewExc() : v.openNewRule(),
+      q: st.q, onQ: (e) => this.setState({ q: e.target.value }), searchPh: ['Buscar ramo o rol', 'Buscar inspector, agencia o facultad', 'Buscar regla o condición'][st.tab], plusIcon: this.plusIcon || null, facOpts: this.FAC, legend: this.LEGEND,
+      openHist: () => this.openPanel('hist', {}),
+      snack: st.snack, snackOpen: !!st.snack, closeSnack: () => this.setState({ snack: '' }),
+      nivNoun: ['ramo', 'ramos'], excNoun: ['excepción', 'excepciones'], insNoun: ['inspector', 'inspectores'],
+      nivCols: [
+        { key: 'tipo', label: 'Tipo de riesgo', sortable: true, width: 110, sticky: true },
+        { key: 'ramo', label: 'Ramo', type: 'link', linkAction: 'edit', linkWrap: true, sortable: true, minWidth: 170, flex: true },
+        { key: 'n1', label: 'Nivel 1', sortable: true, width: 160 },
+        { key: 'n2', label: 'Nivel 2', sortable: true, width: 110 },
+        { key: 'cond', label: 'Condición para el nivel 2', shortLabel: 'Condición nivel 2', minWidth: 200, flex: true },
+        { key: 'det', label: 'Determinación del inspector', shortLabel: 'Determinación', type: 'badge', sortable: true, width: 130 },
+        { key: 'mod', label: 'Última modificación', shortLabel: 'Modificación', type: 'sub', sortable: true, width: 120 },
+      ],
+      nivRows: st.niv.map(r => ({ id: r.id, ariaName: r.ramo, tipo: r.tipo, ramo: { label: r.ramo, sort: r.ramo }, n1: r.n1, n2: r.n2, cond: r.cond || '—', det: { label: r.det ? 'Activa' : 'Apagada', tone: r.det ? 'success' : 'neutral', sort: r.det ? 0 : 1 }, mod: { label: this.fmt(r.mod.d), sub: r.mod.by, sort: r.mod.d } })).filter(r => (st.nivTipo === 'all' || r.tipo === st.nivTipo) && this.match([r.tipo, r.ramo.label, r.n1, r.n2, r.cond])),
+      nivActions: [{ id: 'edit', label: 'Editar', icon: 'edit' }],
+      onNivAction: (a, row) => { const r = st.niv.find(x => x.id === row.id); this.openPanel('nivel', Object.assign({}, r, { cond: r.cond || this.CONDS[0] })); },
+      scopes, scope: st.scope, oneScope: scopes.length < 2, onScope: (e) => this.setState({ scope: e.target.value }),
+      aplicaOpts: st.tab === 0 ? [{ v: 'all', l: 'Todos los tipos de riesgo' }, { v: 'Vehículos', l: 'Vehículos' }, { v: 'Ramos Generales', l: 'Ramos Generales' }] : scopes, aplicaVal: st.tab === 0 ? st.nivTipo : st.scope, aplicaDis: st.tab > 0 && scopes.length < 2, aplicaWhy: st.tab > 0 && scopes.length < 2 ? 'Solo lectura: solo hay un alcance disponible' : '',
+      onAplica: (e) => this.setState(st.tab === 0 ? { nivTipo: e.target.value } : { scope: e.target.value }),
+      aplicaNote: st.tab === 0 ? '' : scopes.length < 2 ? 'Para configurar un ramo de Ramos Generales, activa su determinación del inspector en Niveles por ramo.' : '',
+      scopeNote: scopes.length < 2 ? 'Para configurar un ramo de Ramos Generales, activa su determinación del inspector en Niveles por ramo.' : 'Cada ramo con determinación activa tiene su propia facultad y sus propias reglas.',
+      g: { fac: F.fac, mue: F.mue + ' %', mod: this.fmt(F.mod.d) + ' · ' + F.mod.by },
+      openGlobal: () => this.openPanel('global', { fac: F.fac, mue: String(F.mue) }),
+      openNewExc: () => this.openPanel('exc', { level: 'insp', name: '', fac: this.FAC[1], mue: '', desde: this.today(), hasta: '' }),
+      excCols: [
+        { key: 'nivel', label: 'Nivel', sortable: true, width: 120, sticky: true },
+        { key: 'nombre', label: 'Nombre', type: 'link', linkAction: 'edit', linkWrap: true, sortable: true, minWidth: 150, flex: true },
+        { key: 'fac', label: 'Facultad', sortable: true, minWidth: 215, flex: true },
+        { key: 'mue', label: 'Muestreo', sortable: true, width: 90 },
+        { key: 'vig', label: 'Vigencia', sortable: true, width: 170 },
+        { key: 'by', label: 'Asignado por', sortable: true, width: 130 },
+        { key: 'est', label: 'Estado', type: 'badge', sortable: true, width: 110 },
+      ],
+      excRows: F.exc.map(e => { const t = this.today(), on = this.active(e), est = on ? 'Vigente' : e.desde > t ? 'Programada' : 'Vencida';
+        return { id: e.id, ariaName: this.excLabel(e), nivel: { label: this.LVL[e.level], sort: ['tipo', 'agencia', 'insp'].indexOf(e.level) }, nombre: { label: e.name, sort: e.name }, fac: e.fac, mue: e.mue !== '' ? e.mue + ' %' : '—', vig: { label: e.hasta ? this.fmt(e.desde) + ' – ' + this.fmt(e.hasta) : 'Desde ' + this.fmt(e.desde), sort: e.desde }, by: e.by, est: { label: est, tone: on ? 'success' : est === 'Programada' ? 'warning' : 'neutral', sort: est } }; }).filter(r => this.match([r.nivel.label, r.nombre.label, r.fac, r.by])),
+      excActions: [{ id: 'edit', label: 'Editar', icon: 'edit' }, { id: 'del', label: 'Eliminar', path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', menu: true, danger: true }],
+      onExcAction: (a, row) => { const e = F.exc.find(x => x.id === row.id); if (a === 'del') this.setState({ modal: { id: e.id }, motivo: '', motErr: false }); else this.openPanel('exc', Object.assign({}, e, { mue: e.mue === '' ? '' : String(e.mue) })); },
+      insCols: [
+        { key: 'n', label: 'Inspector', sortable: true, width: 160, sticky: true },
+        { key: 'tipo', label: 'Tipo', sortable: true, width: 100 },
+        { key: 'ag', label: 'Agencia', sortable: true, minWidth: 160, flex: true },
+        { key: 'eff', label: 'Facultad efectiva', sortable: true, minWidth: 405, flex: true },
+        { key: 'mue', label: 'Muestreo de control', shortLabel: 'Muestreo', sortable: true, width: 160 },
+      ],
+      insRows: this.INSP.map(i => { const e = this.effective(i, F); return { id: i.n, ariaName: i.n, n: i.n, tipo: i.tipo, ag: i.ag || '—', eff: { label: e.fac + ' · ' + e.from, sort: this.FAC.indexOf(e.fac) }, mue: e.mue }; }).filter(r => this.match([r.n, r.tipo, r.ag, r.eff.label])),
+      insActions: [{ id: 'exc', label: 'Editar facultad del inspector', icon: 'edit' }],
+      onInsAction: (a, row) => { const ex = F.exc.find(x => x.level === 'insp' && x.name === row.id); if (ex) this.openPanel('exc', Object.assign({}, ex, { mue: ex.mue === '' ? '' : String(ex.mue) })); else this.openPanel('exc', { level: 'insp', name: row.id, fac: this.effective(this.INSP.find(i => i.n === row.id), F).fac, mue: '', desde: this.today(), hasta: '' }); },
+      flow: [
+        { n: '1', t: 'Facultad del inspector', d: 'Sin facultad, o No asegurable con «solo Asegurable»: pasa a calificación.' },
+        { n: '2', t: 'Reglas de envío a calificación', d: 'Si alguna regla activa se cumple, pasa a calificación con su motivo.' },
+        { n: '3', t: 'Muestreo de control', d: 'Un porcentaje de lo determinado va a revisión posterior, sin bloquear el envío.' },
+        { n: '4', t: 'Resultado', d: 'Determinado por el inspector y enviado al BPM de Emisión.' },
+      ].map((s, i, a) => Object.assign(s, { notLast: i < a.length - 1, bg: i === a.length - 1 ? 'var(--color-brand)' : 'var(--color-brand-wash)', fg: i === a.length - 1 ? '#FFFFFF' : 'var(--text-strong)' })),
+      ci: (() => { const i = this.INSP.find(x => x.n === st.consult);
+        const base = { q: st.consultQ || '', opts: this.INSP.map(x => x.n), has: !!i, none: !i, chain: [], onQ: (e) => { const val = e.target.value, hit = this.INSP.find(x => x.n.toLowerCase() === val.trim().toLowerCase()); this.setState({ consultQ: val, consult: hit ? hit.n : null }); } };
+        if (!i) return base;
+        const ex = F.exc.filter(e => this.active(e)), own = ex.find(e => e.level === 'insp' && e.name === i.n), ag = i.ag && ex.find(e => e.level === 'agencia' && e.name === i.ag), tp = ex.find(e => e.level === 'tipo' && e.name === i.tipo);
+        const win = own ? 'insp' : ag ? 'ag' : tp ? 'tipo' : 'g', no = 'Sin definir';
+        const lv = [['g', 'Global', F.fac], ['tipo', 'Tipo: ' + i.tipo.toLowerCase(), tp ? tp.fac : no]].concat(i.ag ? [['ag', 'Agencia: ' + i.ag, ag ? ag.fac : no]] : [], [['insp', 'Inspector: ' + i.n, own ? own.fac : no]]);
+        const eff = this.effective(i, F);
+        const ownMue = own && own.mue !== '' && own.mue != null;
+        return Object.assign(base, { name: i.n, fac: eff.fac, mue: eff.fac === 'Sin facultad' ? 'No aplica' : (ownMue ? own.mue : F.mue) + ' %', mueFrom: eff.fac === 'Sin facultad' ? 'No determina riesgos: no hay muestreo' : ownMue ? 'Viene del inspector (excepción propia)' : 'Viene del valor global', who: i.tipo + (i.ag ? ' · ' + i.ag : ''), edit: () => v.onInsAction('exc', { id: i.n }),
+          chain: lv.map(([k, l, sub], idx) => { const on = k === win; const und = sub === no; return { sep: idx > 0, l, sub: on ? sub + ' · manda' : sub, cur: on ? 'true' : undefined, bg: on ? 'var(--color-brand-wash)' : und ? 'var(--surface-subtle)' : '#FFFFFF', border: on ? 'var(--color-brand)' : 'var(--border-subtle)', bstyle: und ? 'dashed' : 'solid', fw: on ? 700 : 500, lColor: und ? 'var(--text-muted)' : 'var(--text-strong)', subColor: on ? 'var(--text-strong)' : 'var(--text-muted)', sfs: und ? 'italic' : 'normal' }; }) }); })(),
+      hist: st.hist.map(h => ({ when: this.fmtT(h.when), by: h.by, tab: h.tab, what: h.what, detail: h.detail, hasDetail: !!h.detail, motivo: h.motivo })),
+      closePanel: () => this.closePanel(), onPanelKey: (e) => { if (e.key === 'Escape') this.closePanel(); },
+      pScrim: st.panel ? 1 : 0, pPointer: st.panel ? 'auto' : 'none', pHidden: st.panel ? 'false' : 'true', pTransform: st.panel ? 'none' : 'translateX(100%)', pVis: st.panel ? 'visible' : 'hidden',
+    };
+    Object.assign(v, this.ruleVals(F, scopeName));
+    v.sim = this.simVals(F); v.closeSim = () => this.setState({ sim: null });
+    const d = st.draft, kind = st.panel, err = st.err;
+    const p = { k: (d.id || 'new') + (kind || ''), isNivel: kind === 'nivel', isGlobal: kind === 'global', isExc: kind === 'exc', isHist: kind === 'hist', isRule: kind === 'rule', needsMotivo: !!kind && kind !== 'hist',
+      motivo: st.motivo, onMotivo: (e) => this.setState({ motivo: e.target.value, motErr: st.motErr && !e.target.value.trim() }), hasMotErr: st.motErr, motInvalid: st.motErr ? 'true' : 'false', motBorder: st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      onSave: () => this.save(), eyebrow: '', title: '' };
+    if (kind === 'rule') { Object.assign(p, { eyebrow: 'Reglas de envío a calificación · ' + scopeName, title: d.id ? 'Editar regla · ' + ((st.rules.find(x => x.id === d.id) || d).name) : 'Nueva regla' }); v.rp = this.rpVals(d, scopeName); } else v.rp = { groups: [], varGroups: [], vers: [], rootModes: [], forms: [] };
+    if (kind === 'hist') Object.assign(p, { eyebrow: 'Niveles de calificación', title: 'Historial de cambios' });
+    if (kind === 'nivel') Object.assign(p, { eyebrow: 'Niveles por ramo', title: 'Editar ' + d.ramo, tipo: d.tipo, ramo: d.ramo, n1: d.n1, n2: d.n2, cond: d.cond, roles: this.ROLES, roles2: ['—'].concat(this.ROLES.filter(r => r !== d.n1)), conds: this.CONDS, condDis: d.n2 === '—', det: !!d.det,
+      onN1: (e) => this.setD({ n1: e.target.value, n2: d.n2 === e.target.value ? '—' : d.n2 }), onN2: (e) => this.setD({ n2: e.target.value }), onCond: (e) => this.setD({ cond: e.target.value }), toggleDet: () => this.setD({ det: !d.det }), isVeh: d.id === 'veh', toggleOtro: () => this.setD({ otroCal: !d.otroCal }), otroAria: d.otroCal ? 'true' : 'false', otroBg: d.otroCal ? 'var(--color-brand)' : 'var(--neutral-300)', otroLeft: d.otroCal ? '22px' : '2px', otroTxt: d.otroCal ? 'Activo' : 'Apagado', otroImp: this.otroImpact(), detAria: d.det ? 'true' : 'false', detBg: d.det ? 'var(--color-brand)' : 'var(--neutral-300)', detLeft: d.det ? '22px' : '2px', detTxt: d.det ? 'Activa' : 'Apagada',
+      detNote: d.det ? (d.id === 'veh' ? 'El inspector determina según su facultad y las reglas de envío a calificación.' : 'Se usarán las pestañas Facultad del inspector y Reglas de envío a calificación, filtradas por ' + d.ramo + '.') : 'Todos los riesgos de este ramo pasan a calificación.' });
+    if (kind === 'global') { const affected = this.INSP.filter(i => this.effective(i, Object.assign({}, F, { fac: d.fac })).from === 'heredada del valor global').map(i => i.n);
+      Object.assign(p, { eyebrow: 'Facultad del inspector · ' + scopeName, title: 'Editar valor global', fac: d.fac, mue: d.mue, onFac: (e) => this.setD({ fac: e.target.value }), onMue: (e) => this.setD({ mue: e.target.value }),
+        impact: affected.length ? 'Lo heredan ' + affected.length + (affected.length === 1 ? ' inspector: ' : ' inspectores: ') + affected.join(', ') + '.' : 'Ningún inspector hereda hoy el valor global.' }); }
+    if (kind === 'exc') {
+      const names = d.level === 'tipo' ? this.TIPOS.map(n => ({ v: n, l: n })) : d.level === 'agencia' ? this.AGENCIAS.map(n => ({ v: n, l: n })) : this.INSP.map(i => ({ v: i.n, l: i.n + ' · ' + i.tipo.toLowerCase() + (i.ag ? ' · ' + i.ag : '') }));
+      const affected = !d.name ? [] : this.INSP.filter(i => (d.level === 'insp' && i.n === d.name) || (d.level === 'agencia' && i.ag === d.name) || (d.level === 'tipo' && i.tipo === d.name));
+      const insp = d.level === 'insp' && d.name ? this.INSP.find(i => i.n === d.name) : null;
+      Object.assign(p, { eyebrow: 'Facultad del inspector · ' + scopeName, title: d.id ? 'Editar excepción' : 'Agregar excepción', editing: !!d.id, nivWhy: d.id ? 'Solo lectura: al editar una excepción no se cambia el nivel' : undefined, level: d.level,
+        levels: Object.keys(this.LVL).map(k => ({ l: this.LVL[k], pressed: d.level === k ? 'true' : 'false', bg: d.level === k ? 'var(--color-brand)' : '#FFFFFF', fg: d.level === k ? '#FFFFFF' : 'var(--text-strong)', pick: () => this.setD({ level: k, name: '', mue: '' }) })),
+        nameLbl: d.level === 'tipo' ? 'Tipo de inspector' : d.level === 'agencia' ? 'Agencia' : 'Inspector', names, name: d.name, onName: (e) => this.setD({ name: e.target.value }),
+        hasNameErr: !!err.name, nameErr: err.name || '', nameInvalid: err.name ? 'true' : 'false', nameBorder: err.name ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+        fac: d.fac, onFac: (e) => this.setD({ fac: e.target.value }), isInsp: d.level === 'insp', mue: d.mue, onMue: (e) => this.setD({ mue: e.target.value }), muePh: 'Global: ' + F.mue + ' %',
+        desde: d.desde, hasta: d.hasta, onDesde: (e) => this.setD({ desde: e.target.value }), onHasta: (e) => this.setD({ hasta: e.target.value }),
+        hasHastaErr: !!err.hasta, hastaInvalid: err.hasta ? 'true' : 'false', hastaBorder: err.hasta ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+        impact: !d.name ? 'Selecciona a quién aplica para ver los inspectores afectados.' : insp ? 'Tiene prioridad sobre la agencia, el tipo de inspector y el valor global. Hoy su facultad efectiva es: ' + this.effective(insp, F).fac + ' · ' + this.effective(insp, F).from + '.' : affected.length ? 'Aplica a ' + affected.map(i => i.n).join(', ') + ', salvo quienes tengan una excepción más específica.' : 'Hoy ningún inspector registrado pertenece a este grupo.' });
+    }
+    v.p = p;
+    const m = st.modal, me = m && !m.kind && F.exc.find(x => x.id === m.id), mr = m && m.kind && st.rules.find(x => x.id === m.id);
+    const mInput = { motivo: st.motivo, onMotivo: (e) => this.setState({ motivo: e.target.value, motErr: false }), err: st.motErr, invalid: st.motErr ? 'true' : 'false', border: st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)' };
+    const footer = (label, fn) => React.createElement('div', { style: { display: 'flex', gap: 12, justifyContent: 'flex-end', width: '100%' } }, this.btn('Cancelar', 'ghost', () => this.setState({ modal: null })), this.btn(label, 'primary', fn));
+    if (mr) { const off = mr.active, isDel = m.kind === 'delRule';
+      const run = () => { if (!st.motivo.trim()) { this.setState({ motErr: true }); return; } const mot = st.motivo.trim(); const rules = isDel ? st.rules.filter(x => x.id !== mr.id) : st.rules.map(x => x.id === mr.id ? Object.assign({}, x, { active: !x.active, mod: { d: this.today(), by: this.user() } }) : x); this.setState({ rules, modal: null, motivo: '', hist: this.log('Reglas de envío a calificación', (isDel ? 'Eliminó' : off ? 'Desactivó' : 'Activó') + ' la regla «' + mr.name + '»', mr.sys ? 'Regla del sistema' : '', mot) }); this.toast('Regla «' + mr.name + '» ' + (isDel ? 'eliminada' : off ? 'desactivada' : 'activada')); };
+      const I = this.impactOf(mr), N = I.total;
+      v.dm = Object.assign({ hasImp: !isDel && N > 0, impTxt: off ? 'En los últimos 30 días esta regla envió a calificación ' + I.n + ' de ' + N + ' riesgos (' + this.pctTxt(I.n, N) + '). Al desactivarla, esos riesgos podrían haberlos determinado los inspectores con facultad.' : 'Con los riesgos de los últimos 30 días, esta regla habría enviado a calificación ' + I.n + ' de ' + N + ' (' + this.pctTxt(I.n, N) + ').', open: true, title: (isDel ? 'Eliminar' : off ? 'Desactivar' : 'Activar') + ' la regla «' + mr.name + '»', desc: isDel ? 'Dejará de evaluarse en los informes nuevos. Los riesgos ya enviados conservan su motivo.' : off ? 'Los riesgos dejarán de pasar a calificación por esta regla desde ahora.' : 'Se evaluará en los informes desde ahora.', footer: footer(isDel ? 'Eliminar regla' : off ? 'Desactivar' : 'Activar', run) }, mInput);
+    } else v.dm = me ? { open: true, title: 'Eliminar la excepción de ' + this.excLabel(me), desc: 'Los inspectores afectados volverán a heredar del nivel superior.', motivo: st.motivo, onMotivo: (e) => this.setState({ motivo: e.target.value, motErr: false }), err: st.motErr, invalid: st.motErr ? 'true' : 'false', border: st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      footer: React.createElement('div', { style: { display: 'flex', gap: 12, justifyContent: 'flex-end', width: '100%' } }, this.btn('Cancelar', 'ghost', () => this.setState({ modal: null })), this.btn('Eliminar excepción', 'primary', () => this.delExc())) } : { open: false };
+    v.closeModal = () => this.setState({ modal: null });
+    const PV = this.pvGet(), TIPOS = ['Interno', 'Externo', 'Agencia'];
+    v.pvNoun = ['tipo de inspector', 'tipos de inspector'];
+    v.pvCols = [{ key: 'tipo', label: 'Tipo de inspector', sortable: true, width: 150, sticky: true }, { key: 'val', label: 'Puntaje visible', type: 'badge', sortable: true, width: 130 }, { key: 'alc', label: 'Alcance', minWidth: 220, flex: true }, { key: 'mod', label: 'Última modificación', shortLabel: 'Modificación', type: 'sub', sortable: true, width: 150 }];
+    v.pvRows = TIPOS.map(t => { const p = PV[t], ni = this.INSP.filter(x => x.tipo === t).length; return { id: t, ariaName: t, tipo: { label: t, sort: t }, val: { label: p.on ? 'Sí' : 'No', tone: p.on ? 'success' : 'neutral', sort: p.on ? 1 : 0 }, alc: ni + (ni === 1 ? ' inspector' : ' inspectores') + ' · ' + (p.on ? 'ven el panel de puntaje provisional' : 'no ven el panel de puntaje'), mod: { label: p.d ? this.fmt(p.d) : 'Valor por defecto', sub: p.by || '', sort: p.d || '' } }; });
+    v.pvActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }];
+    v.onPvAction = (a, row) => { this._pvRet = document.activeElement; this.setState({ pvm: { tipo: row.id, on: PV[row.id].on, motivo: '', tried: false } }); };
+    const pm = st.pvm, pclose = () => { this.setState({ pvm: null }); const f = this._pvRet; setTimeout(() => f && f.focus && document.contains(f) && f.focus(), 50); };
+    if (pm) { const cur = PV[pm.tipo].on, ins = this.INSP.filter(x => x.tipo === pm.tipo), inf = this.pvInformes(pm.tipo), same = pm.on === cur, motE = pm.tried && !pm.motivo.trim(), sameE = pm.tried && same;
+      const imp = same ? 'Sin cambio: el valor actual ya es «' + (cur ? 'Sí' : 'No') + '».' : (pm.on ? 'Con Sí, ' : 'Con No, ') + (ins.length ? ins.length + (ins.length === 1 ? ' inspector de tipo ' : ' inspectores de tipo ') + pm.tipo + ' (' + ins.map(x => x.n).join(', ') + ')' : 'ningún inspector registrado de tipo ' + pm.tipo) + (ins.length === 1 ? (pm.on ? ' verá' : ' dejará de ver') : (pm.on ? ' verán' : ' dejarán de ver')) + ' el panel de puntaje provisional en ' + (inf.length ? inf.length + (inf.length === 1 ? ' informe de Ramos Generales en curso (' : ' informes de Ramos Generales en curso (') + inf.join(', ') + ')' : 'los informes de Ramos Generales (hoy ninguno en curso)') + ' y en los siguientes. No cambia la calificación ni lo que ven el Ejecutivo de inspecciones, el Suscriptor y el Administrador.';
+      v.pvm = { open: true, title: 'Puntaje visible · ' + pm.tipo, imp, close: pclose, motivo: pm.motivo, onMotivo: (e) => { const t = e.target.value; this.setState(s => ({ pvm: Object.assign({}, s.pvm, { motivo: t }) })); }, err: motE || sameE, errTxt: sameE ? 'Elige un valor distinto del actual para guardar.' : 'Escribe el motivo para guardar.', invalid: motE ? 'true' : 'false', border: motE ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+        opts: [[true, 'Sí'], [false, 'No']].map(([b, l]) => ({ l, on: pm.on === b, pick: () => this.setState(s => ({ pvm: Object.assign({}, s.pvm, { on: b }) })) })),
+        footer: React.createElement('div', { style: { display: 'flex', gap: 12, justifyContent: 'flex-end', width: '100%' } }, this.btn('Cancelar', 'ghost', pclose), this.btn('Confirmar cambio', 'primary', () => { const m = this.state.pvm; if (!m) return; if (m.on === PV[m.tipo].on || !m.motivo.trim()) { this.setState({ pvm: Object.assign({}, m, { tried: true }) }); return; }
+          const d = this.now(), by = this.user(), nx = Object.assign({}, this.state.pv || PV, { [m.tipo]: { on: m.on, d, by } }); this.pvSet(nx);
+          this.setState({ pv: nx, pvm: null, hist: this.log('Facultad del inspector', 'Cambió «Puntaje visible para el inspector» de ' + m.tipo, (m.on ? 'No → Sí' : 'Sí → No') + ' · ' + imp, m.motivo.trim()) }); this.toast('Puntaje visible para ' + m.tipo + ': ' + (m.on ? 'Sí' : 'No')); const f = this._pvRet; setTimeout(() => f && f.focus && document.contains(f) && f.focus(), 50); })) };
+    } else v.pvm = { open: false, title: '', imp: '', close: pclose, motivo: '', onMotivo: null, err: false, errTxt: '', invalid: 'false', border: 'var(--input-outlined-border)', opts: [], footer: null };
+    return v;
+  }
+}
+</script>
+</body>
+</html>

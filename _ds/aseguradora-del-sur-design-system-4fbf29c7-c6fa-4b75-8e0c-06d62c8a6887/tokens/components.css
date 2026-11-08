@@ -1,0 +1,96 @@
+/* ===========================================================================
+   COMPONENT TOKENS — Alert · Modal · Spinner · Snackbar · Input · Button
+   Alias layer over the base tokens. Components read these, never raw hex.
+   =========================================================================== */
+:root{
+  /* Layering */
+  --z-modal:1000; /* @kind other */
+  --z-snackbar:1100; /* @kind other */
+
+  /* Alert */
+  --alert-radius:var(--radius-sm);
+  --alert-padding:12px 16px;
+  --alert-padding-sm:8px 12px;
+  --alert-gap:var(--space-3);
+  --alert-info-bg:var(--color-info-bg);        --alert-info-fg:var(--cyan-700);
+  --alert-success-bg:var(--color-success-bg);  --alert-success-fg:var(--color-success);
+  --alert-warning-bg:var(--color-warning-bg);  --alert-warning-fg:#8A6A04;
+  --alert-danger-bg:var(--color-danger-bg);    --alert-danger-fg:var(--color-danger);
+
+  /* Modal (matches the Renovaciones "Nuevo pedido" dialog) */
+  --modal-radius:var(--radius-lg);
+  --modal-padding:40px;
+  --modal-width-sm:420px;
+  --modal-width-md:600px;
+  --modal-width-lg:860px;
+  --modal-shadow:var(--shadow-modal);
+  --modal-scrim:var(--scrim-modal);
+  --modal-title-size:30px;
+
+  /* Spinner */
+  --spinner-size-sm:16px;
+  --spinner-size-md:24px;
+  --spinner-size-lg:40px;
+  --spinner-track:var(--cyan-100);
+  --spinner-arc:var(--color-brand);
+  --dur-spin:800ms; /* @kind other */
+
+  /* Snackbar */
+  --snackbar-bg:var(--surface-navy);
+  --snackbar-fg:var(--white);
+  --snackbar-action:var(--cyan-300);
+  --snackbar-radius:var(--radius-sm);
+  --snackbar-padding:14px 16px;
+  --snackbar-max-width:560px;
+  --snackbar-offset:24px;
+  --snackbar-duration:5000ms; /* @kind other */
+
+  /* Input extensions */
+  --input-autofill-bg:var(--blue-100);
+  --input-success:var(--color-success);
+  --input-capslock-fg:#8A6A04;
+  --input-capslock-bg:var(--color-warning-bg);
+
+  --input-outlined-height:48px;
+  --input-outlined-border:var(--border-strong);
+
+  /* Login */
+  --login-form-width:280px;
+  --login-title-size:28px;
+  --login-submit-disabled-bg:#99DFF9; /* cyan-500 @ 40% on white — ADS login disabled CTA */
+  --login-header-height:80px;
+
+  /* SideNav (menú lateral de módulos) */
+  --sidenav-width-collapsed:116px;
+  --sidenav-width-expanded:265px;
+  --sidenav-bg:var(--white);
+  --sidenav-border:var(--border-subtle);
+  --sidenav-fg:var(--neutral-600);
+  --sidenav-active-bg:var(--blue-700);
+  --sidenav-active-fg:var(--white);
+  --sidenav-hover-bg:var(--neutral-100);
+  --sidenav-sub-active-bg:#DCE5FB;
+  --sidenav-sub-fg:var(--neutral-600);
+  --sidenav-toggle-size:32px;
+  --z-sidenav:900; /* @kind other */
+
+  /* Button loading */
+  --button-loading-opacity:0.85; /* @kind other */
+}
+
+@keyframes ads-spin{to{transform:rotate(360deg)}}
+@keyframes ads-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes ads-rise-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ads-scale-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+/* Browser autofill detection hooks (listened to via onAnimationStart in Input) */
+@keyframes ads-autofill-start{from{opacity:1}to{opacity:1}}
+@keyframes ads-autofill-cancel{from{opacity:1}to{opacity:1}}
+
+.ads-input__control:-webkit-autofill{animation-name:ads-autofill-start;animation-duration:1ms;-webkit-box-shadow:0 0 0 1000px var(--input-autofill-bg) inset;-webkit-text-fill-color:var(--text-strong);caret-color:var(--text-strong)}
+.ads-input__control:not(:-webkit-autofill){animation-name:ads-autofill-cancel;animation-duration:1ms}
+.ads-sidenav__scroll::-webkit-scrollbar{display:none;width:0;height:0}
+
+@media (prefers-reduced-motion:reduce){
+  .ads-spinner__arc{animation-duration:2400ms !important}
+  .ads-modal__dialog,.ads-modal__scrim,.ads-snackbar{animation:none !important}
+}

@@ -1,0 +1,255 @@
+{
+  "v": 1,
+  "mode": "omelette",
+  "root": "project/",
+  "title": "# SIRIUS Back-office",
+  "entry": "SIRIUS Back-office.dc.html",
+  "pages": [
+    {
+      "path": "SIRIUS Back-office.dc.html",
+      "title": "SIRIUS Back-office",
+      "kind": "page"
+    },
+    {
+      "path": "Catalogos.dc.html",
+      "title": "Catalogos",
+      "kind": "component"
+    },
+    {
+      "path": "DataTable.dc.html",
+      "title": "DataTable",
+      "kind": "component"
+    },
+    {
+      "path": "NuevaSolicitud.dc.html",
+      "title": "NuevaSolicitud",
+      "kind": "component"
+    },
+    {
+      "path": "CalificacionRG.dc.html",
+      "title": "CalificacionRG",
+      "kind": "component"
+    },
+    {
+      "path": "Formularios.dc.html",
+      "title": "Formularios",
+      "kind": "component"
+    },
+    {
+      "path": "DocumentoPdf.dc.html",
+      "title": "DocumentoPdf",
+      "kind": "component"
+    },
+    {
+      "path": "Niveles.dc.html",
+      "title": "Niveles",
+      "kind": "component"
+    },
+    {
+      "path": "Flujo.dc.html",
+      "title": "Flujo",
+      "kind": "component"
+    },
+    {
+      "path": "Campos.dc.html",
+      "title": "Campos",
+      "kind": "component"
+    },
+    {
+      "path": "Notificaciones.dc.html",
+      "title": "Notificaciones",
+      "kind": "component"
+    },
+    {
+      "path": "EditorPlantilla.dc.html",
+      "title": "EditorPlantilla",
+      "kind": "component"
+    },
+    {
+      "path": "Conflictos.dc.html",
+      "title": "Conflictos",
+      "kind": "component"
+    },
+    {
+      "path": "SalidaVeh.dc.html",
+      "title": "SalidaVeh",
+      "kind": "component"
+    },
+    {
+      "path": "FotosEvidencias.dc.html",
+      "title": "FotosEvidencias",
+      "kind": "component"
+    },
+    {
+      "path": "Modelos.dc.html",
+      "title": "Modelos",
+      "kind": "component"
+    },
+    {
+      "path": "GarantiasPoliticas.dc.html",
+      "title": "GarantiasPoliticas",
+      "kind": "component"
+    },
+    {
+      "path": "MotoresIA.dc.html",
+      "title": "MotoresIA",
+      "kind": "component"
+    },
+    {
+      "path": "InformeRG.dc.html",
+      "title": "InformeRG",
+      "kind": "component"
+    },
+    {
+      "path": "Coordinacion.dc.html",
+      "title": "Coordinacion",
+      "kind": "component"
+    },
+    {
+      "path": "Calificacion.dc.html",
+      "title": "Calificacion",
+      "kind": "component"
+    },
+    {
+      "path": "SIRIUS Login.dc.html",
+      "title": "SIRIUS Login",
+      "kind": "page"
+    },
+    {
+      "path": "FilterBar.dc.html",
+      "title": "FilterBar",
+      "kind": "component"
+    },
+    {
+      "path": "Captura anexo v2.dc.html",
+      "title": "Captura anexo v2",
+      "kind": "page"
+    },
+    {
+      "path": "Varios riesgos revision.dc.html",
+      "title": "Varios riesgos revision",
+      "kind": "page"
+    },
+    {
+      "path": "Estados BPM revision.dc.html",
+      "title": "Estados BPM revision",
+      "kind": "page"
+    },
+    {
+      "path": "Coordinacion revision.dc.html",
+      "title": "Coordinacion revision",
+      "kind": "page"
+    },
+    {
+      "path": "Ajustes BPM revision.dc.html",
+      "title": "Ajustes BPM revision",
+      "kind": "page"
+    },
+    {
+      "path": "Calificacion varios riesgos revision.dc.html",
+      "title": "Calificacion varios riesgos revision",
+      "kind": "page"
+    },
+    {
+      "path": "Nueva solicitud revision.dc.html",
+      "title": "Nueva solicitud revision",
+      "kind": "page"
+    },
+    {
+      "path": "Garantias v3 revision.dc.html",
+      "title": "Garantias v3 revision",
+      "kind": "page"
+    },
+    {
+      "path": "Garantias v2 revision.dc.html",
+      "title": "Garantias v2 revision",
+      "kind": "page"
+    },
+    {
+      "path": "Garantias revision.dc.html",
+      "title": "Garantias revision",
+      "kind": "page"
+    },
+    {
+      "path": "Calificacion edicion revision.dc.html",
+      "title": "Calificacion edicion revision",
+      "kind": "page"
+    },
+    {
+      "path": "Calificacion revision.dc.html",
+      "title": "Calificacion revision",
+      "kind": "page"
+    },
+    {
+      "path": "Detalle revision.dc.html",
+      "title": "Detalle revision",
+      "kind": "page"
+    },
+    {
+      "path": "Bandeja revision.dc.html",
+      "title": "Bandeja revision",
+      "kind": "page"
+    },
+    {
+      "path": "Login revision.dc.html",
+      "title": "Login revision",
+      "kind": "page"
+    },
+    {
+      "path": "scraps/Verificacion.dc.html",
+      "title": "Verificacion",
+      "kind": "page"
+    },
+    {
+      "path": "uploads/prototipo_calificacion_inspeccion_y_suscripcion (2).html",
+      "title": "Solicitud de Inspección - 20137",
+      "kind": "plain"
+    },
+    {
+      "path": "Usuarios.dc.html",
+      "title": "Usuarios",
+      "kind": "component"
+    },
+    {
+      "path": "MiPerfil.dc.html",
+      "title": "MiPerfil",
+      "kind": "component"
+    },
+    {
+      "path": "Inicio.dc.html",
+      "title": "Inicio",
+      "kind": "component"
+    },
+    {
+      "path": "Agenda.dc.html",
+      "title": "Agenda",
+      "kind": "component"
+    },
+    {
+      "path": "Liquidaciones.dc.html",
+      "title": "Liquidaciones",
+      "kind": "component"
+    }
+  ],
+  "migratorVersion": "artifact-migrator (claude-design-backend a595f3769f57)",
+  "createdAt": "2026-10-31T01:22:18.809Z",
+  "source": {
+    "v": 1,
+    "app": "claude-design",
+    "url": "https://claude.ai/design/p/5fd5f625-5879-4442-973b-bea2e8f23472",
+    "projectId": "5fd5f625-5879-4442-973b-bea2e8f23472",
+    "exportedAt": "2026-10-31T01:22:18.809Z"
+  },
+  "report": {
+    "itemsVersion": 2,
+    "pages": {
+      "total": 19,
+      "ok": 19,
+      "partial": 0,
+      "notMigrated": 0
+    },
+    "items": [],
+    "truncated": 0,
+    "truncatedLeftOut": 0
+  }
+}

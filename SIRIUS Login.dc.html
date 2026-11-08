@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-usuarios.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-usuarios.js"></script>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#FFFFFF}a{color:var(--color-brand)}a:hover{color:var(--color-brand-dark)}@media (max-width:860px){.login-photo{display:none}}</style>
+</helmet>
+<div data-screen-label="Login" style="min-height:100vh;display:flex;flex-direction:column">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+<x-import component-from-global-scope="LoginScreen" from="./LoginScreen.jsx" animacion="{{ animacion }}" layout="{{ layout }}" constelacion="{{ constelacion }}" invitacion="{{ invitacion }}" paso="{{ paso }}" enlace="{{ enlace }}" hint-size="100%,744px" style="flex:1;display:flex;flex-direction:column"></x-import>
+<x-import component-from-global-scope="AppFooter" from="./AppFooter.jsx" hint-size="100%,56px"></x-import>
+</sc-if>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font-brand);color:var(--text-muted)">Cargando…</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;layoutLogin&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Inmersivo&quot;,&quot;options&quot;:[&quot;Dividido&quot;,&quot;Inmersivo&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;constelacion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;fondo&quot;,&quot;options&quot;:[&quot;fondo&quot;,&quot;ninguna&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;animacionLogin&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Completa&quot;,&quot;options&quot;:[&quot;Completa&quot;,&quot;Reducida&quot;,&quot;Estática&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() {
+    const NS = 'AseguradoraDelSurDesignSystem_4fbf29';
+    this._poll = setInterval(() => { if (window[NS] && window[NS].LoginForm) { clearInterval(this._poll); this.setState({ ready: true }); } }, 50);
+  }
+  componentWillUnmount() { clearInterval(this._poll); }
+  renderVals() { return { ready: this.state.ready, loading: !this.state.ready, animacion: this.props.animacionLogin ?? 'Completa', layout: this.props.layoutLogin ?? 'Dividido', constelacion: new URLSearchParams(location.search).get('constelacion') || (this.props.constelacion ?? 'fondo'), invitacion: new URLSearchParams(location.search).get('invitacion') || '', paso: new URLSearchParams(location.search).get('paso') || '', enlace: new URLSearchParams(location.search).get('enlace') || '' }; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+/* ===========================================================================
+   COLORS — Aseguradora del Sur (Marca ADS)
+   Brand palette extracted from the Figma "Pro - Colores" foundation.
+   Base scales first, semantic aliases at the bottom.
+   ===========================================================================*/
+:root {
+  /* --- Primario (brand cyan) ------------------------------------------------ */
+  --cyan-700: #008BBF;   /* deep cyan */
+  --cyan-500: #00AEEF;   /* ★ brand cyan — the signature ADS color */
+  --cyan-300: #5BC8F5;   /* light cyan */
+  --cyan-100: #C9EEFB;   /* tint / wash */
+
+  /* --- Secundario (royal blue) --------------------------------------------- */
+  --blue-900: #011E41;   /* deep navy (also primary text) */
+  --blue-800: #183154;   /* dark steel blue */
+  --blue-700: #0033A1;   /* ★ secondary royal blue */
+  --blue-500: #1E50D6;   /* bright blue */
+  --blue-100: #F1F5FF;   /* lightest blue wash */
+
+  /* --- Grises (neutrals) --------------------------------------------------- */
+  --neutral-900: #011E41; /* darkest — shared with navy */
+  --neutral-800: #242424;
+  --neutral-700: #484848;
+  --neutral-600: #5C6470;
+  --neutral-500: #787878;
+  --neutral-400: #B4B4B4;
+  --neutral-300: #DADADA;
+  --neutral-200: #E8E8E8;
+  --neutral-100: #F4F4F4;
+  --neutral-050: #FAFBFC;
+  --white: #FFFFFF;
+
+  /* --- Complementarios (semantic + decorative accents) --------------------- */
+  --green-500:  #4C8C1E;  --green-100:  #DCEFC6;   /* success */
+  --gold-500:   #C99A06;  --gold-100:   #FBEFCB;   /* warning */
+  --red-500:    #9E1B0E;  --red-100:    #F8DAD5;   /* danger */
+  --teal-500:   #4F8488;  --teal-300:   #9CCBCB;  --teal-100: #E8F4F4; /* teal accent */
+  --purple-700: #4B1A5E;  --purple-500: #8E5A8C;  --purple-100: #E6DCEC; /* plum accent */
+
+  /* --- Sur One (sub-brand: companion mobile app) --------------------------- */
+  --surone-purple: #4D16C4;
+  --surone-pink:   #FE49A8;
+  --surone-cyan:   #8BF2FF;
+
+  /* ========================================================================= */
+  /* SEMANTIC ALIASES — prefer these in components                             */
+  /* ========================================================================= */
+  --color-brand:           var(--cyan-500);
+  --color-brand-dark:      var(--cyan-700);
+  --color-brand-wash:      var(--cyan-100);
+  --color-secondary:       var(--blue-700);
+  --color-secondary-bright:var(--blue-500);
+  --color-accent-teal:     var(--teal-500);
+
+  --text-strong:   var(--blue-900);   /* headings, emphasis */
+  --text-body:     var(--neutral-700);/* paragraph copy */
+  --text-muted:    var(--neutral-500);/* secondary / captions */
+  --text-on-brand: var(--white);      /* text on cyan / navy */
+  --text-link:     var(--cyan-700);
+
+  --surface-page:   var(--white);
+  --surface-subtle: var(--neutral-100);
+  --surface-teal:   var(--teal-100);  /* alternating section bg */
+  --surface-navy:   var(--blue-900);  /* dark footer / hero */
+  --surface-brand:  var(--cyan-500);  /* cyan hero / banner */
+
+  --border-subtle: var(--neutral-200);
+  --border-default:var(--neutral-300);
+  --border-strong: var(--neutral-400);
+
+  --color-success: var(--green-500);  --color-success-bg: var(--green-100);
+  --color-warning: var(--gold-500);   --color-warning-bg: var(--gold-100);
+  --color-danger:  var(--red-500);    --color-danger-bg:  var(--red-100);
+  --color-info:    var(--cyan-500);   --color-info-bg:    var(--cyan-100);
+
+  /* Insurance tier accents (Bronce / Plata / Oro) */
+  --tier-bronce: #B5732B;
+  --tier-plata:  #8B9097;
+  --tier-oro:    #C99A06;
+
+  /* Admin / product-tool accents (módulo de renovaciones) */
+  --admin-green:    #4F800B;  /* "Admin" role tag */
+  --admin-green-bg: #E8F4D4;  /* light green chip wash */
+  --table-row-hover: #F1F5FF; /* light-blue row hover/header wash */
+}

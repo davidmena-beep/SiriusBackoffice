@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="datos-compania.js"></script><script src="sirius-motivo.js"></script>
+<script src="sirius-fecha.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
+</helmet>
+<section data-screen-label="BO-25 Notificaciones" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ isEditor }}" hint-placeholder-val="{{ false }}"><dc-import name="EditorPlantilla" key="{{ ed.key }}" plantilla-id="{{ ed.id }}" dup-de="{{ ed.dup }}" escena="{{ ed.escena }}" user-name="{{ ed.user }}" casos="{{ ed.casos }}" valores-caso="{{ ed.valores }}" sticky-top="{{ ed.stickyTop }}" on-volver="{{ ed.volver }}" on-guardado="{{ ed.guardado }}" on-crumb="{{ ed.crumb }}" canal-ini="{{ ed.canal }}" on-ir="{{ ed.ir }}" hint-size="100%,900px"></dc-import></sc-if>
+<sc-if value="{{ noEditor }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
+<div style="flex:1 1 420px;display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Notificaciones</h1>
+<p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">Reglas, plantillas y canales de los avisos por correo, WhatsApp, SMS y en SIRIUS.</p>
+</div>
+<div style="flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:8px;white-space:nowrap">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" icon-left="{{ histIcon }}" on-click="{{ openHist }}" hint-size="210px,40px">Historial de cambios</x-import>
+<sc-if value="{{ tabReglas }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ openNew }}" hint-size="170px,40px">Agregar regla</x-import></sc-if>
+<sc-if value="{{ tabPlant }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ openNewPl }}" hint-size="190px,40px">Agregar plantilla</x-import></sc-if>
+</div>
+</div>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
+<sc-if value="{{ tabReglas }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ regIntro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ regCols }}" rows="{{ regRows }}" row-actions="{{ regActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onRegAction }}" page-size="{{ 25 }}" item-noun="{{ regNoun }}" storage-key="sirius.adm.notif.reglas" empty-title="Sin reglas" empty-text="Todavía no hay reglas de notificación." hint-size="100%,420px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{ tabPlant }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ plIntro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ plCols }}" rows="{{ plRows }}" row-actions="{{ plActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onPlAction }}" page-size="{{ 25 }}" item-noun="{{ plNoun }}" storage-key="sirius.adm.notif.plantillas" empty-title="Sin plantillas" empty-text="No hay plantillas para mostrar." hint-size="100%,420px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{ tabVar }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<div role="search" aria-label="Filtrar las variables" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-v-caso" style="font-size:14px;font-weight:700;color:var(--text-strong)">Caso del ejemplo</label><select id="nt-v-caso" key="{{ vk }}-nt-v-caso" defaultValue="{{ vCaso }}" onChange="{{ onVCaso }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:120px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ vCasoOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-v-grupo" style="font-size:14px;font-weight:700;color:var(--text-strong)">Grupo</label><select id="nt-v-grupo" key="{{ vk }}-nt-v-grupo" defaultValue="{{ vGrupo }}" onChange="{{ onVGrupo }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:160px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ vGrupoOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-v-clase" style="font-size:14px;font-weight:700;color:var(--text-strong)">Clasificación</label><select id="nt-v-clase" key="{{ vk }}-nt-v-clase" defaultValue="{{ vClase }}" onChange="{{ onVClase }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ vClaseOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-v-disp" style="font-size:14px;font-weight:700;color:var(--text-strong)">Disponible</label><select id="nt-v-disp" key="{{ vk }}-nt-v-disp" defaultValue="{{ vDisp }}" onChange="{{ onVDisp }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ vDispOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-v-q" style="font-size:14px;font-weight:700;color:var(--text-strong)">Buscar</label><input id="nt-v-q" key="{{ vk }}-q" type="search" defaultValue="{{ vQ }}" onInput="{{ onVQ }}" placeholder="Nombre o clave" style="height:40px;width:220px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></span>
+<sc-if value="{{ vHasFilters }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ vClear }}" style="height:40px;padding:0 12px;border:none;background:transparent;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);cursor:pointer;text-decoration:underline;text-underline-offset:3px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">Limpiar filtros</button></sc-if>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ varIntro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ varCols }}" rows="{{ varRows }}" row-actions="{{ varActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onVarAction }}" page-size="{{ 25 }}" item-noun="{{ varNoun }}" storage-key="sirius.adm.notif.variables" empty-title="Sin variables" empty-text="No hay variables con esos filtros." hint-size="100%,420px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{ tabCan }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+<section aria-labelledby="nt-h-canales" style="display:flex;flex-direction:column;gap:12px"><h2 id="nt-h-canales" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Canales</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"><sc-for list="{{ canCards }}" as="c" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF;min-width:0"><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-strong)">{{ c.nombre }}</h3><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ c.tone }}" hint-size="90px,22px"><span style="white-space:nowrap">{{ c.estado }}</span></x-import></div><span style="font-size:13px;color:var(--text-muted)">Proveedor</span><span style="font-size:14px;color:var(--text-strong)">{{ c.proveedor }}</span><span style="font-size:13px;color:var(--text-muted)">Conexión</span><span style="font-size:14px;color:var(--text-strong);white-space:nowrap">{{ c.conexion }}</span></div></sc-for></div></section>
+<section aria-labelledby="nt-h-correo" style="display:flex;flex-direction:column;gap:12px;min-width:0"><h2 id="nt-h-correo" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Remitente del correo</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty;max-width:980px">{{ remRegla }}</p>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">Cuenta institucional: <strong style="color:var(--text-strong);white-space:nowrap">{{ remInst }}</strong></p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ cueCols }}" rows="{{ cueRows }}" row-actions="{{ cueActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onCueAction }}" page-size="{{ 25 }}" item-noun="{{ cueNoun }}" storage-key="sirius.adm.notif.cuentas" empty-title="Sin cuentas" empty-text="No hay cuentas de Gmail para mostrar." hint-size="100%,420px"></dc-import>
+</section>
+<section aria-labelledby="nt-h-hor" style="display:flex;flex-direction:column;gap:8px"><h2 id="nt-h-hor" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Horario para clientes</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ horCli }}</p><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ horNota }}</p><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ horInt }}</p></section>
+<section aria-labelledby="nt-h-lim" style="display:flex;flex-direction:column;gap:12px"><h2 id="nt-h-lim" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Límites por canal</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px"><sc-for list="{{ limCards }}" as="c" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF;min-width:0"><h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-strong)">{{ c.nombre }}</h3><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px"><sc-for list="{{ c.lines }}" as="l" hint-placeholder-count="3"><li style="font-size:14px;line-height:1.45;color:var(--text-body);text-wrap:pretty">{{ l.l }}</li></sc-for></ul></div></sc-for></div></section>
+<section aria-labelledby="nt-h-con" style="display:flex;flex-direction:column;gap:8px"><h2 id="nt-h-con" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Consentimiento del cliente</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ consRegla }}</p></section>
+</div>
+</sc-if>
+<sc-if value="{{ tabBit }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<div role="search" aria-label="Filtrar la bitácora" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-canal" style="font-size:14px;font-weight:700;color:var(--text-strong)">Canal</label><select id="nt-b-canal" key="{{ fk }}-nt-b-canal" defaultValue="{{ bCanal }}" onChange="{{ onBCanal }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ canalFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-estado" style="font-size:14px;font-weight:700;color:var(--text-strong)">Estado</label><select id="nt-b-estado" key="{{ fk }}-nt-b-estado" defaultValue="{{ bEstado }}" onChange="{{ onBEstado }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ estadoFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-caso" style="font-size:14px;font-weight:700;color:var(--text-strong)">Caso</label><select id="nt-b-caso" key="{{ fk }}-nt-b-caso" defaultValue="{{ bCaso }}" onChange="{{ onBCaso }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:130px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ casoFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ clearFilters }}" style="height:40px;padding:0 12px;border:none;background:transparent;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);cursor:pointer;text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Limpiar filtros</button></sc-if>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ bitIntro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ bitCols }}" rows="{{ bitRows }}" row-actions="{{ bitActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onBitAction }}" page-size="{{ 25 }}" item-noun="{{ bitNoun }}" storage-key="sirius.adm.notif.bitacora" empty-title="Sin envíos" empty-text="No hay envíos con esos filtros." hint-size="100%,420px"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{ pn.open }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;inset:0;z-index:70;display:flex;justify-content:flex-end"><div onClick="{{ pn.close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.2)"></div>
+<aside role="dialog" aria-modal="true" aria-labelledby="nt-pn-t" style="position:relative;width:{{ pn.width }};max-width:100%;height:100%;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:24px 24px 12px"><h2 id="nt-pn-t" style="margin:0;font-size:20px;font-weight:700;color:var(--text-strong);text-wrap:pretty">{{ pn.title }}</h2><button type="button" aria-label="Cerrar" onClick="{{ pn.close }}" style="flex:none;width:36px;height:36px;border:none;border-radius:50%;background:transparent;cursor:pointer;font-size:20px;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">×</button></div>
+<div style="flex:1 1 auto;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:8px 24px 16px">
+<sc-if value="{{ pn.isHist }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ pn.histEmpty }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body)">{{ pn.histEmptyTxt }}</p></sc-if><ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column"><sc-for list="{{ pn.hist }}" as="h" hint-placeholder-count="3"><li style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:12px;padding-bottom:18px"><span style="display:flex;flex-direction:column;align-items:center"><span style="width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--color-brand)"></span><span style="flex:1;width:2px;margin-top:4px;background:var(--border-subtle)"></span></span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;color:var(--text-muted)">{{ h.when }} · {{ h.by }}</span><span style="font-size:15px;font-weight:700;line-height:1.35;color:var(--text-strong)">{{ h.what }}</span><span style="font-size:13px;line-height:1.4;color:var(--text-body)">{{ h.regla }}</span><span style="font-size:13px;line-height:1.4;color:var(--text-body)">Motivo: {{ h.motivo }}</span></span></li></sc-for></ol></sc-if>
+<sc-if value="{{ pn.isVer }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:13px;line-height:1.45;color:var(--text-muted);text-wrap:pretty">{{ pn.verNota }}</p><div role="tablist" aria-label="Canal de la vista previa" style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pn.canalTabs }}" as="t" hint-placeholder-count="3"><button type="button" role="tab" id="{{ t.id }}" aria-selected="{{ t.on }}" aria-controls="nt-ver-body" onClick="{{ t.pick }}" style="height:38px;padding:0 16px;border:1.5px solid {{ t.bd }};border-radius:var(--radius-pill);background:{{ t.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ t.l }}</button></sc-for></div><div id="nt-ver-body" role="tabpanel" aria-label="Vista previa" style="display:flex;flex-direction:column;gap:12px"><sc-if value="{{ pn.vCorreo }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:var(--text-muted)">Asunto</span><span style="font-size:15px;font-weight:700;line-height:1.35;color:var(--text-strong)"><sc-for list="{{ pn.cAsunto }}" as="x" hint-placeholder-count="3"><span style="background:{{ x.bg }};color:{{ x.cl }};border-radius:4px;padding:{{ x.pd }}">{{ x.t }}</span></sc-for></span></div><div style="border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:16px;display:flex;flex-direction:column;gap:12px;background:{{ pn.cFondo }};color:{{ pn.cTexto }};font-family:{{ pn.cFuente }},var(--font-brand)"><sc-for list="{{ pn.cBloques }}" as="bl" hint-placeholder-count="3"><sc-if value="{{ bl.isBanner }}" hint-placeholder-val="{{ false }}"><div style="height:{{ bl.alto }}px;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--border-strong,#98A2B3);border-radius:var(--radius-sm);background:var(--neutral-100,#F2F4F7);font-size:13px;color:var(--text-muted);text-align:center;padding:0 8px"><span>Banner · {{ bl.archivo }}</span></div></sc-if><sc-if value="{{ bl.isTexto }}" hint-placeholder-val="{{ false }}"><div style="white-space:pre-wrap;font-size:14px;line-height:1.5;overflow-wrap:anywhere"><sc-for list="{{ bl.parts }}" as="x" hint-placeholder-count="3"><span style="background:{{ x.bg }};color:{{ x.cl }};border-radius:4px;padding:{{ x.pd }}">{{ x.t }}</span></sc-for></div></sc-if><sc-if value="{{ bl.isTabla }}" hint-placeholder-val="{{ false }}"><div style="overflow:hidden;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)"><div style="display:grid;grid-template-columns:repeat({{ bl.ncols }},minmax(0,1fr));background:{{ pn.cPrimario }};color:#FFFFFF;font-size:13px;font-weight:700"><sc-for list="{{ bl.columnas }}" as="cn" hint-placeholder-count="3"><span style="padding:8px 10px">{{ cn.l }}</span></sc-for></div><div style="padding:8px 10px;font-size:13px;color:var(--text-muted)">{{ bl.fuenteTxt }}</div></div></sc-if><sc-if value="{{ bl.isBoton }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><span style="display:inline-block;padding:10px 20px;border-radius:var(--radius-sm);border:1.5px solid {{ pn.cPrimario }};background:{{ bl.bg }};color:{{ bl.fg }};font-size:14px;font-weight:700">{{ bl.texto }}</span><span style="font-size:12px;color:var(--text-muted)">Destino: {{ bl.destino }}</span></div></sc-if><sc-if value="{{ bl.isSep }}" hint-placeholder-val="{{ false }}"><hr style="border:none;border-top:1px solid var(--border-subtle);margin:0"></sc-if><sc-if value="{{ bl.isPie }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:4px;padding-top:8px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--text-muted)"><span>{{ bl.texto }}</span><span>Imagen · {{ bl.archivo }}</span></div></sc-if></sc-for></div><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.cLimites }}</span></div></sc-if><sc-if value="{{ pn.vWa }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><span style="font-size:13px;color:var(--text-muted)">Plantilla en Meta</span><strong style="font-size:14px;color:var(--text-strong);overflow-wrap:anywhere">{{ pn.wNombre }}</strong><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ pn.wTone }}" hint-size="100px,22px"><span style="white-space:nowrap">{{ pn.wEstado }}</span></x-import></div><div style="max-width:380px;display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:#E7F6EC;border:1px solid var(--border-subtle)"><div style="padding:8px 10px;border:1.5px dashed var(--border-strong,#98A2B3);border-radius:var(--radius-sm);background:#FFFFFF;font-size:13px;color:var(--text-muted)">{{ pn.wEncabezado }}</div><div style="white-space:pre-wrap;font-size:14px;line-height:1.5;color:var(--text-strong);overflow-wrap:anywhere"><sc-for list="{{ pn.wCuerpo }}" as="x" hint-placeholder-count="3"><span style="background:{{ x.bg }};color:{{ x.cl }};border-radius:4px;padding:{{ x.pd }}">{{ x.t }}</span></sc-for></div><sc-for list="{{ pn.wBotones }}" as="bt" hint-placeholder-count="1"><div style="padding:8px 10px;border-radius:var(--radius-sm);background:#FFFFFF;text-align:center;font-size:14px;font-weight:700;color:var(--text-link)">{{ bt.l }}<span style="display:block;font-size:11px;font-weight:400;color:var(--text-muted)">Destino: {{ bt.destino }}</span></div></sc-for></div><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.wLimites }}</span></div></sc-if><sc-if value="{{ pn.vSms }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px"><div style="max-width:380px;padding:12px;border-radius:12px;background:var(--neutral-100,#F2F4F7);border:1px solid var(--border-subtle);white-space:pre-wrap;font-size:14px;line-height:1.5;color:var(--text-strong);overflow-wrap:anywhere"><sc-for list="{{ pn.sTexto }}" as="x" hint-placeholder-count="3"><span style="background:{{ x.bg }};color:{{ x.cl }};border-radius:4px;padding:{{ x.pd }}">{{ x.t }}</span></sc-for></div><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.sLimites }}</span></div></sc-if><sc-if value="{{ pn.vApp }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px"><div style="max-width:420px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);box-shadow:var(--shadow-sm);background:#FFFFFF;font-size:14px;line-height:1.5;color:var(--text-strong);overflow-wrap:anywhere"><sc-for list="{{ pn.aTexto }}" as="x" hint-placeholder-count="3"><span style="background:{{ x.bg }};color:{{ x.cl }};border-radius:4px;padding:{{ x.pd }}">{{ x.t }}</span></sc-for></div><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">Aparece en la campana de notificaciones de SIRIUS.</span></div></sc-if></div><div style="display:flex;flex-direction:column;gap:6px"><strong style="font-size:13px;color:var(--text-strong)">Variables usadas en este canal</strong><div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ pn.vars }}" as="v" hint-placeholder-count="3"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="140px,22px"><span style="white-space:nowrap">{{ v.l }}</span></x-import></sc-for></div><sc-if value="{{ pn.varsBad }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.varsBad }}</span></sc-if></div></sc-if>
+<sc-if value="{{ pn.stepEdit }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ pn.showErrSum }}" hint-placeholder-val="{{ false }}"><div role="alert" style="padding:10px 12px;border-radius:var(--radius-sm);background:var(--red-100,#FDECEC);font-size:14px;color:var(--text-strong)">{{ pn.errSum }}</div></sc-if><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-nombre" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nombre de la regla <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><input id="nt-f-nombre" type="text" value="{{ pn.v.nombre }}" onInput="{{ pn.on.nombre }}" aria-invalid="{{ pn.er.nombre }}" aria-describedby="nt-f-nombre-h" maxlength="80" autocomplete="off" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ pn.bd.nombre }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ pn.er.nombre }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.nombre }}</span></sc-if><span id="nt-f-nombre-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.nombre }}</span></div><div role="radiogroup" id="nt-f-tipo" aria-labelledby="nt-f-tipo-l" aria-describedby="nt-f-tipo-h" style="display:flex;flex-direction:column;gap:6px"><span id="nt-f-tipo-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Tipo de disparador <span aria-hidden="true" style="color:var(--color-danger)">*</span></span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pn.tipos }}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="height:38px;padding:0 16px;border:1.5px solid {{ o.bd }};border-radius:var(--radius-pill);background:{{ o.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</button></sc-for></div><span id="nt-f-tipo-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.tipo }}</span><sc-if value="{{ pn.er.tipo }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.tipo }}</span></sc-if></div><sc-if value="{{ pn.tEstado }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-estado" style="font-size:13px;font-weight:700;color:var(--text-strong)">Estado de SIRIUS <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="nt-f-estado" key="{{ pn.nonce }}-estado" defaultValue="{{ pn.v.estado }}" onChange="{{ pn.on.estado }}" aria-invalid="{{ pn.er.estado }}" aria-describedby="nt-f-estado-h" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.bd.estado }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.estadoOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ pn.er.estado }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.estado }}</span></sc-if><span id="nt-f-estado-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.estado }}</span></div></sc-if><sc-if value="{{ pn.tRegla }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:16px"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-fecha" style="font-size:13px;font-weight:700;color:var(--text-strong)">Fecha de referencia <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="nt-f-fecha" key="{{ pn.nonce }}-fecha" defaultValue="{{ pn.v.fecha }}" onChange="{{ pn.on.fecha }}" aria-invalid="{{ pn.er.fecha }}" aria-describedby="nt-f-fecha-h" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.bd.fecha }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.fechaOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ pn.er.fecha }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.fecha }}</span></sc-if><span id="nt-f-fecha-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.fecha }}</span></div><div role="group" aria-labelledby="nt-f-cant-l" aria-describedby="nt-f-cant-h" style="display:flex;flex-direction:column;gap:6px"><span id="nt-f-cant-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Cuándo se envía <span aria-hidden="true" style="color:var(--color-danger)">*</span></span><div style="display:flex;flex-wrap:wrap;gap:8px"><input id="nt-f-cant" type="text" inputmode="numeric" value="{{ pn.v.cant }}" onInput="{{ pn.on.cant }}" aria-label="Cantidad" aria-invalid="{{ pn.er.cant }}" maxlength="3" style="width:84px;height:44px;padding:0 12px;border:1.5px solid {{ pn.bd.cant }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><select id="nt-f-unidad" key="{{ pn.nonce }}-unidad" defaultValue="{{ pn.v.unidad }}" onChange="{{ pn.on.unidad }}" aria-label="Unidad" style="height:44px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.unidadOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><select id="nt-f-sentido" key="{{ pn.nonce }}-sentido-{{ pn.sentidoKey }}" defaultValue="{{ pn.v.sentido }}" onChange="{{ pn.on.sentido }}" aria-label="Antes o después" style="height:44px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.sentidoOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></div><sc-if value="{{ pn.er.cant }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.cant }}</span></sc-if><span id="nt-f-cant-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.cant }}</span></div><sc-if value="{{ pn.hasHora }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-hora" style="font-size:13px;font-weight:700;color:var(--text-strong)">Hora del envío (opcional)</label><input id="nt-f-hora" type="time" value="{{ pn.v.hora }}" onInput="{{ pn.on.hora }}" aria-invalid="{{ pn.er.hora }}" aria-describedby="nt-f-hora-h" style="width:160px;height:44px;padding:0 12px;border:1.5px solid {{ pn.bd.hora }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ pn.er.hora }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.hora }}</span></sc-if><span id="nt-f-hora-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.hora }}</span></div></sc-if><sc-if value="{{ pn.hasCond }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-cond" style="font-size:13px;font-weight:700;color:var(--text-strong)">Condición </label><select id="nt-f-cond" key="{{ pn.nonce }}-cond" defaultValue="{{ pn.v.cond }}" onChange="{{ pn.on.cond }}" aria-invalid="{{ pn.er.cond }}" aria-describedby="nt-f-cond-h" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.bd.cond }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.condOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ pn.er.cond }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.cond }}</span></sc-if><span id="nt-f-cond-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.cond }}</span></div></sc-if></div></sc-if><sc-if value="{{ pn.tEvento }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-evento" style="font-size:13px;font-weight:700;color:var(--text-strong)">Evento del sistema <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="nt-f-evento" key="{{ pn.nonce }}-evento" defaultValue="{{ pn.v.evento }}" onChange="{{ pn.on.evento }}" aria-invalid="{{ pn.er.evento }}" aria-describedby="nt-f-evento-h" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.bd.evento }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.eventoOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ pn.er.evento }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.evento }}</span></sc-if><span id="nt-f-evento-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.evento }}</span></div></sc-if><div role="group" id="nt-f-dest" tabIndex="-1" aria-labelledby="nt-f-dest-l" aria-describedby="nt-f-dest-h" style="display:flex;flex-direction:column;gap:6px"><span id="nt-f-dest-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Destinatarios <span aria-hidden="true" style="color:var(--color-danger)">*</span></span><div style="display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 10px;border:1.5px solid {{ pn.bd.dest }};border-radius:var(--radius-sm)"><sc-for list="{{ pn.dest }}" as="g" hint-placeholder-count="3"><label style="display:inline-flex;align-items:center;gap:8px;min-height:28px;cursor:pointer;font-size:14px;color:var(--text-strong)"><input type="checkbox" checked="{{ g.on }}" onChange="{{ g.toggle }}" style="width:18px;height:18px;margin:0;accent-color:var(--color-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ g.l }}</label></sc-for></div><sc-if value="{{ pn.er.dest }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.dest }}</span></sc-if><span id="nt-f-dest-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.dest }}</span></div><div role="group" id="nt-f-canales" tabIndex="-1" aria-labelledby="nt-f-canales-l" aria-describedby="nt-f-canales-h" style="display:flex;flex-direction:column;gap:6px"><span id="nt-f-canales-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Canales <span aria-hidden="true" style="color:var(--color-danger)">*</span></span><div style="display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 10px;border:1.5px solid {{ pn.bd.canales }};border-radius:var(--radius-sm)"><sc-for list="{{ pn.canalChk }}" as="g" hint-placeholder-count="3"><label style="display:inline-flex;align-items:center;gap:8px;min-height:28px;cursor:pointer;font-size:14px;color:var(--text-strong)"><input type="checkbox" checked="{{ g.on }}" onChange="{{ g.toggle }}" style="width:18px;height:18px;margin:0;accent-color:var(--color-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ g.l }}</label></sc-for></div><sc-if value="{{ pn.er.canales }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.canales }}</span></sc-if><span id="nt-f-canales-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.canales }}</span></div><sc-if value="{{ pn.hasOrden }}" hint-placeholder-val="{{ false }}"><div role="group" aria-labelledby="nt-orden-l" style="display:flex;flex-direction:column;gap:6px"><span id="nt-orden-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Orden de preferencia</span><ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px"><sc-for list="{{ pn.orden }}" as="o" hint-placeholder-count="2"><li style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--table-row-hover)"><span style="flex:none;width:22px;font-size:14px;font-weight:700;color:var(--text-strong)">{{ o.pos }}</span><span style="flex:1 1 auto;font-size:14px;color:var(--text-strong)">{{ o.l }}</span><button type="button" aria-label="{{ o.upAria }}" aria-disabled="{{ o.upDis }}" title="{{ o.upTip }}" onClick="{{ o.up }}" style="width:36px;height:36px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-size:16px;color:{{ o.upColor }};cursor:{{ o.upCur }}" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">↑</button><button type="button" aria-label="{{ o.dnAria }}" aria-disabled="{{ o.dnDis }}" title="{{ o.dnTip }}" onClick="{{ o.dn }}" style="width:36px;height:36px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-size:16px;color:{{ o.dnColor }};cursor:{{ o.dnCur }}" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">↓</button></li></sc-for></ol><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">Se avisa por el primero; los demás siguen en este orden.</span></div></sc-if><sc-if value="{{ pn.consNote }}" hint-placeholder-val="{{ false }}"><span id="nt-cons" style="font-size:13px;line-height:1.45;color:var(--text-body);text-wrap:pretty">{{ pn.consNote }}</span></sc-if><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-f-plantilla" style="font-size:13px;font-weight:700;color:var(--text-strong)">Plantilla <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="nt-f-plantilla" key="{{ pn.plantKey }}" defaultValue="{{ pn.v.plantilla }}" onChange="{{ pn.on.plantilla }}" aria-invalid="{{ pn.er.plantilla }}" aria-describedby="nt-f-plantilla-h nt-f-plantilla-e" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.bd.plantilla }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.plantOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><span id="nt-f-plantilla-e" role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.plantilla }}</span><sc-if value="{{ pn.plantWarn }}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size:13px;line-height:1.45;color:var(--text-strong);padding:8px 10px;border-radius:var(--radius-sm);background:var(--gold-100);text-wrap:pretty">{{ pn.plantWarn }}</span></sc-if><span id="nt-f-plantilla-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.plantilla }}</span></div><div role="radiogroup" id="nt-f-activa" aria-labelledby="nt-f-activa-l" aria-describedby="nt-f-activa-h" style="display:flex;flex-direction:column;gap:6px"><span id="nt-f-activa-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Estado de la regla <span aria-hidden="true" style="color:var(--color-danger)">*</span></span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pn.estados }}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="height:38px;padding:0 16px;border:1.5px solid {{ o.bd }};border-radius:var(--radius-pill);background:{{ o.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</button></sc-for></div><span id="nt-f-activa-h" style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ pn.hp.activa }}</span><sc-if value="{{ pn.er.activa }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.msg.activa }}</span></sc-if></div></sc-if>
+<sc-if value="{{ pn.stepConfirm }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><strong style="font-size:14px;color:var(--text-strong)">{{ pn.changesHead }}</strong><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px"><sc-for list="{{ pn.changes }}" as="c" hint-placeholder-count="2"><li style="font-size:14px;color:var(--text-strong)">{{ c.l }}</li></sc-for></ul></div></sc-if>
+<sc-if value="{{ pn.isStatus }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-strong);text-wrap:pretty">{{ pn.statusTxt }}</p></sc-if>
+<sc-if value="{{ pn.hasImpact }}" hint-placeholder-val="{{ false }}"><div role="status" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--gold-100)"><strong style="font-size:14px;color:var(--text-strong)">Impacto antes de confirmar</strong><span style="font-size:14px;color:var(--text-strong);text-wrap:pretty">{{ pn.impactHead }}</span><sc-for list="{{ pn.impact }}" as="x" hint-placeholder-count="3"><span style="font-size:14px;color:var(--text-strong);text-wrap:pretty">{{ x.l }}</span></sc-for></div></sc-if><sc-if value="{{ pn.needsMotivo }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="nt-pn-motivo" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo del cambio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="nt-pn-motivo" rows="3" value="{{ pn.motivo }}" onInput="{{ pn.onMotivo }}" aria-invalid="{{ pn.mErr }}" aria-describedby="nt-pn-help" placeholder="Ej. Pide el área de Garantías" style="width:100%;padding:9px 12px;border:1.5px solid {{ pn.mBd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ pn.mErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo para guardar.</span></sc-if><span id="nt-pn-help" style="font-size:12px;line-height:1.4;color:var(--text-muted)">Queda en el historial con la fecha y hora del reloj y tu nombre.</span></div></sc-if>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--border-subtle)">
+<sc-if value="{{ pn.btnCancel }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ pn.close }}" hint-size="110px,40px">Cancelar</x-import></sc-if>
+<sc-if value="{{ pn.btnBack }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ pn.back }}" hint-size="150px,40px">Volver a editar</x-import></sc-if>
+<sc-if value="{{ pn.btnPrimary }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ pn.primary }}" hint-size="190px,40px">{{ pn.primaryLabel }}</x-import></sc-if>
+<sc-if value="{{ pn.btnClose }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ pn.close }}" hint-size="110px,40px">Cerrar</x-import></sc-if></div>
+</aside></div></sc-if>
+<sc-if value="{{ snack }}" hint-placeholder-val="{{ false }}"><div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;max-width:min(560px,90vw);padding:12px 20px;border-radius:var(--radius-sm);background:var(--neutral-900,#011E41);color:#FFFFFF;font-size:14px;box-shadow:var(--shadow-md)">{{ snack }}</div></sc-if>
+</sc-if>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;reglas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;casos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;valoresCaso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;ir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  TABS = ['Reglas', 'Plantillas', 'Variables', 'Canales', 'Bitácora'];
+  TIPOS = [['estado', 'Por estado'], ['regla', 'Por regla de tiempo'], ['evento', 'Por evento']];
+  FECHAS = [['garantias.fechaLimite', 'Fecha límite de garantías', 'de la fecha límite de garantías'], ['visita.fecha', 'Visita', 'de la visita'], ['enlace.envio', 'Envío del enlace', 'del envío del enlace'], ['enlace.ultimaAccion', 'Última acción del cliente en el enlace', 'de la última acción del cliente en el enlace'], ['enlace.vence', 'Vencimiento del enlace', 'del vencimiento del enlace'], ['sla.vence', 'Vencimiento del SLA', 'del vencimiento del SLA']];
+  CONDS = ['Conjunto Pendiente', 'Conjunto Vencido'];
+  ENVIOS = ['Enviado', 'Entregado', 'Leído', 'Fallido', 'Omitido', 'Prueba'];
+  EDIT_ESC = ['editor', 'editmovil', 'editwa', 'editsms', 'var', 'varerr', 'prueba', 'nuevaplant', 'amplia', 'completa', 'tablalibre', 'tablagrid', 'tabladatos', 'casoaviso', 'varcorreo', 'varlopdp', 'sindato', 'confeditor'];
+  CHAN = ['correo', 'whatsapp', 'sms', 'app'];
+  KEYS = ['nombre', 'tipo', 'estado', 'fecha', 'cant', 'hora', 'cond', 'evento', 'dest', 'canales', 'plantilla', 'activa'];
+  FOCUS_ORDER = ['nombre', 'estado', 'fecha', 'cant', 'hora', 'evento', 'dest', 'canales', 'plantilla'];
+  state = (() => {
+    const e = this.props.escena || '', N = this.N();
+    const st = { tab: 0, panel: null, step: 'edit', f: null, orig: null, errs: {}, showErr: false, motivo: '', motErr: false, histFor: null, prevId: null, prevCanal: null, bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: 0, snack: '', nonce: 0, vGrupo: 'all', vClase: 'all', vDisp: 'all', vQ: '', vCaso: '20178', vk: 0 };
+    if (!N) return st;
+    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 4 }; if (tabs[e] != null) st.tab = tabs[e];
+    if (e === 'regla') { st.panel = 'regla'; st.orig = 'R02'; st.f = this.draftFrom(N.regla('R02')); }
+    if (e === 'nueva') { st.panel = 'regla'; st.f = Object.assign(this.blank(), { tipo: 'evento' }); }
+    if (e === 'ver') { st.panel = 'ver'; st.prevId = 'gar_recordatorio'; st.prevCanal = 'whatsapp'; }
+    if (e === 'bitacora') st.bCaso = '20178';
+    if (e === 'varoff') { st.panel = 'var'; st.orig = 'asegurado.celular'; }
+    if (e === 'varsens') st.vClase = 'Dato sensible';
+    if (e === 'polizaoff') { st.tab = 2; st.panel = 'var'; st.orig = 'caso.poliza'; st.vQ = 'póliza'; }
+    // Etapa 10n-plantillas: el editor ocupa la página (EditorPlantilla.dc.html).
+    if (this.EDIT_ESC.includes(e)) { st.tab = 1; st.editor = { id: '', dup: '', escena: e === 'nuevaplant' ? '' : e, n: 1 }; }
+    return st;
+  })();
+  N() { return window.SIRIUS_NOTIFICACIONES || null; }
+  abrirEditor(o) { this._edRet = o.ret || ''; this._edSaved = ''; this.setState(s => ({ editor: { id: o.id || '', dup: o.dup || '', escena: '', canal: o.canal || '', n: ((s.editor || {}).n || 0) + 1 } })); try { window.scrollTo(0, 0); } catch (er) {} }
+  cerrarEditor() { const N = this.N(), pid = this._edSaved || (this.state.editor || {}).id || '', pp = pid && N.plantilla ? N.plantilla(pid) : null, r = pp ? 'Editar · ' + pp.nombre : this._edRet; this._edSaved = ''; this.setState({ editor: null }); if (this.props.onCrumb) this.props.onCrumb(''); setTimeout(() => { const b = r === 'pl-nueva' ? Array.from(document.querySelectorAll('button')).find(x => x.innerText.trim() === 'Agregar plantilla') : r ? document.querySelector('[aria-label="' + r + '"]') : null; if (b) b.focus(); }, 120); }
+  F() { return window.SIRIUS_FLUJO || null; }
+  E() { return window.SIRIUS_EJEMPLO || {}; }
+  user() { return this.props.userName || 'Andrea Salazar'; }
+  p2(n) { return String(n).padStart(2, '0'); }
+  nowDate() { const E = this.E(); return E.ahora ? E.ahora() : new Date(2026, 9, 18, 20, 30); }
+  nowIso() { const d = this.nowDate(); return d.getFullYear() + '-' + this.p2(d.getMonth() + 1) + '-' + this.p2(d.getDate()) + 'T' + this.p2(d.getHours()) + ':' + this.p2(d.getMinutes()); }
+  fmtT(s) { const [y, m, d] = String(s).slice(0, 10).split('-'); return d + '/' + m + '/' + y.slice(2) + ' · ' + String(s).slice(11, 16); }
+  toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); }
+  plural(n, s, p) { return n + ' ' + (n === 1 ? s : p); }
+  hist() { const N = this.N(); return N.historial || (N.historial = []); }
+  canalNombre(id) { const c = this.N().canal(id); return c ? c.nombre : id; }
+  tipoNombre(id) { const t = this.TIPOS.find(x => x[0] === id); return t ? t[1] : id; }
+  fechaInfo(key) { const t = this.FECHAS.find(x => x[0] === key); return t ? { l: t[1], de: t[2] } : { l: key, de: 'de ' + key }; }
+  condsFor(fecha) { return fecha === 'garantias.fechaLimite' ? this.CONDS : ({ 'enlace.envio': ['Enlace sin abrir'], 'enlace.ultimaAccion': ['Autoinspección abandonada a medias'], 'enlace.vence': ['Autoinspección sin completar'] })[fecha] || []; }
+  cantTxt(n, unidad) { return n + ' ' + (unidad === 'horas' ? (n === 1 ? 'hora' : 'horas') : (n === 1 ? 'día' : 'días')); }
+  // ---------- Texto del disparador ----------
+  cuandoLabel(r) {
+    const c = r.cuando || {};
+    if (r.tipo === 'estado') return 'Entra a «' + c.estado + '»';
+    if (r.tipo === 'evento') return c.evento;
+    const fi = this.fechaInfo(c.fecha), horas = c.horas != null, v = horas ? c.horas : c.dias, n = Math.abs(v || 0);
+    let t = n === 0 ? (horas ? 'En el momento ' : 'El mismo día ') + fi.de : this.cantTxt(n, horas ? 'horas' : 'dias') + (horas && c.habiles ? ' hábiles' : '') + (v < 0 ? ' antes ' : ' después ') + fi.de;
+    if (c.hora && !horas) t += ' · ' + c.hora;
+    return t;
+  }
+  cuandoSub(r) { return this.tipoNombre(r.tipo) + (r.cuando && r.cuando.condicion ? ' · ' + r.cuando.condicion : ''); }
+  dispTxt(r) { return this.tipoNombre(r.tipo) + ': ' + this.cuandoLabel(r) + (r.cuando && r.cuando.condicion ? ' · ' + r.cuando.condicion : ''); }
+  canalesTxt(r) { return r.canales.map(c => this.canalNombre(c)).join(' → '); }
+  plantNombre(id) { const p = this.N().plantilla(id); return p ? p.nombre : id; }
+  // ---------- Casos e impacto ----------
+  activos() { const F = this.F(); return (this.props.casos || []).filter(c => { const e = F && F.estado(c.estado); return !!e && e.tipo !== 'cierre'; }); }
+  parseD(s) { if (!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/); return m ? new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0) : null; }
+  refDate(c, key) {
+    if (key === 'garantias.fechaLimite') return c.gar && !c.gar.cerrado && ['Pendiente', 'Vencido'].includes(c.gar.estado) ? this.parseD(c.gar.limIso) : null;
+    if (key === 'visita.fecha') { const F = this.F(), i = c.estado === 'Agendado' && F && F.ingresos ? F.ingresos[c.id] : null; return i && i.visita ? this.parseD(i.visita[0]) : null; }
+    if (key === 'sla.vence') return c.slaInfo && c.slaInfo.vence ? c.slaInfo.vence : null;
+    return null;
+  }
+  condOk(c, cond) { if (!cond) return true; const g = c.gar && c.gar.estado; return cond === 'Conjunto Pendiente' ? g === 'Pendiente' : cond === 'Conjunto Vencido' ? g === 'Vencido' : true; }
+  trig(base, c) {
+    let t = new Date(base);
+    if (c.horas != null) t = new Date(t.getTime() + c.horas * 3600000);
+    else { t.setDate(t.getDate() + (c.dias || 0)); if (c.hora) { const p = c.hora.split(':'); t.setHours(+p[0], +p[1], 0, 0); } }
+    return t;
+  }
+  ids(l) { return 'Casos: ' + l.slice(0, 8).map(x => x.id).join(', ') + (l.length > 8 ? ' y ' + (l.length - 8) + ' más' : '') + '.'; }
+  impacto(r) {
+    const F = this.F(), todos = this.props.casos || [], act = this.activos(), c = r.cuando || {};
+    if (r.tipo === 'evento') return { head: 'Se evalúa cuando ocurra el evento.', lines: [] };
+    if (r.tipo === 'estado') {
+      const e = F.estado(c.estado), cierre = !!e && e.tipo === 'cierre', l = (cierre ? todos : act).filter(x => x.estado === c.estado), n = l.length;
+      const sufijo = cierre ? ' (estado de cierre)' : '';
+      const head = n ? (cierre ? this.plural(n, 'caso está', 'casos están') : this.plural(n, 'caso activo está', 'casos activos están')) + ' hoy en «' + c.estado + '»' + sufijo + '.' : 'Hoy ningún caso ' + (cierre ? '' : 'activo ') + 'está en «' + c.estado + '»' + sufijo + '.';
+      return { head, lines: (n ? [this.ids(l)] : []).concat(['El aviso sale cuando un caso entra a ese estado; los que ya están en él no lo reciben.']).map(x => ({ l: x })) };
+    }
+    if (c.fecha === 'enlace.vence') return { head: 'Se evalúa cuando se genere el enlace de cada caso.', lines: [] };
+    if (c.fecha === 'enlace.envio' || c.fecha === 'enlace.ultimaAccion') return { head: 'Se evalúa por cada enlace de autoinspección enviado, con las acciones que el cliente haga en el portal.', lines: [] };   // etapa 13
+    const gar = c.fecha === 'garantias.fechaLimite', now = this.nowDate(), l = (gar ? todos : act).filter(x => this.refDate(x, c.fecha) && this.condOk(x, c.condicion)), n = l.length, cond = c.condicion ? ' «' + c.condicion + '»' : '';
+    const sing = gar ? 'caso con garantías abiertas' : 'caso activo', plu = gar ? 'casos con garantías abiertas' : 'casos activos';
+    if (!n) return { head: 'Hoy ningún ' + sing + ' cumple la condición' + cond + '.', lines: [] };
+    // En SLA las horas son hábiles (calendario de Flujo y SLA): el aviso ya pasó si restan N horas hábiles o menos.
+    const pas = l.filter(x => c.fecha === 'sla.vence' && c.horas != null && c.horas < 0 ? x.slaInfo.horas <= -c.horas : this.trig(this.refDate(x, c.fecha), c) <= now).length, lines = [this.ids(l)];
+    lines.push(pas === 0 ? 'Ninguno pasó todavía la fecha del aviso.' : pas === n ? (n === 1 ? 'Ya pasó la fecha del aviso.' : 'Todos ya pasaron la fecha del aviso.') : 'De ellos, ' + pas + (pas === 1 ? ' ya pasó' : ' ya pasaron') + ' la fecha del aviso y ' + (n - pas) + (n - pas === 1 ? ' la tiene' : ' la tienen') + ' por delante.');
+    return { head: this.plural(n, sing + ' cumple', plu + ' cumplen') + ' hoy la condición' + cond + '.', lines: lines.map(x => ({ l: x })) };
+  }
+  // ---------- Borrador ----------
+  blank() { return { nombre: '', tipo: 'estado', estado: '', fecha: 'garantias.fechaLimite', cant: '1', unidad: 'dias', sentido: 'antes', hora: '', cond: '', evento: '', dest: [], canales: [], plantilla: '', activa: true }; }
+  draftFrom(r) {
+    const c = r.cuando || {}, f = this.blank();
+    f.nombre = r.nombre; f.tipo = r.tipo; f.dest = r.a.slice(); f.canales = r.canales.slice(); f.plantilla = r.plantilla; f.activa = r.estado === 'Activa';
+    if (r.tipo === 'estado') f.estado = c.estado || '';
+    else if (r.tipo === 'evento') f.evento = c.evento || '';
+    else { const horas = c.horas != null, v = horas ? c.horas : c.dias; f.fecha = c.fecha || 'garantias.fechaLimite'; f.unidad = horas ? 'horas' : 'dias'; f.cant = String(Math.abs(v || 0)); f.sentido = (v || 0) > 0 ? 'despues' : 'antes'; f.hora = c.hora || ''; f.cond = c.condicion || ''; }
+    return f;
+  }
+  toRegla(f, base) {
+    let cuando;
+    if (f.tipo === 'estado') cuando = { estado: f.estado };
+    else if (f.tipo === 'evento') cuando = { evento: f.evento };
+    else {
+      const n = Number(f.cant), sg = n === 0 ? 0 : f.sentido === 'antes' ? -n : n; cuando = { fecha: f.fecha }; cuando[f.unidad === 'horas' ? 'horas' : 'dias'] = sg;
+      if (f.cond && this.condsFor(f.fecha).includes(f.cond)) cuando.condicion = f.cond;
+      if (base && base.cuando && base.cuando.habiles && base.cuando.fecha === f.fecha && f.unidad === 'horas') cuando.habiles = true;   // etapa 13 · R13 cuenta horas hábiles
+      if (f.unidad === 'dias' && f.hora) cuando.hora = f.hora;
+    }
+    const N = this.N();
+    return Object.assign({}, base || {}, { nombre: f.nombre.trim(), tipo: f.tipo, cuando, a: N.destinatarios.filter(x => f.dest.includes(x)), canales: f.canales.slice(), plantilla: f.plantilla, estado: f.activa ? 'Activa' : 'Inactiva' });
+  }
+  missing(p, canales) { return canales.filter(c => !p[c]).map(c => this.canalNombre(c)); }
+  listaY(a) { return a.length > 1 ? a.slice(0, -1).join(', ') + ' ni ' + a[a.length - 1] : a[0]; }
+  plantErr(f) {
+    const N = this.N(); if (!f.plantilla) return '';
+    const p = N.plantilla(f.plantilla); if (!p) return 'La plantilla ya no existe.';
+    const m = this.missing(p, f.canales);
+    return m.length ? 'La plantilla «' + p.nombre + '» no tiene variante ' + this.listaY(m) + '. Elige otra plantilla o quita ese canal.' : '';
+  }
+  // ---------- Validación ----------
+  validate(f, orig) {
+    const N = this.N(), e = {}, m = (k, t) => { if (!e[k]) e[k] = t; };
+    const nm = f.nombre.trim().toLowerCase();
+    if (!nm) m('nombre', 'Escribe el nombre de la regla.'); else if (N.reglas.some(r => r.id !== orig && r.nombre.trim().toLowerCase() === nm)) m('nombre', 'Ya existe una regla con ese nombre.');
+    if (f.tipo === 'estado' && !f.estado) m('estado', 'Elige el estado.');
+    if (f.tipo === 'evento' && !f.evento) m('evento', 'Elige el evento.');
+    if (f.tipo === 'regla') {
+      const max = f.unidad === 'horas' ? 168 : 365;
+      if (!f.fecha) m('fecha', 'Elige la fecha de referencia.');
+      if (!/^\d+$/.test(f.cant.trim()) || +f.cant > max) m('cant', 'Escribe un número entero entre 0 y ' + max + '.');
+      if (f.unidad === 'dias' && f.hora && !/^([01]\d|2[0-3]):[0-5]\d$/.test(f.hora)) m('hora', 'Escribe una hora válida (HH:MM).');
+    }
+    if (!f.dest.length) m('dest', 'Elige al menos un destinatario.');
+    if (!f.canales.length) m('canales', 'Elige al menos un canal.');
+    if (!f.plantilla) m('plantilla', 'Elige la plantilla.'); else { const t = this.plantErr(f); if (t) m('plantilla', t); }
+    return e;
+  }
+  // ---------- Cambios ----------
+  diff(a, b) {
+    const out = [], add = (l, x, y) => { if (String(x) !== String(y)) out.push(l + ': ' + x + ' → ' + y); };
+    add('Nombre', a.nombre, b.nombre); const dd = (r) => (a.tipo === b.tipo ? '' : this.tipoNombre(r.tipo) + ': ') + this.cuandoLabel(r) + (r.cuando && r.cuando.condicion ? ' · ' + r.cuando.condicion : ''); add('Disparador', dd(a), dd(b)); add('Destinatarios', a.a.join(', '), b.a.join(', '));
+    add('Canales (en orden)', this.canalesTxt(a), this.canalesTxt(b)); add('Plantilla', this.plantNombre(a.plantilla), this.plantNombre(b.plantilla)); add('Estado', a.estado, b.estado);
+    return out;
+  }
+  summaryNew(r) { return ['Regla nueva «' + r.nombre + '»', 'Disparador: ' + this.dispTxt(r), 'Destinatarios: ' + r.a.join(', '), 'Canales (en orden): ' + this.canalesTxt(r), 'Plantilla: ' + this.plantNombre(r.plantilla), 'Estado: ' + r.estado]; }
+  // ---------- Panel ----------
+  openPanel(panel, o) {
+    o = o || {}; const N = this.N();
+    if (!this.state.panel) this._opener = { el: document.activeElement, sel: o.row ? '[aria-label="' + o.how + ' · ' + o.row + '"]' : '' };
+    const st = { panel, step: 'edit', errs: {}, showErr: false, motivo: '', motErr: false, histFor: o.histFor || null, orig: o.id || null, f: null, nonce: this.state.nonce + 1, prevId: o.prevId || null, prevCanal: null };
+    if (panel === 'regla') st.f = o.id ? this.draftFrom(N.regla(o.id)) : this.blank();
+    if (panel === 'ver') { const p = N.plantilla(o.prevId); st.prevCanal = this.CHAN.find(c => p && p[c]) || null; }
+    this.setState(st);
+    setTimeout(() => this.focusFirst(), 90);
+  }
+  focusFirst() { const a = document.querySelector('aside[aria-labelledby="nt-pn-t"]'); if (!a) return; const f = a.querySelector('#nt-f-nombre,#nt-pn-motivo') || a.querySelector('button'); if (f) f.focus(); }
+  closePanel() { if (!this.state.panel) return; this.setState({ panel: null }); this.restoreFocus(); }
+  restoreFocus() { const o = this._opener || {}; setTimeout(() => { let el = o.el; if (!(el && el.isConnected) && o.sel) el = document.querySelector(o.sel); if (el && el.focus) el.focus(); }, 80); }
+  // Etapa 10n-conflictos: motor de conflictos (SiriusConflictos) y pedidos de navegación del Back-office (props.ir).
+  CF() { return window.SiriusConflictos || null; }
+  sincronizar(que) { const Z = this.CF(); if (Z) Z.sync({ que, quien: this.user() }); }
+  anticipaLineas(aplicar, revertir) { const Z = this.CF(); if (!Z) return []; try { return Z.anticipa(aplicar, revertir).lineas.map(l => ({ l })); } catch (er) { return []; } }
+  conIr(go) { if (!go || go.n <= (window.__siriusNotifIr || 0)) return; window.__siriusNotifIr = go.n; const N = this.N();
+    const hacer = () => { if (go.k === 'var') { const SV = this.SV(), x = SV && SV.info(go.clave); this.setState({ tab: 2, vQ: x ? x.etiqueta : '', vk: this.state.vk + 1 }); if (x) setTimeout(() => this.openPanel('var', { id: x.clave, row: x.etiqueta, how: 'Disponible' }), 60); }
+      else if (go.k === 'editor') { this.setState({ tab: 1 }); this.abrirEditor({ id: go.id, canal: go.canal || '', ret: 'Editar · ' + ((N.plantilla(go.id) || {}).nombre || go.id) }); }
+      else if (go.k === 'regla') { const r = N.regla(go.id); this.setState({ tab: 0 }); if (r) setTimeout(() => this.openPanel('regla', { id: r.id, row: r.nombre, how: 'Editar' }), 60); }
+      else if (go.k === 'cuentas') this.setState({ tab: 3 }); };
+    if (this.state.editor) { this.setState({ editor: null }); if (this.props.onCrumb) this.props.onCrumb(''); setTimeout(hacer, 60); } else hacer(); }
+  componentDidUpdate() { if (this.props.ir) this.conIr(this.props.ir); }
+  componentDidMount() {
+    const Z = this.CF(); if (Z) this._cfOff = Z.on(() => this.forceUpdate()); if (this.props.ir) setTimeout(() => this.conIr(this.props.ir), 0);
+    this._k = (ev) => { if (ev.key === 'Escape' && this.state.panel && !ev.defaultPrevented) { ev.preventDefault(); this.closePanel(); } };
+    document.addEventListener('keydown', this._k, true);
+    if (this.state.panel) setTimeout(() => this.focusFirst(), 150);
+  }
+  componentWillUnmount() { document.removeEventListener('keydown', this._k, true); if (this._cfOff) this._cfOff(); }
+  setF(o) { this.setState(s => { const f = Object.assign({}, s.f, o); if (o.fecha && !this.condsFor(f.fecha).includes(f.cond)) f.cond = ''; return { f, errs: s.showErr ? this.validate(f, s.orig) : s.errs }; }); }
+  toggleIn(arr, x, order) { return arr.includes(x) ? arr.filter(y => y !== x) : (order ? order.filter(y => arr.includes(y) || y === x) : arr.concat([x])); }
+  toConfirm() {
+    const st = this.state, errs = this.validate(st.f, st.orig), keys = Object.keys(errs);
+    if (keys.length) { this.setState({ errs, showErr: true }); const k = this.FOCUS_ORDER.find(x => errs[x]); setTimeout(() => { const el = document.getElementById('nt-f-' + k); const t = el && (el.matches('input,textarea,select') ? el : el.querySelector('input,select') || el); if (t && t.focus) t.focus(); }, 30); return; }
+    if (st.orig) { const r0 = this.N().regla(st.orig); if (!this.diff(r0, this.toRegla(st.f, r0)).length) { this.toast('No hay cambios para guardar.'); return; } }
+    this.setState({ step: 'confirm', errs: {}, showErr: false, motivo: '', motErr: false }); setTimeout(() => this.focusFirst(), 60);
+  }
+  save() {
+    const st = this.state, N = this.N(), motivo = st.motivo.trim();
+    if (!motivo) { this.setState({ motErr: true }); const el = document.getElementById('nt-pn-motivo'); if (el) el.focus(); return; }
+    const by = this.user(), ts = this.nowIso(), H = this.hist(), log = (id, accion) => H.unshift({ fecha: ts, por: by, regla: id, accion, motivo });
+    if (st.panel === 'regla') {
+      if (st.orig) {
+        const r0 = N.regla(st.orig), r1 = this.toRegla(st.f, r0), d = this.diff(r0, r1), i = N.reglas.indexOf(r0); N.reglas[i] = r1;
+        log(r1.id, 'Editó la regla (' + d.slice(0, 3).join('; ') + (d.length > 3 ? '; y ' + (d.length - 3) + ' más' : '') + ')'); this.toast('Regla actualizada. Los cambios valen en esta sesión.');
+      } else {
+        const n = Math.max.apply(null, N.reglas.map(r => parseInt(String(r.id).slice(1), 10) || 0)) + 1, id = 'R' + this.p2(n), r1 = this.toRegla(st.f, { id });
+        N.reglas.push(r1); log(id, 'Creó la regla'); this.toast('Regla agregada. Los cambios valen en esta sesión.');
+      }
+    }
+    if (st.panel === 'inact') { const r = N.regla(st.orig); r.estado = 'Inactiva'; log(r.id, 'Inactivó la regla'); this.toast('Regla inactivada. Deja de enviar avisos.'); }
+    if (st.panel === 'var') { const SV = this.SV(), x = SV.info(st.orig), on = !x.disponible; SV.setDisponible(x.clave, on); H.unshift({ fecha: ts, por: by, variable: x.clave, accion: (on ? 'Activó' : 'Desactivó') + ' la variable «' + x.etiqueta + '»' + (SV.usos(x.clave).length ? ' (en uso en ' + this.plural(SV.usos(x.clave).length, 'plantilla', 'plantillas') + ')' : ''), motivo }); this.toast(on ? 'Variable activada: ya se ofrece al insertar.' : 'Variable desactivada: ya no se ofrece al insertar.'); }
+    if (st.panel === 'react') { const r = N.regla(st.orig); r.estado = 'Activa'; log(r.id, 'Reactivó la regla'); this.toast('Regla reactivada. Vuelve a enviar avisos.'); }
+    this.sincronizar(st.panel === 'var' ? (SVx => { const x = SVx && SVx.info(st.orig); return (x && x.disponible ? 'Activó' : 'Apagó') + ' «Disponible» de {{' + st.orig + '}}'; })(this.SV()) : st.panel === 'inact' ? 'Inactivó la regla ' + st.orig : st.panel === 'react' ? 'Activó la regla ' + st.orig : st.orig ? 'Editó la regla ' + st.orig : 'Agregó una regla');
+    this.setState({ panel: null }); this.restoreFocus();
+  }
+  moveCanal(i, d) { const c = this.state.f.canales.slice(), j = i + d; if (j < 0 || j >= c.length) return; const t = c[i]; c[i] = c[j]; c[j] = t; this.setF({ canales: c }); }
+  // ---------- Texto con variables resaltadas ----------
+  parts(txt) {
+    return String(txt || '').split(/(\{\{\s*[\w.]+\s*\}\})/).filter(x => x !== '').map(x => /^\{\{/.test(x) ? { t: x, bg: 'var(--cyan-100)', cl: 'var(--cyan-700,#0B5CAD)', pd: '0 4px' } : { t: x, bg: 'transparent', cl: 'inherit', pd: '0' });
+  }
+  // ---------- Pantalla ----------
+  renderVals() {
+    const st = this.state, NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {}, N = this.N(), F = this.F();
+    const v = { tabs: this.TABS, tab: st.tab, onTab: (i) => this.setState({ tab: i }), snack: st.snack, pn: { open: false } };
+    v.noEditor = !st.editor; v.isEditor = !!st.editor;
+    if (st.editor) { const ed = st.editor; v.ed = { key: 'ed-' + ed.n, id: ed.id, dup: ed.dup, escena: ed.escena, canal: ed.canal || '', ir: this.props.onIr || null, user: this.user(), casos: (this.props.casos || []).map(c => ({ id: c.id, asegurado: c.asegurado })).sort((a, b) => a.id < b.id ? -1 : 1), valores: this.props.valoresCaso || null, stickyTop: this.props.stickyTop || '16px',
+      volver: () => this.cerrarEditor(), guardado: (id) => { if (id) this._edSaved = id; this.forceUpdate(); }, crumb: (n) => { if (this.props.onCrumb) this.props.onCrumb(n); } }; }
+    v.tabReglas = st.tab === 0; v.tabPlant = st.tab === 1; v.tabVar = st.tab === 2; v.tabCan = st.tab === 3; v.tabBit = st.tab === 4;
+    if (!N || !F) return Object.assign(v, { regRows: [], regCols: [], plRows: [], plCols: [], cueRows: [], cueCols: [], bitRows: [], bitCols: [], varRows: [], varCols: [] });
+    if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
+    v.plusIcon = this.plusIcon || null;
+    v.histIcon = this.histIcon || (this.histIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' })));
+    v.openHist = () => this.openPanel('hist'); v.openNew = () => this.openPanel('regla');
+    // ----- Reglas -----
+    const act = N.reglas.filter(r => r.estado === 'Activa').length;
+    v.regIntro = act + ' activas de ' + N.reglas.length + '. Cada regla avisa por los canales elegidos, en ese orden de preferencia. Los cambios valen en esta sesión.';
+    v.regNoun = ['regla', 'reglas'];
+    v.regCols = [
+      { key: 'regla', label: 'Regla', type: 'sub', minWidth: 240, flex: true, sticky: true, ellipsis: true },
+      { key: 'disp', label: 'Disparador', type: 'sub', minWidth: 270, flex: true, ellipsis: true },
+      { key: 'dest', label: 'Destinatarios', minWidth: 230, flex: true },
+      { key: 'canales', label: 'Canales en orden', type: 'chips', minWidth: 270 },
+      { key: 'plantilla', label: 'Plantilla', type: 'sub', minWidth: 200, flex: true, ellipsis: true },
+      { key: 'estado', label: 'Estado', type: 'badge', width: 110 },
+    ];
+    v.regRows = N.reglas.map(r => { const dim = r.estado !== 'Activa', pl = N.plantilla(r.plantilla), a = r.a.join(', ');
+      return { id: r.id, ariaName: r.nombre, hideActions: dim ? ['inact'] : ['react'], regla: { label: r.nombre, sub: r.id, dim }, disp: { label: this.cuandoLabel(r), sub: this.cuandoSub(r), dim, title: this.cuandoLabel(r) + ' · ' + this.cuandoSub(r) },
+        dest: { label: a, dim, title: a }, canales: { label: '', chips: r.canales.map((c, i) => ({ label: (i + 1) + ' · ' + this.canalNombre(c), tone: 'neutral' })) },
+        plantilla: { label: pl ? pl.nombre : r.plantilla, sub: r.plantilla, dim }, estado: r.pausa ? { label: r.pausa.estado, tone: 'warning', title: 'En ' + this.CF().canalesTxt(r.pausa.canales) + (r.pausa.canales.length < r.canales.length ? '; ' + this.CF().canalesTxt(r.canales.filter(c => r.pausa.canales.indexOf(c) < 0)) + ' sigue enviando' : '') + ' · ' + r.pausa.motivo.join('; ') + ' · ' + r.pausa.ids.join(', ') } : { label: r.estado, tone: dim ? 'neutral' : 'success' } }; });
+    v.regActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }, { id: 'inact', label: 'Inactivar', menu: true }, { id: 'react', label: 'Activar', menu: true }, { id: 'hist', label: 'Ver historial', icon: 'history', menu: true }];
+    v.onRegAction = (a, row) => { const r = N.regla(row.id); if (!r) return; if (a === 'edit') this.openPanel('regla', { id: r.id, row: r.nombre, how: 'Editar' }); else if (a === 'inact') this.openPanel('inact', { id: r.id, row: r.nombre, how: 'Más acciones' }); else if (a === 'react') this.openPanel('react', { id: r.id, row: r.nombre, how: 'Más acciones' }); else if (a === 'hist') this.openPanel('hist', { histFor: r.id, row: r.nombre, how: 'Más acciones' }); };
+    // ----- Plantillas -----
+    const tone = { 'Aprobada': 'success', 'En revisión': 'warning', 'Rechazada': 'danger', 'Activa': 'success', 'Borrador': 'warning' };
+    v.plIntro = N.plantillas.length + ' plantillas. «Editar» abre el editor por canal; «Duplicar», en el menú ⋯, parte de una copia.';
+    v.plNoun = ['plantilla', 'plantillas'];
+    v.plCols = [
+      { key: 'plantilla', label: 'Plantilla', type: 'sub', minWidth: 240, flex: true, sticky: true, ellipsis: true },
+      { key: 'canales', label: 'Canales disponibles', type: 'chips', minWidth: 330 },
+      { key: 'meta', label: 'Estado en Meta', type: 'badge', width: 140 },
+      { key: 'estado', label: 'Estado', type: 'badge', width: 110 },
+      { key: 'act', label: 'Actualizada', type: 'sub', width: 170 },
+    ];
+    v.plRows = N.plantillas.map(p => ({ id: p.id, ariaName: p.nombre, plantilla: { label: p.nombre, sub: p.id }, canales: { label: '', chips: this.CHAN.filter(c => p[c]).map(c => ({ label: this.canalNombre(c), tone: 'neutral' })) },
+      meta: p.whatsapp ? { label: p.whatsapp.estadoMeta, tone: tone[p.whatsapp.estadoMeta] || 'neutral' } : '', estado: p.conflicto ? { label: p.conflicto.estado, tone: 'danger', title: p.conflicto.motivo.join('; ') + ' · Vuelve sola a «' + p.estado + '» al resolverse (' + p.conflicto.ids.join(', ') + ').' } : { label: p.estado, tone: tone[p.estado] || 'neutral' }, act: { label: this.fmtT(p.actualizada[1]), sub: p.actualizada[0], noBreak: true } }));
+    v.plActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }, { id: 'dup', label: 'Duplicar', menu: true }];
+    v.onPlAction = (a, row) => { if (a === 'edit') this.abrirEditor({ id: row.id, ret: 'Editar · ' + row.ariaName }); else if (a === 'dup') this.abrirEditor({ dup: row.id, ret: 'Editar · ' + row.ariaName }); else if (a === 'ver') this.openPanel('ver', { prevId: row.id, row: row.ariaName, how: 'Ver' }); };
+    v.openNewPl = () => this.abrirEditor({ ret: 'pl-nueva' });
+    // ----- Variables (diccionario) -----
+    Object.assign(v, this.varVals());
+    // ----- Canales -----
+    const ctone = { 'Conectado': 'success', 'Activo': 'success', 'Simulado': 'warning' };
+    v.canCards = N.canales.map(c => ({ nombre: c.nombre, proveedor: c.proveedor, conexion: c.conexion || 'Sin conexión externa', estado: c.estado, tone: ctone[c.estado] || 'neutral' }));
+    v.remRegla = N.remitente.regla; v.remInst = N.remitente.institucional;
+    v.cueNoun = ['cuenta', 'cuentas'];
+    v.cueCols = [
+      { key: 'usuario', label: 'Usuario', type: 'sub', minWidth: 260, flex: true, sticky: true, ellipsis: true },
+      { key: 'gmail', label: 'Gmail', type: 'badge', width: 150 },
+      { key: 'desde', label: 'Conectada desde', width: 160, wrap: false },
+      { key: 'nota', label: 'Nota', minWidth: 230, flex: true },
+    ];
+    const gtone = { 'Conectada': 'success', 'Sin conectar': 'neutral', 'Permiso vencido': 'warning' };
+    v.cueRows = (window.SiriusUsuarios ? window.SiriusUsuarios.cuentasGmail() : []).map(c => ({ id: c.nombre, ariaName: c.nombre, usuario: { label: c.nombre, sub: c.correo }, gmail: { label: c.gmail, tone: gtone[c.gmail] || 'neutral' }, desde: c.gmailDesde ? this.fmtT(c.gmailDesde) : '', nota: c.nota || '' }));
+    v.cueActions = []; v.onCueAction = () => {};
+    const DN = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'], H = N.horario, cl = H.clientes, ds = cl.dias.slice(), seq = ds.every((d, i) => i === 0 || d === ds[i - 1] + 1);
+    const dTxt = seq && ds.length > 1 ? DN[ds[0]] + ' a ' + DN[ds[ds.length - 1]] : ds.map(d => DN[d]).join(', ');
+    v.horCli = 'Avisos a clientes: ' + dTxt.charAt(0).toUpperCase() + dTxt.slice(1) + ', de ' + cl.desde + ' a ' + cl.hasta + '.'; v.horNota = cl.nota + '.'; v.horInt = 'Avisos internos: ' + String(H.internos).toLowerCase() + '.';
+    const L = N.limites, li = (a) => a.map(x => ({ l: x }));
+    v.limCards = [
+      { nombre: 'Correo', lines: li(['Imagen: ' + L.correo.imagen, 'Botones: hasta ' + L.correo.botones]) },
+      { nombre: 'WhatsApp', lines: li(['Cuerpo: hasta ' + L.whatsapp.cuerpo + ' caracteres', 'Botones: hasta ' + L.whatsapp.botones, 'Encabezado: ' + L.whatsapp.encabezado, L.whatsapp.nota + '.']) },
+      { nombre: 'SMS', lines: li(['Sin tildes (GSM): ' + L.sms.gsm + ' caracteres por segmento', 'Con tildes o ñ: ' + L.sms.unicode + ' caracteres por segmento', 'Enlaces: hasta ' + L.sms.enlaces, L.sms.nota + '.']) },
+    ];
+    v.consRegla = N.consentimiento.regla;
+    // ----- Bitácora -----
+    const btone = { 'Enviado': 'neutral', 'Entregado': 'brand', 'Leído': 'success', 'Fallido': 'danger', 'Omitido': 'warning', 'Prueba': 'brand' }, opt = (a, b) => ({ v: a, l: b });
+    const casos = Array.from(new Set(N.bitacora.map(b => b.caso))).filter(c => c !== '—').sort(), hayInv = N.bitacora.some(b => b.caso === '—');
+    v.canalFiltOpts = [opt('all', 'Todos')].concat(N.canales.map(c => opt(c.id, c.nombre))); v.estadoFiltOpts = [opt('all', 'Todos')].concat(this.ENVIOS.map(e => opt(e, e))); v.casoFiltOpts = [opt('all', 'Todos')].concat(casos.map(c => opt(c, c)), hayInv ? [opt('—', 'Sin caso (invitaciones)')] : []);
+    v.fk = st.fk; v.bCanal = st.bCanal; v.bEstado = st.bEstado; v.bCaso = st.bCaso;
+    v.onBCanal = (e) => this.setState({ bCanal: e.target.value }); v.onBEstado = (e) => this.setState({ bEstado: e.target.value }); v.onBCaso = (e) => this.setState({ bCaso: e.target.value });
+    v.hasFilters = st.bCanal !== 'all' || st.bEstado !== 'all' || st.bCaso !== 'all'; v.clearFilters = () => this.setState({ bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: st.fk + 1 });
+    const bl = N.bitacora.map((b, i) => Object.assign({ ix: i }, b)).filter(b => (st.bCanal === 'all' || b.canal === st.bCanal) && (st.bEstado === 'all' || b.estado === st.bEstado) && (st.bCaso === 'all' || b.caso === st.bCaso)).sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : a.ix - b.ix);
+    v.bitIntro = 'Mostrando ' + bl.length + ' de ' + N.bitacora.length + ' envíos de ejemplo. Pasa el cursor por «Fallido» u «Omitido» para ver el motivo.';
+    v.bitNoun = ['envío', 'envíos'];
+    v.bitCols = [
+      { key: 'fecha', label: 'Fecha', width: 140, wrap: false, sticky: true },
+      { key: 'caso', label: 'Caso', width: 90 },
+      { key: 'regla', label: 'Regla', type: 'sub', minWidth: 190, flex: true, ellipsis: true },
+      { key: 'canal', label: 'Canal', width: 100 },
+      { key: 'dest', label: 'Destinatario', minWidth: 170, flex: true },
+      { key: 'rem', label: 'Remitente', minWidth: 300, flex: true },
+      { key: 'estado', label: 'Estado', type: 'badge', width: 120 },
+    ];
+    v.bitRows = bl.map(b => { const rg = N.regla(b.regla), pp = !b.regla && b.plantilla ? N.plantilla(b.plantilla) : null, inv = b.tipo === 'invitacion'; return { id: 'b' + b.ix, casoId: b.caso, ariaName: inv ? 'Invitación a ' + b.a : (b.regla ? 'Envío de ' + b.regla : 'Prueba de plantilla') + ' del caso ' + b.caso, fecha: { label: this.fmtT(b.fecha), noBreak: true }, caso: inv ? { label: '—', dim: true } : { label: b.caso, link: true, linkAction: 'caso' },
+      regla: inv ? { label: 'Invitación a SIRIUS', sub: 'Usuarios y roles' } : b.regla ? { label: rg ? rg.nombre : b.regla, sub: b.regla } : { label: 'Prueba de plantilla', sub: pp ? pp.nombre : (b.plantilla || 'Plantilla nueva') }, canal: this.canalNombre(b.canal), dest: b.a, rem: { label: b.remitente, title: b.nota || undefined }, estado: { label: b.estado, tone: btone[b.estado] || 'neutral', title: b.motivo ? 'Motivo: ' + b.motivo : undefined } }; });
+    v.bitActions = [];
+    v.onBitAction = (a, row) => { if (a === 'caso' && this.props.onOpenCase) this.props.onOpenCase(row.casoId); };
+    v.pn = this.panelVals();
+    return v;
+  }
+  // Etapa 10n-variables: diccionario de variables (SiriusVariables) con disponibilidad, clasificación LOPDP y uso.
+  SV() { return window.SiriusVariables || null; }
+  ejemploVar(x, caso) { if (x.clave.startsWith('campo.')) { const C = window.SIRIUS_CAMPOS, y = C && C.valor ? C.valor(caso, x.clave.slice(6)) : null; return window.SiriusVariables ? window.SiriusVariables.textoCampo(x.clave.slice(6), y) : (y == null || y === '' ? '' : (typeof y === 'boolean' ? (y ? 'Sí' : 'No') : String(y))); } const f = this.props.valoresCaso, r = f ? f(caso) : null, y = r && r.vals ? r.vals[x.clave] : ''; return y == null ? '' : String(y); }
+  varVals() { const SV = this.SV(), st = this.state, v = {}, opt = (a, b) => ({ v: a, l: b }); if (!SV) return { varRows: [], varCols: [] };
+    const L = SV.lista(), nSys = L.filter(x => !x.campo).length, nCp = L.filter(x => x.campo).length, nDisp = L.filter(x => x.disponible).length, q = String(st.vQ || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const casos = (this.props.casos || []).map(c => c.id).sort(); v.vCasoOpts = casos.map(id => opt(id, id)); v.vCaso = st.vCaso; v.onVCaso = (e) => this.setState({ vCaso: e.target.value });
+    v.vGrupoOpts = [opt('all', 'Todos')].concat(SV.grupos().map(g => opt(g, g))); v.vClaseOpts = [opt('all', 'Todas')].concat(SV.CLASES.map(c => opt(c, c))); v.vDispOpts = [opt('all', 'Todas'), opt('si', 'Disponibles'), opt('no', 'No disponibles')];
+    v.vGrupo = st.vGrupo; v.vClase = st.vClase; v.vDisp = st.vDisp; v.vQ = st.vQ; v.vk = st.vk;
+    v.onVGrupo = (e) => this.setState({ vGrupo: e.target.value }); v.onVClase = (e) => this.setState({ vClase: e.target.value }); v.onVDisp = (e) => this.setState({ vDisp: e.target.value }); v.onVQ = (e) => this.setState({ vQ: e.target.value });
+    v.vHasFilters = st.vGrupo !== 'all' || st.vClase !== 'all' || st.vDisp !== 'all' || !!st.vQ; v.vClear = () => this.setState({ vGrupo: 'all', vClase: 'all', vDisp: 'all', vQ: '', vk: st.vk + 1 });
+    const fl = L.filter(x => (st.vGrupo === 'all' || x.grupo === st.vGrupo) && (st.vClase === 'all' || x.clasificacion === st.vClase) && (st.vDisp === 'all' || (st.vDisp === 'si') === !!x.disponible) && (!q || norm(x.etiqueta).includes(q) || norm(x.clave).includes(q) || norm(x.grupo).includes(q)));
+    v.varIntro = nSys + ' variables del sistema y ' + this.plural(nCp, 'campo personalizado activo', 'campos personalizados activos') + ' · ' + nDisp + ' disponibles para insertar. Mostrando ' + fl.length + '. El ejemplo sale del caso elegido; los cambios valen en esta sesión.';
+    v.varNoun = ['variable', 'variables'];
+    v.varCols = [
+      { key: 'variable', label: 'Variable', type: 'sub', minWidth: 250, flex: true, sticky: true, ellipsis: true },
+      { key: 'grupo', label: 'Grupo', minWidth: 120 },
+      { key: 'origen', label: 'Origen', minWidth: 120 },
+      { key: 'ejemplo', label: 'Ejemplo · caso ' + st.vCaso, minWidth: 200, flex: true, ellipsis: true },
+      { key: 'clase', label: 'Clasificación', type: 'badge', width: 150 },
+      { key: 'disp', label: 'Disponible', width: 120 },
+      { key: 'usos', label: 'Usada en', width: 120 },
+    ];
+    v.varRows = fl.map(x => { const ej = this.ejemploVar(x, st.vCaso), u = SV.usos(x.clave).length;
+      return { id: x.clave, ariaName: x.etiqueta, variable: { label: x.etiqueta, sub: '{{' + x.clave + '}}', dim: !x.disponible }, grupo: x.grupo, origen: x.origen, ejemplo: ej ? { label: ej, title: ej } : { label: 'Sin dato en este caso', dim: true },
+        clase: { label: x.clasificacion, tone: SV.TONO[x.clasificacion] || 'neutral' }, disp: { sw: true, on: !!x.disponible, label: x.disponible ? 'Sí' : 'No', aria: 'Disponible · ' + x.etiqueta, action: 'sw' },
+        usos: u ? this.plural(u, 'plantilla', 'plantillas') : { label: 'Ninguna', dim: true } }; });
+    v.varActions = []; v.onVarAction = (a, row) => { if (a === 'sw') this.openPanel('var', { id: row.id, row: row.ariaName, how: 'Disponible' }); };
+    return v; }
+  panelVals() {
+    const st = this.state, N = this.N(), F = this.F(), k = st.panel, f = st.f;
+    const pn = { open: !!k, close: () => this.closePanel(), nonce: st.nonce, width: '560px', isHist: k === 'hist', isVer: k === 'ver', isStatus: k === 'inact' || k === 'react', stepEdit: k === 'regla' && st.step === 'edit', stepConfirm: k === 'regla' && st.step === 'confirm', btnClose: false, btnCancel: false, btnBack: false, btnPrimary: false, hasImpact: false, needsMotivo: false, hist: [], histEmpty: false, impact: [], changes: [] };
+    pn.er = {}; pn.msg = {}; pn.bd = {}; pn.hp = {}; pn.v = {}; pn.on = {};
+    this.KEYS.forEach(x => { pn.er[x] = !!st.errs[x]; pn.msg[x] = st.errs[x] || ''; pn.bd[x] = st.errs[x] ? 'var(--color-danger)' : 'var(--input-outlined-border)'; pn.hp[x] = ''; pn.v[x] = ''; pn.on[x] = () => {}; });
+    if (!k) return pn;
+    const Tn = (id) => N.plantilla(id);
+    // ----- Historial -----
+    if (k === 'hist') {
+      const id = st.histFor, r = id ? N.regla(id) : null, items = this.hist().filter(h => !id || h.regla === id).slice().sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0);
+      pn.title = r ? 'Historial · ' + r.nombre : 'Historial de cambios'; pn.histEmpty = !items.length; pn.histEmptyTxt = r ? 'Esta regla aún no tiene cambios registrados en esta sesión.' : 'Aún no hay cambios registrados en esta sesión. Los cambios de reglas, plantillas y variables quedan aquí con su motivo.';
+      pn.hist = items.map(h => { const rr = h.regla ? N.regla(h.regla) : null, pp = h.plantilla ? N.plantilla(h.plantilla) : null, vv = h.variable && this.SV() ? this.SV().info(h.variable) : null; return { when: this.fmtT(h.fecha), by: h.por, what: h.accion, regla: h.variable ? 'Variable · ' + (vv ? vv.etiqueta + ' · ' : '') + '{{' + h.variable + '}}' : h.plantilla ? 'Plantilla · ' + (pp ? pp.nombre + ' · ' : '') + h.plantilla : (rr ? rr.nombre + ' · ' : '') + h.regla, motivo: h.motivo }; });
+      pn.btnClose = true; return pn;
+    }
+    // ----- Vista previa de plantilla -----
+    if (k === 'ver') {
+      const p = Tn(st.prevId), av = this.CHAN.filter(c => p[c]), canal = st.prevCanal && p[st.prevCanal] ? st.prevCanal : av[0], L = N.limites;
+      pn.width = '640px'; pn.title = 'Vista previa · ' + p.nombre; pn.btnClose = true;
+      pn.verNota = p.id + ' · ' + p.estado + ' · actualizada el ' + this.fmtT(p.actualizada[1]) + ' por ' + p.actualizada[0] + '. Solo lectura: para cambiarla usa «Editar» en la lista de plantillas.';
+      pn.canalTabs = av.map(c => ({ id: 'nt-vt-' + c, l: this.canalNombre(c), on: c === canal, bd: c === canal ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: c === canal ? 'var(--cyan-100)' : '#FFFFFF', pick: () => this.setState({ prevCanal: c }) }));
+      pn.vCorreo = canal === 'correo'; pn.vWa = canal === 'whatsapp'; pn.vSms = canal === 'sms'; pn.vApp = canal === 'app';
+      let all = '';
+      if (canal === 'correo') {
+        const c = p.correo, e = c.estilo || {}, nb = c.bloques.filter(b => b.tipo === 'boton').length;
+        pn.cAsunto = this.parts(c.asunto); pn.cFondo = e.fondo || '#FFFFFF'; pn.cTexto = e.texto || 'var(--text-body)'; pn.cFuente = e.fuente || 'var(--font-brand)'; pn.cPrimario = e.primario || 'var(--color-brand)';
+        pn.cBloques = c.bloques.map(b => ({ isBanner: b.tipo === 'banner', isTexto: b.tipo === 'texto', isTabla: b.tipo === 'tabla', isBoton: b.tipo === 'boton', isSep: b.tipo === 'separador', isPie: b.tipo === 'pie', alto: b.alto || 140, archivo: b.archivo || '', parts: this.parts(b.contenido || ''), ncols: (b.columnas || []).length || 1, columnas: (b.columnas || []).map(x => ({ l: x })),
+          fuenteTxt: b.modo === 'libre' ? 'Tabla libre' + (b.titulo ? ' «' + b.titulo + '»' : '') + ' · ' + (b.celdas || []).length + ' × ' + Math.max(0, ...(b.celdas || [[]]).map(r => r.length)) + '.' : 'Tabla de datos · ' + ((N.fuentesTabla || []).find(f => f.id === b.fuente) || { nombre: b.fuente || '' }).nombre + ' · ' + (b.columnas || []).map(c => c[1]).join(', ') + '. Se llena al enviar.', texto: b.texto || '', destino: b.destino === 'sirius' ? 'enlace al caso o al portal en SIRIUS' : (b.destino || ''), bg: b.estilo === 'secundario' ? '#FFFFFF' : (e.primario || 'var(--color-brand)'), fg: b.estilo === 'secundario' ? (e.primario || 'var(--color-brand)') : '#FFFFFF' }));
+        pn.cLimites = 'Botones: ' + nb + ' de ' + L.correo.botones + ' · Imagen: ' + L.correo.imagen + '.';
+        all = c.asunto + ' ' + c.bloques.map(b => (b.contenido || '') + ' ' + (b.texto || '')).join(' ');
+      }
+      if (canal === 'whatsapp') {
+        const w = p.whatsapp, nb = (w.botones || []).length;
+        pn.wNombre = w.nombreMeta; pn.wEstado = w.estadoMeta; pn.wTone = w.estadoMeta === 'Aprobada' ? 'success' : 'warning'; pn.wEncabezado = w.encabezado ? 'Encabezado · ' + w.encabezado : 'Sin encabezado'; pn.wCuerpo = this.parts(w.cuerpo);
+        pn.wBotones = (w.botones || []).map(b => ({ l: b.texto, destino: b.destino === 'sirius' ? 'enlace al caso o al portal en SIRIUS' : b.destino }));
+        pn.wLimites = 'Cuerpo: ' + w.cuerpo.length + ' de ' + L.whatsapp.cuerpo + ' caracteres (con las variables sin reemplazar) · Botones: ' + nb + ' de ' + L.whatsapp.botones + ' · Encabezado: ' + L.whatsapp.encabezado + '. ' + L.whatsapp.nota + '.';
+        all = w.cuerpo + ' ' + (w.botones || []).map(b => b.texto).join(' ');
+      }
+      if (canal === 'sms') {
+        const s = this.N().segmentosSms(p.sms.texto);
+        pn.sTexto = this.parts(p.sms.texto);
+        pn.sLimites = s.caracteres + ' caracteres · ' + this.plural(s.segmentos, 'segmento', 'segmentos') + ' (' + (s.unicode ? L.sms.unicode + ' por segmento con tildes o ñ' : L.sms.gsm + ' por segmento') + ') · Hasta ' + L.sms.enlaces + ' enlace. Las variables se cuentan sin reemplazar.';
+        all = p.sms.texto;
+      }
+      if (canal === 'app') { pn.aTexto = this.parts(p.app.texto); all = p.app.texto; }
+      pn.vars = N.variablesEn(all).map(x => ({ l: '{{' + x + '}}' })); const bad = N.variablesInvalidas(all); pn.varsBad = bad.length ? 'Variables desconocidas: ' + bad.join(', ') + '.' : '';
+      return pn;
+    }
+    pn.motivo = st.motivo; pn.onMotivo = (e) => this.setState({ motivo: e.target.value, motErr: false }); pn.mErr = st.motErr; pn.mBd = st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)';
+    // ----- Disponibilidad de una variable -----
+    if (k === 'var') { const SV = this.SV(), x = SV.info(st.orig), on = !!x.disponible, P = SV.usos(x.clave), R = SV.reglasDe(P.map(p => p.id));
+      pn.isStatus = true; pn.title = (on ? 'Desactivar variable · ' : 'Activar variable · ') + x.etiqueta;
+      pn.statusTxt = on ? '{{' + x.clave + '}} deja de ofrecerse en «Insertar variable». No se borra de las plantillas: donde ya está queda marcada «No está disponible» y esas plantillas no se pueden guardar hasta reemplazarla.' : '{{' + x.clave + '}} vuelve a ofrecerse en «Insertar variable»' + (x.clasificacion === 'Dato sensible' ? ', solo en plantillas cuyas reglas envían a destinatarios internos' : '') + '. Clasificación: ' + x.clasificacion + '.';
+      pn.hasImpact = true; pn.impactHead = P.length ? 'La usan ' + this.plural(P.length, 'plantilla', 'plantillas') + ' y ' + this.plural(R.length, 'regla', 'reglas') + ':' : 'Ninguna plantilla la usa; ninguna regla se ve afectada.';
+      pn.impact = this.anticipaLineas(() => SV.setDisponible(x.clave, !on), () => SV.setDisponible(x.clave, on)).concat(P.map(p => ({ l: 'Plantilla · ' + p.nombre + ' (' + p.id + ')' + (on ? ' · quedará sin poder guardarse hasta reemplazarla' : '') })), R.map(r => ({ l: r.id + ' · ' + r.nombre + ' · ' + r.estado })));
+      pn.needsMotivo = true; pn.btnCancel = true; pn.btnPrimary = true; pn.primaryLabel = on ? 'Desactivar variable' : 'Activar variable'; pn.primary = () => this.save(); return pn; }
+    // ----- Inactivar / reactivar -----
+    if (k === 'inact' || k === 'react') {
+      const r = N.regla(st.orig), imp = this.impacto(r);
+      pn.title = (k === 'inact' ? 'Inactivar regla · ' : 'Activar regla · ') + r.nombre;
+      pn.statusTxt = k === 'inact' ? 'La regla deja de enviar avisos desde que se confirma. No se borra: queda en la lista como Inactiva y se puede activar de nuevo.' : 'La regla vuelve a enviar avisos desde que se confirma, por ' + this.canalesTxt(r) + ' con la plantilla «' + this.plantNombre(r.plantilla) + '».';
+      const est0 = r.estado; pn.hasImpact = true; pn.impactHead = imp.head; pn.impact = this.anticipaLineas(() => { r.estado = k === 'inact' ? 'Inactiva' : 'Activa'; }, () => { r.estado = est0; }).concat(imp.lines); pn.needsMotivo = true; pn.btnCancel = true; pn.btnPrimary = true;
+      pn.primaryLabel = k === 'inact' ? 'Inactivar regla' : 'Activar regla'; pn.primary = () => this.save(); return pn;
+    }
+    // ----- Agregar / editar regla -----
+    const isNew = !st.orig, base = isNew ? null : N.regla(st.orig);
+    pn.title = isNew ? 'Agregar regla' : 'Editar regla · ' + base.nombre;
+    pn.showErrSum = st.showErr && Object.keys(st.errs).length > 0; pn.errSum = 'Revisa ' + this.plural(Object.keys(st.errs).length, 'dato', 'datos') + ' marcados antes de guardar.';
+    pn.v.nombre = f.nombre; pn.on.nombre = (e) => this.setF({ nombre: e.target.value }); pn.hp.nombre = 'Cómo se reconoce la regla en la lista y en la bitácora.';
+    pn.tipos = this.TIPOS.map(([id, l]) => ({ l, on: f.tipo === id, bd: f.tipo === id ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: f.tipo === id ? 'var(--cyan-100)' : '#FFFFFF', pick: () => this.setF({ tipo: id }) }));
+    pn.hp.tipo = N.disparadores[f.tipo] || '';
+    pn.tEstado = f.tipo === 'estado'; pn.tRegla = f.tipo === 'regla'; pn.tEvento = f.tipo === 'evento';
+    pn.estadoOpts = [{ v: '', l: 'Elige un estado' }].concat(F.estados.map(e => ({ v: e.nombre, l: e.nombre }))); pn.v.estado = f.estado; pn.on.estado = (e) => this.setF({ estado: e.target.value }); pn.hp.estado = 'Estados de Flujo y SLA. Aplica al caso o al riesgo cuando entra al estado.';
+    pn.fechaOpts = this.FECHAS.map(x => ({ v: x[0], l: x[1] })); pn.v.fecha = f.fecha; pn.on.fecha = (e) => this.setF({ fecha: e.target.value }); pn.hp.fecha = 'Fecha del caso desde la que se cuenta el tiempo.';
+    pn.v.cant = f.cant; pn.on.cant = (e) => this.setF({ cant: e.target.value.replace(/[^\d]/g, '') });
+    pn.unidadOpts = [{ v: 'dias', l: 'días' }, { v: 'horas', l: 'horas' }]; pn.v.unidad = f.unidad; pn.on.unidad = (e) => this.setF({ unidad: e.target.value });
+    pn.sentidoOpts = [{ v: 'antes', l: 'antes de la fecha' }, { v: 'despues', l: 'después de la fecha' }]; pn.sentidoKey = ''; pn.v.sentido = f.sentido; pn.on.sentido = (e) => this.setF({ sentido: e.target.value });
+    pn.hp.cant = 'Con 0 se envía en la misma fecha. Máximo ' + (f.unidad === 'horas' ? '168 horas' : '365 días') + '.';
+    pn.hasHora = f.unidad === 'dias'; pn.v.hora = f.hora; pn.on.hora = (e) => this.setF({ hora: e.target.value }); pn.hp.hora = 'Vacío = sin hora fija.';
+    pn.hasCond = this.condsFor(f.fecha).length > 0; pn.condOpts = [{ v: '', l: 'Sin condición' }].concat(this.CONDS.map(x => ({ v: x, l: x }))); pn.v.cond = f.cond; pn.on.cond = (e) => this.setF({ cond: e.target.value }); pn.hp.cond = 'Solo se avisa a los casos cuyo conjunto de garantías está en ese estado.';
+    pn.eventoOpts = [{ v: '', l: 'Elige un evento' }].concat(N.eventos.map(x => ({ v: x, l: x }))); pn.v.evento = f.evento; pn.on.evento = (e) => this.setF({ evento: e.target.value }); pn.hp.evento = 'Hecho del sistema que dispara el aviso.';
+    pn.dest = N.destinatarios.map(x => ({ l: x, on: f.dest.includes(x), toggle: () => this.setF({ dest: this.toggleIn(f.dest, x, N.destinatarios) }) })); pn.hp.dest = 'Puedes elegir varios.';
+    pn.canalChk = N.canales.map(c => ({ l: c.nombre, on: f.canales.includes(c.id), toggle: () => this.setF({ canales: f.canales.includes(c.id) ? f.canales.filter(y => y !== c.id) : f.canales.concat([c.id]) }) })); pn.hp.canales = 'Marca los canales; con dos o más podrás ordenarlos por preferencia.';
+    pn.hasOrden = f.canales.length >= 2;
+    pn.orden = f.canales.map((c, i, a) => { const nm = this.canalNombre(c), first = i === 0, last = i === a.length - 1; return { pos: i + 1, l: nm, upAria: 'Subir ' + nm, dnAria: 'Bajar ' + nm, upDis: first ? 'true' : undefined, dnDis: last ? 'true' : undefined, upTip: first ? 'Ya es el primero' : 'Subir', dnTip: last ? 'Ya es el último' : 'Bajar', upColor: first ? 'var(--neutral-400)' : 'var(--text-strong)', dnColor: last ? 'var(--neutral-400)' : 'var(--text-strong)', upCur: first ? 'not-allowed' : 'pointer', dnCur: last ? 'not-allowed' : 'pointer', up: () => this.moveCanal(i, -1), dn: () => this.moveCanal(i, 1) }; });
+    pn.consNote = (f.canales.includes('whatsapp') || f.canales.includes('sms')) && f.dest.includes('Asegurado o contacto') ? N.consentimiento.regla : '';
+    // plantilla: solo las que tienen variante para cada canal elegido; la actual se conserva con su explicación
+    const okP = N.plantillas.filter(p => !this.missing(p, f.canales).length), cur = f.plantilla ? Tn(f.plantilla) : null, lab = (p) => p.nombre + ' (' + p.id + ')' + (p.estado === 'Borrador' ? ' · Borrador' : '');
+    const opts = okP.map(p => ({ v: p.id, l: lab(p) })); if (cur && !okP.includes(cur)) opts.push({ v: cur.id, l: lab(cur) + ' · sin variante ' + this.listaY(this.missing(cur, f.canales)) });
+    pn.plantOpts = [{ v: '', l: 'Elige una plantilla' }].concat(opts); pn.plantKey = st.nonce + '-pl-' + f.canales.join(',') + '-' + (cur ? cur.id : '');
+    pn.v.plantilla = f.plantilla; pn.on.plantilla = (e) => this.setF({ plantilla: e.target.value });
+    const pe = this.plantErr(f); pn.er.plantilla = !!(pe || st.errs.plantilla); pn.msg.plantilla = pe || st.errs.plantilla || ''; pn.bd.plantilla = pn.er.plantilla ? 'var(--color-danger)' : 'var(--input-outlined-border)';
+    const excl = f.canales.length ? N.plantillas.filter(p => this.missing(p, f.canales).length).map(p => p.nombre + ' (' + this.missing(p, f.canales).join(', ') + ')') : [];
+    pn.hp.plantilla = !f.canales.length ? 'Elige primero los canales: solo se ofrecen las plantillas con variante para cada uno.' : excl.length ? 'No se ofrecen por falta de variante: ' + excl.join('; ') + '.' : 'Todas las plantillas tienen variante para los canales elegidos.';
+    pn.plantWarn = ''; if (cur && !pe) { const w = []; if (cur.estado === 'Borrador') w.push('La plantilla está en Borrador.'); if (f.canales.includes('whatsapp') && cur.whatsapp && cur.whatsapp.estadoMeta === 'En revisión') w.push('La variante de WhatsApp está «En revisión» en Meta. ' + N.limites.whatsapp.nota + '.'); pn.plantWarn = w.join(' '); }
+    pn.estados = [[true, 'Activa'], [false, 'Inactiva']].map(([b, l]) => ({ l, on: f.activa === b, bd: f.activa === b ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: f.activa === b ? 'var(--cyan-100)' : '#FFFFFF', pick: () => this.setF({ activa: b }) }));
+    // Paso de confirmación
+    if (st.step === 'confirm') {
+      const r1 = this.toRegla(f, base || { id: '' }), ch = isNew ? this.summaryNew(r1) : this.diff(base, r1), imp = this.impacto(r1);
+      pn.changesHead = isNew ? 'Regla nueva' : 'Cambios de la regla'; pn.changes = ch.map(l => ({ l })); pn.hasImpact = true; pn.impactHead = imp.head; pn.impact = this.anticipaLineas(() => { const i = base ? N.reglas.indexOf(base) : -1; this._antR = { i, r: r1 }; if (i >= 0) N.reglas[i] = Object.assign({}, r1, { id: base.id }); else N.reglas.push(Object.assign({}, r1, { id: 'R-nueva' })); }, () => { const a = this._antR; if (a.i >= 0) N.reglas[a.i] = base; else N.reglas.pop(); }).concat(imp.lines, r1.estado === 'Inactiva' ? [{ l: 'La regla queda inactiva: no envía avisos.' }] : []); pn.needsMotivo = true;
+      pn.btnBack = true; pn.back = () => { this.setState({ step: 'edit', motivo: '', motErr: false }); setTimeout(() => this.focusFirst(), 60); }; pn.btnPrimary = true; pn.primaryLabel = isNew ? 'Confirmar y agregar' : 'Confirmar y guardar'; pn.primary = () => this.save();
+    } else { pn.btnCancel = true; pn.btnPrimary = true; pn.primaryLabel = 'Guardar'; pn.primary = () => this.toConfirm(); }
+    return pn;
+  }
+}
+
+</script>
+</body>
+</html>

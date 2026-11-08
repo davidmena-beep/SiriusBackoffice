@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:16px;font-family:var(--font-brand);min-width:0">
+<sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+<div role="region" aria-label="Acciones sobre la selección" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;padding:10px 16px;border-radius:var(--radius-sm);background:var(--color-brand-wash)">
+<span style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ selectionLabel }}</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ bulkButtons }}" as="b" hint-placeholder-count="2">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ b.onClick }}" icon-left="{{ b.icon }}" hint-size="120px,36px">{{ b.label }}</x-import>
+</sc-for>
+</div>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ clearSelection }}" hint-size="140px,36px" style="margin-left:auto">Quitar selección</x-import>
+</div>
+</sc-if>
+<div ref="{{ wrapRef }}" onScroll="{{ onWrapScroll }}" style="position:relative;overflow-x:{{ ovx }};overflow-y:hidden;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<table style="width:100%;table-layout:{{ layout }};border-collapse:separate;border-spacing:0;font-size:14px;color:var(--text-body);min-width:{{ minWidth }}">
+<thead>
+<tr style="background:var(--table-row-hover)">
+<sc-if value="{{ expandable }}" hint-placeholder-val="{{ false }}"><th scope="col" style="width:{{ expW }};min-width:{{ expW }};padding:10px 2px;position:sticky;left:0;z-index:3;background:var(--table-row-hover)"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Expandir fila</span></th></sc-if>
+<sc-if value="{{ selectable }}" hint-placeholder-val="{{ true }}">
+<th scope="col" style="width:44px;min-width:44px;padding:10px 4px 10px {{ selPadL }};text-align:left;position:sticky;left:{{ selLeft }};z-index:3;background:var(--table-row-hover)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ allChecked }}" on-change="{{ toggleAll }}" aria-label="Seleccionar todos" hint-size="20px,20px"></x-import></th>
+</sc-if>
+<sc-for list="{{ headCols }}" as="c" hint-placeholder-count="8">
+<th scope="col" data-col="{{ c.key }}" aria-sort="{{ c.ariaSort }}" title="{{ c.title }}" style="width:{{ c.w }};position:{{ c.pos }};left:{{ c.left }};right:{{ c.right }};z-index:{{ c.z }};background:var(--table-row-hover);box-shadow:{{ c.shadow }};padding:10px 8px;text-align:left;font-weight:700;font-size:13px;line-height:1.25;color:var(--text-strong);white-space:nowrap;overflow:hidden">
+<sc-if value="{{ c.sortable }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ c.onSort }}" style="display:inline-flex;align-items:center;gap:2px;border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-weight:700;font-size:13px;line-height:1.25;color:var(--text-strong);text-align:left" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ c.label }}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:{{ c.arrowDisp }};color:{{ c.arrowColor }};transform:{{ c.arrowRot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m6 9 6 6 6-6"></path></svg></button>
+</sc-if>
+<sc-if value="{{ c.plain }}" hint-placeholder-val="{{ true }}">{{ c.label }}</sc-if>
+<span role="separator" aria-orientation="vertical" aria-label="{{ c.resizeLabel }}" title="Arrastra para cambiar el ancho · doble clic para ajustar" onMouseDown="{{ c.onResize }}" onDoubleClick="{{ c.onAutoFit }}" style="position:absolute;top:0;right:0;bottom:0;width:8px;cursor:col-resize;z-index:2" style-hover="box-shadow:inset -2px 0 0 var(--cyan-300)"></span>
+</th>
+</sc-for>
+<sc-if value="{{ hasActions }}" hint-placeholder-val="{{ true }}">
+<th scope="col" style="width:{{ actionsWidth }};position:sticky;right:0;z-index:3;background:var(--table-row-hover);box-shadow:{{ actShadow }};transition:box-shadow var(--dur-action) var(--ease-standard);padding:10px 8px;text-align:left;font-weight:700;font-size:13px;color:var(--text-strong);white-space:nowrap">Acciones</th>
+</sc-if>
+</tr>
+</thead>
+<tbody>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ skeletonRows }}" as="s" hint-placeholder-count="6">
+<tr>
+<td colspan="{{ colSpan }}" style="height:56px;padding:0 20px;border-top:1px solid var(--border-subtle)">
+<div style="display:flex;align-items:center;gap:24px">
+<span style="width:20px;height:20px;border-radius:var(--radius-xs);background:var(--neutral-100)"></span>
+<span style="width:64px;height:12px;border-radius:var(--radius-pill);background:var(--neutral-200)"></span>
+<span style="width:{{ s.w1 }};height:12px;border-radius:var(--radius-pill);background:var(--neutral-100)"></span>
+<span style="width:{{ s.w2 }};height:12px;border-radius:var(--radius-pill);background:var(--neutral-100)"></span>
+<span style="width:120px;height:20px;border-radius:var(--radius-pill);background:var(--neutral-100);margin-left:auto"></span>
+</div>
+</td>
+</tr>
+</sc-for>
+</sc-if>
+<sc-if value="{{ showRows }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ pageRows }}" as="r" hint-placeholder-count="6">
+<tr onClick="{{ r.rowClick }}" style="background:{{ r.bg }};cursor:{{ r.rowCursor }}" style-hover="background:var(--table-row-hover)">
+<sc-if value="{{ expandable }}" hint-placeholder-val="{{ false }}"><td style="height:56px;width:{{ expW }};padding:0 2px 0 6px;border-top:1px solid var(--border-subtle);background:inherit;vertical-align:middle;position:sticky;left:0;z-index:1">
+<sc-if value="{{ r.hasSub }}" hint-placeholder-val="{{ false }}"><button type="button" aria-expanded="{{ r.expandedAttr }}" aria-label="{{ r.expLabel }}" onClick="{{ r.toggleExp }}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text-strong);cursor:pointer" style-hover="background:var(--color-brand-wash)" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ r.expRot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg></button></sc-if>
+</td></sc-if>
+<sc-if value="{{ selectable }}" hint-placeholder-val="{{ true }}">
+<td style="height:56px;padding:0 4px 0 {{ selPadL }};border-top:1px solid var(--border-subtle);background:inherit;vertical-align:middle;position:sticky;left:{{ selLeft }};z-index:1"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ r.checked }}" on-change="{{ r.toggle }}" hint-size="20px,20px"></x-import></td>
+</sc-if>
+<sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="8">
+<td data-col="{{ cell.key }}" title="{{ cell.title }}" style="height:56px;padding:8px 8px 8px {{ cell.padL }};border-top:1px solid var(--border-subtle);vertical-align:middle;position:{{ cell.pos }};left:{{ cell.left }};right:{{ cell.right }};z-index:{{ cell.z }};background:{{ cell.bg }};box-shadow:{{ cell.shadow }}">
+<sc-if value="{{ cell.chev }}" hint-placeholder-val="{{ false }}"><button type="button" aria-expanded="{{ r.detailAttr }}" aria-label="{{ r.detailLabel }}" onClick="{{ r.toggleDetail }}" style="position:absolute;left:6px;top:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text-strong);cursor:pointer" style-hover="background:var(--color-brand-wash)" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ r.detailRot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg></button></sc-if>
+<sc-if value="{{ cell.isText }}" hint-placeholder-val="{{ true }}"><span data-clamp="{{ cell.clamp }}" style="display:{{ cell.disp }};-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:{{ cell.ws }};word-break:normal;overflow-wrap:normal;line-height:1.35;color:{{ cell.color }};font-weight:{{ cell.weight }}">{{ cell.text }}</span></sc-if>
+<sc-if value="{{ cell.isSub }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span data-clamp="1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:normal;overflow-wrap:normal;white-space:{{ cell.titleWs }};font-weight:600;color:{{ cell.titleColor }};line-height:1.3">{{ cell.text }}</span><span data-clamp="{{ cell.subClamp }}" style="display:{{ cell.subDisp }};-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:{{ cell.subWs }};overflow:{{ cell.subOv }};text-overflow:{{ cell.subTo }};max-width:{{ cell.subMax }};overflow-wrap:{{ cell.subOw }};font-size:12px;color:var(--text-muted);line-height:1.3">{{ cell.sub }}</span></span></sc-if>
+<sc-if value="{{ cell.isSwitch }}" hint-placeholder-val="{{ false }}"><button type="button" role="switch" aria-checked="{{ cell.swOn }}" aria-label="{{ cell.swLabel }}" onClick="{{ cell.swClick }}" style="display:inline-flex;align-items:center;gap:8px;border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><span aria-hidden="true" style="position:relative;display:block;width:40px;height:22px;border-radius:11px;background:{{ cell.swBg }};flex:none"><span style="position:absolute;top:2px;left:{{ cell.swLeft }};width:18px;height:18px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(1,30,65,.3)"></span></span><span style="white-space:nowrap">{{ cell.text }}</span></button></sc-if>
+<sc-if value="{{ cell.isLink }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><button type="button" onClick="{{ cell.onClick }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;white-space:{{ cell.linkWs }};text-align:left;line-height:1.35" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ cell.text }}</button><sc-if value="{{ cell.hasTag }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ cell.tagTone }}" hint-size="70px,22px"><span style="white-space:nowrap">{{ cell.tagLabel }}</span></x-import></sc-if></span></sc-if>
+<sc-if value="{{ cell.isTagText }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0"><span style="white-space:nowrap;color:var(--text-body)">{{ cell.text }}</span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ cell.tagTone }}" hint-size="90px,22px"><span style="white-space:nowrap">{{ cell.tagLabel }}</span></x-import><sc-if value="{{ cell.hasTagNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;line-height:1.2;white-space:nowrap;color:{{ cell.tagNoteColor }}">{{ cell.tagNote }}</span></sc-if></span></sc-if>
+<sc-if value="{{ cell.isRule }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px"><button type="button" title="{{ cell.cellTitle }}" onClick="{{ cell.onClick }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;text-align:left;line-height:1.35" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ cell.text }}</button><sc-if value="{{ cell.hasTag }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ cell.tagTone }}" hint-size="120px,22px"><span style="white-space:nowrap">{{ cell.tagLabel }}</span></x-import></sc-if></span><span style="font-size:13px;line-height:1.4;color:var(--text-body);white-space:normal;text-wrap:pretty">{{ cell.ruleSub }}</span></span></sc-if>
+<sc-if value="{{ cell.isImpact }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="display:flex;align-items:baseline;gap:6px;white-space:nowrap"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ cell.text }}</span><span style="font-size:12px;color:var(--text-muted)">{{ cell.impSub }}</span></span><span aria-hidden="true" style="display:block;width:72px;height:6px;border-radius:var(--radius-pill);background:var(--neutral-200);overflow:hidden"><span style="display:block;height:100%;width:{{ cell.barW }};border-radius:var(--radius-pill);background:{{ cell.barBg }}"></span></span></span></sc-if>
+<sc-if value="{{ cell.isLinks }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><sc-for list="{{ cell.links }}" as="lk" hint-placeholder-count="2"><button type="button" onClick="{{ lk.go }}" aria-label="{{ lk.aria }}" style="padding:0;border:none;background:transparent;cursor:pointer;text-align:left;font-family:var(--font-brand);font-size:14px;font-weight:700;line-height:1.35;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ lk.label }}</button></sc-for></span></sc-if><sc-if value="{{ cell.isChips }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:4px"><sc-for list="{{ cell.chips }}" as="ch" hint-placeholder-count="2"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ ch.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ ch.label }}</span></x-import></sc-for></span></sc-if>
+<sc-if value="{{ cell.isBadge }}" hint-placeholder-val="{{ false }}"><span title="{{ cell.cellTitle }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:3px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ cell.tone }}" dc-props="{{ cell.badgeProps }}" hint-size="110px,24px"><span style="white-space:nowrap">{{ cell.text }}</span></x-import><sc-if value="{{ cell.hasProg }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:3px;width:100%;min-width:120px"><span role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ cell.progPct }}" aria-label="{{ cell.progAria }}" style="display:block;height:4px;border-radius:2px;background:var(--border-subtle);overflow:hidden"><span style="display:block;height:100%;width:{{ cell.progPct }}%;background:var(--color-brand)"></span></span><span style="font-size:12px;font-weight:600;line-height:1.2;color:var(--text-body);white-space:nowrap">{{ cell.progText }}</span></span></sc-if><sc-if value="{{ cell.hasNote }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:1.2;color:var(--text-body)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{ cell.noteColor }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ cell.noteD }}"></path></svg>{{ cell.note }}</span></sc-if></span></sc-if>
+<sc-if value="{{ cell.isIconText }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--text-strong)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ cell.noteColor }}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="{{ cell.noteD }}"></path></svg>{{ cell.text }}</span><sc-if value="{{ cell.hasSub2 }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;color:var(--text-muted)">{{ cell.sub }}</span></sc-if><sc-if value="{{ cell.hasL2 }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;color:var(--text-body)">{{ cell.l2 }}</span></sc-if><sc-if value="{{ cell.hasL3 }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;color:var(--text-body)">{{ cell.l3 }}</span></sc-if><sc-if value="{{ cell.hasTag }}" hint-placeholder-val="{{ false }}"><span style="display:flex;margin-top:2px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ cell.tagTone }}" hint-size="170px,22px"><span style="white-space:normal">{{ cell.tagLabel }}</span></x-import></span></sc-if><sc-if value="{{ cell.hasTagNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;line-height:1.3;color:var(--text-body)">{{ cell.tagNote }}</span></sc-if></span></sc-if>
+</td>
+</sc-for>
+<sc-if value="{{ hasActions }}" hint-placeholder-val="{{ true }}">
+<td style="position:sticky;right:0;z-index:1;height:56px;vertical-align:middle;background:inherit;padding:0 2px;border-top:1px solid var(--border-subtle);box-shadow:{{ actShadow }};transition:box-shadow var(--dur-action) var(--ease-standard)">
+<div style="display:flex;gap:2px;align-items:center">
+<sc-for list="{{ r.textActs }}" as="ta" hint-placeholder-count="1"><button type="button" aria-label="{{ ta.aria }}" aria-disabled="{{ ta.ariaDisabled }}" title="{{ ta.title }}" onClick="{{ ta.onClick }}" style="height:32px;padding:0 8px;display:inline-flex;align-items:center;border:none;border-radius:var(--radius-sm);background:transparent;font-family:var(--font-brand);font-size:14px;font-weight:700;white-space:nowrap;color:{{ ta.color }};cursor:{{ ta.cursor }};text-decoration:underline;text-underline-offset:3px" style-hover="background:{{ ta.hoverBg }}" style-focus="outline:2px solid var(--color-brand);outline-offset:1px">{{ ta.label }}</button></sc-for>
+<sc-for list="{{ r.actions }}" as="a" hint-placeholder-count="3">
+<span style="position:relative;display:inline-flex">
+<button type="button" data-tk="{{ a.tk }}" data-tl="{{ a.label }}" data-last="{{ a.lastAttr }}" aria-label="{{ a.aria }}" aria-describedby="{{ a.describedby }}" aria-disabled="{{ a.ariaDisabled }}" aria-haspopup="{{ a.haspopup }}" aria-expanded="{{ a.expanded }}" onClick="{{ a.onClick }}" onMouseEnter="{{ a.show }}" onMouseLeave="{{ a.hide }}" onFocus="{{ a.show }}" onBlur="{{ a.hide }}" onKeyDown="{{ a.onKey }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:{{ a.color }};cursor:{{ a.cursor }};transition:var(--transition-action)" style-hover="background:{{ a.hoverBg }};color:{{ a.hoverColor }}" style-focus="outline:2px solid var(--color-brand);outline-offset:1px">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ a.d }}"></path></svg>
+</button>
+</span>
+</sc-for>
+</div>
+</td>
+</sc-if>
+</tr>
+<sc-if value="{{ r.expanded }}" hint-placeholder-val="{{ false }}">
+<tr style="background:var(--surface-subtle)">
+<td colspan="{{ colSpan }}" style="padding:0;border-top:1px solid var(--border-subtle)">
+<ul aria-label="{{ r.subLabel }}" style="list-style:none;margin:0;padding:4px 0 4px 52px;display:flex;flex-direction:column">
+<sc-for list="{{ r.sub }}" as="sb" hint-placeholder-count="1">
+<li style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;padding:10px 16px 10px 0;border-top:{{ sb.border }}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12 M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M6 15h9a3 3 0 0 0 3-3V3"></path></svg>
+<button type="button" onClick="{{ sb.open }}" aria-disabled="{{ sb.openDis }}" data-motivo="{{ sb.openMotivo }}" style="border:none;background:transparent;padding:0;cursor:{{ sb.openCur }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:{{ sb.openColor }};text-decoration:underline;text-underline-offset:3px;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ sb.title }}</button>
+<span style="font-size:13px;color:var(--text-muted);white-space:nowrap">{{ sb.fecha }}</span>
+<span style="font-size:13px;color:var(--text-body)">{{ sb.inspector }}</span>
+<span title="{{ sb.estadoFull }}" style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ sb.tone }}" dc-props="{{ sb.badgeProps }}" hint-size="100px,22px"><span style="white-space:nowrap">{{ sb.estado }}</span></x-import></span>
+<span style="font-size:13px;color:var(--text-muted)">{{ sb.nota }}</span><sc-for list="{{ sb.acts }}" as="ac" hint-placeholder-count="1"><button type="button" onClick="{{ ac.click }}" aria-disabled="{{ ac.dis }}" data-motivo="{{ ac.motivo }}" style="border:none;background:transparent;padding:0;cursor:{{ ac.cur }};font-family:var(--font-brand);font-size:13px;font-weight:700;color:{{ ac.color }};text-decoration:underline;text-underline-offset:3px;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ ac.label }}</button></sc-for>
+</li>
+</sc-for>
+</ul>
+</td>
+</tr>
+</sc-if>
+<sc-if value="{{ r.detailOpen }}" hint-placeholder-val="{{ false }}">
+<tr style="background:var(--surface-subtle)">
+<td colspan="{{ colSpan }}" style="padding:12px 16px 14px 38px;border-top:1px solid var(--border-subtle)"><div style="max-width:980px;display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">{{ r.detailTitle }}</span><div style="font-size:14px;line-height:1.55;color:var(--text-strong);white-space:pre-wrap;overflow-wrap:anywhere;text-wrap:pretty">{{ r.detail }}</div></div></td>
+</tr>
+</sc-if>
+</sc-for>
+</sc-if>
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<tr>
+<td colspan="{{ colSpan }}" style="border-top:1px solid var(--border-subtle);padding:40px 24px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+<div style="position:relative;width:360px;max-width:100%;height:200px;display:flex;align-items:center;justify-content:center">
+<svg aria-hidden="true" viewBox="0 0 360 220" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--cyan-100)" stroke-width="1" stroke-linecap="round">
+<path d="M28 150 L74 96 L128 118 M74 96 L102 38 L170 22 L236 44 L262 98 M236 44 L300 30 L338 78 L262 98 L292 168 M128 118 L104 188 M300 30 L262 98"></path>
+<g fill="var(--cyan-100)" stroke="none"><circle cx="28" cy="150" r="2.5"></circle><circle cx="74" cy="96" r="3"></circle><circle cx="128" cy="118" r="2"></circle><circle cx="102" cy="38" r="2.5"></circle><circle cx="170" cy="22" r="3"></circle><circle cx="236" cy="44" r="2"></circle><circle cx="262" cy="98" r="3"></circle><circle cx="300" cy="30" r="2.5"></circle><circle cx="338" cy="78" r="2"></circle><circle cx="292" cy="168" r="2.5"></circle><circle cx="104" cy="188" r="2"></circle></g>
+</svg>
+<img src="assets/empty-state.png" alt="" style="position:relative;width:160px;height:auto">
+</div>
+<p style="font-weight:700;font-size:20px;color:var(--text-strong);margin:0">{{ emptyTitle }}</p>
+<p style="font-size:16px;color:var(--text-muted);margin:0">{{ emptyText }}</p>
+<sc-if value="{{ hasEmptyAction }}" hint-placeholder-val="{{ false }}">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ onEmptyAction }}" hint-size="160px,40px">{{ emptyActionLabel }}</x-import>
+</sc-if>
+</div>
+</td>
+</tr>
+</sc-if>
+</tbody>
+</table>
+<sc-if value="{{ dragging }}" hint-placeholder-val="{{ false }}"><div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:{{ guideX }};width:2px;background:var(--cyan-500);pointer-events:none;z-index:6"></div></sc-if>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<span style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-muted)">
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Spinner" size="sm" hint-size="16px,16px"></x-import></sc-if>
+{{ resultLabel }}
+</span>
+<sc-if value="{{ showPager }}" hint-placeholder-val="{{ true }}">
+<nav aria-label="Paginación" style="display:flex;align-items:center;gap:6px">
+<button type="button" aria-label="Página anterior" onClick="{{ prevPage }}" disabled="{{ prevDisabled }}" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--table-row-hover)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+</button>
+<sc-for list="{{ pageButtons }}" as="p" hint-placeholder-count="2">
+<button type="button" aria-current="{{ p.current }}" aria-label="{{ p.aria }}" onClick="{{ p.onClick }}" style="min-width:34px;height:34px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font-brand);font-weight:700;font-size:14px;background:{{ p.bg }};color:{{ p.fg }}">{{ p.n }}</button>
+</sc-for>
+<button type="button" aria-label="Página siguiente" onClick="{{ nextPage }}" disabled="{{ nextDisabled }}" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text-body);cursor:pointer" style-hover="background:var(--table-row-hover)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button>
+</nav>
+</sc-if>
+</div>
+<sc-if value="{{ hasTip }}" hint-placeholder-val="{{ false }}"><span ref="{{ tipRef }}" id="{{ tipId }}" role="tooltip" style="position:fixed;top:{{ tipTop }};left:{{ tipLeft }};visibility:{{ tipVis }};z-index:960;box-sizing:border-box;width:max-content;max-width:280px;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:manual;text-align:left;padding:6px 10px;border-radius:var(--radius-sm);background:var(--surface-navy);color:#FFFFFF;font-size:12px;font-weight:600;line-height:1.35;pointer-events:none;box-shadow:var(--shadow-sm)">{{ tipLabel }}<span aria-hidden="true" style="position:absolute;left:{{ tipArrowLeft }};top:{{ tipArrowTop }};width:10px;height:10px;transform:rotate(45deg);background:var(--surface-navy)"></span></span></sc-if>
+<sc-if value="{{ hasMenu }}" hint-placeholder-val="{{ false }}"><div data-dt-menu="1" role="menu" aria-label="{{ menuLabel }}" style="position:fixed;top:{{ menuTop }};bottom:{{ menuBottom }};right:{{ menuRight }};z-index:1400;min-width:200px;display:flex;flex-direction:column;padding:6px;border-radius:var(--radius-sm);background:#FFFFFF;box-shadow:var(--shadow-md);border:1px solid var(--border-subtle)"><sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="3"><button type="button" role="menuitem" tabIndex="-1" aria-disabled="{{ m.ariaDisabled }}" title="{{ m.title }}" onClick="{{ m.onClick }}" onKeyDown="{{ m.onKey }}" style="display:flex;align-items:flex-start;gap:10px;min-height:38px;padding:9px 10px;border:none;border-top:{{ m.border }};border-radius:var(--radius-sm);background:transparent;cursor:{{ m.cursor }};font-family:var(--font-brand);font-size:14px;font-weight:600;color:{{ m.color }};text-align:left" style-hover="background:{{ m.hoverBg }}" style-focus="outline:2px solid var(--color-brand);outline-offset:-2px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;margin-top:1px"><path d="{{ m.d }}"></path></svg><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span>{{ m.label }}</span><sc-if value="{{ m.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:400;line-height:1.35;color:var(--text-muted);max-width:240px;white-space:normal">{{ m.sub }}</span></sc-if></span></button></sc-for></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:700},&quot;columns&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{key:string,label:string,type?:'text'|'strong'|'muted'|'link'|'badge'|'sub',sortable?:boolean,width?:string,indicator?:boolean,linkAction?:string}[]&quot;},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{id:string,ariaName?:string,hideActions?:string[],[key:string]:any}&gt;&quot;},&quot;rowActions&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{id:string,label:string,icon:'eye'|'calendar'|'history'|'users'|'download'|'edit'|'trash'}[]&quot;},&quot;bulkActions&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{id:string,label:string,icon?:string}[]&quot;},&quot;defaultSelected&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string[]&quot;},&quot;onRowAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(actionId:string,row:any)=&gt;void&quot;},&quot;onBulkAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(actionId:string,rows:any[])=&gt;void&quot;},&quot;onSelectionChange&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(ids:string[])=&gt;void&quot;},&quot;onEmptyAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;selectable&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;loading&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;pageSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;tsType&quot;:&quot;number&quot;},&quot;defaultSortKey&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultSortDir&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;asc&quot;,&quot;options&quot;:[&quot;asc&quot;,&quot;desc&quot;],&quot;tsType&quot;:&quot;'asc'|'desc'&quot;},&quot;minWidth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1100,&quot;tsType&quot;:&quot;number&quot;},&quot;itemNoun&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;[string,string]&quot;},&quot;emptyTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;No encontramos resultados&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;emptyText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Prueba con otros criterios de búsqueda.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;emptyActionLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Limpiar filtros&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { dopen: [], sortKey: null, sortDir: 'asc', page: 1, selected: this.props.defaultSelected || [], tip: this.props.demoTip || null, widths: this.loadWidths(), drag: null, guideX: 0 };
+  loadWidths() {
+    const p = this.props;
+    if (p.presetWidths) return Object.assign({}, p.presetWidths);
+    try { return p.storageKey ? JSON.parse(localStorage.getItem(p.storageKey) || '{}') : {}; } catch (e) { return {}; }
+  }
+  saveWidths(w) {
+    const p = this.props;
+    if (p.presetWidths || !p.storageKey) return;
+    try { localStorage.setItem(p.storageKey, JSON.stringify(w)); } catch (e) {}
+  }
+  px(v) { return v == null ? null : typeof v === 'number' ? v : parseFloat(v) || null; }
+  minOf(c) { return this.px(c.minWidth) || 60; }
+  setWidth(key, w, save) {
+    const widths = Object.assign({}, this.state.widths, { [key]: Math.round(w) });
+    this.setState({ widths });
+    if (save) this.saveWidths(widths);
+  }
+  startResize(c, e) {
+    e.preventDefault(); e.stopPropagation();
+    const th = e.currentTarget.parentElement, x0 = e.clientX, w0 = th.getBoundingClientRect().width, min = this.minOf(c);
+    const guide = () => this.setState({ guideX: (th.offsetLeft + th.offsetWidth - 1) + 'px' });
+    this.setState({ drag: c.key }); guide();
+    const move = (ev) => { this.setWidth(c.key, Math.max(min, w0 + ev.clientX - x0)); requestAnimationFrame(guide); };
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.body.style.cursor = ''; this.setState({ drag: null }); this.saveWidths(this.state.widths); };
+    document.body.style.cursor = 'col-resize';
+    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+  }
+  autoFit(c) {
+    const el = this.wrapRef.current; if (!el) return;
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;display:inline-block;font-family:var(--font-brand);font-size:14px';
+    el.appendChild(probe);
+    let max = 0;
+    el.querySelectorAll('[data-col="' + c.key + '"]').forEach(node => {
+      probe.innerHTML = node.innerHTML;
+      probe.querySelectorAll('[role="separator"]').forEach(s => s.remove());
+      probe.querySelectorAll('*').forEach(k => { k.style.whiteSpace = 'nowrap'; if (k.style.display === '-webkit-box') k.style.display = 'block'; });
+      max = Math.max(max, probe.getBoundingClientRect().width);
+    });
+    probe.remove();
+    this.setWidth(c.key, Math.max(this.minOf(c), Math.min(560, Math.ceil(max) + 18)), true);
+  }
+  icons = {
+    eye: 'M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0 M15 12a3 3 0 1 1-6 0 3 3 0 1 1 6 0',
+    calendar: 'M8 2v4 M16 2v4 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M3 10h18',
+    history: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2',
+    users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 1 1 8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
+    download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',
+    edit: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+    trash: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+  };
+  sig(rows) { return (rows || []).map(r => r.id).join('|'); }
+  wrapRef = React.createRef();
+  tipRef = React.createRef();
+  tipId = 'dt-tip-' + Math.random().toString(36).slice(2, 8);
+  showTip(btn, k) { if (this.state.menu) return; this.tipBtn = btn; this.setState({ tip: k, tipLabel: btn.getAttribute('data-tl') || '', tipPos: null }); }
+  hideTip() { this.tipBtn = null; this.setState({ tip: null, tipPos: null }); }
+  placeTip() {
+    const el = this.tipRef.current; if (!el || !this.state.tip) return;
+    let btn = this.tipBtn; if (!btn || !btn.isConnected) { const w = this.wrapRef.current; btn = w && Array.from(w.querySelectorAll('[data-tk]')).find(b => b.getAttribute('data-tk') === this.state.tip); if (!btn) return; this.tipBtn = btn; if (!this.state.tipLabel) { this.setState({ tipLabel: btn.getAttribute('data-tl') || '' }); return; } }
+    const r = btn.getBoundingClientRect(), t = el.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight, gap = 8;
+    const th = this.wrapRef.current && this.wrapRef.current.querySelector('thead'), hb = th ? th.getBoundingClientRect().bottom : 0;
+    const appH = document.querySelector('header'), ab = appH ? Math.max(0, appH.getBoundingClientRect().bottom) : 0;
+    const limit = Math.max(4, hb, ab);
+    const above = r.top - gap - t.height >= limit + 2 || r.bottom + gap + t.height > H - 4 && r.top - gap - t.height >= 4 && r.top >= limit;
+    const top = above ? r.top - gap - t.height : r.bottom + gap;
+    const cx = r.left + r.width / 2;
+    let left = btn.getAttribute('data-last') === '1' ? r.right - t.width : cx - t.width / 2;
+    left = Math.max(8, Math.min(W - t.width - 8, left));
+    const arrow = Math.max(8, Math.min(t.width - 18, cx - left - 5));
+    const P = { top: Math.round(top), left: Math.round(left), arrow: Math.round(arrow), above };
+    const o = this.state.tipPos; if (!o || o.top !== P.top || o.left !== P.left || o.above !== P.above || o.arrow !== P.arrow) this.setState({ tipPos: P });
+  }
+  closeMenu(focus) { if (!this.state.menu) return; this.setState({ menu: null }); if (focus && this.menuBtn) { const b = this.menuBtn; setTimeout(() => b.focus(), 0); } }
+  menuKey(e) { const items = Array.from(document.querySelectorAll('[data-dt-menu] [role=menuitem]')); const i = items.indexOf(e.currentTarget); if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); this.closeMenu(true); } else if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); } }
+  componentDidMount() { this.onDocDown = (e) => { const t = e.target && e.target.closest ? e.target : null; if (this.state.menu && !(t && t.closest('[data-dt-menu]')) && !(t && t.closest('button') === this.menuBtn)) this.closeMenu(false); }; this.onWin = () => { this.state.menu && this.closeMenu(false); this.state.tip && this.state.tipPos && this.hideTip(); }; this.onEsc = (e) => { if (e.key === 'Escape' && this.state.tip) this.hideTip(); }; document.addEventListener('keydown', this.onEsc); if (this.state.tip) setTimeout(() => { const w = this.wrapRef.current, k = this.state.tip, b = w && Array.from(w.querySelectorAll('[data-tk]')).find(x => x.getAttribute('data-tk') === k); if (b) this.showTip(b, k); }, 80); document.addEventListener('mousedown', this.onDocDown); window.addEventListener('resize', this.onWin); window.addEventListener('scroll', this.onWin, true); this.fitTitles(); this.checkScroll(); this.ro = new ResizeObserver(() => this.checkScroll()); if (this.wrapRef.current) this.ro.observe(this.wrapRef.current); }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); document.removeEventListener('keydown', this.onEsc); document.removeEventListener('mousedown', this.onDocDown); window.removeEventListener('resize', this.onWin); window.removeEventListener('scroll', this.onWin, true); }
+  checkScroll() {
+    const el = this.wrapRef.current; if (!el) return;
+    const l = el.scrollLeft > 0, r = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    const nx = el.scrollWidth > el.clientWidth + 1, cw = this.props.fill ? el.clientWidth : 0;
+    if (l !== this.state.scL || r !== this.state.scR || nx !== !!this.state.needX || cw !== (this.state.cw || 0)) this.setState({ scL: l, scR: r, needX: nx, cw });
+  }
+  fitTitles() {
+    const el = this.wrapRef.current; if (!el) return;
+    el.querySelectorAll('[data-clamp="1"]').forEach(s => {
+      const t = s.textContent.trim(), cut = s.scrollHeight > s.clientHeight + 1;
+      if (cut) s.setAttribute('title', t); else s.removeAttribute('title');
+    });
+  }
+  componentDidUpdate(prev) {
+    if (this.state.tip && !this.state.tipPos) this.placeTip();
+    this.fitTitles();
+    this.checkScroll();
+    if (prev.storageKey !== this.props.storageKey || prev.resetToken !== this.props.resetToken) {
+      if (prev.resetToken !== this.props.resetToken && this.props.storageKey) { try { localStorage.removeItem(this.props.storageKey); } catch (e) {} }
+      this.setState({ widths: prev.resetToken !== this.props.resetToken ? {} : this.loadWidths() });
+    }
+    if (this.sig(prev.rows) !== this.sig(this.props.rows) && this.state.page !== 1) this.setState({ page: 1 });
+  }
+  sortVal(row, key) {
+    const v = row[key];
+    if (v == null || v === '') return null;
+    if (typeof v === 'object') return v.sort ?? v.label;
+    return v;
+  }
+  svgIcon(name) {
+    const d = this.icons[name];
+    if (!d) return null;
+    return React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d }));
+  }
+  renderVals() {
+    const p = this.props;
+    const cols = p.columns || [];
+    const rows = p.rows || [];
+    const loading = !!p.loading;
+    const selectable = p.selectable ?? true;
+    const rowActions = p.rowActions || [];
+    const bulk = p.bulkActions || [];
+    const sortKey = this.state.sortKey ?? p.defaultSortKey ?? null;
+    const dir = this.state.sortKey ? this.state.sortDir : (p.defaultSortDir || 'asc');
+    let sorted = rows;
+    if (sortKey) {
+      const cmp = (a, b) => {
+        const x = this.sortVal(a, sortKey), y = this.sortVal(b, sortKey);
+        if (x == null && y == null) return 0;
+        if (x == null) return 1;
+        if (y == null) return -1;
+        const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es', { numeric: true });
+        return dir === 'asc' ? c : -c;
+      };
+      if (rows.some(r => r.parent)) { const ids = new Set(rows.map(r => r.id)), kids = {}; rows.forEach(r => { if (r.parent && ids.has(r.parent)) (kids[r.parent] = kids[r.parent] || []).push(r); }); sorted = []; rows.filter(r => !r.parent || !ids.has(r.parent)).sort(cmp).forEach(b => { sorted.push(b); (kids[b.id] || []).forEach(k => sorted.push(k)); }); } else sorted = [...rows].sort(cmp);
+    }
+    const size = p.pageSize || 10;
+    const pages = Math.max(1, Math.ceil(sorted.length / size));
+    const page = Math.min(this.state.page, pages);
+    const slice = sorted.slice((page - 1) * size, page * size);
+    const ids = new Set(rows.map(r => r.id));
+    const selected = this.state.selected.filter(id => ids.has(id));
+    const selSet = new Set(selected);
+    const pageIds = slice.map(r => r.id);
+    const allChecked = pageIds.length > 0 && pageIds.every(id => selSet.has(id));
+    const setSel = (next) => { this.setState({ selected: next }); p.onSelectionChange && p.onSelectionChange(next); };
+    const noun = p.itemNoun || ['registro', 'registros'];
+    const total = sorted.length;
+    const from = total ? (page - 1) * size + 1 : 0, to = Math.min(page * size, total);
+    const W = this.state.widths || {};
+    const nBtn = rowActions.filter(a => !a.menu).length + (rowActions.some(a => a.menu) ? 1 : 0);
+    const txW = p.textActionsWidth || 0;
+    const actW = txW + (p.compactActions ? Math.max(76, nBtn * 32 + Math.max(0, nBtn - 1) * 2 + 8) : Math.max(104, nBtn * 32 + Math.max(0, nBtn - 1) * 2 + 4));
+    const colW = cols.map(c => W[c.key] || (c.flex ? this.minOf(c) : (this.px(c.width) || this.minOf(c))));
+    const fill = !!p.fill, colWf = colW.slice();
+    if (fill && this.state.cw) { const avail = this.state.cw - (selectable ? 44 : 0) - (p.expandable ? (p.expandWidth || 44) : 0) - (rowActions.length ? actW : 0), fl = cols.map((c, i) => c.flex && !W[c.key] ? i : -1).filter(i => i >= 0), extra = Math.max(0, avail - colW.reduce((a, b) => a + b, 0)), sf = fl.reduce((a, i) => a + colW[i], 0); if (sf) fl.forEach(i => { colWf[i] = Math.floor(colW[i] + extra * colW[i] / sf); }); }
+    const colWidthCss = (c, i) => W[c.key] ? W[c.key] + 'px' : c.flex ? (fill ? colWf[i] + 'px' : 'auto') : (this.px(c.width) ? this.px(c.width) + 'px' : (c.minWidth ? colW[i] + 'px' : 'auto'));
+    const expandable = !!p.expandable;
+    const expWn = expandable ? (p.expandWidth || 44) : 0;
+    const stickyLeft = ((selectable ? 44 : 0) + expWn) + 'px';
+    const stL = {}; { let acc = (selectable ? 44 : 0) + expWn; cols.forEach((c, i) => { if (c.sticky) { stL[c.key] = acc + 'px'; acc += fill ? colWf[i] : colW[i]; } }); }
+    const stickyRight = (rowActions.length ? actW : 0) + 'px', hasSR = cols.some(c => c.stickyRight);
+    const expSet = new Set(p.expandedIds || this.state.expanded || []);
+    return {
+      selectable,
+      hasActions: rowActions.length > 0,
+      minWidth: (!loading && sorted.length === 0) ? '100%' : (cols.some(c => c.minWidth) ? colW.reduce((a, b) => a + b, 0) + (selectable ? 44 : 0) + expWn + (rowActions.length ? actW : 0) : (p.minWidth ?? 1100)) + 'px',
+      layout: cols.some(c => c.width || c.minWidth) ? 'fixed' : 'auto',
+      dragging: !!this.state.drag, guideX: this.state.guideX,
+      onWrapScroll: () => this.checkScroll(),
+      actShadow: this.state.scR && !hasSR ? '-1px 0 0 var(--border-subtle), -4px 0 8px rgba(1, 30, 65, 0.12)' : '-1px 0 0 var(--border-subtle)',
+      colWidths: cols.map(c => ({ w: c.width || 'auto' })),
+      actionsWidth: actW + 'px',
+      wrapRef: this.wrapRef,
+      colSpan: cols.length + (selectable ? 1 : 0) + (expandable ? 1 : 0) + (rowActions.length ? 1 : 0),
+      expandable, expW: expWn + 'px', selLeft: expWn + 'px', selPadL: expandable ? '4px' : '14px',
+      loading,
+      showRows: !loading && total > 0,
+      isEmpty: !loading && total === 0,
+      emptyTitle: p.emptyTitle || 'No encontramos resultados',
+      emptyText: p.emptyText || 'Prueba con otros criterios de búsqueda.',
+      emptyActionLabel: p.emptyActionLabel || 'Limpiar filtros',
+      hasEmptyAction: !!p.onEmptyAction,
+      onEmptyAction: () => p.onEmptyAction && p.onEmptyAction(),
+      skeletonRows: [0, 1, 2, 3, 4, 5].map(i => ({ w1: ['160px', '220px', '140px'][i % 3], w2: ['200px', '120px', '180px'][i % 3] })),
+      headCols: cols.map((c, i) => {
+        const on = sortKey === c.key;
+        return {
+          key: c.key, label: c.shortLabel || c.label, title: c.shortLabel ? c.label : undefined, sortable: !!c.sortable, plain: !c.sortable, w: colWidthCss(c, i),
+          pos: c.sticky || c.stickyRight ? 'sticky' : 'relative', left: c.sticky ? stL[c.key] : 'auto', right: c.stickyRight ? stickyRight : 'auto', z: c.sticky || c.stickyRight ? 3 : 1, shadow: c.stickyRight ? (this.state.scR ? '-1px 0 0 var(--border-subtle), -4px 0 8px rgba(1, 30, 65, 0.12)' : 'none') : c.sticky ? (this.state.scL ? '1px 0 0 var(--border-subtle), 4px 0 8px rgba(1, 30, 65, 0.12)' : '1px 0 0 var(--border-subtle)') : 'none',
+          arrowDisp: on ? 'block' : 'none',
+          resizeLabel: 'Cambiar ancho de ' + c.label,
+          onResize: (e) => this.startResize(c, e),
+          onAutoFit: () => this.autoFit(c),
+          ariaSort: on ? (dir === 'asc' ? 'ascending' : 'descending') : undefined,
+          arrowColor: on ? 'var(--cyan-700)' : 'var(--neutral-400)',
+          arrowRot: on && dir === 'asc' ? 'rotate(180deg)' : 'none',
+          onSort: () => this.setState({ sortKey: c.key, sortDir: on && dir === 'asc' ? 'desc' : 'asc', page: 1 }),
+        };
+      }),
+      pageRows: slice.map(r => {
+        const checked = selSet.has(r.id);
+        const hidden = new Set(r.hideActions || []);
+        return {
+          bg: checked ? 'var(--table-row-hover)' : '#FFFFFF',
+          hasDetail: !!r.detail, detail: r.detail || '', detailTitle: r.detailTitle || 'Texto completo', detailOpen: !!r.detail && (this.state.dopen || []).includes(r.id), detailAttr: (this.state.dopen || []).includes(r.id) ? 'true' : 'false', detailRot: (this.state.dopen || []).includes(r.id) ? 'rotate(90deg)' : 'none',
+          detailLabel: ((this.state.dopen || []).includes(r.id) ? 'Plegar' : 'Desplegar') + ' el texto completo de ' + (r.ariaName || r.id), rowCursor: r.detail ? 'pointer' : 'auto',
+          toggleDetail: () => this.setState(st => { const s = new Set(st.dopen || []); s.has(r.id) ? s.delete(r.id) : s.add(r.id); return { dopen: Array.from(s) }; }),
+          rowClick: r.detail ? (e) => { if (e && e.target && e.target.closest && e.target.closest('button,a,input,select,textarea,[role=button]')) return; this.setState(st => { const s = new Set(st.dopen || []); s.has(r.id) ? s.delete(r.id) : s.add(r.id); return { dopen: Array.from(s) }; }); } : undefined,
+          hasSub: !!(r.sub && r.sub.length), expanded: expandable && expSet.has(r.id) && !!(r.sub && r.sub.length),
+          expandedAttr: expSet.has(r.id) ? 'true' : 'false', expRot: expSet.has(r.id) ? 'rotate(90deg)' : 'none',
+          expLabel: (expSet.has(r.id) ? 'Ocultar' : 'Mostrar') + ' ' + (p.subNoun || 'inspecciones de garantías') + ' de ' + (r.ariaName || r.id),
+          subLabel: (p.subNoun ? p.subNoun.charAt(0).toUpperCase() + p.subNoun.slice(1) : 'Inspecciones de garantías') + ' de ' + (r.ariaName || r.id),
+          toggleExp: () => { if (p.onToggleExpand) p.onToggleExpand(r.id); else this.setState(st => { const s = new Set(st.expanded || []); s.has(r.id) ? s.delete(r.id) : s.add(r.id); return { expanded: Array.from(s) }; }); },
+          sub: (r.sub || []).map((sb, i) => Object.assign({ border: i === 0 ? 'none' : '1px solid var(--border-subtle)', nota: '', estadoFull: '', openMotivo: '' }, sb, { openDis: sb.openMotivo ? 'true' : undefined, openCur: sb.openMotivo ? 'not-allowed' : 'pointer', openColor: sb.openMotivo ? 'var(--neutral-500)' : 'var(--text-link)', acts: (sb.acts || (sb.actLabel ? [{ label: sb.actLabel, action: sb.actAction }] : [])).map(a => ({ label: a.label, motivo: a.disabled || '', dis: a.disabled ? 'true' : undefined, cur: a.disabled ? 'not-allowed' : 'pointer', color: a.disabled ? 'var(--neutral-500)' : 'var(--text-link)', click: () => { if (a.disabled) { p.onBlockedAction && p.onBlockedAction(a.action || 'sub-act', Object.assign({ id: sb.id }, sb)); return; } p.onRowAction && p.onRowAction(a.action || 'sub-act', Object.assign({ id: sb.id }, sb)); } })), open: () => { if (sb.openMotivo) return; p.onRowAction && p.onRowAction('abrir-sub', Object.assign({ id: sb.id }, sb)); } })),
+          checked,
+          toggle: () => setSel(checked ? selected.filter(i => i !== r.id) : selected.concat(r.id)),
+          cells: cols.map(c => {
+            const v = r[c.key];
+            const empty = v == null || v === '';
+            const o = v && typeof v === 'object' ? v : null;
+            const label = empty ? '—' : o ? o.label : String(v);
+            const t = empty ? 'muted' : (o && o.sw ? 'switch' : o && o.link ? 'link' : (c.type || 'text'));
+            const tone = (o && o.tone) || 'neutral';
+            const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
+            const iconName = { success: 'success', warning: 'warning', danger: 'danger' }[tone];
+            return {
+              key: c.key, chev: !!r.detail && cols[0] === c, padL: !!r.detail && cols[0] === c ? '36px' : '8px', subClamp: c.subWrap ? '1' : '0', subDisp: c.subWrap ? '-webkit-box' : 'block', subWs: c.subWrap ? 'normal' : 'nowrap', subOw: c.subWrap ? 'anywhere' : 'normal', pos: c.sticky || c.stickyRight ? 'sticky' : (!!r.detail && cols[0] === c ? 'relative' : 'static'), left: c.sticky ? stL[c.key] : 'auto', right: c.stickyRight ? stickyRight : 'auto', z: c.sticky || c.stickyRight ? 1 : 'auto', bg: c.sticky || c.stickyRight ? 'inherit' : 'transparent', shadow: c.stickyRight ? (this.state.scR ? '-1px 0 0 var(--border-subtle), -4px 0 8px rgba(1, 30, 65, 0.12)' : 'none') : c.sticky ? (this.state.scL ? '1px 0 0 var(--border-subtle), 4px 0 8px rgba(1, 30, 65, 0.12)' : '1px 0 0 var(--border-subtle)') : 'none',
+              hasTag: !!(o && o.tag), tagLabel: o && o.tag ? o.tag.label : '', tagTone: o && o.tag ? o.tag.tone : 'neutral', hasTagNote: !!(o && o.tag && o.tag.note), tagNote: o && o.tag ? o.tag.note || '' : '', tagNoteColor: o && o.tag && o.tag.over ? 'var(--color-danger)' : 'var(--text-body)', isTagText: !!(o && o.tag) && !['link', 'badge', 'sub', 'icontext', 'rule'].includes(t),
+              isLinks: !!(o && o.links), links: o && o.links ? o.links.map(l => ({ label: l.label, aria: l.aria || l.label, go: () => p.onRowAction && p.onRowAction(l.action, r) })) : [], isText: !['link', 'badge', 'sub', 'icontext', 'rule', 'impact', 'switch', 'chips'].includes(t) && !(o && o.links) && !(o && o.tag), isChips: t === 'chips', chips: (o && o.chips) || [], isRule: t === 'rule', isImpact: t === 'impact', ruleSub: (o && o.sub) || '', cellTitle: (o && o.title) || undefined, impSub: (o && o.pct) || '', barW: ((o && o.bar) || 0) + '%', barBg: o && o.barMuted ? 'var(--neutral-400)' : 'var(--color-brand)', isIconText: t === 'icontext', hasSub2: t === 'icontext' && !!(o && o.sub), hasL2: t === 'icontext' && !!(o && o.l2), l2: (o && o.l2) || '', hasL3: t === 'icontext' && !!(o && o.l3), l3: (o && o.l3) || '',
+              cellTitle: o && o.progress ? (o.title || '') : '', hasProg: !!(o && o.progress), progPct: o && o.progress ? o.progress.pct : 0, progText: o && o.progress ? o.progress.text : '', progAria: o && o.progress ? (o.progress.aria || o.progress.text) : '',
+              hasNote: !!(o && o.note), note: (o && o.note) || '', noteD: !o || !o.noteKind || o.noteKind === 'none' ? 'M10.1 2.18a9.93 9.93 0 0 1 3.8 0 M17.6 3.71a9.95 9.95 0 0 1 2.69 2.7 M21.82 10.1a9.93 9.93 0 0 1 0 3.8 M20.29 17.6a9.95 9.95 0 0 1-2.7 2.69 M13.9 21.82a9.94 9.94 0 0 1-3.8 0 M6.4 20.29a9.95 9.95 0 0 1-2.69-2.7 M2.18 13.9a9.93 9.93 0 0 1 0-3.8 M3.71 6.4a9.95 9.95 0 0 1 2.7-2.69' : o.noteKind === 'ok' ? 'M20 6 9 17l-5-5' : o.noteKind === 'no' ? 'M18 6 6 18 M6 6l12 12' : o.noteKind === 'warn' ? 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3 M12 9v4 M12 17h.01' : 'M12 8v4 M12 16h.01 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z',
+              noteColor: !o || !o.noteKind || o.noteKind === 'none' ? 'var(--neutral-500)' : o.noteKind === 'ok' ? 'var(--color-success)' : o.noteKind === 'no' ? 'var(--color-danger)' : 'var(--color-warning)', isLink: t === 'link', isSwitch: t === 'switch', swOn: o && o.on ? 'true' : 'false', swBg: o && o.on ? 'var(--color-brand)' : 'var(--neutral-400)', swLeft: o && o.on ? '20px' : '2px', swLabel: (o && o.aria) || label, swClick: () => p.onRowAction && p.onRowAction((o && o.action) || 'sw', r), linkWs: c.linkWrap ? 'normal' : 'nowrap', isBadge: t === 'badge', isSub: t === 'sub',
+              text: label, titleWs: o && o.noBreak ? 'nowrap' : 'normal', sub: (o && o.sub) || '', tone, subOv: c.ellipsis || c.subWrap ? 'hidden' : 'visible', subTo: c.ellipsis ? 'ellipsis' : 'clip', subMax: c.ellipsis || c.subWrap ? '100%' : 'none',
+              title: (o && o.title) || undefined,
+              clamp: c.wrap === false || (o && o.nowrap) || t === 'link' ? '0' : '1',
+              disp: c.wrap === false || (o && o.nowrap) ? 'block' : '-webkit-box', ws: c.wrap === false || (o && o.nowrap) ? 'nowrap' : 'normal',
+              badgeProps: { style: { whiteSpace: 'nowrap' }, iconLeft: c.indicator && iconName && NS.FeedbackIcon ? React.createElement(NS.FeedbackIcon, { name: iconName, size: 13 }) : undefined },
+              color: o && o.dim ? 'var(--text-muted)' : t === 'strong' ? 'var(--text-strong)' : t === 'muted' ? 'var(--text-muted)' : 'var(--text-body)', titleColor: o && o.dim ? 'var(--text-muted)' : 'var(--text-strong)',
+              weight: t === 'strong' ? 600 : 400,
+              minW: c.minWidth || 'auto',
+              onClick: () => p.onRowAction && p.onRowAction((o && o.linkAction) || c.linkAction || 'ver', r),
+            };
+          }),
+          textActs: (r.textActions || []).map(t => ({ label: t.label, aria: (t.aria || t.label) + (t.disabled ? ' · ' + t.disabled : ''), title: t.disabled || t.title || t.label, ariaDisabled: t.disabled ? 'true' : undefined, color: t.disabled ? 'var(--neutral-400)' : 'var(--text-link)', cursor: t.disabled ? 'not-allowed' : 'pointer', hoverBg: t.disabled ? 'transparent' : 'var(--color-brand-wash)', onClick: () => { if (t.disabled) { p.onBlockedAction && p.onBlockedAction(t.action, r); return; } p.onRowAction && p.onRowAction(t.action, r); } })),
+          actions: (() => { const vis = rowActions.filter(a => !hidden.has(a.id)); const menu = vis.filter(a => a.menu); const out = vis.filter(a => !a.menu); if (menu.length) out.push({ id: '__menu', label: 'Más acciones', path: 'M12 12h.01 M19 12h.01 M5 12h.01', isMenu: true, items: menu.slice().sort((x, y) => (x.danger ? 1 : 0) - (y.danger ? 1 : 0)) }); return out; })().map((a, ai, arr) => {
+            const k = r.id + ':' + a.id;
+            const dis = r.disabledActions && r.disabledActions[a.id];
+            const last = ai === arr.length - 1;
+            return {
+              ariaDisabled: dis ? 'true' : undefined, color: dis ? 'var(--neutral-400)' : 'var(--neutral-600)', cursor: dis ? 'not-allowed' : 'pointer', hoverBg: dis ? 'transparent' : 'var(--color-brand-wash)', hoverColor: dis ? 'var(--neutral-400)' : 'var(--cyan-700)',
+              tipLeft: last ? 'auto' : '50%', tipRight: last ? '0' : 'auto', tipTx: last ? 'none' : 'translateX(-50%)',
+              d: this.icons[a.icon] || a.path || '', label: dis || a.label, aria: a.label + ' · ' + (r.ariaName || r.id) + (dis ? ' · ' + dis : ''),
+              tip: this.state.tip === k,
+              tk: k, lastAttr: last ? '1' : '0', describedby: this.state.tip === k ? this.tipId : undefined,
+              show: (e) => this.showTip(e.currentTarget, k), hide: () => this.state.tip === k && this.hideTip(),
+              onKey: (e) => { if (e.key === 'Escape' && this.state.tip) { e.stopPropagation(); this.hideTip(); } },
+              haspopup: a.isMenu ? 'menu' : undefined, expanded: a.isMenu ? (this.state.menu && this.state.menu.id === r.id ? 'true' : 'false') : undefined,
+              onClick: (e) => { if (a.isMenu) { const rc = e.currentTarget.getBoundingClientRect(); this.menuBtn = e.currentTarget; this.setState({ tip: null, menu: this.state.menu && this.state.menu.id === r.id ? null : { id: r.id, row: r, items: a.items, x: rc.right, y: rc.bottom + 4, up: rc.bottom + 4 + a.items.length * 40 + 16 > window.innerHeight } }); setTimeout(() => { const m = document.querySelector('[data-dt-menu] [role=menuitem]:not([aria-disabled=true])'); m && m.focus(); }, 30); return; } if (dis) { p.onBlockedAction && p.onBlockedAction(a.id, r); return; } if (p.onRowAction) p.onRowAction(a.id, r); },
+            };
+          }),
+        };
+      }),
+      hasTip: !!this.state.tip && !!this.state.tipLabel, tipRef: this.tipRef, tipId: this.tipId, tipLabel: this.state.tipLabel || '', ...(() => { const P = this.state.tipPos; return P ? { tipTop: P.top + 'px', tipLeft: P.left + 'px', tipVis: 'visible', tipArrowLeft: P.arrow + 'px', tipArrowTop: P.above ? 'calc(100% - 5px)' : '-5px' } : { tipTop: '0px', tipLeft: '0px', tipVis: 'hidden', tipArrowLeft: '0px', tipArrowTop: '-5px' }; })(),
+      ovx: this.state.needX ? 'auto' : 'hidden', hasMenu: !!this.state.menu, menuTop: this.state.menu ? (this.state.menu.up ? 'auto' : this.state.menu.y + 'px') : '0', menuBottom: this.state.menu && this.state.menu.up ? (window.innerHeight - this.state.menu.y + 40) + 'px' : 'auto', menuRight: this.state.menu ? (window.innerWidth - this.state.menu.x) + 'px' : '0', menuLabel: this.state.menu ? 'Más acciones · ' + (this.state.menu.row.ariaName || this.state.menu.row.id) : '',
+      menuItems: this.state.menu ? this.state.menu.items.map((a, i, arr) => { const r = this.state.menu.row, dis = r.disabledActions && r.disabledActions[a.id]; return { label: a.label, title: dis || undefined, sub: dis || '', hasSub: !!dis, ariaDisabled: dis ? 'true' : undefined, color: dis ? 'var(--neutral-400)' : a.danger ? 'var(--color-danger)' : 'var(--text-strong)', hoverBg: dis ? 'transparent' : a.danger ? 'var(--color-danger-bg)' : 'var(--color-brand-wash)', cursor: dis ? 'not-allowed' : 'pointer', d: this.icons[a.icon] || a.path || '', border: a.danger && i > 0 ? '1px solid var(--border-subtle)' : 'none', onClick: () => { if (dis) { this.closeMenu(false); p.onBlockedAction && p.onBlockedAction(a.id, r); return; } this.closeMenu(false); p.onRowAction && p.onRowAction(a.id, r); }, onKey: (e) => this.menuKey(e) }; }) : [],
+      allChecked,
+      toggleAll: () => setSel(allChecked ? selected.filter(id => !pageIds.includes(id)) : Array.from(new Set(selected.concat(pageIds)))),
+      hasSelection: selectable && selected.length > 0,
+      selectionLabel: selected.length + ' ' + (selected.length === 1 ? noun[0] + ' seleccionado' : noun[1] + ' seleccionados'),
+      bulkButtons: bulk.map(b => ({ label: b.label, icon: this.svgIcon(b.icon), onClick: () => p.onBulkAction && p.onBulkAction(b.id, rows.filter(r => selSet.has(r.id))) })),
+      clearSelection: () => setSel([]),
+      resultLabel: loading ? 'Cargando ' + noun[1] + '…' : total ? `Resultados ${from}–${to} de ${total}` : 'Sin resultados',
+      showPager: !loading && pages > 1,
+      prevDisabled: page <= 1, nextDisabled: page >= pages,
+      prevPage: () => this.setState({ page: Math.max(1, page - 1) }),
+      nextPage: () => this.setState({ page: Math.min(pages, page + 1) }),
+      pageButtons: Array.from({ length: pages }, (_, i) => i + 1).map(n => ({
+        n, current: n === page ? 'page' : undefined, aria: 'Página ' + n,
+        bg: n === page ? 'var(--color-brand)' : 'transparent', fg: n === page ? '#FFFFFF' : 'var(--text-body)',
+        onClick: () => this.setState({ page: n }),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

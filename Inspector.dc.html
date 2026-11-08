@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}
+.in-bt{min-height:40px;padding:0 14px;border-radius:8px;font:700 14px var(--font-brand);cursor:pointer}
+.in-bt:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.in-ph button:focus-visible,.in-ph input:focus-visible,.in-ph textarea:focus-visible{outline:2px solid #0B5CAD;outline-offset:2px}
+</style>
+</helmet>
+<section data-screen-label="APP-01 App del inspector" style="font-family:var(--font-brand);min-width:0;width:100%;min-height:100%;display:flex;flex-direction:column;background:#E9EEF3">{{ page }}</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;escena&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;cliente&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;nonce&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onVolver&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onEscenas&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCliente&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;ver&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;cpreset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+// APP-01 · App del inspector (etapa 15-1 · DEC-173). Barra del prototipo («App del inspector · lo que ve el inspector en su celular»,
+// «Ir a una escena», «Volver al Back-office») y el celular de 390 px con SiriusAppInspector (sirius-app-inspector.js). Con «Ver también el
+// portal del cliente», al lado se ve el portal del caso (SiriusPortalCaso) para comprobar lo que recibe el asegurado.
+class Component extends DCLogic {
+  state = { w: window.innerWidth, hh: window.innerHeight };
+  componentDidMount() { this._r = () => this.setState({ w: window.innerWidth, hh: window.innerHeight }); window.addEventListener('resize', this._r); }
+  componentWillUnmount() { window.removeEventListener('resize', this._r); }
+  renderVals() {
+    const h = React.createElement, W = this.state.w, H = this.state.hh, movil = W <= 520, dos = !!this.props.cliente && !!this.props.ver && !!window.SiriusPortalCaso && !movil;
+    const k = movil ? 1 : Math.max(.45, Math.min(1, (H - 64 - 32 - 30) / 780, dos ? (W - 64) / (390 * 2 + 40) : 1)), r = (n) => Math.floor(n) + 'px';
+    // Etapa 15-2 · giro del marco (solo en el prototipo): «Girar el celular» cambia la posición física; con el bloqueo de rotación la pantalla
+    // no gira (el marco gira entero y la capa de la cámara se endereza); sin bloqueo, la pantalla pasa a horizontal.
+    const VL = window.SiriusAppVisitaLogic, G = VL ? VL.S.giro : { fis: 'v', bloqueo: false }, fisH = !movil && G.fis === 'h', pantH = fisH && !G.bloqueo, girado = fisH && G.bloqueo;
+    const kA = movil ? 1 : Math.max(.45, Math.min(1, fisH ? (H - 64 - 32 - 80) / 390 : (H - 64 - 32 - 80) / 780, fisH ? (W - 64) / 780 : 1, dos ? (W - 64) / (390 * 2 + 40) : 1));
+    const marco = (kids, lab, key, app) => { const kk = app ? kA : k, ancho = app && pantH ? 780 : 390, alto = app && pantH ? 390 : 780, gir = app && girado;
+      return h('div', { key, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 } }, lab ? h('span', { style: { fontSize: 13, fontWeight: 700, color: '#44515f' } }, lab) : null,
+      h('div', { 'data-marco-app': app ? (gir ? 'girado-bloqueo' : pantH ? 'horizontal' : 'vertical') : undefined, style: { width: movil ? '100%' : r((gir ? 780 : ancho) * kk), height: movil ? 'auto' : r((gir ? 390 : alto) * kk), flex: '0 0 auto', position: 'relative' } },
+        h('div', { className: 'in-ph', style: movil ? { display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 64px)' } : { width: ancho + 'px', height: alto + 'px', transform: gir ? 'scale(' + kk + ') translate(0,390px) rotate(-90deg)' : 'scale(' + kk + ')', transformOrigin: 'top left', display: 'flex', flexDirection: 'column', border: '10px solid #1b232d', borderRadius: '28px', overflow: 'hidden', background: '#FFFFFF', boxShadow: '0 12px 40px rgba(11,46,89,.18)', transition: 'transform .3s' } }, kids))); };
+    const giroCtl = VL && !movil ? h('div', { key: 'giro', role: 'group', 'aria-label': 'Posición del celular (solo en el prototipo)', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px 0' } },
+      h('button', { type: 'button', id: 'in-girar', onClick: () => VL.fijarGiro({ fis: G.fis === 'h' ? 'v' : 'h' }), style: { minHeight: 40, padding: '0 14px', border: '1.5px solid #0B2E59', borderRadius: 8, background: '#FFFFFF', color: '#0B2E59', font: '700 14px var(--font-brand)', cursor: 'pointer' } }, 'Girar el celular'),
+      h('button', { type: 'button', id: 'in-bloqueo', role: 'switch', 'aria-checked': G.bloqueo ? 'true' : 'false', onClick: () => VL.fijarGiro({ bloqueo: !G.bloqueo }), style: { minHeight: 40, padding: '0 14px', border: '1.5px solid #0B2E59', borderRadius: 8, background: G.bloqueo ? '#0B2E59' : '#FFFFFF', color: G.bloqueo ? '#FFFFFF' : '#0B2E59', font: '700 14px var(--font-brand)', cursor: 'pointer' } }, 'Bloqueo de rotación: ' + (G.bloqueo ? 'activado' : 'desactivado')),
+      h('span', { style: { fontSize: 13, color: '#44515f' } }, 'Solo en el prototipo · celular ' + (fisH ? 'horizontal' : 'vertical') + (girado ? ' · la pantalla no gira: la cámara endereza su interfaz' : ''))) : null;
+    const bar = h('div', { key: 'bar', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px 16px', padding: '10px 16px', background: '#0B2E59', color: '#FFFFFF' } },
+      h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { fontSize: 14, fontWeight: 700 } }, 'App del inspector · lo que ve el inspector en su celular'), h('span', { style: { fontSize: 12, opacity: .85 } }, 'Solo en el prototipo · inspectores.asur.ec (PWA)')),
+      h('span', { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } },
+        window.SiriusPortalCaso && this.props.cliente && !movil ? h('button', { type: 'button', className: 'in-bt', id: 'in-cliente', 'aria-pressed': dos ? 'true' : 'false', onClick: () => this.props.onCliente && this.props.onCliente(), style: { border: '1.5px solid #FFFFFF', background: dos ? '#FFFFFF' : 'transparent', color: dos ? '#0B2E59' : '#FFFFFF' } }, dos ? 'Ocultar el portal del cliente' : 'Ver también el portal del cliente') : null,
+        h('button', { type: 'button', className: 'in-bt', onClick: () => this.props.onEscenas && this.props.onEscenas(), style: { border: '1.5px solid #FFFFFF', background: 'transparent', color: '#FFFFFF' } }, 'Ir a una escena'),
+        h('button', { type: 'button', className: 'in-bt', id: 'in-volver', onClick: () => this.props.onVolver && this.props.onVolver(), style: { border: 'none', background: '#FFFFFF', color: '#0B2E59' } }, 'Volver al Back-office')));
+    const app = window.SiriusAppInspector ? h(window.SiriusAppInspector, { key: 'app' + (this.props.nonce || 0), escena: this.props.escena, alto: movil ? 'calc(100vh - 64px)' : (pantH ? '370px' : '760px'), ancho: movil ? W : (pantH ? 760 : 370), altoPx: movil ? H - 64 : (pantH ? 370 : 760) }) : h('p', null, 'Cargando la app…');
+    const cli = dos ? h('div', { style: { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' } }, h(window.SiriusPortalCaso, { key: 'pc' + this.props.cliente + (this.props.cpreset || ''), token: this.props.cliente, preset: this.props.cpreset || '', alto: '760px' })) : null;
+    return { page: [bar, giroCtl, h('div', { key: 'w', style: { flex: '1 0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'center', gap: 40, padding: movil ? 0 : 16 } },
+      marco(app, dos ? 'Inspector' : '', 'a', true), dos ? marco(cli, 'Cliente · portal del caso', 'c') : null)] };
+  }
+}
+</script>
+</body>
+</html>

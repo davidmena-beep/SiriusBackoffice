@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<style>html,body{margin:0;background:var(--neutral-100)}*{box-sizing:border-box}a{color:var(--text-link)}a:hover{opacity:.8}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:40px;padding:40px;font-family:var(--font-brand)">
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-weight:300;font-size:32px;color:var(--text-strong)">Estados después de la calificación y salida al BPM · 1440 px</h1>
+<p style="margin:0;font-size:15px;color:var(--text-muted)">Back-office en vivo, a escala 75%, SideNav colapsada. La respuesta simulada del BPM se cambia con el control “respuestaBPM” del back-office.</p>
+</div>
+<section data-screen-label="Bandeja asegurabilidad" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Bandeja · Inspeccionado, Enviado a emisión y Emitida con su asegurabilidad (orden por estado)</h2>
+<div style="width:1080px;height:675px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?escena=bandejaaseg&amp;rol=Coordinador%20de%20inspecciones&amp;loader=off&amp;demo=off&amp;nav=colapsada" title="Bandeja" style="width:1440px;height:900px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+<section data-screen-label="Crear orden" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Caso 20160 sin orden de emisión · modal “Crear orden de emisión” · Ejecutivo comercial</h2>
+<div style="width:1080px;height:675px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?escena=crearorden&amp;rol=Ejecutivo%20comercial&amp;loader=off&amp;demo=off&amp;nav=colapsada" title="Crear orden" style="width:1440px;height:900px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+<section data-screen-label="Enviado a emisión" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Caso 20137 Enviado a emisión · cabecera y aviso al editar la calificación · Suscriptor</h2>
+<div style="width:1080px;height:900px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?escena=editenvio&amp;rol=Suscriptor&amp;loader=off&amp;demo=off&amp;nav=colapsada" title="Enviado a emisión" style="width:1440px;height:1200px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
+<script src="sirius-fecha.js"></script>
+</helmet>
+<div data-screen-label="BO-06 Coordinar inspección" style="display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)">
+<section aria-labelledby="co-rec-h" style="display:grid;grid-template-columns:auto minmax(0,1.6fr) minmax(0,1fr);gap:24px;align-items:start;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:120px">
+<h2 id="co-rec-h" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Recomendación del sistema</h2>
+<span style="display:flex;align-items:baseline;gap:4px"><span style="font-size:44px;font-weight:300;line-height:1;color:var(--text-strong)">{{ rec.score }}</span><span style="font-size:15px;color:var(--text-muted)">/ 100</span></span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ rec.tone }}" hint-size="100px,22px"><span style="white-space:nowrap">{{ rec.nivel }}</span></x-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+<span style="font-size:13px;font-weight:700;color:var(--text-strong)">Alertas</span>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px">
+<sc-for list="{{ rec.alertas }}" as="al" hint-placeholder-count="3">
+<li style="display:flex;align-items:flex-start;gap:10px;font-size:15px;color:var(--text-strong)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;margin-top:2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3 M12 9v4 M12 17h.01"></path></svg>
+<span style="display:flex;flex-wrap:wrap;gap:4px 8px"><sc-if value="{{ al.hasRiesgo }}" hint-placeholder-val="{{ false }}"><strong style="white-space:nowrap">{{ al.riesgo }}</strong></sc-if><span>{{ al.text }}</span></span>
+</li>
+</sc-for>
+<sc-if value="{{ rec.noAlertas }}" hint-placeholder-val="{{ false }}"><li style="font-size:15px;color:var(--text-muted)">Sin alertas para este caso.</li></sc-if>
+</ul>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:var(--radius-sm);background:var(--color-brand-wash);min-width:0">
+<span style="font-size:13px;color:var(--text-muted)">Modalidad recomendada</span>
+<span style="font-size:18px;font-weight:700;color:var(--text-strong)">{{ rec.modalidad }}</span>
+<span style="font-size:14px;line-height:1.45;color:var(--text-body)">{{ rec.motivo }}</span>
+</div>
+</section>
+<section aria-labelledby="co-int-h" style="display:flex;flex-direction:column;gap:14px;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><h2 id="co-int-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Intentos de contacto</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ intCount }}</x-import></div>
+<sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:8px">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ openInt }}" hint-size="230px,36px">Registrar intento de contacto</x-import>
+<sc-if value="{{ canCancelCase }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ openCc }}" hint-size="200px,36px">Cancelar por coordinación</x-import></sc-if>
+</div></sc-if>
+</div>
+<sc-if value="{{ hasCancelInfo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface-subtle)">
+<span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="90px,22px"><span style="white-space:nowrap">Cancelado</span></x-import><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ cInfo.motivo }}</span></span>
+<span style="font-size:14px;line-height:1.45;color:var(--text-body)">{{ cInfo.obs }}</span>
+<span style="font-size:13px;color:var(--text-muted)">{{ cInfo.meta }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ hasReapInfo }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--color-brand-wash)">
+<span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="100px,22px"><span style="white-space:nowrap">Reaperturado</span></x-import><span style="font-size:13px;color:var(--text-body)">{{ rInfo.meta }}</span></span>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 16px">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><dt style="font-size:13px;color:var(--text-muted)">Celular (WhatsApp)</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong)">{{ rInfo.cel }}</dd></div>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><dt style="font-size:13px;color:var(--text-muted)">Correo electrónico</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong);overflow-wrap:anywhere">{{ rInfo.correo }}</dd></div>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:1 / -1"><dt style="font-size:13px;color:var(--text-muted)">Instrucciones para la coordinación</dt><dd style="margin:0;font-size:15px;line-height:1.45;color:var(--text-strong)">{{ rInfo.instr }}</dd></div>
+</dl>
+</div>
+</sc-if>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
+<sc-for list="{{ intentos }}" as="it" hint-placeholder-count="2">
+<li style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:12px 16px;border-top:{{ it.border }}">
+<span style="min-width:130px;font-size:14px;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ it.when }}</span>
+<span style="min-width:80px;font-size:14px;color:var(--text-body)">{{ it.medio }}</span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ it.tone }}" hint-size="110px,22px"><span style="white-space:nowrap">{{ it.resultado }}</span></x-import>
+<span style="flex:1 1 220px;min-width:0;font-size:14px;color:var(--text-body)">{{ it.obs }}</span>
+<span style="font-size:13px;color:var(--text-muted);white-space:nowrap">{{ it.by }}</span>
+</li>
+</sc-for>
+<sc-if value="{{ noIntentos }}" hint-placeholder-val="{{ false }}"><li style="padding:14px 16px;font-size:14px;color:var(--text-muted)">Aún no hay intentos de contacto registrados.</li></sc-if>
+</ul>
+</section>
+<sc-if value="{{ showPending }}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="co-pend-h" style="display:flex;flex-direction:column;gap:14px;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><h2 id="co-pend-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ pendTitle }}</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ pendCount }}</x-import></div>
+<sc-if value="{{ readOnly }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-muted)">Solo lectura · la coordinación la realiza el Coordinador de inspecciones</span></sc-if>
+<sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-if value="{{ canGroup }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ toggleGroup }}" unavailable-reason="{{ noPendingWhy }}" hint-size="190px,36px">{{ groupLabel }}</x-import></sc-if>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="sm" on-click="{{ createSel }}" unavailable-reason="{{ noSelWhy }}" hint-size="250px,36px">{{ createSelLabel }}</x-import>
+</div></sc-if>
+</div>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
+<sc-for list="{{ pending }}" as="r" hint-placeholder-count="3">
+<li style="display:grid;grid-template-columns:auto minmax(0,1.2fr) minmax(0,1.6fr) auto;align-items:center;gap:16px;padding:12px 16px;border-top:{{ r.border }};background:{{ r.bg }}">
+<span style="display:inline-flex;width:20px"><sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.toggle }}" aria-label="{{ r.cbLabel }}" style="width:20px;height:20px;margin:0;accent-color:var(--cyan-700);cursor:pointer"></sc-if></span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:700;color:var(--text-strong);white-space:{{ r.ws }}">{{ r.label }}</span><span style="font-size:13px;color:var(--text-muted)">{{ r.sub }}</span></span>
+<span style="font-size:14px;color:var(--text-body)">{{ r.dir }}</span>
+<span title="{{ r.estadoFull }}" style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="90px,22px"><span style="white-space:nowrap">{{ r.estado }}</span></x-import></span>
+</li>
+</sc-for>
+<sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}"><li style="padding:14px 16px;font-size:14px;color:var(--text-muted)">Todos los riesgos tienen una visita asignada.</li></sc-if>
+</ul>
+<sc-if value="{{ hasProposals }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-strong)">{{ propTitle }}</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">
+<sc-for list="{{ proposals }}" as="pp" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:10px;padding:16px;border:1px dashed var(--cyan-500);border-radius:var(--radius-sm);background:var(--color-brand-wash)">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ pp.title }}</span><span style="font-size:13px;color:var(--text-body);white-space:nowrap">{{ pp.count }}</span></div>
+<span style="display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--text-body)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;margin-top:2px"><path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0 M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>{{ pp.dir }}</span>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pp.items }}" as="pi" hint-placeholder-count="2"><li style="padding:4px 10px;border-radius:var(--radius-pill);background:#FFFFFF;font-size:13px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ pi }}</li></sc-for></ul>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:13px;color:var(--text-body)">Sugerida: {{ pp.mod }}</span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="sm" on-click="{{ pp.create }}" hint-size="150px,36px">Crear esta visita</x-import></div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</section>
+</sc-if>
+<sc-if value="{{ showVisits }}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="co-vis-h" style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px"><h2 id="co-vis-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Visitas del caso</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ visitCount }}</x-import></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));gap:16px;align-items:start">
+<sc-for list="{{ visits }}" as="v" hint-placeholder-count="2">
+<article aria-label="{{ v.aria }}" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:{{ v.bg }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<span style="height:28px;padding:0 10px;display:inline-flex;align-items:center;border-radius:var(--radius-sm);background:var(--blue-900);color:#FFFFFF;font-size:14px;font-weight:700">{{ v.id }}</span>
+<span style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ v.mod }}</span>
+<sc-if value="{{ v.porCliente }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="240px,22px"><span style="white-space:nowrap">{{ v.porClienteTxt }}</span></x-import></sc-if>
+<span style="margin-left:auto"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ v.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ v.estado }}</span></x-import></span>
+</div>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
+<sc-for list="{{ v.fields }}" as="f" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:{{ f.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ f.label }}</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong);white-space:{{ f.ws }}">{{ f.value }}</dd></div></sc-for>
+</dl>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:13px;color:var(--text-muted)">{{ v.riesgosLabel }}</span>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ v.riesgos }}" as="vr" hint-placeholder-count="2"><li style="padding:4px 10px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:13px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ vr }}</li></sc-for></ul>
+</div>
+<sc-if value="{{ v.hasEnlace }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusEnlaceTarjeta" from="./sirius-enlace.js" visita="{{ v.raw }}" ro="{{ v.ro }}" rev="{{ v.rev }}" on-reenviar="{{ v.onReenviar }}" on-nuevo="{{ v.onNuevo }}" on-accion="{{ v.onAccion }}" hint-size="100%,260px"></x-import></sc-if>
+<sc-if value="{{ v.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-body)">{{ v.note }}</span></sc-if>
+<sc-if value="{{ v.hasActions }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px;border-top:1px solid var(--border-subtle)">
+<sc-for list="{{ v.actions }}" as="va" hint-placeholder-count="3"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="{{ va.variant }}" size="sm" on-click="{{ va.onClick }}" aria-label="{{ va.aria }}" hint-size="130px,36px">{{ va.label }}</x-import></sc-for>
+</div>
+</sc-if>
+</article>
+</sc-for>
+</div>
+<sc-if value="{{ noVisits }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:var(--text-muted)">Aún no hay visitas agendadas para este caso.</p></sc-if>
+</section>
+</sc-if>
+<sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}"><div aria-hidden="true" onClick="{{ closePnl }}" style="position:fixed;inset:0;z-index:1500;background:var(--scrim-drawer)"></div></sc-if>
+<sc-if value="{{ hasForm }}" hint-placeholder-val="{{ false }}">
+<section role="{{ fc.role }}" aria-modal="{{ fc.modal }}" aria-labelledby="co-form-h" style="position:{{ fc.pos }};top:0;right:0;z-index:{{ fc.z }};height:{{ fc.h }};width:{{ fc.w }};max-width:100vw;display:flex;flex-direction:column;background:#FFFFFF;border:{{ fc.border }};border-radius:{{ fc.radius }};box-shadow:{{ fc.shadow }}">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px 28px 16px;border-bottom:1px solid var(--border-subtle)">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">{{ fKicker }}</span><h2 id="co-form-h" style="margin:0;font-weight:300;font-size:28px;line-height:1.1;color:var(--text-strong)">{{ fTitle }}</h2></div>
+<sc-if value="{{ drawer }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="Cerrar formulario de visita" onClick="{{ closePnl }}" style="width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-pill);background:transparent;color:var(--text-strong);cursor:pointer" style-hover="background:var(--table-row-hover)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></sc-if>
+</div>
+<div style="flex:1;overflow-y:{{ fc.scroll }};padding:20px 28px;display:flex;flex-direction:column;gap:22px">
+<sc-if value="{{ showIncl }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ inclLabel }}</span>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ incl }}" as="ic" hint-placeholder-count="2"><li style="display:flex;align-items:center;gap:6px;min-height:32px;padding:0 6px 0 12px;border-radius:var(--radius-pill);background:var(--color-brand-wash);font-size:14px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ ic.label }}<sc-if value="{{ ic.canRemove }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ ic.aria }}" onClick="{{ ic.remove }}" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;background:transparent;cursor:pointer;color:var(--text-strong)" style-hover="background:#FFFFFF" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></sc-if></li></sc-for>
+</ul>
+<sc-if value="{{ inclErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Incluye al menos un riesgo en la visita.</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ showSplit }}" hint-placeholder-val="{{ false }}">
+<fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
+<legend style="padding:0;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text-strong)">Ramo que pasa a la nueva visita <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<sc-for list="{{ splitOpts }}" as="so" hint-placeholder-count="2"><label style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;border:2px solid {{ so.border }};border-radius:var(--radius-sm);background:{{ so.bg }};cursor:pointer;font-size:15px;font-weight:600;color:var(--text-strong)"><input type="radio" name="co-split" checked="{{ so.checked }}" onChange="{{ so.pick }}" style="width:18px;height:18px;margin:0;accent-color:var(--cyan-700)">{{ so.label }}</label></sc-for>
+</fieldset>
+</sc-if>
+<sc-if value="{{ showMods }}" hint-placeholder-val="{{ true }}">
+<fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
+<legend style="padding:0;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text-strong)">Modalidad <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<div role="radiogroup" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{ mods }}" as="m" hint-placeholder-count="5">
+<label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:2px solid {{ m.border }};border-radius:var(--radius-sm);background:{{ m.bg }};cursor:pointer">
+<input type="radio" name="co-mod" checked="{{ m.checked }}" onChange="{{ m.pick }}" style="width:18px;height:18px;margin:2px 0 0;accent-color:var(--cyan-700);flex:0 0 auto">
+<span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ m.label }}</span><sc-if value="{{ m.rec }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="90px,20px"><span style="white-space:nowrap">Recomendada</span></x-import></sc-if></span><span style="font-size:13px;color:var(--text-muted)">{{ m.hint }}</span></span>
+</label>
+</sc-for>
+</div>
+</fieldset>
+</sc-if>
+<sc-if value="{{ needsIns }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:6px;position:relative" onBlur="{{ insBlur }}">
+<label for="co-ins" style="font-size:13px;font-weight:700;color:var(--text-strong)">Inspector <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<input id="co-ins" type="search" role="combobox" aria-expanded="{{ insOpen }}" aria-controls="co-ins-list" aria-autocomplete="list" autocomplete="off" placeholder="Busca por nombre, tipo o zona" value="{{ insQ }}" onChange="{{ onInsQ }}" onFocus="{{ openIns }}" aria-invalid="{{ insInvalid }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ insBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<sc-if value="{{ insOpen }}" hint-placeholder-val="{{ false }}">
+<ul id="co-ins-list" role="listbox" aria-label="Inspectores" style="list-style:none;margin:0;padding:4px 0;position:absolute;top:74px;left:0;right:0;z-index:5;max-height:260px;overflow-y:auto;background:#FFFFFF;border-radius:var(--radius-sm);box-shadow:var(--shadow-modal)">
+<sc-for list="{{ insOpts }}" as="io" hint-placeholder-count="4"><li role="option" aria-selected="{{ io.sel }}"><button type="button" onClick="{{ io.pick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:none;background:{{ io.bg }};cursor:pointer;font-family:var(--font-brand);text-align:left" style-hover="background:var(--table-row-hover)" style-focus="outline:2px solid var(--color-brand);outline-offset:-2px"><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ io.n }}</span><span style="font-size:13px;color:var(--text-muted)">{{ io.meta }}</span></span><span style="font-size:13px;font-weight:700;color:{{ io.loadColor }};white-space:nowrap">{{ io.load }}</span></button></li></sc-for>
+<sc-if value="{{ insNoMatch }}" hint-placeholder-val="{{ false }}"><li style="padding:10px 14px;font-size:14px;color:var(--text-muted)">No hay inspectores con ese criterio.</li></sc-if>
+</ul>
+</sc-if>
+<sc-if value="{{ hasIns }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-body)">{{ insSummary }}</span></sc-if>
+<sc-if value="{{ insErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Selecciona el inspector.</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ hasClash }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--color-warning-bg);color:var(--text-strong)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;margin-top:2px"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2"></path></svg>
+<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">{{ clashText }}</span><span style="font-size:13px;color:var(--text-body)">Puedes agendar igual o elegir otro horario o inspector.</span></span>
+</div>
+</sc-if>
+<sc-if value="{{ hasFields }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px;align-items:start">
+<sc-for list="{{ fFields }}" as="f" hint-placeholder-count="4">
+<div style="grid-column:{{ f.span }};display:flex;flex-direction:column;gap:6px;min-width:0">
+<label for="{{ f.id }}" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ f.label }} <span aria-hidden="true" style="color:var(--color-danger);display:{{ f.star }}">*</span></label>
+<sc-if value="{{ f.isFecha }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFecha" id="{{ f.id }}" value="{{ f.value }}" on-change="{{ f.onChange }}" on-blur="{{ f.onBlur }}" modo="{{ f.fechaModo }}" formato="iso" min="{{ f.min }}" max="{{ f.max }}" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" hide-error="{{ true }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}"><input id="{{ f.id }}" type="{{ f.type }}" min="{{ f.min }}" inputmode="{{ f.inputMode }}" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}"><select id="{{ f.id }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></sc-if>
+<sc-if value="{{ f.isTextarea }}" hint-placeholder-val="{{ false }}"><textarea id="{{ f.id }}" rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" placeholder="{{ f.ph }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></sc-if>
+<sc-if value="{{ f.hasHelp }}" hint-placeholder-val="{{ false }}"><span id="{{ f.helpId }}" style="font-size:13px;color:var(--text-muted)">{{ f.help }}</span></sc-if>
+<sc-if value="{{ f.errShow }}" hint-placeholder-val="{{ false }}"><span id="{{ f.errId }}" role="alert" style="font-size:13px;color:var(--color-danger)">{{ f.err }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ showMap }}" hint-placeholder-val="{{ false }}">
+<div role="img" aria-label="{{ mapAria }}" style="height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm);background:var(--neutral-100);color:var(--neutral-500);text-align:center;padding:12px">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0 M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>
+<span style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Mapa de referencia</span>
+<span style="font-size:13px">{{ mapText }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ hasModNote }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="info" size="sm" hint-size="100%,48px">{{ modNote }}</x-import></sc-if>
+<sc-if value="{{ showContact }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-strong)">Contacto para la coordinación</h3>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px;align-items:start">
+<sc-for list="{{ cFields }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<label for="{{ f.id }}" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ f.label }} <span aria-hidden="true" style="color:var(--color-danger);display:{{ f.star }}">*</span></label>
+<sc-if value="{{ f.isFecha }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFecha" id="{{ f.id }}" value="{{ f.value }}" on-change="{{ f.onChange }}" on-blur="{{ f.onBlur }}" modo="{{ f.fechaModo }}" formato="iso" min="{{ f.min }}" max="{{ f.max }}" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" hide-error="{{ true }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}"><input id="{{ f.id }}" type="{{ f.type }}" inputmode="{{ f.inputMode }}" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></sc-if>
+<sc-if value="{{ f.errShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ f.err }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ showObs }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="co-obs" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ obsLabel }}</label>
+<textarea id="co-obs" rows="3" value="{{ obs }}" onChange="{{ onObs }}" placeholder="Ej. Llamar antes de llegar; el guardia pide cédula en la entrada." style="width:100%;padding:10px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+</div>
+</sc-if>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 28px;border-top:1px solid var(--border-subtle)">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ submit }}" hint-size="160px,40px">{{ submitLabel }}</x-import>
+<sc-if value="{{ drawer }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ closePnl }}" hint-size="110px,40px">Cancelar</x-import></sc-if>
+<span style="font-size:13px;color:var(--text-muted)">{{ hint }}</span>
+</div>
+</section>
+</sc-if>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ cancelOpen }}" on-close="{{ closeCancel }}" size="sm" align="left" title="{{ cancelTitle }}" description="Sus riesgos vuelven a “por coordinar”. El inspector y el contacto recibirán el aviso." footer="{{ cancelFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="co-cancel" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo de la cancelación <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="co-cancel" rows="3" value="{{ cancelMotivo }}" onChange="{{ onCancelMotivo }}" aria-invalid="{{ cancelInvalid }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ cancelBorder }};border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ cancelErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo de la cancelación.</span></sc-if>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ regenOpen }}" on-close="{{ closeRegen }}" size="sm" align="left" title="{{ regenTitle }}" description="{{ regenDesc }}" footer="{{ regenFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="co-regen" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="co-regen" rows="3" value="{{ regenMotivo }}" onChange="{{ onRegenMotivo }}" aria-invalid="{{ regenInvalid }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ regenBorder }};border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ regenErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo (al menos 10 caracteres).</span></sc-if>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ intOpen }}" on-close="{{ closeInt }}" size="sm" align="left" title="Registrar intento de contacto" description="{{ intDesc }}" footer="{{ intFooter }}" hint-size="0px,0px">
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px">
+<div style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1"><label for="co-int-f" style="font-size:13px;font-weight:700;color:var(--text-strong)">Fecha y hora <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><x-import component-from-global-scope="SiriusFecha" id="co-int-f" value="{{ intF.fecha }}" on-change="{{ intF.onFecha }}" modo="fechaHora" formato="iso" max="ahora" max-label="la fecha y hora actual" invalid="{{ intF.fechaInv }}" req="{{ true }}" hint-size="100%,44px"></x-import><sc-if value="{{ intF.fechaErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ intF.fechaMsg }}</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="co-int-m" style="font-size:13px;font-weight:700;color:var(--text-strong)">Medio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="co-int-m" value="{{ intF.medio }}" onChange="{{ intF.onMedio }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ intF.medioBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)"><sc-for list="{{ intF.medios }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ intF.medioErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Elige el medio.</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="co-int-r" style="font-size:13px;font-weight:700;color:var(--text-strong)">Resultado <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="co-int-r" value="{{ intF.resultado }}" onChange="{{ intF.onRes }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ intF.resBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)"><sc-for list="{{ intF.resultados }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ intF.resErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Elige el resultado.</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1"><label for="co-int-o" style="font-size:13px;font-weight:700;color:var(--text-strong)">Observación</label><textarea id="co-int-o" rows="3" value="{{ intF.obs }}" onChange="{{ intF.onObs }}" placeholder="Ej. Buzón de voz; se dejó mensaje." style="width:100%;padding:10px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></div>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ ccOpen }}" on-close="{{ closeCc }}" size="sm" align="left" title="{{ ccTitle }}" description="El caso se cerrará y se notificará al Ejecutivo comercial con el motivo." footer="{{ ccFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
+<legend style="padding:0;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<sc-for list="{{ ccOpts }}" as="co" hint-placeholder-count="2"><label title="{{ co.tip }}" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:2px solid {{ co.border }};border-radius:var(--radius-sm);background:{{ co.bg }};cursor:{{ co.cursor }}"><input type="radio" name="co-cc" checked="{{ co.checked }}" disabled="{{ co.dis }}" onChange="{{ co.pick }}" aria-describedby="{{ co.hintId }}" style="width:18px;height:18px;margin:2px 0 0;accent-color:var(--cyan-700);flex:0 0 auto"><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:600;color:{{ co.fg }}">{{ co.label }}</span><sc-if value="{{ co.hasHint }}" hint-placeholder-val="{{ false }}"><span id="{{ co.hintId }}" style="font-size:13px;color:var(--text-muted)">{{ co.tip }}</span></sc-if></span></label></sc-for>
+<sc-if value="{{ ccMotErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Elige el motivo.</span></sc-if>
+</fieldset>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="co-cc-obs" style="font-size:13px;font-weight:700;color:var(--text-strong)">Observación <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="co-cc-obs" rows="3" value="{{ ccObs }}" onChange="{{ onCcObs }}" aria-invalid="{{ ccObsInv }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ ccObsBorder }};border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ ccObsErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe una observación.</span></sc-if>
+</div>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ waOpen }}" on-close="{{ closeWa }}" size="sm" align="left" title="{{ waTitle }}" description="Vista previa del mensaje enviado por WhatsApp · solo lectura" footer="{{ waFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="font-size:13px;color:var(--text-muted);overflow-wrap:anywhere">Para: {{ waTo }}</span>
+<p id="co-wa-texto" style="margin:0;padding:14px 16px;border-radius:var(--radius-md) var(--radius-md) var(--radius-md) 4px;background:var(--surface-subtle);font-size:15px;line-height:1.5;color:var(--text-strong);white-space:pre-line;overflow-wrap:anywhere;min-width:0;max-width:100%">{{ waText }}</p>
+<sc-if value="{{ waHasLink }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ copyLink }}" hint-size="150px,36px"><span id="co-wa-copiar">Copiar enlace</span></x-import><span id="co-wa-copiado" role="status" aria-live="polite" style="font-size:14px;font-weight:600;color:var(--color-success);min-height:20px">{{ waCopyMsg }}</span></div></sc-if>
+<sc-if value="{{ waHasIns }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-body)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>{{ waIns }}</span></sc-if>
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20196&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tipo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Vehículos&quot;,&quot;Ramos Generales&quot;],&quot;default&quot;:&quot;Vehículos&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;riesgos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;visitas&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;rec&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;contacto&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(type:string,payload:object)=&gt;void&quot;},&quot;enlaceRev&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  // El tipo de inspector sale de datos-ejemplo.js cuando está cargado.
+  get INS() { const D = window.SIRIUS_EJEMPLO; return !D || !D.inspectores ? this.INS0 : this.INS0.map(i => { const d = D.inspectores.find(x => x.n === i.n); return d ? Object.assign({}, i, { tipo: d.tipo }) : i; }); }
+  INS0 = [
+    { n: 'Marco Tapia', tipo: 'Interno', zona: 'Quito norte', agenda: { '2026-10-16': [['08:00', '09:00'], ['10:30', '11:30'], ['15:00', '16:00']], '2026-10-17': [['09:00', '10:00'], ['14:00', '15:00']] } },
+    { n: 'Cristian Vaca', tipo: 'Interno', zona: 'Quito sur y valles', agenda: { '2026-10-16': [['09:00', '10:00'], ['11:00', '12:00']], '2026-10-17': [['10:00', '11:00']] } },
+    { n: 'Diego Salinas', tipo: 'Externo', zona: 'Quito norte', agenda: { '2026-10-17': [['16:00', '17:00']] } },
+    { n: 'Inspecciones Andinas', tipo: 'Agencia', zona: 'Pichincha', agenda: { '2026-10-16': [['08:00', '09:00'], ['09:00', '10:00'], ['11:00', '12:00'], ['14:00', '15:00'], ['16:00', '17:00']], '2026-10-17': [['08:00', '09:00'], ['12:00', '13:00'], ['15:00', '16:00']] } },
+    { n: 'Luis Andrade', tipo: 'Externo', zona: 'Manta y Portoviejo', agenda: { '2026-10-17': [['10:00', '11:00']] } },
+    { n: 'Patricia Rosero', tipo: 'Externo · especialista en equipo electrónico', zona: 'Manabí y Guayas', agenda: { '2026-10-17': [['15:00', '16:00']] } },
+  ];
+  MODS = [['Presencial', 'El inspector visita la dirección'], ['Virtual guiada', 'Videollamada con el inspector'], ['Autoinspección', 'El contacto envía fotos guiadas'], ['Documental', 'Revisión de documentos y fotos'], ['No requiere inspección', 'Pasa directo a calificación']];
+  today = '2026-10-16';
+  nowIso = '2026-10-16T13:40';
+  addHours(val) { const h = /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 48; const d = window.SIRIUS_EJEMPLO.ahora(); d.setHours(d.getHours() + h); const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+  fmtDT(iso) { const [dd, tt] = iso.split('T'); return this.fmtD(dd) + ' · ' + tt; }
+  state = this.initial();
+  initial() {
+    const p = this.props, pr = p.preset || '';
+    const s = { sel: [], grouped: pr === 'agrupar', pnl: null, touched: {}, insQ: '', insOpen: false, wa: null, cancel: null, intF: null, cc: null };
+    const rs = p.riesgos || [];
+    if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; }
+    else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; }
+    else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección' });   // etapa 12b · envioenlace (20186)
+    else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false) s.pnl = this.newForm(rs.map(r => r.id));
+    return s;
+  }
+  componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey) this.setState(this.initial()); }
+  // Etapa 12d-2b · «Copiar enlace» del modal de envío: copia el enlace exacto del mensaje y lo confirma en pantalla.
+  copiarEnlace() { const u = (this.state.wa || {}).enlace || '', ok = () => this.setState({ waCopied: true }), viejo = () => { try { const t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.select(); const r = document.execCommand('copy'); document.body.removeChild(t); if (r) ok(); } catch (e) { /* sin portapapeles */ } };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, viejo); else viejo(); } catch (e) { viejo(); } }
+  visits() { return this.props.visitas || []; }
+  activeVisit() { return this.visits().find(v => v.estado !== 'Cancelada'); }
+  rById(id) { return (this.props.riesgos || []).find(r => r.id === id) || { id, label: id }; }
+  recFor(ids) { const ms = ids.map(id => this.rById(id).recMod).filter(Boolean); return ms.includes('Presencial') ? 'Presencial' : ms[0] || (this.props.rec || {}).modalidad || 'Presencial'; }
+  newForm(ids, extra) {
+    const c = this.props.contacto || {}, dirs = ids.map(id => this.rById(id).dir).filter(Boolean);
+    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), inspector: '', fecha: '', hIni: '', hFin: '', dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
+  }
+  setP(k, v) { this.setState(st => ({ pnl: Object.assign({}, st.pnl, { [k]: v }) })); }
+  touch(k) { if (!this.state.touched[k]) this.setState(st => ({ touched: Object.assign({}, st.touched, { [k]: true }) })); }
+  fmtD(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y.slice(2); }
+  needsIns(p) { return p.mode === 'inspector' || ['Presencial', 'Virtual guiada', 'Documental'].includes(p.mod); }
+  slots(name, fecha, exceptId) {
+    const i = this.INS.find(x => x.n === name); const out = ((i && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1] }));
+    this.visits().filter(v => v.estado !== 'Cancelada' && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
+    return out;
+  }
+  addH(h) { const [x, y] = h.split(':').map(Number); return String(Math.min(23, x + 1)).padStart(2, '0') + ':' + String(y).padStart(2, '0'); }
+  clash(p) {
+    if (!p || !p.inspector || !p.fecha || !p.hIni || !['Presencial', 'Virtual guiada'].includes(p.mod)) return null;
+    const a = p.hIni, b = p.mod === 'Presencial' && p.hFin ? p.hFin : this.addH(p.hIni);
+    return this.slots(p.inspector, p.fecha, p.visitId).find(s => s.a < b && a < s.b) || null;
+  }
+  // ---------- Campos personalizados (etapa 10c-consumo): los obligatorios en «Coordinación» se piden al grabar la visita ----------
+  cpCampos() { const C = window.SIRIUS_CAMPOS; if (!C) return []; const g = this.props.tipo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'; return C.campos.filter(x => x.estado === 'Activo' && x.entidad === 'caso' && x.momento === 'Coordinación' && x.aplicaA.includes(g)).sort((a, b) => a.orden - b.orden); }
+  cpVal(p, x) { const k = 'cp_' + x.clave; if (p && p[k] !== undefined) return p[k]; const v = window.SIRIUS_CAMPOS.valor(this.props.caseId, x.clave); return v === null ? '' : String(v); }
+  cpPide(p) { return !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección'; }
+  errors(p) {
+    const e = {}; if (!p) return e;
+    if (p.mode !== 'inspector' && !p.riesgos.length) e.riesgos = 1;
+    if (p.mode === 'dividir' && !p.split) e.split = 'Elige el ramo.';
+    if (this.needsIns(p) && !p.inspector) e.inspector = 'Selecciona el inspector.';
+    if (p.mode === 'inspector') return e;
+    if (['Presencial', 'Virtual guiada', 'Documental'].includes(p.mod) && !p.fecha) e.fecha = p.mod === 'Documental' ? 'Indica la fecha límite de revisión.' : 'Indica la fecha.';
+    if (p.mod === 'No requiere inspección') { if (!p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (!String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.'; return e; }
+    if (p.fecha && p.fecha < this.today) e.fecha = 'La fecha no puede ser anterior a hoy.';
+    if (['Presencial', 'Virtual guiada'].includes(p.mod) && !p.hIni) e.hIni = 'Indica la hora de inicio.';
+    if (p.mod === 'Presencial') { if (!p.hFin) e.hFin = 'Indica la hora de fin.'; else if (p.hIni && p.hFin <= p.hIni) e.hFin = 'La hora de fin debe ser posterior al inicio.'; if (!p.dir.trim()) e.dir = 'Ingresa la dirección.'; }
+    if (p.mod === 'No requiere inspección' && !p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (p.mod === 'No requiere inspección' && !String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.';
+    if (!p.cName.trim()) e.cName = 'Ingresa el nombre del contacto.';
+    if (!/^09\d{8}$/.test(p.cCel.replace(/\s/g, ''))) e.cCel = 'Ingresa un celular de 10 dígitos que empiece con 09.';
+    if (p.cMail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.cMail.trim())) e.cMail = 'Revisa el formato del correo.';
+    if (this.cpPide(p)) this.cpCampos().forEach(x => { const raw = String(this.cpVal(p, x)).trim(); const m = !raw ? 'Ingresa ' + x.etiqueta.toLowerCase() + ': se pide al coordinar la visita.' : window.SIRIUS_CAMPOS.validar(x, raw); if (m) e['cp_' + x.clave] = m; });
+    return e;
+  }
+  VIG = ['48 horas', '72 horas', '5 días', '10 días', '15 días'];
+  aiCfg() { const D = window.SIRIUS_EJEMPLO; return (D && D.autoinspeccion) || {}; }
+  vigHoras(val) { return /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 0; }
+  // Etapa 12b: «Abrir el portal del cliente» solo si el enlace de la visita existe en el portal (?token=).
+  conPortal(v) { const P = window.SiriusPortal, tk = String((v && v.enlace) || '').split(/\/ai?\//)[1]; return !!(P && P.resolver && tk && P.resolver(tk).estado !== 'invalido'); }
+  vigDef() { const n = this.aiCfg().vigenciaDias; return n ? (n * 24 <= 72 ? n * 24 + ' horas' : n + ' días') : '48 horas'; }
+  vigOpts() { const def = this.vigDef(), l = this.VIG.includes(def) ? this.VIG.slice() : this.VIG.concat(def).sort((x, y) => this.vigHoras(x) - this.vigHoras(y)); return l.map(v => ({ v, l: v === def ? v + ' (configurado)' : v })); }
+  recTxt(val) { return this.vigHoras(val) <= 72 ? '24 h' : (this.aiCfg().recordatorioDias || 2) + ' días'; }
+  F(k, label, kind, o) {
+    o = o || {}; const p = this.state.pnl, e = this.errors(p), show = !!(this.state.touched[k] && e[k]);
+    const id = 'co-' + k;
+    return { id, label, star: o.req ? 'inline' : 'none', isInput: kind === 'input' && !['date', 'time', 'datetime-local'].includes(o.type), isFecha: kind === 'input' && ['date', 'time', 'datetime-local'].includes(o.type), fechaModo: { date: 'fecha', time: 'hora', 'datetime-local': 'fechaHora' }[o.type] || 'fecha', max: o.max || '', isSelect: kind === 'select', isTextarea: kind === 'textarea', type: o.type || 'text', min: o.min, inputMode: o.inputMode || 'text', ph: o.ph || '', value: p[k] || '', options: (o.options || []).map(x => typeof x === 'string' ? { v: x, l: x } : x), span: o.span || 'auto',
+      onChange: (ev) => this.setP(k, ev.target.value), onBlur: () => this.touch(k), hasHelp: !!o.help, help: o.help || '', helpId: id + '-help', errShow: show, err: e[k] || '', errId: id + '-err',
+      descId: [o.help ? id + '-help' : '', show ? id + '-err' : ''].filter(Boolean).join(' ') || undefined, invalid: show ? 'true' : undefined, border: show ? 'var(--color-danger)' : 'var(--input-outlined-border)' };
+  }
+  waMessage(v) {
+    const c = (v.cName || '').split(' ')[0], cid = this.props.caseId, items = v.riesgos.map(id => this.rById(id).label).join(', ');
+    const hi = 'Hola, ' + c + '. Te escribimos de Aseguradora del Sur por tu solicitud ' + cid + '.\n\n';
+    if (v.mod === 'Presencial') return hi + 'Agendamos la inspección presencial de ' + items + ' para el ' + this.fmtD(v.fecha) + ' de ' + v.hIni + ' a ' + v.hFin + ' en ' + v.dir + (v.inter ? ' y ' + v.inter : '') + '. Te visitará ' + v.inspector + '.\n\nSi necesitas cambiar la cita, responde a este mensaje.';
+    if (v.mod === 'Virtual guiada') return hi + 'Agendamos una videollamada con ' + v.inspector + ' para el ' + this.fmtD(v.fecha) + ' a las ' + v.hIni + ' para inspeccionar ' + items + '. Únete desde este enlace: ' + v.enlace + '\n\nTen a mano el vehículo o el bien y buena conexión.';
+    if (v.mod === 'Autoinspección') return hi + 'Realiza la autoinspección de ' + items + ' desde este enlace: ' + v.enlace + '\n\nEl enlace vence el ' + (v.vence ? this.fmtDT(v.vence) : 'en ' + v.validez) + '. Te guiaremos foto por foto.';
+    if (v.mod === 'Documental') return hi + 'Revisaremos los documentos y fotos de ' + items + ' hasta el ' + this.fmtD(v.fecha) + '. Si te pedimos algo adicional, te escribiremos por aquí.';
+    return '';
+  }
+  renderVals() {
+    const P = this.props, s = this.state, ro = P.canEdit === false, p = ro ? null : s.pnl;
+    const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
+    const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
+    const rs = P.riesgos || [], single = rs.length === 1, veh = P.tipo === 'Vehículos';
+    const vis = this.visits();
+    const assigned = new Set(); vis.filter(v => v.estado !== 'Cancelada').forEach(v => v.riesgos.forEach(id => assigned.add(id)));
+    const pend = rs.filter(r => !assigned.has(r.id));
+    const sel = s.sel.filter(id => pend.some(r => r.id === id));
+    const rec = P.rec || { score: 80, nivel: 'Riesgo bajo', alertas: [], modalidad: 'Presencial', motivo: '' };
+    const groups = {}; pend.forEach(r => { const k = r.dir || 'Sin dirección'; (groups[k] = groups[k] || []).push(r); });
+    const proposals = veh ? (s.grouped ? Object.keys(groups).map((dir, i) => ({ dir, list: groups[dir], title: 'Visita propuesta ' + (i + 1) })) : []) : (pend.length ? [{ dir: pend[0].dir || '', list: pend, title: 'Una sola visita para ' + (pend.length === 1 ? 'el ramo' : 'los ' + pend.length + ' ramos') }] : []);
+    const openNew = (ids) => this.setState({ pnl: this.newForm(ids), touched: {}, insQ: '', insOpen: false });
+    const errs = this.errors(p), eKeys = Object.keys(errs);
+    const inline = !!p && single && !this.activeVisit() && p.mode === 'nueva';
+    const drawer = !!p && !inline;
+    const ins = p && p.inspector ? this.INS.find(x => x.n === p.inspector) : null;
+    const loadDate = (p && p.fecha) || this.today;
+    const loadOf = (n) => { const k = this.slots(n, loadDate, p && p.visitId).length; return (k === 1 ? '1 visita' : k + ' visitas') + (loadDate === this.today ? ' hoy' : ' el ' + this.fmtD(loadDate).slice(0, 5)); };
+    const q = s.insQ.trim().toLowerCase();
+    const insList = this.INS.filter(i => !q || (ins && s.insQ === ins.n) || (i.n + ' ' + i.tipo + ' ' + i.zona).toLowerCase().includes(q));
+    const cl = this.clash(p);
+    const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
+    const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
+    const nextId = 'V' + (vis.length + 1);
+    const tone = { Agendada: 'brand', 'Enlace enviado': 'brand', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
+    const fields = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
+      this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
+      this.F('dir', 'Dirección', 'input', { req: true, span: '1 / -1' }), this.F('inter', 'Intersección', 'input', { ph: 'Ej. De los Juncos' }), this.F('ref', 'Referencias', 'input', { span: 'span 2', ph: 'Ej. Portón verde junto a la gasolinera' })]
+      : p.mod === 'Virtual guiada' ? [this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora', 'input', { req: true, type: 'time' })]
+      : p.mod === 'Documental' ? [this.F('fecha', 'Fecha límite de revisión', 'input', { req: true, type: 'date', min: this.today })]
+      : p.mod === 'Autoinspección' ? [this.F('validez', 'Validez del enlace', 'select', { options: this.vigOpts() })]
+      : [this.F('motivo', 'Motivo', 'select', { req: true, span: '1 / -1', options: [{ v: '', l: 'Selecciona el motivo' }].concat(((window.SIRIUS_EJEMPLO || {}).catalogos || {}).motivosNoInspeccion || []) }), this.F('nrObs', 'Observación', 'textarea', { req: true, span: '1 / -1', ph: 'Ej. Factura del concesionario y fotos de entrega revisadas.' })];
+    const cF = (k, label, o) => { o = o || {}; const show = !!(s.touched[k] && errs[k]); return { id: 'co-' + k, label, star: o.req ? 'inline' : 'none', isInput: true, isFecha: false, type: o.type || 'text', inputMode: o.inputMode || 'text', ph: o.ph || '', value: p ? p[k] : '', onChange: (ev) => this.setP(k, ev.target.value), onBlur: () => this.touch(k), errShow: show, err: errs[k] || '', invalid: show ? 'true' : undefined, border: show ? 'var(--color-danger)' : 'var(--input-outlined-border)' }; };
+    const submit = () => {
+      if (eKeys.length) { const t = Object.assign({}, s.touched); eKeys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); return; }
+      const mode = p.mode, onA = P.onAction || (() => {});
+      if (mode === 'inspector') { onA('inspector', { id: p.visitId, inspector: p.inspector }); this.setState({ pnl: null }); return; }
+      if (this.cpPide(p)) { const C = window.SIRIUS_CAMPOS, cambios = []; this.cpCampos().forEach(x => { const nv = String(this.cpVal(p, x)).trim(), old = C.valor(P.caseId, x.clave); if (nv !== (old === null ? '' : String(old))) { if (!C.valores[P.caseId]) C.valores[P.caseId] = {}; C.valores[P.caseId][x.clave] = nv; cambios.push({ etiqueta: x.etiqueta, de: C.mostrar(x, old), a: nv }); } }); if (cambios.length) onA('campos', { cambios }); }
+      if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.setState({ pnl: null, touched: {}, wa: { title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nv), ins: '' } }); return; }
+      const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
+      let v;
+      if (mode === 'reagendar') { v = Object.assign({}, src, base); onA('reagendar', { id: p.visitId, patch: base }); }
+      else { const id = nextId; v = Object.assign({ id, riesgos: mode === 'dividir' ? [p.split] : p.riesgos.slice(), estado: 'Agendada' }, base);
+        if (p.mod === 'Virtual guiada') v.enlace = 'meet.sirius.ec/' + P.caseId + '-' + id.toLowerCase();
+        if (p.mod === 'Autoinspección') { v.enlace = 'sirius.ec/ai/' + P.caseId + '-' + id; v.vence = this.addHours(p.validez); }
+        if (mode === 'dividir') onA('dividir', { fromId: p.visitId, visit: v }); else onA('agendar', { visit: v }); }
+      const txt = this.waMessage(v);
+      this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), to: v.cName + ' · ' + v.cCel, text: txt, enlace: v.enlace || '', ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null });
+    };
+    const fieldN = eKeys.filter(k => k !== 'riesgos').length;
+    const cancel = s.cancel;
+    const ints = P.intentos || [], nInt = ints.length, it = s.intF, cc = s.cc, onAct = P.onAction || (() => {});
+    const resTone = { 'Contestó': 'success', 'No contesta': 'warning', 'Número equivocado': 'danger', 'Pidió llamar después': 'brand' };
+    const by = (x) => x.by + ' · ' + this.fmtDT(x.at);
+    const itE = it ? { fecha: !it.fecha ? 'Indica la fecha y hora.' : it.fecha > this.nowIso ? 'La fecha no puede ser posterior a ahora.' : '', medio: !it.medio, resultado: !it.resultado } : {};
+    const setI = (k) => (e) => { const v = e.target.value; this.setState(st => ({ intF: Object.assign({}, st.intF, { [k]: v }) })); };
+    const ccOk = { 'Datos de contacto incompletos o incorrectos': true, 'Cliente no contesta': nInt >= 3 };
+    const ccErr = cc ? { motivo: !cc.motivo, obs: !cc.obs.trim() } : {};
+    const intVals = {
+      intCount: String(nInt), noIntentos: !nInt, canCancelCase: P.canCancel !== false,
+      intentos: ints.slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1).map((x, i) => ({ when: this.fmtDT(x.fecha), medio: x.medio, resultado: x.resultado, tone: resTone[x.resultado] || 'neutral', obs: x.obs || '—', by: x.by || '', border: i === 0 ? 'none' : '1px solid var(--border-subtle)' })),
+      hasCancelInfo: !!P.cancelacion, cInfo: P.cancelacion ? { motivo: P.cancelacion.motivo, obs: P.cancelacion.obs, meta: 'Cancelado por ' + by(P.cancelacion) + (ccOk[P.cancelacion.motivo] !== undefined ? ' · se notificó al Ejecutivo comercial' : '') } : { motivo: '', obs: '', meta: '' },
+      hasReapInfo: !!P.reapertura, rInfo: P.reapertura ? { meta: 'por ' + by(P.reapertura) + ' · responsable: Coordinador de inspecciones', cel: P.reapertura.cel, correo: P.reapertura.correo || 'Sin correo', instr: P.reapertura.instr } : { meta: '', cel: '', correo: '', instr: '' },
+      openInt: () => this.setState({ intF: { fecha: this.nowIso, medio: '', resultado: '', obs: '', tried: false } }),
+      intOpen: !!it, closeInt: () => this.setState({ intF: null }),
+      intDesc: P.estadoCaso === 'Registrado' || P.estadoCaso === 'Reaperturado' ? 'Con el primer intento, el caso pasa a En coordinación.' : 'Queda en la lista y en el historial del caso.',
+      intF: it ? { fecha: it.fecha, medio: it.medio, resultado: it.resultado, obs: it.obs, onFecha: setI('fecha'), onMedio: setI('medio'), onRes: setI('resultado'), onObs: setI('obs'),
+        fechaErr: !!(it.tried && itE.fecha), fechaMsg: itE.fecha || '', fechaInv: it.tried && itE.fecha ? 'true' : undefined, fechaBorder: it.tried && itE.fecha ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+        medioErr: !!(it.tried && itE.medio), medioBorder: it.tried && itE.medio ? 'var(--color-danger)' : 'var(--input-outlined-border)', resErr: !!(it.tried && itE.resultado), resBorder: it.tried && itE.resultado ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+        medios: [{ v: '', l: 'Selecciona' }].concat(['Llamada', 'WhatsApp', 'Correo'].map(v => ({ v, l: v }))), resultados: [{ v: '', l: 'Selecciona' }].concat(['Contestó', 'No contesta', 'Número equivocado', 'Pidió llamar después'].map(v => ({ v, l: v }))) } : { medios: [], resultados: [] },
+      intFooter: React.createElement(React.Fragment, null, btn('ghost', 'Volver', () => this.setState({ intF: null })), btn('primary', 'Registrar intento', () => {
+        if (itE.fecha || itE.medio || itE.resultado) { this.setState({ intF: Object.assign({}, it, { tried: true }) }); return; }
+        onAct('intento', { intento: { fecha: it.fecha, medio: it.medio, resultado: it.resultado, obs: it.obs.trim() } }); this.setState({ intF: null }); })),
+      openCc: () => this.setState({ cc: { motivo: '', obs: '', tried: false } }),
+      ccOpen: !!cc, closeCc: () => this.setState({ cc: null }), ccTitle: 'Cancelar caso ' + P.caseId,
+      ccOpts: Object.keys(ccOk).map((label, i) => { const dis = !ccOk[label], on = !!cc && cc.motivo === label; const tip = dis ? 'Requiere al menos 3 intentos de contacto registrados (' + (nInt === 1 ? 'hay 1' : 'hay ' + nInt) + ').' : '';
+        return { label, dis, tip: tip || undefined, hasHint: dis, hintId: dis ? 'co-cc-h' + i : undefined, checked: on, fg: dis ? 'var(--text-muted)' : 'var(--text-strong)', cursor: dis ? 'not-allowed' : 'pointer', border: on ? 'var(--cyan-500)' : 'var(--border-default)', bg: dis ? 'var(--surface-subtle)' : on ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => !dis && this.setState({ cc: Object.assign({}, cc, { motivo: label }) }) }; }),
+      ccMotErr: !!(cc && cc.tried && ccErr.motivo), ccObs: cc ? cc.obs : '', onCcObs: (e) => { const v = e.target.value; this.setState(st => ({ cc: Object.assign({}, st.cc, { obs: v }) })); },
+      ccObsErr: !!(cc && cc.tried && ccErr.obs), ccObsInv: cc && cc.tried && ccErr.obs ? 'true' : undefined, ccObsBorder: cc && cc.tried && ccErr.obs ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      ccFooter: React.createElement(React.Fragment, null, btn('ghost', 'Volver', () => this.setState({ cc: null })), btn('primary', 'Cancelar caso', () => {
+        if (ccErr.motivo || ccErr.obs) { this.setState({ cc: Object.assign({}, cc, { tried: true }) }); return; }
+        onAct('cancelarCaso', { motivo: cc.motivo, obs: cc.obs.trim() }); this.setState({ cc: null }); })),
+    };
+    return {
+      ...intVals,
+      rec: { score: String(rec.score), nivel: rec.nivel, tone: rec.score >= 75 ? 'success' : rec.score >= 55 ? 'warning' : 'danger', modalidad: rec.modalidad, motivo: rec.motivo, noAlertas: !(rec.alertas || []).length,
+        alertas: (rec.alertas || []).map(a => ({ hasRiesgo: !!a.riesgo, riesgo: (a.riesgo || '') + ' ·', text: a.text })) },
+      showPending: !single, pendTitle: veh ? 'Vehículos por coordinar' : 'Ramos por coordinar', pendCount: String(pend.length), noPending: !pend.length, noPendingWhy: pend.length ? '' : (veh ? 'No hay vehículos por coordinar' : 'No hay ramos por coordinar'), noSelWhy: sel.length ? '' : (veh ? 'Selecciona al menos un vehículo' : 'Selecciona al menos un ramo'),
+      canGroup: veh, groupLabel: s.grouped ? 'Quitar agrupación' : 'Agrupar por dirección', toggleGroup: () => this.setState(st => ({ grouped: !st.grouped })),
+      noSel: !sel.length, createSelLabel: sel.length ? 'Crear visita con los seleccionados (' + sel.length + ')' : 'Crear visita con los seleccionados', createSel: () => sel.length && openNew(sel),
+      pending: pend.map((r, i) => ({ label: r.label, ws: r.nowrap ? 'nowrap' : 'normal', sub: r.sub || '', dir: r.dir || '—', estado: 'Por coordinar', estadoFull: r.estado, checked: sel.includes(r.id), cbLabel: 'Seleccionar ' + r.label, border: i === 0 ? 'none' : '1px solid var(--border-subtle)', bg: sel.includes(r.id) ? 'var(--table-row-hover)' : '#FFFFFF',
+        toggle: () => this.setState(st => ({ sel: st.sel.includes(r.id) ? st.sel.filter(x => x !== r.id) : st.sel.concat(r.id) })) })),
+      hasProposals: proposals.length > 0 && !ro, canEdit: !ro, readOnly: ro, propTitle: veh ? 'Propuesta por dirección' : 'Propuesta del sistema',
+      proposals: proposals.map(g => ({ title: g.title, dir: g.dir, count: g.list.length === 1 ? (veh ? '1 vehículo' : '1 ramo') : g.list.length + (veh ? ' vehículos' : ' ramos'), items: g.list.map(r => r.label), mod: this.recFor(g.list.map(r => r.id)), create: () => openNew(g.list.map(r => r.id)) })),
+      showVisits: !inline || vis.length > 0, noVisits: !vis.length, visitCount: String(vis.filter(v => v.estado !== 'Cancelada').length),
+      visits: vis.map(v => {
+        const live = v.estado === 'Agendada' || v.estado === 'En curso', pendRamos = v.riesgos.filter(id => !['Pendiente calificación', 'Pendiente calificación de suscripción', 'Inspeccionado: aprobado', 'Inspeccionado: no aprobado'].includes(this.rById(id).estado));
+        const when = v.mod === 'Presencial' ? this.fmtD(v.fecha) + ' · ' + v.hIni + '–' + v.hFin : v.mod === 'Virtual guiada' ? this.fmtD(v.fecha) + ' · ' + v.hIni : v.mod === 'Documental' ? 'Revisión hasta ' + this.fmtD(v.fecha) : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? this.fmtDT(v.envio) : v.vence ? 'Vence el ' + this.fmtDT(v.vence) : 'Enlace válido por ' + v.validez) : 'No aplica';
+        const place = v.mod === 'Presencial' ? v.dir + (v.inter ? ' y ' + v.inter : '') : v.enlace || (v.mod === 'Autoinspección' ? 'WhatsApp ' + v.cCel : '—');
+        const Eo = window.SiriusEnlace, tkE = Eo && v.mod === 'Autoinspección' ? Eo.tokenDe(v.enlace) : '', stE = tkE ? Eo.estado(tkE) : null, conTarjeta = !!stE && v.estado !== 'Cancelada'; // etapa 13: estado del enlace calculado por el motor
+        const est = v.mod === 'Autoinspección' && v.estado === 'Agendada' ? ((v.vence && v.vence < this.nowIso) || (stE && stE.id === 'vencido') ? 'Enlace caducado' : 'Enlace enviado') : v.estado;
+        const onA = P.onAction || (() => {});
+        const showWa = (vv, title) => this.setState({ wa: { title, to: vv.cName + ' · ' + vv.cCel, text: this.waMessage(vv), enlace: vv.enlace || '', ins: '' } });
+        const acts = est === 'Agendada' ? [
+          { label: 'Reagendar', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'reagendar', visitId: v.id, riesgos: v.riesgos })), touched: {}, insQ: v.inspector || '', insOpen: false }) },
+          v.inspector && { label: 'Cambiar inspector', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })), touched: {}, insQ: '', insOpen: true }) },
+          !veh && v.riesgos.length > 1 && pendRamos.length > 0 && { label: 'Dividir visita', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm([], Object.assign({}, { mod: v.mod, dir: v.dir, inter: v.inter, ref: v.ref, cName: v.cName, cCel: v.cCel, cMail: v.cMail, fecha: v.fecha }, { mode: 'dividir', visitId: v.id, riesgos: pendRamos, split: '' })), touched: {}, insQ: '', insOpen: false }) },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : est === 'Enlace enviado' ? [
+          { label: 'Generar uno nuevo', variant: 'secondary', onClick: () => this.setState({ regen: { id: v.id, motivo: '', touched: false } }) },
+          P.onAction && this.conPortal(v) && { label: 'Abrir el portal del cliente', variant: 'secondary', onClick: () => onA('portal', { id: v.id, enlace: v.enlace }) },
+          { label: 'Reenviar enlace', variant: 'secondary', onClick: () => { onA('reenviar', { id: v.id }); showWa(v, 'Enlace de ' + v.id + ' reenviado'); } },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : est === 'Enlace caducado' ? [
+          { label: 'Generar nuevo enlace', variant: 'primary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }) },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : est === 'En curso' ? [
+          v.mod === 'Autoinspección' && P.onAction && this.conPortal(v) && { label: 'Abrir el portal del cliente', variant: 'secondary', onClick: () => onA('portal', { id: v.id, enlace: v.enlace }) },
+          v.inspector && { label: 'Cambiar inspector', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })), touched: {}, insQ: '', insOpen: true }) },
+        ] : est === 'Realizada' ? [
+          { label: 'Ver informe', variant: 'secondary', onClick: () => onA('verInforme', { id: v.id }) },
+        ] : [];
+        const acts2 = acts.filter(Boolean).filter(a => !ro || a.label === 'Ver informe').filter(a => !conTarjeta || !['Generar uno nuevo', 'Reenviar enlace', 'Generar nuevo enlace'].includes(a.label)).map(a => Object.assign({ aria: a.label + ' ' + v.id }, a));
+        return { id: v.id, mod: v.mod, porCliente: !!v.porCliente && v.estado !== 'Cancelada', porClienteTxt: 'Agendada por el cliente · ' + (v.origenCita === 'red' ? 'red' : 'agenda fija'), estado: est, tone: tone[est] || 'neutral', aria: 'Visita ' + v.id + ' · ' + v.mod + ' · ' + est, bg: v.estado === 'Cancelada' ? 'var(--surface-subtle)' : '#FFFFFF',
+          fields: [{ label: 'Inspector', value: v.inspector || 'Sin inspector', ws: 'normal', span: 'auto' }, { label: v.mod === 'Documental' ? 'Plazo' : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? 'Enviada por el cliente' : 'Vencimiento') : 'Fecha y hora', value: when, ws: 'normal', span: 'auto' }, { label: v.mod === 'Presencial' ? 'Dirección' : v.mod === 'Autoinspección' ? 'Enlace enviado' : 'Enlace', value: place, ws: 'normal', span: '1 / -1' }].concat(v.porCliente ? [{ label: 'Agendada por el cliente', value: 'Desde el portal' + (v.agendadaEn ? ' el ' + v.agendadaEn.slice(8, 10) + '/' + v.agendadaEn.slice(5, 7) + '/' + v.agendadaEn.slice(2, 4) + ' · ' + v.agendadaEn.slice(11, 16) : '') + (v.cName ? ' · recibe ' + v.cName + (v.cCel ? ' (' + v.cCel + ')' : '') : '') + (v.ref ? ' · ' + v.ref : '') + (v.origenCita === 'red' ? ' · la aceptó ' + v.inspector + ' (' + (v.organizacion || '—') + (v.credencial ? ' · credencial ' + v.credencial : '') + ') en la red de inspectores' : ' · inspector de agenda fija con el horario libre' + (v.organizacion ? ' (' + v.organizacion + ')' : '')), ws: 'normal', span: '1 / -1' }] : []).concat((v.anteriores || []).length ? [{ label: 'Enlaces anteriores', value: v.anteriores.map(x => x.enlace + ' · ' + x.estado + (x.at ? ' el ' + x.at : '')).join(' | '), ws: 'normal', span: '1 / -1' }] : []),
+          riesgosLabel: v.riesgos.length === 1 ? 'Riesgo incluido' : v.riesgos.length + ' riesgos incluidos', riesgos: v.riesgos.map(id => this.rById(id).label),
+          hasNote: !!(v.estado === 'Cancelada' && v.motivoCancel) || v.mod === 'No requiere inspección', note: v.estado === 'Cancelada' ? 'Cancelada · ' + (v.motivoCancel || '') : 'Motivo: ' + (v.motivo || '') + (v.nrObs ? ' · ' + v.nrObs : '') + (v.by ? ' · ' + v.by + ' · ' + v.at : ''),
+          hasActions: acts2.length > 0, actions: acts2,
+          hasEnlace: conTarjeta, raw: v, ro, rev: P.enlaceRev || 0, onAccion: onA,
+          onReenviar: () => { onA('reenviar', { id: v.id }); showWa(v, 'Enlace de ' + v.id + ' reenviado'); },
+          onNuevo: () => { const sn = Eo ? Eo.estado(tkE) : null; if (sn && sn.terminal) this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }); else this.setState({ regen: { id: v.id, motivo: '', touched: false } }); } };
+      }),
+      hasForm: !!p, drawer,
+      fc: inline ? { role: 'region', modal: undefined, pos: 'relative', z: 'auto', h: 'auto', w: '100%', border: '1px solid var(--border-subtle)', radius: 'var(--radius-md)', shadow: 'none', scroll: 'visible' } : { role: 'dialog', modal: 'true', pos: 'fixed', z: '1501', h: '100vh', w: '640px', border: 'none', radius: '0', shadow: 'var(--shadow-modal)', scroll: 'auto' },
+      fKicker: p ? (p.mode === 'nueva' ? 'Caso ' + P.caseId : p.mode === 'dividir' ? 'Dividir visita ' + p.visitId : 'Visita ' + p.visitId) : '',
+      fTitle: p ? (p.mode === 'nueva' ? (single ? 'Coordinar inspección' : 'Nueva visita · ' + nextId) : p.mode === 'reagendar' ? 'Reagendar visita' : p.mode === 'inspector' ? 'Cambiar inspector' : p.mode === 'enlace' ? 'Generar nuevo enlace' : 'Nueva visita para un especialista · ' + nextId) : '',
+      closePnl: () => this.setState({ pnl: null }),
+      showIncl: !!p && (p.mode === 'nueva' || p.mode === 'reagendar'), inclLabel: p && p.riesgos.length === 1 ? 'Riesgo incluido' : 'Riesgos incluidos' + (p ? ' (' + p.riesgos.length + ')' : ''), inclErr: !!(p && errs.riesgos),
+      incl: p ? p.riesgos.map(id => ({ label: this.rById(id).label, canRemove: p.mode === 'nueva' && !single, aria: 'Quitar ' + this.rById(id).label + ' de la visita', remove: () => this.setP('riesgos', p.riesgos.filter(x => x !== id)) })) : [],
+      showSplit: !!p && p.mode === 'dividir',
+      splitOpts: p && p.mode === 'dividir' ? p.riesgos.map(id => ({ label: this.rById(id).label, checked: p.split === id, border: p.split === id ? 'var(--cyan-500)' : 'var(--border-default)', bg: p.split === id ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('split', id) })) : [],
+      showMods: !!p && p.mode !== 'inspector' && p.mode !== 'enlace',
+      mods: this.MODS.map(([label, hint]) => ({ label, hint, rec: label === recMod, checked: !!p && p.mod === label, border: p && p.mod === label ? 'var(--cyan-500)' : 'var(--border-default)', bg: p && p.mod === label ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('mod', label) })),
+      needsIns: !!p && this.needsIns(p),
+      insQ: s.insQ, insOpen: s.insOpen, onInsQ: (e) => this.setState({ insQ: e.target.value, insOpen: true }), openIns: () => this.setState({ insOpen: true }),
+      insBlur: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { this.setState({ insOpen: false, insQ: p && p.inspector ? p.inspector : s.insQ }); this.touch('inspector'); } },
+      insOpts: insList.map(i => { const k = this.slots(i.n, loadDate, p && p.visitId).length; return { n: i.n, meta: i.tipo + ' · ' + i.zona, load: loadOf(i.n), loadColor: k >= 4 ? 'var(--color-danger)' : 'var(--text-body)', sel: p && p.inspector === i.n ? 'true' : 'false', bg: p && p.inspector === i.n ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.setP('inspector', i.n); this.setState({ insQ: i.n, insOpen: false }); } }; }),
+      insNoMatch: !insList.length, hasIns: !!ins, insSummary: ins ? ins.tipo + ' · ' + ins.zona + ' · ' + loadOf(ins.n) : '',
+      insErrShow: !!(p && s.touched.inspector && errs.inspector), insInvalid: p && s.touched.inspector && errs.inspector ? 'true' : undefined, insBorder: p && s.touched.inspector && errs.inspector ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      hasClash: !!cl, clashText: cl ? p.inspector + ' tiene otra visita de ' + cl.a + ' a ' + cl.b : '',
+      hasFields: fields.length > 0, fFields: fields,
+      showMap: !!p && p.mode !== 'inspector' && p.mod === 'Presencial', mapAria: 'Mapa de referencia de ' + (p ? p.dir : ''), mapText: p && p.dir ? p.dir + (p.inter ? ' y ' + p.inter : '') : 'Ingresa la dirección para ubicarla',
+      hasModNote: !!p && p.mode !== 'inspector' && ['Virtual guiada', 'Autoinspección', 'No requiere inspección'].includes(p.mod),
+      modNote: !p ? '' : p.mod === 'Virtual guiada' ? 'El enlace de la videollamada se genera al agendar y se envía al contacto por WhatsApp.' : p.mod === 'Autoinspección' ? 'Se enviará un enlace por WhatsApp a ' + (p.cName || 'el contacto') + ' (' + (p.cCel || 'sin celular') + '), válido por ' + p.validez + '. Recordatorio ' + this.recTxt(p.validez) + ' antes del vencimiento.' : 'Los riesgos pasan directamente a calificación, sin informe de inspección.',
+      showContact: !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección',
+      cFields: p ? this.cpCampos().filter(() => this.cpPide(p)).map(x => Object.assign(cF('cp_' + x.clave, x.etiqueta, { req: true, ph: x.ayuda }), { value: this.cpVal(p, x) })).reduce((a, f) => a.concat([f]), [cF('cName', 'Nombre', { req: true }), cF('cCel', 'Celular (WhatsApp)', { req: true, type: 'tel', inputMode: 'numeric', ph: '09XXXXXXXX' }), cF('cMail', 'Correo electrónico', { type: 'email', inputMode: 'email' })]) : [],
+      showObs: !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección', obsLabel: p && p.mod === 'Autoinspección' ? 'Indicaciones para el contacto' : 'Observaciones para el inspector', obs: p ? p.obs : '', onObs: (e) => this.setP('obs', e.target.value),
+      invalid: eKeys.length > 0, hint: !eKeys.length ? '' : fieldN ? (fieldN === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + fieldN + ' campos obligatorios') : 'Incluye al menos un riesgo',
+      submitLabel: !p ? '' : p.mode === 'inspector' ? 'Cambiar inspector' : p.mode === 'enlace' ? 'Enviar nuevo enlace' : p.mode === 'reagendar' ? 'Guardar cambios' : p.mod === 'No requiere inspección' ? 'Enviar a calificación' : p.mod === 'Autoinspección' ? 'Enviar enlace de autoinspección' : 'Agendar visita',
+      submit,
+      // Etapa 12d-1b · DEC-146: «Generar uno nuevo» invalida el enlace anterior con motivo (el Back-office genera el token y lo registra en el Historial).
+      regenOpen: !!s.regen, regenTitle: s.regen ? 'Generar un enlace nuevo para ' + s.regen.id : '', regenDesc: 'El enlace actual queda Invalidado y deja de abrir el portal. El nuevo se envía al mismo contacto, con vigencia de ' + this.vigDef() + '.', regenMotivo: s.regen ? s.regen.motivo : '',
+      onRegenMotivo: (e) => this.setState({ regen: Object.assign({}, s.regen, { motivo: e.target.value }) }), closeRegen: () => this.setState({ regen: null }),
+      regenErrShow: !!(s.regen && s.regen.touched && s.regen.motivo.trim().length < 10), regenInvalid: s.regen && s.regen.touched && s.regen.motivo.trim().length < 10 ? 'true' : undefined, regenBorder: s.regen && s.regen.touched && s.regen.motivo.trim().length < 10 ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      regenFooter: React.createElement(React.Fragment, null, btn('ghost', 'Volver', () => this.setState({ regen: null })), btn('primary', 'Generar enlace nuevo', () => { const r = this.state.regen;
+        if (!r || r.motivo.trim().length < 10) { this.setState({ regen: Object.assign({}, r, { touched: true }) }); return; }
+        (P.onAction || (() => {}))('nuevoEnlace', { id: r.id, motivo: r.motivo.trim(), vence: this.addHours(this.vigDef()), validez: this.vigDef(), regenera: true }); this.setState({ regen: null }); })),
+      cancelOpen: !!cancel, cancelTitle: cancel ? 'Cancelar visita ' + cancel.id : '', cancelMotivo: cancel ? cancel.motivo : '',
+      onCancelMotivo: (e) => this.setState({ cancel: Object.assign({}, cancel, { motivo: e.target.value }) }),
+      cancelErrShow: !!(cancel && cancel.touched && !cancel.motivo.trim()), cancelInvalid: cancel && cancel.touched && !cancel.motivo.trim() ? 'true' : undefined, cancelBorder: cancel && cancel.touched && !cancel.motivo.trim() ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      closeCancel: () => this.setState({ cancel: null }),
+      cancelFooter: React.createElement(React.Fragment, null, btn('ghost', 'Volver', () => this.setState({ cancel: null })), btn('primary', 'Cancelar visita', () => {
+        if (!cancel.motivo.trim()) { this.setState({ cancel: Object.assign({}, cancel, { touched: true }) }); return; }
+        (P.onAction || (() => {}))('cancelar', { id: cancel.id, motivo: cancel.motivo.trim() }); this.setState({ cancel: null }); })),
+      waHasLink: !!(s.wa && s.wa.enlace), waCopyMsg: s.waCopied ? 'Enlace copiado' : '', copyLink: () => this.copiarEnlace(), waOpen: !!s.wa, waTitle: s.wa ? s.wa.title : '', waTo: s.wa ? s.wa.to : '', waText: s.wa ? s.wa.text : '', waHasIns: !!(s.wa && s.wa.ins), waIns: s.wa ? s.wa.ins : '',
+      closeWa: () => this.setState({ wa: null, waCopied: false }), waFooter: btn('primary', 'Entendido', () => this.setState({ wa: null, waCopied: false })),
+    };
+  }
+}
+</script>
+</body>
+</html>

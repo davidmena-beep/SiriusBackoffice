@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-compania.js"></script><script src="sirius-compania.js"></script><script src="sirius-monto.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-honorarios.js"></script><script src="sirius-honorarios.js"></script><script src="sirius-liquidaciones.js"></script><script src="sirius-modal.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}
+.cg-sel,.cg-in{height:40px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);width:100%}
+.cg-sel:focus-visible,.cg-in:focus-visible,.cg-ta:focus-visible{border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)}
+.cg-sel[aria-invalid=true],.cg-in[aria-invalid=true],.cg-ta[aria-invalid=true]{border-color:var(--color-danger)}
+.cg-sel:disabled,.cg-in:disabled{background:var(--surface-muted,#F3F4F6);color:var(--text-muted)}
+.cg-ta{width:100%;padding:9px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;resize:vertical}
+.cg-tw{width:100%;overflow:auto;border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
+.cg-t{border-collapse:separate;border-spacing:0;width:100%;font-size:14px}
+.cg-t th,.cg-t td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);text-align:left;vertical-align:top}
+.cg-t thead th{position:sticky;top:0;background:var(--table-header-bg,#EEF6FD);font-size:13px;color:var(--text-strong);z-index:1}
+.cg-t .cg-c0{position:sticky;left:0;background:#FFFFFF;z-index:1}
+.cg-t thead .cg-c0{z-index:2;background:var(--table-header-bg,#EEF6FD)}
+.cg-t .cg-n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cg-nw{white-space:nowrap}
+.cg-card{border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:20px 24px;display:flex;flex-direction:column;gap:12px;background:#FFFFFF;min-width:0}
+.cg-lk{border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px}
+</style>
+</helmet>
+<section data-screen-label="BO-11 Configuración general" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">{{ top }}{{ bottom }}</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:800},&quot;datos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;escena&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+// BO-11 · Administración › Configuración general (etapa 11-c · DEC-139). Pestañas Compañía, Moneda e Impuestos sobre SIRIUS_COMPANIA
+// (lógica en SiriusCompania, en memoria). El Administrador edita todo; Finanzas edita Impuestos. Cambiar la moneda pide motivo y muestra
+// el impacto sin convertir valores; una vigencia de IVA nueva cierra la anterior (sin huecos ni cruces) y las liquidaciones facturadas no se recalculan.
+class Component extends DCLogic {
+  state = { tab: 0, comp: null, mon: '', monModal: null, vig: { tasa: null, tasaErr: '', desde: '', nota: '' }, vigModal: null, probar: '', snack: '' };
+  SC() { return window.SiriusCompania; }
+  C() { return window.SIRIUS_COMPANIA; }
+  NS() { return window.AseguradoraDelSurDesignSystem_4fbf29 || {}; }
+  d() { return this.props.datos || { puedeCompania: true, puedeImpuestos: true, yo: 'Mónica Ríos' }; }
+  componentDidMount() { const SC = this.SC(); if (SC) this._off = SC.on(() => this.forceUpdate()); setTimeout(() => this.semilla(), 30); setTimeout(() => this.crumb(), 40); }
+  componentWillUnmount() { if (this._off) this._off(); clearTimeout(this._st); }
+  componentDidUpdate(prev) { prev = prev || {}; if (this._tabC !== this.state.tab) this.crumb(); }
+  crumb() { this._tabC = this.state.tab; const f = this.props.onCrumb; if (f) f(['Compañía', 'Moneda', 'Impuestos'][this.state.tab]); }
+  semilla() { if (this._sem) return; this._sem = true; const e = this.props.escena || '', SC = this.SC(); if (!SC) return;
+    if (e === 'confgeneral') this.setState({ tab: 1, mon: this.C().moneda.codigo });
+    if (e === 'confimpuestos') this.setState({ tab: 2 });
+    if (e === 'confmoneda') this.setState({ tab: 1, mon: 'COP', monModal: { motivo: 'Cambio de moneda de reporte para la operación en Colombia', tried: false } }); }
+  toast(m) { this.setState({ snack: m }); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ snack: '' }), 5200); }
+  fmtF(s) { return this.SC().fechaTxt(s ? String(s).slice(0, 10) : ''); }
+  fecha(s) { if (!s) return '—'; const p = String(s).slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0] + (String(s).length > 10 ? ' · ' + String(s).slice(11, 16) : ''); }
+  badge(e, tone, key) { const NS = this.NS(), h = React.createElement, inner = h('span', { className: 'cg-nw' }, e); return NS.Badge ? h(NS.Badge, { key, tone: tone || 'neutral' }, inner) : inner; }
+  btn(variant, label, on, extra) { const NS = this.NS(), h = React.createElement; return NS.Button ? h(NS.Button, Object.assign({ key: label, variant, size: 'md', onClick: on }, extra || {}), label) : h('button', { key: label, type: 'button', onClick: on }, label); }
+  lab(id, t, req) { return React.createElement('label', { htmlFor: id, style: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, t, req ? React.createElement('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *') : null); }
+  campo(id, t, ctrl, o) { const h = React.createElement; o = o || {}; return h('div', { key: id, style: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, gridColumn: o.span || 'auto' } }, this.lab(id, t, o.req), ctrl, o.err ? h('span', { id: id + '-e', role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, o.err) : o.help ? h('span', { id: id + '-e', style: { fontSize: 12, color: 'var(--text-muted)' } }, o.help) : null); }
+  motivo(id, m, set, ph) { const h = React.createElement, e = m.tried && m.motivo.trim().length < 10; return this.campo(id, 'Motivo', h('textarea', { id, className: 'cg-ta', rows: 3, value: m.motivo, placeholder: ph || 'Qué cambia y por qué', 'aria-invalid': e ? 'true' : 'false', 'aria-describedby': id + '-e', onChange: (ev) => set(Object.assign({}, m, { motivo: ev.target.value })) }), { req: true, err: e ? 'Escribe el motivo (mínimo 10 caracteres): queda en el historial.' : '', help: 'Queda en el historial con tu nombre y la fecha.' }); }
+  hist(area) { const h = React.createElement, SC = this.SC(), L = SC.historial(area); return h('section', { key: 'hist-' + area, className: 'cg-card', 'aria-label': 'Historial de cambios' }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Historial de cambios'),
+    L.length ? h('div', { className: 'cg-tw' }, h('table', { className: 'cg-t', style: { minWidth: 760 } }, h('thead', null, h('tr', null, h('th', { scope: 'col', className: 'cg-c0 cg-nw' }, 'Fecha'), h('th', { scope: 'col' }, 'Cambio'), h('th', { scope: 'col' }, 'Motivo'), h('th', { scope: 'col' }, 'Impacto'), h('th', { scope: 'col', className: 'cg-nw' }, 'Por'))),
+      h('tbody', null, L.map((e, i) => h('tr', { key: i }, h('td', { className: 'cg-c0 cg-nw' }, this.fecha(e.fecha)), h('td', null, e.que), h('td', null, e.motivo || '—'), h('td', null, e.impacto || '—'), h('td', { className: 'cg-nw' }, e.por)))))) : h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Sin cambios en esta sesión. La configuración parte de SIRIUS_COMPANIA.')); }
+  // ---------- Compañía ----------
+  tabCompania() { const h = React.createElement, C = this.C(), SC = this.SC(), d = this.d(), ed = !!d.puedeCompania, f = this.state.comp || { nombre: C.nombre, pais: C.pais, zonaHoraria: C.zonaHoraria, idioma: C.idioma, motivo: '', tried: false }, set = (o) => this.setState({ comp: Object.assign({}, f, o) });
+    const camb = ['nombre', 'pais', 'zonaHoraria', 'idioma'].some(k => f[k] !== C[k]), eN = f.tried && f.nombre.trim().length < 3, eM = f.tried && camb && f.motivo.trim().length < 10;
+    const sel = (id, k, opts) => h('select', { id, className: 'cg-sel', value: f[k], disabled: !ed, onChange: (e) => set({ [k]: e.target.value }) }, opts.map(o => h('option', { key: o[0], value: o[0] }, o[1])));
+    const guardar = () => { if (!camb) return; if (f.nombre.trim().length < 3 || f.motivo.trim().length < 10) { set({ tried: true }); return; } SC.guardarCompania({ nombre: f.nombre.trim(), pais: f.pais, zonaHoraria: f.zonaHoraria, idioma: f.idioma }, f.motivo.trim(), d.yo); this.setState({ comp: null }); this.toast('Datos de la compañía guardados; quedaron en el historial.'); };
+    return [h('section', { key: 'c', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Datos de la compañía'), !ed ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Solo el Administrador edita los datos de la compañía y la moneda. Tú puedes editar los impuestos.') : null,
+      h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16 } },
+        this.campo('cg-n', 'Nombre de la compañía', h('input', { id: 'cg-n', className: 'cg-in', value: f.nombre, disabled: !ed, 'aria-invalid': eN ? 'true' : 'false', 'aria-describedby': 'cg-n-e', onChange: (e) => set({ nombre: e.target.value }) }), { req: true, err: eN ? 'Escribe el nombre (mínimo 3 caracteres).' : '' }),
+        this.campo('cg-p', 'País', sel('cg-p', 'pais', SC.PAISES.map(p => [p.id, p.id])), { req: true, help: 'Cambiar el país no cambia la moneda ni el IVA: se configuran en sus pestañas.' }),
+        this.campo('cg-z', 'Zona horaria', sel('cg-z', 'zonaHoraria', SC.ZONAS.map(z => [z.id, z.nombre])), { req: true, help: 'Fechas y horas de casos, visitas y SLA.' }),
+        this.campo('cg-i', 'Idioma', sel('cg-i', 'idioma', SC.IDIOMAS.map(z => [z.id, z.nombre])), { req: true, help: 'Textos de SIRIUS y de las notificaciones.' })),
+      ed ? [this.motivo('cg-m', f, set), h('div', { key: 'b', style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } }, this.btn('primary', 'Guardar cambios', camb ? guardar : undefined, camb ? {} : { unavailableReason: 'No hay cambios para guardar' }), camb ? this.btn('ghost', 'Descartar', () => this.setState({ comp: null })) : null)] : null),
+      this.hist('compania')]; }
+  // ---------- Moneda ----------
+  tabMoneda() { const h = React.createElement, C = this.C(), SC = this.SC(), d = this.d(), ed = !!d.puedeCompania, m = C.moneda, sel = this.state.mon || m.codigo, info = SC.monedaInfo(sel) || m, cambia = sel !== m.codigo;
+    const ejemplos = [1234.5, 0.5, 18, 250000, -75.25], tabla = (cod, titulo) => h('div', { key: cod + titulo, style: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 220 } }, h('strong', { style: { fontSize: 13, color: 'var(--text-strong)' } }, titulo), h('ul', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2, fontSize: 15, fontVariantNumeric: 'tabular-nums' } }, ejemplos.map(n => h('li', { key: n }, SC.vista(cod, n)))));
+    return [h('section', { key: 'm', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Moneda de la compañía'),
+      h('p', { style: { margin: 0, fontSize: 14 } }, h('strong', null, 'Hoy: '), m.nombre + ' (' + m.codigo + ') · símbolo «' + m.simbolo + '» · ' + (m.decimales ? m.decimales + ' decimales' : 'sin decimales') + ' · decimal «' + m.separadorDecimal + '» · miles «' + m.separadorMiles + '» · ejemplo ' + C.formatoMonto(1234.5)),
+      h('p', { role: 'note', style: { margin: 0, fontSize: 14, padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle,#F3F5F8)' } }, C.moneda.cambio),
+      h('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(260px,420px)', gap: 16 } }, this.campo('cg-mon', 'Moneda', h('select', { id: 'cg-mon', className: 'cg-sel', value: sel, disabled: !ed, onChange: (e) => this.setState({ mon: e.target.value }) }, C.monedasDisponibles.map(x => h('option', { key: x.codigo, value: x.codigo }, x.nombre + ' (' + x.codigo + ')'))), { help: !ed ? 'Solo el Administrador cambia la moneda.' : 'Elige una moneda para ver cómo se mostrarían los montos antes de cambiarla.' })),
+      h('div', { key: 'vp', style: { display: 'flex', flexWrap: 'wrap', gap: 32 }, role: 'group', 'aria-label': 'Vista previa del formato' }, tabla(m.codigo, 'Formato actual · ' + m.codigo), cambia ? tabla(sel, 'Vista previa · ' + sel) : null),
+      cambia ? h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, info.decimales === 0 ? 'Esta moneda no usa decimales: al escribir un monto el sistema avisa «Usa hasta 0 decimales».' : 'Al escribir un monto el sistema acepta coma o punto y avisa «Usa hasta ' + info.decimales + ' decimales» si te pasas.') : null,
+      ed ? h('div', { key: 'b', style: { display: 'flex', gap: 8, flexWrap: 'wrap' } }, this.btn('primary', 'Cambiar moneda…', cambia ? () => this.setState({ monModal: { motivo: '', tried: false } }) : undefined, cambia ? {} : { unavailableReason: 'Elige una moneda distinta a la actual' }), cambia ? this.btn('ghost', 'Descartar', () => this.setState({ mon: '' })) : null) : null),
+      this.hist('moneda')]; }
+  // ---------- Impuestos ----------
+  tabImpuestos() { const h = React.createElement, C = this.C(), SC = this.SC(), d = this.d(), ed = !!d.puedeImpuestos, v = SC.vigencias(), hoy = SC.hoyIso(), st = this.state, f = st.vig, err = f.tasa != null || f.desde ? SC.validarVigencia(f.tasa, f.desde) : '', ult = v[v.length - 1], re = C.impuestos.find(i => i.id === 'retencion');
+    const setV = (o) => this.setState({ vig: Object.assign({}, f, o) }), tasaEf = (t) => C.tasa('iva', t);
+    const fila = (x, i) => { const vigente = x.desde <= hoy && (!x.hasta || hoy <= x.hasta); return h('tr', { key: i }, h('td', { className: 'cg-c0 cg-nw', style: { fontWeight: 700, color: 'var(--text-strong)' } }, x.tasa + ' %'), h('td', { className: 'cg-nw' }, this.fmtF(x.desde)), h('td', { className: 'cg-nw' }, x.hasta ? this.fmtF(x.hasta) : 'Sin fin'), h('td', { className: 'cg-nw' }, vigente ? this.badge('Vigente hoy', 'success') : x.desde > hoy ? this.badge('Futura', 'brand') : this.badge('Anterior', 'neutral')), h('td', null, x.nota || '—')); };
+    const prueba = st.probar, rp = /^\d{4}-\d{2}-\d{2}$/.test(prueba) ? tasaEf(prueba) : undefined;
+    const imp = !err && f.tasa != null && f.desde ? SC.impactoIva(f.tasa, f.desde) : null;
+    return [h('section', { key: 'i', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'IVA'), !ed ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Tu rol consulta los impuestos pero no los edita.') : null,
+      h('p', { style: { margin: 0, fontSize: 14 } }, h('strong', null, 'Vigente hoy (' + this.fmtF(hoy) + '): '), (tasaEf(hoy) == null ? 'sin tasa' : tasaEf(hoy) + ' %') + '. ' + C.impuestos[0].fechaBase + '.'),
+      h('div', { className: 'cg-tw' }, h('table', { className: 'cg-t', style: { minWidth: 640 } }, h('caption', { style: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' } }, 'Vigencias del IVA'), h('thead', null, h('tr', null, h('th', { scope: 'col', className: 'cg-c0 cg-nw' }, 'Tasa'), h('th', { scope: 'col', className: 'cg-nw' }, 'Desde'), h('th', { scope: 'col', className: 'cg-nw' }, 'Hasta'), h('th', { scope: 'col', className: 'cg-nw' }, 'Estado'), h('th', { scope: 'col' }, 'Nota'))), h('tbody', null, v.map(fila)))),
+      h('div', { key: 'pr', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 16 } }, this.campo('cg-pr', 'Consultar la tasa de una fecha', h('input', { id: 'cg-pr', type: 'date', className: 'cg-in', value: prueba, style: { width: 200 }, onChange: (e) => this.setState({ probar: e.target.value }) }), { help: 'Es la tasa que usaría una liquidación con factura (o cierre) en esa fecha.' }), prueba ? h('strong', { role: 'status', style: { fontSize: 15, color: 'var(--text-strong)', paddingBottom: 10 } }, rp === undefined ? 'Fecha incompleta' : rp == null ? 'Sin tasa vigente en esa fecha' : this.fmtF(prueba) + ' → IVA ' + rp + ' %') : null)),
+      ed ? h('section', { key: 'a', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Agregar una vigencia'),
+        h('p', { style: { margin: 0, fontSize: 14 } }, 'Una vigencia nueva cierra la anterior el día previo; no se permiten huecos ni cruces. ' + (ult ? 'La vigencia actual (' + ult.tasa + ' %) empezó el ' + this.fmtF(ult.desde) + '.' : '')),
+        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 } },
+          this.campo('cg-v-t', 'Tasa (%)', h(window.SiriusMonto, { id: 'cg-v-t', value: f.tasa, decimales: 2, placeholder: '0', formatear: (n) => String(n).replace('.', ',') + ' %', invalid: !!f.tasaErr, onChange: (n, er) => setV({ tasa: er ? null : n, tasaErr: er }) }), { req: true, help: 'Acepta coma o punto: 15 · 12,5 · 12.5' }),
+          this.campo('cg-v-d', 'Rige desde', h('input', { id: 'cg-v-d', type: 'date', className: 'cg-in', value: f.desde, 'aria-invalid': err && f.desde ? 'true' : 'false', 'aria-describedby': 'cg-v-d-e', onChange: (e) => setV({ desde: e.target.value }) }), { req: true, err: err && f.desde ? err : '' }),
+          this.campo('cg-v-n', 'Nota', h('input', { id: 'cg-v-n', className: 'cg-in', value: f.nota, placeholder: 'Ej. Decreto o resolución', onChange: (e) => setV({ nota: e.target.value }) }), {})),
+        imp ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle,#F3F5F8)' } }, 'Cierra la vigencia de ' + ult.tasa + ' % el ' + this.fmtF(SC.diaAntes(f.desde)) + '. Impacto en las liquidaciones abiertas sin factura: ' + imp.liquidaciones + (imp.liquidaciones === 1 ? ' liquidación' : ' liquidaciones') + ', ' + C.formatoMonto(imp.antes) + ' → ' + C.formatoMonto(imp.despues) + ' (' + (imp.diferencia >= 0 ? '+' : '') + C.formatoMonto(imp.diferencia) + '). Las facturadas no cambian.') : null,
+        h('div', { style: { display: 'flex', gap: 8 } }, this.btn('primary', 'Agregar vigencia…', !err && f.tasa != null && f.desde && !f.tasaErr ? () => this.setState({ vigModal: { motivo: '', tried: false } }) : undefined, !err && f.tasa != null && f.desde && !f.tasaErr ? {} : { unavailableReason: f.tasaErr || err || 'Escribe la tasa y la fecha desde la que rige' }))) : null,
+      h('section', { key: 'r', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Retenciones'), h('p', { style: { margin: 0, fontSize: 14 } }, h('strong', null, re.nombre + ': '), re.nota + '. ' + re.aplicaA + '. Mientras tanto, las liquidaciones muestran «Por definir».')),
+      h('section', { key: 'rg', className: 'cg-card', style: { maxWidth: 960 }, 'aria-label': 'Reglas' }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Cómo se aplica'), h('ul', { style: { margin: 0, paddingLeft: 18, fontSize: 14, display: 'flex', flexDirection: 'column', gap: 4 } }, C.reglas.map((r, i) => h('li', { key: i }, r)))),
+      this.hist('impuestos')]; }
+  modales() { const h = React.createElement, M = window.SiriusModal || this.NS().Modal, C = this.C(), SC = this.SC(), st = this.state, d = this.d(), out = []; if (!M) return out;
+    if (st.monModal) { const m = st.monModal, cod = st.mon, imp = SC.impactoMoneda(cod), cierra = () => this.setState({ monModal: null });
+      out.push(h(M, { key: 'mm', open: true, onClose: cierra, size: 'md', align: 'left', title: 'Cambiar la moneda a ' + imp.nombre + ' (' + cod + ')', description: 'No convierte los valores guardados: solo cambia cómo se muestran.', footer: h(React.Fragment, null, this.btn('ghost', 'Cancelar', cierra), this.btn('primary', 'Cambiar moneda', () => { if (m.motivo.trim().length < 10) { this.setState({ monModal: Object.assign({}, m, { tried: true }) }); return; } SC.cambiarMoneda(cod, m.motivo.trim(), d.yo); this.setState({ monModal: null, mon: '' }); this.toast('Moneda cambiada a ' + cod + '. Los valores guardados no se convirtieron.'); })) },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, h('div', { role: 'note', style: { padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle,#F3F5F8)', fontSize: 14, display: 'flex', flexDirection: 'column', gap: 4 } }, h('strong', null, 'Impacto'), h('span', null, imp.tarifarios + ' tarifarios (' + imp.tarifariosVigentes + ' vigentes) conservan sus valores.'), h('span', null, imp.honorariosAbiertos + ' honorarios sin pagar · ' + C.formatoMonto(imp.honorariosValor) + ' hoy → ' + SC.vista(cod, imp.honorariosValor) + ' con el nuevo formato.'), h('span', null, imp.liquidacionesSinPagar + ' liquidaciones sin pagar · ' + C.formatoMonto(imp.liquidacionesValor) + ' hoy → ' + SC.vista(cod, imp.liquidacionesValor) + '.'), h('span', null, 'Ejemplo: ' + C.formatoMonto(1234.5) + ' → ' + imp.despues + (imp.decimales === 0 ? ' (sin decimales: los centavos se redondean solo al mostrar).' : '.')), h('span', { style: { color: 'var(--text-muted)' } }, 'Los números no se convierten: si 100 eran dólares, siguen siendo 100 en la moneda nueva. Revisa los tarifarios después del cambio.')),
+          this.motivo('cg-mm', m, (x) => this.setState({ monModal: x }), 'Por qué cambia la moneda de la compañía')))); }
+    if (st.vigModal) { const m = st.vigModal, f = st.vig, imp = SC.impactoIva(f.tasa, f.desde), ult = SC.vigencias().slice(-1)[0], cierra = () => this.setState({ vigModal: null });
+      out.push(h(M, { key: 'mv', open: true, onClose: cierra, size: 'md', align: 'left', title: 'Agregar la vigencia del IVA ' + f.tasa + ' %', description: 'Rige desde el ' + this.fmtF(f.desde) + (ult ? ' y cierra la de ' + ult.tasa + ' % el ' + this.fmtF(SC.diaAntes(f.desde)) : '') + '.', footer: h(React.Fragment, null, this.btn('ghost', 'Cancelar', cierra), this.btn('primary', 'Agregar vigencia', () => { if (m.motivo.trim().length < 10) { this.setState({ vigModal: Object.assign({}, m, { tried: true }) }); return; } const er = SC.agregarVigencia(f.tasa, f.desde, f.nota, m.motivo.trim(), d.yo); if (er) { this.toast(er); return; } this.setState({ vigModal: null, vig: { tasa: null, tasaErr: '', desde: '', nota: '' } }); this.toast('Vigencia agregada: la anterior quedó cerrada.'); })) },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } }, h('div', { role: 'note', style: { padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle,#F3F5F8)', fontSize: 14, display: 'flex', flexDirection: 'column', gap: 4 } }, h('strong', null, 'Impacto en las liquidaciones abiertas (sin factura)'), h('span', null, imp.liquidaciones + (imp.liquidaciones === 1 ? ' liquidación' : ' liquidaciones') + ': ' + C.formatoMonto(imp.antes) + ' → ' + C.formatoMonto(imp.despues) + ' (' + (imp.diferencia >= 0 ? '+' : '') + C.formatoMonto(imp.diferencia) + ').'), h('span', { style: { color: 'var(--text-muted)' } }, 'Las liquidaciones facturadas no se recalculan.')),
+          this.motivo('cg-vm', m, (x) => this.setState({ vigModal: x }))))); }
+    return out; }
+  renderVals() {
+    const h = React.createElement, NS = this.NS(), st = this.state, SC = this.SC(), v = {}; if (!SC || !this.C()) { v.top = h('p', null, 'Cargando…'); v.bottom = null; return v; }
+    const titulo = h('div', { key: 'tt', style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('h1', { style: { margin: 0, fontWeight: 300, fontSize: 36, lineHeight: 1.05, color: 'var(--text-strong)' } }, 'Configuración general'), h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)', maxWidth: 900 } }, 'Datos de la compañía, moneda e impuestos: una sola fuente para toda pantalla, PDF, notificación y cálculo que muestre o sume dinero.'));
+    const tb = NS.Tabs ? h(NS.Tabs, { key: 'tb', tabs: ['Compañía', 'Moneda', 'Impuestos'], active: st.tab, onChange: (i) => this.setState({ tab: i }) }) : null;
+    const snack = st.snack ? h('div', { key: 'sn', role: 'status', style: { position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 1700, maxWidth: 'min(640px,90vw)', padding: '12px 20px', borderRadius: 'var(--radius-sm)', background: 'var(--neutral-900,#011E41)', color: '#FFFFFF', fontSize: 14, boxShadow: 'var(--shadow-md)' } }, st.snack) : null;
+    v.top = [titulo, tb].concat(st.tab === 0 ? this.tabCompania() : st.tab === 1 ? this.tabMoneda() : this.tabImpuestos());
+    v.bottom = [this.modales(), snack];
+    return v;
+  }
+}
+</script>
+</body>
+</html>

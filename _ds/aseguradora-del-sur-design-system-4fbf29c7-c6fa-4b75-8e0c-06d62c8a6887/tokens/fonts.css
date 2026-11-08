@@ -1,0 +1,8 @@
+/* ===========================================================================
+   FONTS — Aseguradora del Sur
+   Brand face is AVENIR (proprietary, not web-licensed here). We substitute
+   MULISH — the closest free geometric-humanist sans on Google Fonts — for all
+   brand UI/marketing copy. The Sur One sub-brand uses INTER.
+   ⚠ SUBSTITUTION: replace Mulish with licensed Avenir webfonts in production.
+   =========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700;800&display=swap');

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
+</helmet>
+<div style="display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px;align-items:start;font-family:var(--font-brand);min-width:0">
+<sc-if value="{{ isView }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+<sc-if value="{{ calReg }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="warning" hint-size="260px,22px"><span style="white-space:nowrap">Informe registrado por el calificador</span></x-import></div></sc-if>
+<sc-if value="{{ hasLock }}" hint-placeholder-val="{{ false }}">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="info" title="{{ lockReason }}" hint-size="100%,56px"></x-import>
+</sc-if>
+<sc-for list="{{ viewBlocks }}" as="vb" hint-placeholder-count="1">
+<section aria-label="{{ vb.title }}" style="display:flex;flex-direction:column;gap:20px;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:{{ vb.bg }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">{{ vb.kicker }}</span>
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ vb.title }}</h2>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ vb.tone }}" hint-size="90px,24px"><span style="white-space:nowrap">{{ vb.estado }}</span></x-import>
+</div>
+<sc-if value="{{ vb.canEdit }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ onEdit }}" hint-size="180px,40px">Editar calificación</x-import></sc-if>
+</div>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px">
+<sc-for list="{{ vb.fields }}" as="f" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0;grid-column:{{ f.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ f.label }}</dt><dd style="margin:0;font-size:15px;font-weight:600;line-height:1.45;color:var(--text-strong);white-space:{{ f.ws }}">{{ f.value }}</dd></div>
+</sc-for>
+</dl>
+<sc-for list="{{ vb.sections }}" as="vs" hint-placeholder-count="3">
+<section aria-label="{{ vs.title }}" style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px">
+<div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-strong)">{{ vs.title }}</h3><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ vs.count }}</x-import></div>
+<sc-if value="{{ vs.isGar }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:var(--text-body)">{{ vs.plazoText }}</span></sc-if>
+<sc-if value="{{ vs.isInfo }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-muted)">Informativas · sin estado ni plazo</span></sc-if>
+</div>
+<div style="border:1px solid var(--border-subtle);border-radius:var(--radius-sm);overflow-x:auto;overflow-y:hidden;max-width:100%">
+<table style="width:100%;min-width:630px;table-layout:fixed;border-collapse:collapse;font-size:14px;color:var(--text-body)">
+<thead><tr style="background:var(--table-row-hover)">
+<th scope="col" title="N.º" style="width:44px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">N.º</span></th>
+<th scope="col" title="Ramo" style="width:130px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Ramo</span></th>
+<th scope="col" title="Descripción" style="width:180px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Descripción</span></th>
+<th scope="col" title="Observaciones" style="padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Observaciones</span></th>
+<sc-if value="{{ vs.hasEstado }}" hint-placeholder-val="{{ true }}"><th scope="col" title="Estado" style="width:116px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Estado</span></th></sc-if>
+</tr></thead>
+<tbody>
+<sc-for list="{{ vs.rows }}" as="r" hint-placeholder-count="2">
+<tr>
+<td style="padding:10px 8px;border-top:1px solid var(--border-subtle);vertical-align:middle">{{ r.n }}</td>
+<td style="padding:10px 8px;border-top:1px solid var(--border-subtle);vertical-align:middle;font-size:13px;line-height:1.3">{{ r.ramo }}</td>
+<td style="padding:10px 8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><span style="font-weight:600;color:var(--text-strong);line-height:1.3">{{ r.desc }}</span><sc-if value="{{ r.added }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="150px,22px"><span style="white-space:nowrap">Agregado en suscripción</span></x-import></sc-if></span></td>
+<td style="padding:10px 8px;border-top:1px solid var(--border-subtle);vertical-align:middle;line-height:1.4">{{ r.obs }}</td>
+<sc-if value="{{ vs.hasEstado }}" hint-placeholder-val="{{ true }}"><td style="padding:10px 8px;border-top:1px solid var(--border-subtle);vertical-align:middle;white-space:nowrap"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ r.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ r.estado }}</span></x-import></td></sc-if>
+</tr>
+</sc-for>
+<sc-if value="{{ vs.isEmpty }}" hint-placeholder-val="{{ false }}"><tr><td colspan="{{ vs.cols }}" style="padding:14px 8px;border-top:1px solid var(--border-subtle);color:var(--text-muted)">{{ vs.emptyText }}</td></tr></sc-if>
+</tbody>
+</table>
+</div>
+</section>
+</sc-for>
+</section>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+<form ref="{{ formRef }}" aria-label="{{ formLabel }}" onSubmit="{{ onSubmit }}" novalidate="{{ true }}" style="display:flex;flex-direction:column;gap:20px;min-width:0;margin:0">
+<sc-if value="{{ isN2 }}" hint-placeholder-val="{{ false }}">
+<section aria-label="Calificación de nivel 1" style="display:flex;flex-direction:column;gap:12px;padding:20px 24px;border-radius:var(--radius-md);background:var(--surface-subtle)">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px">
+<h2 style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Calificación de inspección · nivel 1</h2>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ n1.tone }}" hint-size="90px,24px"><span style="white-space:nowrap">{{ n1.estado }}</span></x-import>
+</div>
+<p style="margin:0;font-size:15px;font-weight:600;line-height:1.45;color:var(--text-strong)">{{ n1.obs }}</p>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;font-size:13px;color:var(--text-muted)"><span>{{ n1.user }}</span><span style="white-space:nowrap">{{ n1.fecha }}</span></div>
+</section>
+</sc-if>
+<sc-if value="{{ isVeh }}" hint-placeholder-val="{{ false }}">
+<section aria-label="Motivo del inspector" style="display:flex;flex-direction:column;gap:6px;padding:20px 24px;border-radius:var(--radius-md);background:var(--surface-subtle)">
+<span style="font-size:13px;color:var(--text-muted)">Motivo del inspector</span>
+<p style="margin:0;font-size:16px;font-weight:600;line-height:1.45;color:var(--text-strong)">{{ motivoInspector }}</p>
+</section>
+</sc-if>
+<section style="display:flex;flex-direction:column;gap:24px;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<sc-if value="{{ isRG }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ showAprob }}" hint-placeholder-val="{{ true }}">
+<fieldset onBlur="{{ onEstadoBlur }}" aria-invalid="{{ estadoInvalid }}" aria-describedby="err-estado" style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:10px;min-width:0">
+<legend style="padding:0;margin:0 0 10px;font-size:15px;font-weight:700;color:var(--text-strong)">Estado de aprobación <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<div role="radiogroup" aria-required="true" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<sc-for list="{{ estadoOpts }}" as="o" hint-placeholder-count="2">
+<label style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid {{ o.border }};border-radius:var(--radius-md);background:{{ o.bg }};cursor:pointer;transition:var(--transition-action)">
+<input type="radio" name="estadoAprob" value="{{ o.value }}" checked="{{ o.checked }}" onChange="{{ o.pick }}" style="width:20px;height:20px;margin:0;accent-color:var(--cyan-700);flex:0 0 auto">
+<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ o.label }}</span><span style="font-size:13px;color:var(--text-muted)">{{ o.hint }}</span></span>
+</label>
+</sc-for>
+</div>
+<sc-if value="{{ estadoErrShow }}" hint-placeholder-val="{{ false }}"><span id="err-estado" role="alert" style="font-size:13px;color:var(--color-danger)">Selecciona el estado de aprobación.</span></sc-if>
+</fieldset>
+</sc-if>
+<sc-if value="{{ multiRG }}" hint-placeholder-val="{{ false }}">
+<fieldset onBlur="{{ onRamosBlur }}" style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:10px;min-width:0">
+<legend style="padding:0;margin:0 0 10px;font-size:15px;font-weight:700;color:var(--text-strong)">{{ resTitulo }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<span aria-live="polite" style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ ramosSummary }}</span>
+<div style="border:1px solid var(--border-subtle);border-radius:var(--radius-sm);overflow-x:auto;overflow-y:hidden;max-width:100%">
+<table style="width:100%;min-width:810px;table-layout:fixed;border-collapse:collapse;font-size:14px;color:var(--text-body)">
+<thead><tr style="background:var(--table-row-hover)">
+<th scope="col" title="{{ colRiesgo }}" style="width:160px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">{{ colRiesgo }}</span></th>
+<th scope="col" title="{{ colLinea }}" style="width:130px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">{{ colLinea }}</span></th>
+<th scope="col" title="Informe" style="width:104px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Informe</span></th>
+<th scope="col" title="Resultado" style="width:236px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Resultado</span></th>
+<th scope="col" title="Observación del ramo" style="padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Observación del ramo</span></th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ ramoRows }}" as="rr" hint-placeholder-count="3">
+<tr>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><span style="font-weight:700;color:var(--text-strong);line-height:1.3">{{ rr.label }}</span><sc-if value="{{ rr.changed }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="150px,22px"><span style="white-space:nowrap">Cambiado en suscripción</span></x-import></sc-if></span></td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle;font-size:13px">{{ rr.linea }}</td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><button type="button" onClick="{{ rr.openInf }}" aria-label="{{ rr.infLabel }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Ver informe</button></td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><div role="radiogroup" aria-label="{{ rr.aria }}" aria-required="true" aria-invalid="{{ rr.errInv }}" style="display:flex;gap:6px"><sc-for list="{{ rr.opts }}" as="o" hint-placeholder-count="2"><label style="flex:1;display:flex;align-items:center;gap:6px;height:40px;padding:0 8px;border:2px solid {{ o.border }};border-radius:var(--radius-sm);background:{{ o.bg }};cursor:pointer;font-size:13px;font-weight:700;color:var(--text-strong);white-space:nowrap"><input type="radio" name="{{ rr.name }}" checked="{{ o.checked }}" onChange="{{ o.pick }}" style="width:16px;height:16px;margin:0;accent-color:var(--cyan-700)">{{ o.label }}</label></sc-for></div><sc-if value="{{ rr.errShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="display:block;margin-top:4px;font-size:12px;color:var(--color-danger)">Elige el resultado.</span></sc-if></td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><textarea aria-label="{{ rr.obsLabel }}" rows="{{ rr.obsRows }}" value="{{ rr.obs }}" onChange="{{ rr.onObs }}" placeholder="Opcional" style="width:100%;min-height:40px;padding:8px 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;line-height:1.4;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</fieldset>
+</sc-if>
+<sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+<section aria-labelledby="{{ sec.hid }}" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px">
+<div style="display:flex;align-items:center;gap:8px">
+<h3 id="{{ sec.hid }}" style="margin:0;font-size:16px;font-weight:700;color:var(--text-strong)">{{ sec.title }}</h3>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ sec.count }}</x-import>
+<sc-if value="{{ sec.hasSummary }}" hint-placeholder-val="{{ false }}"><span aria-live="polite" style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ sec.summary }}</span></sc-if>
+</div>
+<sc-if value="{{ sec.canAdd }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" icon-left="{{ plusIcon }}" on-click="{{ sec.onAdd }}" aria-label="{{ sec.addLabel }}" hint-size="110px,36px">Agregar</x-import></sc-if>
+</div>
+<div style="border:1px solid var(--border-subtle);border-radius:var(--radius-sm);overflow-x:auto;overflow-y:hidden;max-width:100%">
+<table style="width:100%;min-width:732px;table-layout:fixed;border-collapse:collapse;font-size:14px;color:var(--text-body)">
+<thead>
+<tr style="background:var(--table-row-hover)">
+<th scope="col" title="N.º" style="width:44px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">N.º</span></th>
+<th scope="col" title="Ramo" style="width:140px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Ramo</span></th>
+<th scope="col" title="Descripción" style="width:180px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Descripción</span></th>
+<th scope="col" title="Observaciones" style="padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Observaciones</span></th>
+<sc-if value="{{ sec.hasPlazo }}" hint-placeholder-val="{{ false }}"><th scope="col" title="Plazo (días)" style="width:104px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom">Plazo (días)</th></sc-if><sc-if value="{{ sec.hasEstado }}" hint-placeholder-val="{{ true }}"><th scope="col" title="Estado" style="width:140px;padding:8px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:none"><span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis">Estado</span></th></sc-if>
+<th scope="col" style="width:48px;padding:8px"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Acciones</span></th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="2">
+<tr>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle;font-variant-numeric:tabular-nums">{{ r.n }}</td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle;font-size:13px;line-height:1.3"><sc-if value="{{ r.ramoSel }}" hint-placeholder-val="{{ false }}"><select aria-label="{{ r.ramoLabel }}" value="{{ r.ramo }}" onChange="{{ r.onRamo }}" style="width:100%;height:36px;padding:0 4px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:13px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ r.ramoOpts }}" as="ro" hint-placeholder-count="3"><option value="{{ ro }}">{{ ro }}</option></sc-for></select></sc-if><sc-if value="{{ r.ramoTxt }}" hint-placeholder-val="{{ true }}">{{ r.ramo }}</sc-if></td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle">
+<span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><span style="font-weight:600;color:var(--text-strong);line-height:1.3">{{ r.desc }}</span>
+<sc-if value="{{ r.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-muted);line-height:1.35">{{ r.sub }}</span></sc-if>
+<sc-if value="{{ r.locked }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="success" hint-size="150px,22px"><span style="white-space:nowrap">Cumplida por respaldo</span></x-import></sc-if>
+<sc-if value="{{ r.added }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="150px,22px"><span style="white-space:nowrap">Agregado en suscripción</span></x-import></sc-if></span>
+</td>
+<td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><textarea aria-label="{{ r.obsLabel }}" rows="{{ r.rows }}" value="{{ r.obs }}" onChange="{{ r.onObs }}" disabled="{{ r.locked }}" placeholder="{{ r.obsPh }}" style="display:block;width:100%;min-height:40px;padding:9px 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;line-height:1.4;color:var(--text-strong);resize:vertical;field-sizing:content"  style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></td>
+<sc-if value="{{ sec.hasPlazo }}" hint-placeholder-val="{{ false }}"><td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><span style="display:flex;flex-direction:column;gap:4px"><input type="number" inputmode="numeric" min="1" max="365" aria-label="{{ r.plazoLabel }}" aria-invalid="{{ r.plazoInv }}" value="{{ r.plazoV }}" onChange="{{ r.onPlazoR }}" style="width:100%;height:40px;padding:0 8px;border:1.5px solid {{ r.plazoBorderR }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong);text-align:right" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ r.plazoMiss }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-danger)">Falta plazo</span></sc-if></span></td></sc-if><sc-if value="{{ sec.hasEstado }}" hint-placeholder-val="{{ true }}"><td style="padding:8px;border-top:1px solid var(--border-subtle);vertical-align:middle"><select aria-label="{{ r.estadoLabel }}" value="{{ r.estado }}" onChange="{{ r.onEstado }}" disabled="{{ r.locked }}" style="width:100%;height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ sec.estadoOpts }}" as="eo" hint-placeholder-count="3"><option value="{{ eo.v }}">{{ eo.l }}</option></sc-for></select></td></sc-if>
+<td style="padding:8px 4px;border-top:1px solid var(--border-subtle);vertical-align:middle"><sc-if value="{{ r.canDelete }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ r.delLabel }}" title="Eliminar" onClick="{{ r.onDelete }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--neutral-600);cursor:pointer" style-hover="background:var(--color-danger-bg);color:var(--color-danger)" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v6 M14 11v6"></path></svg></button></sc-if></td>
+</tr>
+</sc-for>
+<sc-if value="{{ sec.isEmpty }}" hint-placeholder-val="{{ false }}"><tr><td colspan="{{ sec.cols }}" style="padding:16px 8px;border-top:1px solid var(--border-subtle);font-size:14px;color:var(--text-muted)">{{ sec.emptyText }}</td></tr></sc-if>
+</tbody>
+</table>
+</div>
+<sc-if value="{{ sec.isGar }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface-subtle)">
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<label for="cal-plazo" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ plazoLabel }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<input id="cal-plazo" readonly="{{ plazoRO }}" type="number" inputmode="numeric" min="{{ plazoMin }}" max="365" required="{{ true }}" value="{{ plazo }}" onChange="{{ onPlazo }}" onBlur="{{ onPlazoBlur }}" aria-invalid="{{ plazoInvalid }}" aria-describedby="err-plazo hint-plazo" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ plazoBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<sc-if value="{{ plazoErrShow }}" hint-placeholder-val="{{ false }}"><span id="err-plazo" role="alert" style="font-size:13px;color:var(--color-danger)">{{ plazoErrTxt }}</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<span style="font-size:13px;font-weight:700;color:var(--text-strong)">Fecha límite de garantías</span>
+<span aria-live="polite" style="height:44px;display:flex;align-items:center;font-size:16px;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ fechaLimite }}</span>
+</div>
+<span id="hint-plazo" style="grid-column:1 / -1;font-size:13px;color:var(--text-muted)">{{ plazoHint }}</span>
+<sc-if value="{{ showPlazoObs }}" hint-placeholder-val="{{ false }}"><div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:6px"><label for="cal-plazo-obs" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo de la ampliación del plazo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="cal-plazo-obs" rows="2" value="{{ plazoObs }}" onChange="{{ onPlazoObs }}" onBlur="{{ onPlazoObsBlur }}" aria-invalid="{{ plazoObsInvalid }}" style="width:100%;padding:9px 12px;border:1.5px solid {{ plazoObsBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ plazoObsErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Indica por qué se amplía el plazo.</span></sc-if></div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ sec.hasRemoved }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<button type="button" aria-expanded="{{ sec.removedOpen }}" onClick="{{ sec.toggleRemoved }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;border:none;background:transparent;padding:4px 0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:{{ sec.removedRot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m9 18 6-6-6-6"></path></svg>{{ sec.removedLabel }}</button>
+<sc-if value="{{ sec.removedOpen }}" hint-placeholder-val="{{ false }}">
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px dashed var(--border-default);border-radius:var(--radius-sm)">
+<sc-for list="{{ sec.removed }}" as="x" hint-placeholder-count="1">
+<li style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-top:{{ x.border }}">
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:600;color:var(--text-body);text-decoration:line-through">{{ x.desc }}</span><span style="font-size:13px;color:var(--text-muted)">{{ x.meta }}</span></span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ x.onRestore }}" aria-label="{{ x.restoreLabel }}" hint-size="100px,36px">Restaurar</x-import>
+</li>
+</sc-for>
+</ul>
+</sc-if>
+</div>
+</sc-if>
+</section>
+</sc-for>
+<sc-if value="{{ hasRef }}" hint-placeholder-val="{{ false }}">
+<section aria-label="Referencia del caso original" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface-subtle)">
+<span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Referencia · solo lectura</span>
+<sc-for list="{{ refGroups }}" as="rg" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;font-weight:700;color:var(--text-strong)">{{ rg.title }}</span>
+<sc-for list="{{ rg.items }}" as="ri" hint-placeholder-count="1"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14px;color:var(--text-body)">{{ ri.desc }}<sc-if value="{{ ri.hasEstado }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ ri.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ ri.estado }}</span></x-import></sc-if></span></sc-for>
+<sc-if value="{{ rg.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:var(--text-muted)">Sin registros.</span></sc-if></div>
+</sc-for>
+</section>
+</sc-if>
+<sc-if value="{{ showResp }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:360px">
+<label for="cal-resp" style="font-size:13px;font-weight:700;color:var(--text-strong)">Ejecutivo responsable <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<select id="cal-resp" required="{{ true }}" value="{{ responsable }}" onChange="{{ onResp }}" onBlur="{{ onRespBlur }}" aria-invalid="{{ respInvalid }}" aria-describedby="err-resp" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ respBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<option value="">Selecciona</option>
+<sc-for list="{{ responsables }}" as="p" hint-placeholder-count="4"><option value="{{ p }}">{{ p }}</option></sc-for>
+</select>
+<sc-if value="{{ respErrShow }}" hint-placeholder-val="{{ false }}"><span id="err-resp" role="alert" style="font-size:13px;color:var(--color-danger)">Selecciona el ejecutivo responsable.</span></sc-if>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ isVeh }}" hint-placeholder-val="{{ false }}">
+<fieldset onBlur="{{ onVerBlur }}" aria-invalid="{{ verInvalid }}" aria-describedby="err-ver" style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:10px;min-width:0">
+<legend style="padding:0;margin:0 0 10px;font-size:15px;font-weight:700;color:var(--text-strong)">Veredicto de asegurabilidad <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<div role="radiogroup" aria-required="true" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start">
+<sc-for list="{{ verOpts }}" as="o" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;border:2px solid {{ o.border }};border-radius:var(--radius-md);background:{{ o.bg }};transition:var(--transition-action)">
+<label style="display:flex;align-items:center;gap:12px;cursor:pointer">
+<input type="radio" name="veredicto" value="{{ o.value }}" checked="{{ o.checked }}" onChange="{{ o.pick }}" style="width:20px;height:20px;margin:0;accent-color:var(--cyan-700);flex:0 0 auto">
+<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ o.label }}</span><span style="font-size:13px;color:var(--text-muted)">{{ o.hint }}</span></span>
+</label>
+<sc-if value="{{ o.showSelect }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="{{ o.selId }}" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ o.selLabel }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<select id="{{ o.selId }}" required="{{ true }}" value="{{ o.selValue }}" onChange="{{ o.onSel }}" onBlur="{{ o.onSelBlur }}" aria-invalid="{{ o.selInvalid }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ o.selBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<option value="">Selecciona</option>
+<sc-for list="{{ o.options }}" as="op" hint-placeholder-count="4"><option value="{{ op }}">{{ op }}</option></sc-for>
+</select>
+<sc-if value="{{ o.selErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ o.selErr }}</span></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ verErrShow }}" hint-placeholder-val="{{ false }}"><span id="err-ver" role="alert" style="font-size:13px;color:var(--color-danger)">Selecciona el veredicto de asegurabilidad.</span></sc-if>
+</fieldset>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="cal-obs" style="font-size:13px;font-weight:700;color:var(--text-strong)">Observación general <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="cal-obs" rows="3" required="{{ true }}" value="{{ obs }}" onChange="{{ onObs }}" onBlur="{{ onObsBlur }}" aria-invalid="{{ obsInvalid }}" aria-describedby="err-obs" style="width:100%;min-height:96px;padding:10px 12px;border:1.5px solid {{ obsBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea>
+<sc-if value="{{ obsErrShow }}" hint-placeholder-val="{{ false }}"><span id="err-obs" role="alert" style="font-size:13px;color:var(--color-danger)">Escribe la observación general de la calificación.</span></sc-if>
+</div>
+<sc-if value="{{ showDerivar }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface-subtle)">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ derivar }}" on-change="{{ toggleDerivar }}" label="Requerir evaluación de suscripción" hint-size="300px,24px"></x-import>
+<span style="font-size:13px;color:var(--text-muted);padding-left:32px">El caso pasará a “En suscripción” y el Suscriptor emitirá el dictamen final.</span>
+</div>
+</sc-if>
+<sc-if value="{{ danosShow }}" hint-placeholder-val="{{ false }}"><div id="cal-danos" role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1.5px solid {{ danosBd }};border-radius:var(--radius-sm);background:{{ danosBg }}"><span style="flex:1 1 320px;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;line-height:1.4;color:var(--text-strong)">{{ danosTxt }}</b><span style="font-size:13px;line-height:1.45;color:var(--text-body)">{{ danosSub }}</span></span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ abrirDanos }}" hint-size="140px,36px">Revisar daños</x-import></div></sc-if>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-top:4px">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onPrimaryClick }}" hint-size="210px,48px">{{ primaryLabel }}</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="lg" on-click="{{ onCancel }}" hint-size="120px,48px">Cancelar</x-import>
+<sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-muted)">{{ pendingHint }}</span></sc-if>
+</div>
+</section>
+</form>
+</sc-if>
+<aside aria-label="Evidencias del informe" style="position:sticky;top:{{ stickyTop }};display:flex;flex-direction:column;gap:16px;max-height:{{ asideMaxH }};overflow-y:auto;min-width:0">
+<section style="display:flex;flex-direction:column;gap:14px;padding:20px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<h2 style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Evidencias del informe</h2>
+<span style="font-size:13px;color:var(--text-muted);white-space:nowrap">{{ evidCount }}</span>
+</div>
+<sc-if value="{{ hasEvChips }}" hint-placeholder-val="{{ false }}"><div role="group" aria-label="{{ evChipsAria }}" style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ evChips }}" as="ch" hint-placeholder-count="3"><button type="button" aria-pressed="{{ ch.pressed }}" onClick="{{ ch.pick }}" style="height:32px;padding:0 12px;border:1px solid {{ ch.border }};border-radius:var(--radius-pill);background:{{ ch.bg }};cursor:pointer;font-family:var(--font-brand);font-size:13px;font-weight:{{ ch.fw }};color:var(--text-strong);white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ ch.label }}</button></sc-for></div></sc-if>
+<ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:12px">
+<sc-for list="{{ evid }}" as="e" hint-placeholder-count="6">
+<li style="min-width:0">
+<button type="button" onClick="{{ e.open }}" aria-label="{{ e.aria }}" style="width:100%;display:flex;flex-direction:column;gap:6px;padding:0;border:none;background:transparent;cursor:zoom-in;text-align:left;font-family:var(--font-brand)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">
+<span style="width:100%;aspect-ratio:4 / 3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm);background:var(--neutral-100);color:var(--neutral-500)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ e.icon }}"></path></svg>
+<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ e.kind }}</span>
+</span>
+<span style="font-size:13px;font-weight:700;line-height:1.3;color:var(--text-strong)">{{ e.titulo }}</span>
+<span style="font-size:12px;color:var(--text-muted);white-space:nowrap">{{ e.cuando }}</span>
+<sc-if value="{{ e.hasGps }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-variant-numeric:tabular-nums">GPS {{ e.gps }}</span></sc-if>
+</button>
+</li>
+</sc-for>
+</ul>
+</section>
+<section style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<button type="button" aria-expanded="{{ informeOpen }}" aria-controls="cal-informe" onClick="{{ toggleInforme }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border:none;background:transparent;cursor:pointer;font-family:var(--font-brand);text-align:left" style-focus="outline:2px solid var(--color-brand);outline-offset:-2px">
+<span style="font-size:17px;font-weight:700;color:var(--text-strong)">Resumen del informe del inspector</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto;transform:{{ informeRot }};transition:transform var(--dur-action) var(--ease-standard)"><path d="m6 9 6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{ informeOpen }}" hint-placeholder-val="{{ true }}">
+<div id="cal-informe" style="display:flex;flex-direction:column;gap:14px;padding:0 20px 20px">
+<dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
+<sc-for list="{{ informe.fields }}" as="f" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:{{ f.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ f.label }}</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong);white-space:{{ f.ws }}">{{ f.value }}</dd></div>
+</sc-for>
+</dl>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:13px;color:var(--text-muted)">Hallazgos</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px;color:var(--text-strong)">
+<sc-for list="{{ informe.hallazgos }}" as="hz" hint-placeholder-count="3"><li>{{ hz }}</li></sc-for>
+</ul>
+</div>
+</div>
+</sc-if>
+</section>
+</aside>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ catOpen }}" on-close="{{ closeCat }}" size="md" align="left" title="{{ catTitle }}" description="{{ catDesc }}" footer="{{ catFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<label style="display:flex;align-items:center;gap:8px;height:var(--input-outlined-height);padding:0 14px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<input type="search" aria-label="Buscar en el catálogo" placeholder="Buscar en el catálogo" value="{{ catSearch }}" onChange="{{ onCatSearch }}" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)">
+</label>
+<span style="font-size:13px;color:var(--text-muted)">{{ catSelLabel }}</span>
+<ul role="group" aria-label="{{ catTitle }}" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:320px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
+<sc-for list="{{ catItems }}" as="ci" hint-placeholder-count="5">
+<li style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-top:{{ ci.border }};background:{{ ci.bg }}">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ ci.checked }}" disabled="{{ ci.disabled }}" on-change="{{ ci.toggle }}" label="{{ ci.label }}" hint-size="260px,24px"></x-import>
+<sc-if value="{{ ci.disabled }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--text-muted);white-space:nowrap">Ya agregado</span></sc-if>
+</li>
+</sc-for>
+<sc-if value="{{ catEmpty }}" hint-placeholder-val="{{ false }}"><li style="padding:16px 14px;font-size:14px;color:var(--text-muted)">No hay coincidencias en el catálogo.</li></sc-if>
+</ul>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ confirmOpen }}" on-close="{{ closeConfirm }}" size="sm" align="left" title="Confirmar dictamen final" description="{{ confirmDesc }}" footer="{{ confirmFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Cambios frente al nivel 1</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-strong)">
+<sc-for list="{{ changes }}" as="ch" hint-placeholder-count="2"><li>{{ ch }}</li></sc-for>
+</ul>
+</div>
+</x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ viewerOpen }}" on-close="{{ closeViewer }}" size="lg" align="left" title="{{ vw.titulo }}" footer="{{ viewerFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="width:100%;aspect-ratio:16 / 10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:var(--radius-md);background:var(--neutral-100);color:var(--neutral-500)">
+<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ vw.icon }}"></path></svg>
+<span style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">{{ vw.kind }}</span>
+</div>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px"><sc-for list="{{ vw.meta }}" as="m" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:{{ m.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ m.label }}</dt><dd style="margin:0;font-size:15px;font-weight:600;color:var(--text-strong);white-space:{{ m.ws }};font-variant-numeric:tabular-nums">{{ m.value }}</dd></div></sc-for></dl>
+<span style="font-size:13px;color:var(--text-muted)">{{ vw.pos }}</span>
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1100},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;n1&quot;,&quot;options&quot;:[&quot;n1&quot;,&quot;n2&quot;,&quot;veh&quot;],&quot;tsType&quot;:&quot;&#x27;n1&#x27;|&#x27;n2&#x27;|&#x27;veh&#x27;&quot;},&quot;dual&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ramo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Incendio y líneas aliadas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20137&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;motivoInspector&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;evidences&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{tipo:&#x27;foto&#x27;|&#x27;doc&#x27;,titulo:string,fecha:string,hora:string,gps?:string}&gt;&quot;},&quot;informe&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{fields:{label:string,value:string,span:string,ws:string}[],hallazgos:string[]}&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(payload:object)=&gt;void&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;danosRid&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosUsuario&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosAbrir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onRevisarDanos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+class Component extends DCLogic {
+  keys = ['garantias', 'documentos', 'preexistencias'];
+  titles = { garantias: 'Garantías', documentos: 'Documentos', preexistencias: 'Preexistencias' };
+  nouns = { garantias: ['garantía', 'garantías', 'f'], documentos: ['documento', 'documentos', 'm'], preexistencias: ['preexistencia', 'preexistencias', 'f'] };
+  responsables = ['Verónica Lema', 'Daniela Ruiz', 'Ricardo Almeida'];
+  coberturas = ['Todo riesgo', 'Pérdida total', 'Daños propios', 'Responsabilidad civil (RC)'];
+  rechazos = ['Daños preexistentes no reparados', 'Alteraciones no declaradas', 'Documentación del vehículo incompleta', 'Uso comercial no declarado', 'Estado general fuera de política'];
+  get catalog() { const C = ((window.SIRIUS_EJEMPLO || {}).catalogoSeguimientos || []).filter(x => x.estado === 'Vigente'), F = this._catBase, pick = (t) => C.filter(x => x.tipo === t).map(x => x.titulo);
+    if (!C.length) return F; return { garantias: pick('Garantía'), documentos: pick('Documento'), preexistencias: pick('Preexistencia').length ? pick('Preexistencia') : F.preexistencias }; }
+  _catBase = {
+    garantias: ['Sistema de alarma monitoreado', 'Detectores de humo', 'Extintores', 'Permiso de funcionamiento de Bomberos', 'Rociadores automáticos', 'Guardianía 24/7', 'Cerramiento perimetral', 'Mantenimiento del sistema eléctrico'],
+    documentos: ['Plano eléctrico actualizado', 'Certificado de mantenimiento de extintores', 'Plan de emergencia aprobado', 'Escrituras o contrato de arriendo', 'Inventario valorado de mercadería'],
+    preexistencias: ['Grietas en la mampostería', 'Humedad en cubierta', 'Instalación eléctrica deteriorada', 'Daño previo en cubierta', 'Óxido en estructura metálica'],
+  };
+  icons = {
+    foto: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+    doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h6',
+  };
+  seq = 0;
+  state = this.initial();
+  initial() {
+    const p = this.props, mode = p.mode || 'n1', pre = p.prefill || null, preset = p.preset || '';
+    const clone = (arr) => (arr || []).map(x => Object.assign({}, x));
+    const s = { estado: '', items: { garantias: [], documentos: [], preexistencias: [] }, removed: { garantias: [], documentos: [], preexistencias: [] }, removedOpen: {}, plazo: '30', responsable: '', obs: '', derivar: false, touched: {}, cat: null, catSearch: '', catSel: [], confirmOpen: false, viewer: null, informeOpen: true, veredicto: '', cobertura: '', motivo: '' };
+    if (pre && !p.view) {
+      s.estado = pre.estado || ''; s.plazo = String(pre.plazo || 30); s.responsable = pre.responsable || ''; s.obs = pre.obs || '';
+      if (pre.items) this.keys.forEach(k => { s.items[k] = clone(pre.items[k]); });
+      if ((mode === 'n1' || mode === 'gar1') && p.isEdit) s.derivar = !!pre.derivar;
+      if (preset === 'gar-demo') { s.items.garantias = s.items.garantias.map(x => x.lockedResp ? x : Object.assign({}, x, { estado: 'Cumplido', obs: 'Se verificó en sitio el permiso de Bomberos 2026 vigente' })); s.obs = 'Se verificaron en sitio todas las garantías pendientes del caso 20137.'; }
+      if (mode === 'veh') { s.veredicto = pre.veredicto || ''; s.cobertura = pre.cobertura || ''; s.motivo = pre.motivo || ''; }
+    }
+    if (preset === 'n1-sus' || preset === 'catalogo') { s.derivar = true; }
+    if (preset === 'catalogo') { s.cat = 'garantias'; s.catSel = ['Sistema de detección y alarma contra incendio', 'Detectores de humo']; }
+    if (mode === 'n2' && preset === 'n2-demo') {
+      const g = s.items.garantias; const ix = g.findIndex(x => x.desc === 'Extintores');
+      if (ix >= 0) { s.removed.garantias = [g[ix]]; s.items.garantias = g.filter((_, i) => i !== ix); s.removedOpen.garantias = true; }
+      s.items.documentos = s.items.documentos.concat([{ id: 'new-1', ramo: p.ramo, desc: 'Certificado de mantenimiento de extintores', obs: 'Reemplaza la garantía de extintores', estado: 'Pendiente', added: true }]);
+    }
+    s.ramoRes = JSON.parse(JSON.stringify(((this.props.prefill || {}).ramoRes) || {})); s.evFilter = '';
+    if (preset === 'rg-demo') { const ids = (this.props.ramos || []).map(r => r.id); s.ramoRes = { [ids[0]]: { res: 'Aprobado', obs: '' }, [ids[1]]: { res: 'No aprobado', obs: 'Sin guardianía nocturna ni alarma monitoreada' }, [ids[2]]: { res: 'Aprobado', obs: '' } }; s.estado = 'Aprobado'; s.responsable = 'Verónica Lema'; s.obs = 'Incendio y equipo electrónico aprobados; robo no aprobado hasta contar con guardianía nocturna.'; s.derivar = true; s.plazo = '30';
+      s.items.garantias = [{ id: 'g1', ramo: 'Incendio y líneas aliadas', desc: 'Extintores', obs: 'Recargar los 4 extintores de la bodega', estado: 'Pendiente' }, { id: 'g2', ramo: 'Robo', desc: 'Guardianía 24/7', obs: 'Contrato vigente con empresa de seguridad', estado: 'Pendiente' }];
+      s.items.documentos = [{ id: 'd1', ramo: 'Equipo electrónico', desc: 'Inventario de equipos con número de serie', obs: 'Incluir servidor y cámaras IP', estado: 'Pendiente' }];
+      s.items.preexistencias = [{ id: 'p1', ramo: 'Incendio y líneas aliadas', desc: 'Grietas en la mampostería', obs: 'Muro posterior de la bodega' }]; }
+    if (mode === 'n1' || mode === 'n2') { const leg = pre && pre.plazo ? String(pre.plazo) : preset === 'rg-demo' ? '30' : '';
+      s.items.garantias = s.items.garantias.map(x => x.plazo != null && x.plazo !== '' ? x : Object.assign({}, x, { plazo: this.plazoCat(x.desc) || leg }));
+      const mx = Math.max(0, ...s.items.garantias.map(x => Number(x.plazo) || 0)); s.plazoG = mode === 'n2' && pre && Number(pre.plazo) > mx ? String(pre.plazo) : ''; }
+    if (mode === 'veh' && preset === 'veh-ok') { s.veredicto = 'si'; s.cobertura = 'Todo riesgo'; s.obs = 'Vehículo asegurable; daño previo en parachoques posterior excluido de cobertura hasta su reparación.'; }
+    return s;
+  }
+  // Plazo por garantía (plazo sugerido del catálogo); el global es el máximo. El Suscriptor puede ampliarlo, nunca bajarlo del máximo.
+  plazoCat(desc) { const x = ((window.SIRIUS_EJEMPLO || {}).catalogoSeguimientos || []).find(c => c.titulo === desc && c.tipo === 'Garantía'); return x && x.plazo > 0 ? String(x.plazo) : ''; }
+  plazoCalc() { const s = this.state, mode = this.props.mode || 'n1'; if (!(mode === 'n1' || mode === 'n2')) return null;
+    const ok = (v) => { const n = Number(v); return v !== '' && v != null && Number.isInteger(n) && n >= 1 && n <= 365; };
+    const g = s.items.garantias || [], falta = g.filter(x => !ok(x.plazo)), mx = g.filter(x => ok(x.plazo)).sort((a, b) => Number(b.plazo) - Number(a.plazo))[0], max = mx ? Number(mx.plazo) : 0;
+    const ext = mode === 'n2' && s.plazoG !== '' && s.plazoG != null ? Number(s.plazoG) : null, extErr = ext != null && !(Number.isInteger(ext) && ext >= max && ext <= 365);
+    return { g, falta, mx, max, ext, extErr, total: !g.length ? 0 : falta.length ? null : (ext != null && !extErr && ext > max ? ext : max) }; }
+  componentDidMount() { this.emitDraft(null);
+    // Etapa 12a · DEC-134: la calificación se actualiza cuando cambian los daños del riesgo y la escena danoscalif abre la revisión.
+    if (window.SiriusDanos) this._offDanos = window.SiriusDanos.on(() => this.forceUpdate()); if (this.props.danosAbrir && this.props.danosRid) setTimeout(() => this.setState({ danosErr: true }), 200);
+    const NS = window.AseguradoraDelSurDesignSystem_4fbf29;
+    this.plusIcon = NS && NS.FeedbackIcon ? React.createElement(NS.FeedbackIcon, { name: 'plus', size: 16 }) : null;
+    this.forceUpdate();
+  }
+  evMeta(e) {
+    const g = String(e.gps || '').split(',').map(x => x.trim());
+    const p = this.props, sec = String(7 + ((e.titulo || '').length % 50)).padStart(2, '0');
+    const paso = e.paso || (e.tipo === 'doc' ? 'Documentos' : /odómetro|tablero|interior/i.test(e.titulo) ? 'Interior' : /servidor|equipo|cuarto/i.test(e.titulo) ? 'Equipos' : 'Exterior');
+    return [
+      { label: 'Latitud', value: g[0] || 'Sin GPS', ws: 'nowrap', span: 'auto' }, { label: 'Longitud', value: g[1] || '—', ws: 'nowrap', span: 'auto' }, { label: 'Precisión GPS', value: g[0] ? '± ' + (3 + ((e.titulo || '').length % 6)) + ' m' : '—', ws: 'nowrap', span: 'auto' },
+      { label: 'Fecha y hora sellada (servidor)', value: e.fecha + ' · ' + e.hora + ':' + sec, ws: 'nowrap', span: 'span 2' }, { label: 'Dispositivo', value: e.dispositivo || 'Samsung Galaxy A54 · App SIRIUS 1.4', ws: 'normal', span: 'auto' },
+      { label: 'Modalidad de captura', value: e.modalidad || (p.informe && p.informe.fields && (p.informe.fields.find(f => f.label === 'Modalidad') || {}).value) || 'Presencial', ws: 'normal', span: 'auto' },
+      { label: 'Riesgo', value: e.ramo || e.riesgo || p.ramo || '—', ws: 'normal', span: 'auto' }, { label: 'Paso', value: paso, ws: 'normal', span: 'auto' },
+    ];
+  }
+  emitDraft(ps) { const s = this.state, f = this.props.onDraftChange; if (!f) return; if (ps && ps.veredicto === s.veredicto && ps.cobertura === s.cobertura && ps.motivo === s.motivo && ps.obs === s.obs) return; f({ veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs }); }
+  componentDidUpdate(prev, ps) { this.emitDraft(ps);
+    if (prev.formKey !== this.props.formKey) this.setState(this.initial());
+  }
+  addDays(n) {
+    const [y, m, dd] = String(this.props.baseDate || '2026-10-16').split('-').map(Number);
+    const d = new Date(y, m - 1, dd); d.setDate(d.getDate() + n);
+    const p = (x) => String(x).padStart(2, '0');
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(2);
+  }
+  markErrs(errs) { const t = Object.assign({}, this.state.touched); Object.keys(errs).forEach(k => { if (errs[k]) t[k] = true; }); this.setState({ touched: t }); [60, 300].forEach(ms => setTimeout(() => { const f = this.formRef && this.formRef.current; let el = f && f.querySelector('[aria-invalid="true"]'); if (!el) return; if (!el.matches('input,select,textarea,button')) el = el.querySelector('input,select,textarea,button') || el; el.focus(); }, ms)); }
+  touch(k) { if (!this.state.touched[k]) this.setState(s => ({ touched: Object.assign({}, s.touched, { [k]: true }) })); }
+  setItem(k, id, patch) { this.setState(s => ({ items: Object.assign({}, s.items, { [k]: s.items[k].map(x => x.id === id ? Object.assign({}, x, patch) : x) }) })); }
+  removeItem(k, id) {
+    const n2 = this.props.mode === 'n2' || this.props.mode === 'gar2';
+    this.setState(s => {
+      const it = s.items[k].find(x => x.id === id);
+      const items = Object.assign({}, s.items, { [k]: s.items[k].filter(x => x.id !== id) });
+      if (!n2 || !it || it.added) return { items };
+      return { items, removed: Object.assign({}, s.removed, { [k]: s.removed[k].concat([it]) }), removedOpen: Object.assign({}, s.removedOpen, { [k]: true }) };
+    });
+  }
+  restore(k, id) {
+    this.setState(s => {
+      const it = s.removed[k].find(x => x.id === id);
+      return { removed: Object.assign({}, s.removed, { [k]: s.removed[k].filter(x => x.id !== id) }), items: Object.assign({}, s.items, { [k]: s.items[k].concat([it]) }) };
+    });
+  }
+  plural(k, n, verb) {
+    const [sg, pl, g] = this.nouns[k];
+    const end = g === 'f' ? (n === 1 ? 'a' : 'as') : (n === 1 ? 'o' : 'os');
+    return n + ' ' + (n === 1 ? sg : pl) + ' ' + verb + end;
+  }
+  allChanges() {
+    const pr = (this.props.prefill || {}).ramoRes, rs = this.props.ramos || [];
+    const out = pr && rs.length > 1 ? rs.filter(r => pr[r.id] && (this.state.ramoRes[r.id] || {}).res !== pr[r.id].res).map(r => r.label + ': ' + pr[r.id].res + ' → ' + (this.state.ramoRes[r.id] || {}).res) : [];
+    const rest = this.changes().filter(x => !(out.length && /^Estado de aprobación/.test(x)));
+    return out.length ? out.concat(rest.filter(x => !/^Sin cambios/.test(x))) : rest;
+  }
+  changes() {
+    const pre = this.props.baseline; if (!pre) return [];
+    const s = this.state, out = [];
+    if (this.props.mode === 'veh') {
+      const lab = (v) => v === 'si' ? 'Es asegurable' : v === 'no' ? 'No asegurable' : '—';
+      if (pre.veredicto !== s.veredicto) out.push('Veredicto: ' + lab(pre.veredicto) + ' → ' + lab(s.veredicto));
+      if (s.veredicto === 'si' && pre.cobertura !== s.cobertura) out.push('Cobertura: ' + s.cobertura);
+      if (s.veredicto === 'no' && pre.motivo !== s.motivo) out.push('Motivo de rechazo: ' + s.motivo);
+      if ((pre.obs || '').trim() !== s.obs.trim()) out.push('Observación general actualizada');
+      if (!out.length) out.push('Sin cambios');
+      return out;
+    }
+    if (s.estado !== pre.estado) out.push('Estado de aprobación: ' + pre.estado + ' → ' + s.estado);
+    if ((this.props.mode === 'n1' || this.props.mode === 'gar1') && this.props.dual && !!pre.derivar !== !!s.derivar) out.push(s.derivar ? 'Se deriva a suscripción' : 'Se retira la derivación a suscripción');
+    this.keys.forEach(k => {
+      const ids = new Set(s.items[k].map(x => x.id)), preIds = new Set((pre.items[k] || []).map(x => x.id));
+      const del = (pre.items[k] || []).filter(x => !ids.has(x.id)).length, add = s.items[k].filter(x => !preIds.has(x.id)).length;
+      const mod = s.items[k].filter(x => { const o = (pre.items[k] || []).find(y => y.id === x.id); return o && (o.obs !== x.obs || o.estado !== x.estado); }).length;
+      if (del) out.push(this.plural(k, del, 'eliminad'));
+      if (add) out.push(this.plural(k, add, 'agregad'));
+      if (mod) out.push(this.plural(k, mod, 'modificad'));
+    });
+    const pcT = this.plazoCalc(), sp = pcT ? String(pcT.total) : String(s.plazo); if (String(pre.plazo) !== sp) out.push('Plazo: ' + pre.plazo + ' → ' + sp + ' días' + ((s.plazoObs || '').trim() ? ' (' + s.plazoObs.trim() + ')' : ''));
+    if (pre.responsable !== s.responsable) out.push('Ejecutivo responsable: ' + s.responsable);
+    if (pre.obs.trim() !== s.obs.trim()) out.push('Observación general actualizada');
+    if (!out.length) out.push(this.props.isEdit ? 'Sin cambios' : 'Sin cambios: se ratifica la calificación de nivel 1');
+    return out;
+  }
+  submit() {
+    const s = this.state, mode = this.props.mode || 'n1';
+    const payload = { plazoObs: (s.plazoObs || '').trim(), mode, isEdit: !!this.props.isEdit, estado: s.estado, ramoRes: s.ramoRes, derivar: !!s.derivar && !!this.props.dual && (mode === 'n1' || mode === 'gar1'), veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs.trim(), plazo: this.plazoCalc() ? (this.plazoCalc().total || 0) : Number(s.plazo), responsable: s.responsable, changes: this.props.baseline ? this.allChanges() : [], items: s.items, counts: this.keys.reduce((a, k) => Object.assign(a, { [k]: s.items[k].length }), {}) };
+    this.props.onSave && this.props.onSave(payload);
+  }
+  estadoGeneral(items, plazo) {
+    const g = items.garantias || [], d = items.documentos || [];
+    if (!g.length && !d.length) return { label: 'Sin seguimientos', tone: 'neutral' };
+    const [y, m, dd] = String(this.props.baseDate || '2026-10-16').split('-').map(Number);
+    const lim = new Date(y, m - 1, dd + Number(plazo || 0)), today = new Date(2026, 9, 16);
+    if (g.some(x => x.estado === 'Vencido') || (today > lim && g.some(x => x.estado !== 'Cumplido'))) return { label: 'Vencido', tone: 'danger' };
+    if (g.concat(d).every(x => x.estado === 'Cumplido')) return { label: 'Cumplido', tone: 'success' };
+    return { label: 'Pendiente', tone: 'warning' };
+  }
+  viewVals() {
+    const p = this.props;
+    if (!p.view) return { viewBlocks: [] };
+    if (p.finalDictamen) {
+      const gm = (p.mode || '').startsWith('gar');
+      const fin = this.viewBlock(p.finalDictamen, gm ? 'gar2' : 'n2');
+      const ref = this.viewBlock(p.prefill || {}, gm ? 'gar1' : 'n1');
+      return { viewBlocks: [Object.assign(fin, { kicker: 'Vigente', bg: '#FFFFFF' }), Object.assign(ref, { kicker: 'Referencia', title: gm ? 'Calificación de inspección de garantías' : 'Calificación de inspección', sections: [], bg: 'var(--surface-subtle)' })] };
+    }
+    return { viewBlocks: [Object.assign(this.viewBlock(p.prefill || {}, p.mode || 'n1'), { kicker: '', bg: '#FFFFFF', canEdit: !!p.canEdit })] };
+  }
+  viewBlock(v, mode) {
+    const p = this.props;
+    const tone = { 'Aprobado': 'success', 'No aprobado': 'danger', 'Cumplido': 'success', 'Pendiente': 'warning', 'Vencido': 'danger' };
+    if (mode === 'veh') {
+      const ok = v.veredicto === 'si';
+      return { title: 'Tu calificación', estado: ok ? 'Es asegurable' : 'No asegurable', tone: ok ? 'success' : 'danger', sections: [], canEdit: false,
+        fields: [{ label: ok ? 'Cobertura' : 'Motivo de rechazo', value: ok ? v.cobertura : v.motivo, span: 'auto', ws: 'normal' }, { label: 'Usuario', value: v.user, span: 'auto', ws: 'normal' }, { label: 'Fecha', value: v.fecha, span: 'auto', ws: 'nowrap' }, { label: 'Observación general', value: v.obs, span: '1 / -1', ws: 'normal' }] };
+    }
+    const items = v.items || { garantias: [], documentos: [], preexistencias: [] };
+    const eg = this.estadoGeneral(items, v.plazo);
+    const fields = [{ label: 'Usuario', value: v.user, span: 'auto', ws: 'normal' }, { label: 'Fecha', value: v.fecha, span: 'auto', ws: 'nowrap' }, { label: 'Ejecutivo responsable', value: v.responsable || '—', span: 'auto', ws: 'normal' }];
+    if ((mode === 'n1' || mode === 'gar1') && p.dual && !p.finalDictamen) fields.push({ label: 'Evaluación de suscripción', value: v.derivar ? 'Derivado a suscripción' : 'No requerida', span: 'auto', ws: 'normal' });
+    if (!(p.finalDictamen && mode === 'n1')) fields.push({ label: 'Estado general de seguimientos', value: eg.label, span: 'auto', ws: 'nowrap' });
+    fields.push({ label: 'Observación general', value: v.obs, span: '1 / -1', ws: 'normal' });
+    return {
+      title: mode === 'n2' || mode === 'gar2' ? 'Dictamen final de suscripción' : mode === 'gar1' ? 'Calificación de inspección de garantías' : 'Calificación de inspección', canEdit: false,
+      estado: mode.startsWith('gar') ? (items.garantias || []).filter(x => x.estado === 'Cumplido').length + ' de ' + (items.garantias || []).length + ' garantías cumplidas' : v.estado,
+      tone: mode.startsWith('gar') ? ((items.garantias || []).every(x => x.estado === 'Cumplido') ? 'success' : 'warning') : (tone[v.estado] || 'neutral'), fields,
+      sections: this.keys.map(k => {
+        const rows = items[k] || [], hasEstado = k !== 'preexistencias';
+        return { title: this.titles[k], count: String(rows.length), hasEstado, cols: hasEstado ? 5 : 4, isGar: k === 'garantias', isInfo: k === 'preexistencias',
+          plazoText: 'Plazo ' + v.plazo + ' días · vencen el ' + this.addDays(Number(v.plazo || 0)),
+          isEmpty: !rows.length, emptyText: 'Sin registros.',
+          rows: rows.map((r, i) => ({ n: String(i + 1), ramo: r.ramo || p.ramo || '—', desc: r.desc, obs: r.obs || '—', estado: r.estado || 'Pendiente', tone: tone[r.estado || 'Pendiente'], added: mode === 'n2' && !!r.added })) };
+      }),
+    };
+  }
+  componentWillUnmount() { if (this._offDanos) this._offDanos(); }
+  focoDanos() { setTimeout(() => { const el = document.getElementById('cal-danos'); if (el) { try { el.scrollIntoView({ block: 'center' }); } catch (x) {} const b = el.querySelector('button'); if (b) b.focus(); } }, 30); }
+  renderVals() {
+    const p = this.props, s = this.state, mode = p.mode || 'n1';
+    const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
+    const isGar = mode === 'gar1' || mode === 'gar2';
+    const isRG = mode !== 'veh', isVeh = mode === 'veh', isN2 = mode === 'n2' || mode === 'gar2';
+    const pendDanos = p.danosRid && !p.view && window.SiriusDanos ? window.SiriusDanos.pendientes(p.danosRid) : 0;
+    const ramosList = p.ramos || [], multiRG = isRG && !isGar && ramosList.length > 1, ramoLabels = ramosList.map(r => r.label);
+    const preRR = (p.prefill || {}).ramoRes || {};
+    const basePlazo = p.baseline ? String(p.baseline.plazo) : (p.prefill ? String(p.prefill.plazo) : '');
+    const PC = this.plazoCalc();
+    const plazoChanged = PC ? (isN2 && PC.ext != null && !PC.extErr && PC.ext > PC.max) : (isGar && isN2 && basePlazo && String(s.plazo) !== basePlazo);
+    const plazoN = PC ? (PC.total || 0) : Number(s.plazo);
+    const plazoOk = PC ? (!PC.falta.length && !PC.extErr) : (Number.isInteger(plazoN) && plazoN >= 1 && plazoN <= 365);
+    const errs = {
+      estado: isRG && !isGar && !multiRG && !s.estado, ramos: multiRG && ramosList.some(r => !(s.ramoRes[r.id] || {}).res), plazo: isRG && !plazoOk, resp: isRG && !isGar && !s.responsable, obs: !s.obs.trim(), pobs: plazoChanged && !(s.plazoObs || '').trim(),
+      ver: isVeh && !s.veredicto, cob: isVeh && s.veredicto === 'si' && !s.cobertura, mot: isVeh && s.veredicto === 'no' && !s.motivo,
+    };
+    const valid = !Object.values(errs).some(Boolean);
+    const show = (k, e) => !!(s.touched[k] && errs[e || k]);
+    const border = (k, e) => show(k, e) ? 'var(--color-danger)' : 'var(--input-outlined-border)';
+    const groupBlur = (k) => (e) => { if (!e.currentTarget.contains(e.relatedTarget)) this.touch(k); };
+    const pending = Object.keys(errs).filter(k => errs[k]).length;
+    const ramo = p.ramo || '';
+    const sections = (isGar ? ['garantias'] : this.keys).map(k => {
+      const rows = s.items[k], hasEstado = k !== 'preexistencias', [sg] = this.nouns[k];
+      const cumpl = rows.filter(x => x.estado === 'Cumplido').length;
+      return {
+        estadoOpts: isGar ? [{ v: 'Cumplido', l: 'Cumplida' }, { v: 'Pendiente', l: 'Sigue pendiente' }] : k === 'documentos' ? [{ v: 'Pendiente', l: 'Pendiente' }, { v: 'Cumplido', l: 'Cumplido' }] : [{ v: 'Pendiente', l: 'Pendiente' }, { v: 'Cumplido', l: 'Cumplido' }, { v: 'Vencido', l: 'Vencido' }],
+        hasSummary: isGar, summary: cumpl + ' de ' + rows.length + ' garantías cumplidas', canAdd: !isGar || isN2,
+        key: k, isGar: k === 'garantias', hasPlazo: k === 'garantias' && !!PC, hid: 'sec-' + k, title: this.titles[k], count: String(rows.length), hasEstado, cols: (hasEstado ? 6 : 5) + (k === 'garantias' && PC ? 1 : 0),
+        isEmpty: rows.length === 0, emptyText: 'Sin ' + this.titles[k].toLowerCase() + ' registradas.'.replace('registradas', k === 'documentos' ? 'registrados' : 'registradas'),
+        addLabel: 'Agregar ' + this.titles[k].toLowerCase(),
+        onAdd: () => this.setState({ cat: k, catSearch: '', catSel: [] }),
+        rows: rows.map((r, i) => ({
+          locked: isGar && !!r.lockedResp, hasSub: isGar, sub: 'Observación original: ' + (r.orig || '—'), canDelete: !(isGar && r.lockedResp) && (!isGar || isN2), obsPh: isGar ? 'Observación de la verificación' : '',
+          n: String(i + 1), ramo: r.ramo, desc: r.desc, obs: r.obs || '', rows: Math.max(1, Math.ceil((r.obs || '').length / 26)), estado: r.estado || 'Pendiente', added: isN2 && !!r.added,
+          ramoSel: multiRG, ramoTxt: !multiRG, ramoLabel: 'Ramo de ' + (r.desc || ''), ramoOpts: ramoLabels, onRamo: (e) => this.setItem(k, r.id, { ramo: e.target.value }), obsLabel: 'Observaciones de ' + sg + ' ' + (i + 1), estadoLabel: 'Estado de ' + sg + ' ' + (i + 1), delLabel: 'Eliminar ' + sg + ' ' + r.desc,
+          onObs: (e) => this.setItem(k, r.id, { obs: e.target.value }),
+          plazoV: r.plazo == null ? '' : String(r.plazo), plazoLabel: 'Plazo de ' + (r.desc || sg) + ' (días)', plazoMiss: !!PC && k === 'garantias' && PC.falta.includes(r), plazoInv: !!PC && k === 'garantias' && PC.falta.includes(r) ? 'true' : undefined, plazoBorderR: !!PC && k === 'garantias' && PC.falta.includes(r) ? 'var(--color-danger)' : 'var(--input-outlined-border)', onPlazoR: (e) => this.setItem(k, r.id, { plazo: e.target.value }),
+          onEstado: (e) => this.setItem(k, r.id, { estado: e.target.value }),
+          onDelete: () => this.removeItem(k, r.id),
+        })),
+        hasRemoved: isN2 && s.removed[k].length > 0,
+        removedOpen: !!s.removedOpen[k], removedRot: s.removedOpen[k] ? 'rotate(90deg)' : 'none',
+        removedLabel: 'Eliminados en esta calificación (' + s.removed[k].length + ')',
+        toggleRemoved: () => this.setState(st => ({ removedOpen: Object.assign({}, st.removedOpen, { [k]: !st.removedOpen[k] }) })),
+        removed: s.removed[k].map((x, i) => ({ desc: x.desc, meta: 'Registrado en nivel 1' + (x.obs ? ' · ' + x.obs : ''), border: i === 0 ? 'none' : '1px dashed var(--border-default)', restoreLabel: 'Restaurar ' + x.desc, onRestore: () => this.restore(k, x.id) })),
+      };
+    });
+    const opt = (value, label, hint, cur, pick) => ({ value, label, hint, checked: cur === value, border: cur === value ? 'var(--cyan-500)' : 'var(--border-default)', bg: cur === value ? 'var(--color-brand-wash)' : '#FFFFFF', pick });
+    const cat = s.cat;
+    const already = cat ? new Set(s.items[cat].map(x => x.desc)) : new Set();
+    const q = s.catSearch.trim().toLowerCase();
+    const catList = cat ? this.catalog[cat].filter(x => !q || x.toLowerCase().includes(q)) : [];
+    const evAll = p.evidences || [], evid = s.evFilter ? evAll.filter(e => e.ramo === s.evFilter) : evAll;
+    const vi = s.viewer, ve = vi != null ? evid[vi] : null;
+    const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
+    const informe = p.informe || { fields: [], hallazgos: [] };
+    return {
+      formLabel: isN2 ? 'Dictamen final de suscripción' : isGar ? 'Calificación de inspección de garantías' : 'Calificación de inspección',
+      isRG, isVeh, isN2, showAprob: !isGar && !multiRG, showResp: !isGar, multiRG,
+      ramosSummary: ramosList.filter(r => (s.ramoRes[r.id] || {}).res === 'Aprobado').length + ' de ' + ramosList.length + (p.sustantivo === 'equipo' ? ' equipos aprobados' : ' ramos aprobados'), resTitulo: p.sustantivo === 'equipo' ? 'Resultado por equipo' : 'Resultado por ramo', colRiesgo: p.sustantivo === 'equipo' ? 'Equipo' : 'Ramo', colLinea: p.sustantivo === 'equipo' ? 'Tipo y año' : 'Línea de negocio', evChipsAria: p.sustantivo === 'equipo' ? 'Filtrar evidencias por equipo' : 'Filtrar evidencias por ramo',
+      onRamosBlur: groupBlur('ramos'),
+      ramoRows: ramosList.map(r => { const v = s.ramoRes[r.id] || {}; const setR = (patch) => this.setState(st => { const rr = Object.assign({}, st.ramoRes, { [r.id]: Object.assign({}, st.ramoRes[r.id] || {}, patch) }); return { ramoRes: rr, estado: Object.values(rr).some(x => x.res === 'Aprobado') ? 'Aprobado' : 'No aprobado' }; });
+        return { label: r.label, linea: r.linea || '—', name: 'rr-' + r.id, aria: 'Resultado de ' + r.label, infLabel: 'Ver informe de ' + r.label, openInf: () => p.onOpenInforme && p.onOpenInforme(r.id), obs: v.obs || '', obsRows: Math.max(1, Math.ceil((v.obs || '').length / 24)), obsLabel: 'Observación de ' + r.label, onObs: (e) => setR({ obs: e.target.value }),
+          changed: isN2 && !!preRR[r.id] && preRR[r.id].res !== v.res, errShow: !!(s.touched.ramos && !v.res), errInv: s.touched.ramos && !v.res ? 'true' : undefined,
+          opts: ['Aprobado', 'No aprobado'].map(o => ({ label: o, checked: v.res === o, border: v.res === o ? (o === 'Aprobado' ? 'var(--color-success)' : 'var(--color-danger)') : 'var(--border-default)', bg: v.res === o ? (o === 'Aprobado' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)') : '#FFFFFF', pick: () => setR({ res: o }) })) }; }),
+      hasEvChips: multiRG && evAll.some(e => e.ramo),
+      evChips: [{ label: 'Todos', v: '' }].concat(ramoLabels.map(l => ({ label: l, v: l }))).map(ch => ({ label: ch.label, pressed: (s.evFilter || '') === ch.v ? 'true' : 'false', border: (s.evFilter || '') === ch.v ? 'var(--cyan-500)' : 'var(--border-default)', bg: (s.evFilter || '') === ch.v ? 'var(--color-brand-wash)' : '#FFFFFF', fw: (s.evFilter || '') === ch.v ? 700 : 500, pick: () => this.setState({ evFilter: ch.v, viewer: null }) })),
+      plazoRO: PC ? !isN2 : isGar && !isN2,
+      showPlazoObs: !!plazoChanged, plazoObs: s.plazoObs || '', onPlazoObs: (e) => this.setState({ plazoObs: e.target.value }), onPlazoObsBlur: () => this.touch('pobs'),
+      plazoObsErrShow: show('pobs'), plazoObsInvalid: show('pobs') ? 'true' : undefined, plazoObsBorder: border('pobs'),
+      hasRef: isGar, refGroups: isGar ? [['Documentos', (p.prefill && p.prefill.items && p.prefill.items.documentos) || [], true], ['Preexistencias', (p.prefill && p.prefill.items && p.prefill.items.preexistencias) || [], false]].map(([title, arr, est]) => ({ title, empty: !arr.length, items: arr.map(x => ({ desc: x.desc, hasEstado: est, estado: x.estado || 'Pendiente', tone: { Pendiente: 'warning', Cumplido: 'success', Vencido: 'danger' }[x.estado || 'Pendiente'] })) })) : [],
+      n1: p.prefill && isGar ? (() => { const g = (p.prefill.items && p.prefill.items.garantias) || []; const n = g.filter(x => x.estado === 'Cumplido').length; return { estado: n + ' de ' + g.length + ' cumplidas', tone: n === g.length ? 'success' : 'warning', obs: p.prefill.obs, user: p.prefill.user, fecha: p.prefill.fecha }; })() : p.prefill ? { estado: p.prefill.estado, tone: p.prefill.estado === 'Aprobado' ? 'success' : 'danger', obs: p.prefill.obs, user: p.prefill.user, fecha: p.prefill.fecha } : { estado: '', tone: 'neutral', obs: '', user: '', fecha: '' },
+      motivoInspector: p.motivoInspector || '—',
+      estadoOpts: [
+        opt('Aprobado', 'Aprobado', 'El riesgo es asegurable, con o sin seguimientos', s.estado, () => this.setState({ estado: 'Aprobado' })),
+        opt('No aprobado', 'No aprobado', 'El riesgo no cumple las políticas de suscripción', s.estado, () => this.setState({ estado: 'No aprobado' })),
+      ],
+      onEstadoBlur: groupBlur('estado'), estadoErrShow: show('estado'), estadoInvalid: show('estado') ? 'true' : undefined,
+      sections, plusIcon: this.plusIcon || null,
+      plazo: PC ? (isN2 && s.plazoG !== '' ? s.plazoG : (PC.total != null && PC.g.length ? String(PC.total) : '')) : s.plazo, plazoMin: PC ? String(Math.max(1, PC.max)) : '1', plazoLabel: PC ? 'Plazo global de garantías (días)' : 'Plazo de garantías (días)',
+      onPlazo: (e) => PC ? (isN2 && this.setState({ plazoG: e.target.value })) : this.setState({ plazo: e.target.value }), onPlazoBlur: () => this.touch('plazo'),
+      plazoErrShow: PC ? (PC.falta.length > 0 || (PC.extErr && !!s.touched.plazo)) : show('plazo'), plazoInvalid: (PC ? (PC.falta.length > 0 || PC.extErr) : show('plazo')) ? 'true' : undefined, plazoBorder: PC ? (PC.falta.length || PC.extErr ? 'var(--color-danger)' : 'var(--input-outlined-border)') : border('plazo'),
+      plazoErrTxt: PC ? (PC.falta.length ? 'No se pudo calcular el plazo: falta plazo en ' + PC.falta.map(x => x.desc).join(', ') + '.' : 'El plazo global no puede ser menor que el máximo de las garantías (' + PC.max + ' días).') : 'Ingresa un plazo entre 1 y 365 días.',
+      fechaLimite: plazoOk && plazoN > 0 ? this.addDays(plazoN) : '—',
+      plazoHint: PC ? (PC.mx && !PC.falta.length ? 'Máximo: ' + PC.mx.desc + ' · ' + PC.max + ' días' + (PC.total > PC.max ? '; ampliado por el Suscriptor a ' + PC.total + ' días' : '') + '. Fija la fecha límite y el estado Vencido del conjunto; el plazo de cada garantía es referencia. Contado desde el ' + this.addDays(0) + '. Documentos, preexistencias y recomendaciones no entran en el cálculo.' + (isN2 ? ' Puedes ampliarlo, nunca bajarlo del máximo.' : ' Se recalcula al cambiar el plazo de una garantía.') : PC.g.length ? 'Completa el plazo de cada garantía para calcular el global.' : 'Sin garantías: el caso no tiene plazo.') : 'Un solo plazo para todas las garantías, contado desde el ' + this.addDays(0) + '. Documentos sin plazo; preexistencias informativas.',
+      isView: !!p.view, isForm: !p.view,
+      canEdit: !!p.canEdit, onEdit: () => p.onEdit && p.onEdit(),
+      hasLock: !!p.lockReason, lockReason: p.lockReason || '', calReg: !!p.calReg,
+      ...this.viewVals(),
+      responsables: isN2 ? this.responsables : this.responsables.filter(n => n !== 'Ricardo Almeida'), responsable: s.responsable,
+      onResp: (e) => this.setState({ responsable: e.target.value }), onRespBlur: () => this.touch('resp'),
+      respErrShow: show('resp'), respInvalid: show('resp') ? 'true' : undefined, respBorder: border('resp'),
+      verOpts: [
+        Object.assign(opt('si', 'Es asegurable', 'Se emite con la cobertura seleccionada', s.veredicto, () => this.setState({ veredicto: 'si' })), {
+          showSelect: s.veredicto === 'si', selId: 'cal-cob', selLabel: 'Cobertura', selValue: s.cobertura, options: this.coberturas,
+          onSel: (e) => this.setState({ cobertura: e.target.value }), onSelBlur: () => this.touch('cob'),
+          selErrShow: show('cob'), selErr: 'Selecciona la cobertura.', selInvalid: show('cob') ? 'true' : undefined, selBorder: border('cob') }),
+        Object.assign(opt('no', 'No asegurable', 'Se rechaza con un motivo del catálogo', s.veredicto, () => this.setState({ veredicto: 'no' })), {
+          showSelect: s.veredicto === 'no', selId: 'cal-mot', selLabel: 'Motivo de rechazo', selValue: s.motivo, options: this.rechazos,
+          onSel: (e) => this.setState({ motivo: e.target.value }), onSelBlur: () => this.touch('mot'),
+          selErrShow: show('mot'), selErr: 'Selecciona el motivo de rechazo.', selInvalid: show('mot') ? 'true' : undefined, selBorder: border('mot') }),
+      ],
+      onVerBlur: groupBlur('ver'), verErrShow: show('ver'), verInvalid: show('ver') ? 'true' : undefined,
+      obs: s.obs, onObs: (e) => this.setState({ obs: e.target.value }), onObsBlur: () => this.touch('obs'),
+      obsErrShow: show('obs'), obsInvalid: show('obs') ? 'true' : undefined, obsBorder: border('obs'),
+      showDerivar: (mode === 'n1' || mode === 'gar1') && !!p.dual,
+      derivar: s.derivar, toggleDerivar: () => this.setState(st => ({ derivar: !st.derivar })),
+      primaryLabel: isN2 ? 'Grabar dictamen final' : 'Grabar calificación',
+      hasPending: !valid,
+      pendingHint: pending === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + pending + ' campos obligatorios',
+      onSubmit: (e) => { e.preventDefault(); if (pendDanos) { this.setState({ danosErr: true }); this.focoDanos(); return; } if (!valid) { this.markErrs(errs); return; } if (isN2) this.setState({ confirmOpen: true }); else this.submit(); },
+      formRef: this.formRef || (this.formRef = React.createRef()),
+      // Etapa 12a-b · DEC-134: con daños «Propuestos» no se graba; «Revisar daños» abre el visor de fotos en el primer daño pendiente.
+      danosShow: pendDanos > 0, danosTxt: 'Revisa los daños detectados antes de calificar (' + pendDanos + ')', danosSub: 'El sistema propuso ' + (pendDanos === 1 ? '1 daño' : pendDanos + ' daños') + ' en las fotos que nadie revisó: confírmalos, ajústalos o descártalos. Solo los revisados pasan a la grilla de averías.',
+      danosBg: s.danosErr ? 'var(--alert-error-bg, #FDECEA)' : 'var(--alert-warning-bg, #FFF4DC)', danosBd: s.danosErr ? 'var(--color-danger)' : 'var(--gold-500, #b7791f)',
+      abrirDanos: () => { if (p.onRevisarDanos) p.onRevisarDanos(p.danosRid); },
+      onPrimaryClick: () => { if (pendDanos) { this.setState({ danosErr: true }); this.focoDanos(); return; } if (!valid) { this.markErrs(errs); return; } if (isN2) this.setState({ confirmOpen: true }); else this.submit(); },
+      onCancel: () => p.onCancel && p.onCancel(),
+      stickyTop: p.stickyTop || '24px',
+      asideMaxH: 'calc(100vh - ' + (parseInt(p.stickyTop || '24', 10) + 24) + 'px)',
+      evidCount: evid.filter(e => e.tipo === 'foto').length + ' fotos · ' + evid.filter(e => e.tipo === 'doc').length + ' documentos',
+      evid: evid.map((e, i) => ({ titulo: e.titulo, kind: e.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[e.tipo], cuando: e.fecha + ' · ' + e.hora, gps: e.gps || '', hasGps: !!e.gps, aria: 'Ampliar ' + (e.tipo === 'doc' ? 'documento ' : 'foto ') + e.titulo, open: () => this.setState({ viewer: i }) })),
+      viewerOpen: !!ve,
+      vw: ve ? { meta: this.evMeta(ve),  titulo: ve.titulo, kind: ve.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[ve.tipo], fecha: ve.fecha, hora: ve.hora, gps: ve.gps || 'Sin GPS', pos: (vi + 1) + ' de ' + evid.length } : { meta: [], titulo: '', kind: '', icon: '', fecha: '', hora: '', gps: '', pos: '' },
+      closeViewer: () => this.setState({ viewer: null }),
+      viewerFooter: React.createElement(React.Fragment, null,
+        btn('secondary', 'Anterior', () => this.setState({ viewer: (vi - 1 + evid.length) % evid.length })),
+        btn('secondary', 'Siguiente', () => this.setState({ viewer: (vi + 1) % evid.length }))),
+      informeOpen: s.informeOpen, informeRot: s.informeOpen ? 'rotate(180deg)' : 'none',
+      toggleInforme: () => this.setState(st => ({ informeOpen: !st.informeOpen })),
+      informe,
+      catOpen: !!cat,
+      catTitle: cat ? 'Agregar ' + this.titles[cat].toLowerCase() : '',
+      catDesc: 'Catálogo de ' + ramo,
+      catSearch: s.catSearch, onCatSearch: (e) => this.setState({ catSearch: e.target.value }),
+      catSelLabel: s.catSel.length === 1 ? '1 seleccionado' : s.catSel.length + ' seleccionados',
+      catItems: catList.map((label, i) => {
+        const dis = already.has(label), on = s.catSel.includes(label);
+        return { label, checked: dis || on, disabled: dis, border: i === 0 ? 'none' : '1px solid var(--border-subtle)', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF',
+          toggle: () => { if (dis) return; this.setState(st => ({ catSel: st.catSel.includes(label) ? st.catSel.filter(x => x !== label) : st.catSel.concat(label) })); } };
+      }),
+      catEmpty: !!cat && catList.length === 0,
+      closeCat: () => this.setState({ cat: null }),
+      catFooter: React.createElement(React.Fragment, null,
+        btn('ghost', 'Cancelar', () => this.setState({ cat: null })),
+        btn('primary', s.catSel.length ? 'Agregar (' + s.catSel.length + ')' : 'Agregar', () => {
+          if (!s.catSel.length) return;
+          const add = s.catSel.map(desc => Object.assign({ id: 'new-' + (++this.seq) + '-' + Date.now(), ramo, desc, obs: '', estado: 'Pendiente', added: isN2 }, cat === 'garantias' ? { plazo: this.plazoCat(desc) } : {}));
+          this.setState(st => ({ cat: null, catSel: [], items: Object.assign({}, st.items, { [cat]: st.items[cat].concat(add) }) }));
+        }, !s.catSel.length)),
+      confirmOpen: s.confirmOpen,
+      confirmDesc: 'Este dictamen cierra la calificación del caso ' + (p.caseId || '') + ' y no se puede editar después.',
+      changes: isN2 ? this.allChanges() : [],
+      closeConfirm: () => this.setState({ confirmOpen: false }),
+      confirmFooter: React.createElement(React.Fragment, null,
+        btn('ghost', 'Volver', () => this.setState({ confirmOpen: false })),
+        btn('primary', 'Confirmar dictamen', () => { this.setState({ confirmOpen: false }); this.submit(); })),
+    };
+  }
+}
+</script>
+</body>
+</html>

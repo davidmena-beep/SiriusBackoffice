@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-compania.js"></script><script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-usuarios.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-usuarios.js"></script><script src="sirius-modal.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}.us-in:focus,.us-in:focus-visible{border-color:var(--color-brand)!important;outline:none;box-shadow:0 0 0 3px var(--cyan-100)}.us-bt:focus-visible,.us-lk:focus-visible,.us-cb:focus-visible,.us-rd:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}.us-cb{width:20px;height:20px;margin:0;accent-color:var(--color-brand);flex:none;cursor:pointer}.us-lk{border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px}.us-lk[aria-disabled=true]{color:var(--neutral-500);cursor:not-allowed;text-decoration:none}.us-mx td,.us-mx th{border-bottom:1px solid var(--border-subtle)}</style>
+</helmet>
+<section data-screen-label="BO-28 Mi perfil" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">{{ page }}{{ snackNode }}</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:800},&quot;escena&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+// BO-28 · Mi perfil (etapa 10b · DEC-129). Datos, roles, método de acceso y «Envío de correos con tu cuenta» (Gmail). Los cambios son de la sesión.
+class Component extends DCLogic {
+  state = { modal: null, snack: '', busy: false };
+  SU() { return window.SiriusUsuarios || null; }
+  NS() { return window.AseguradoraDelSurDesignSystem_4fbf29 || {}; }
+  componentDidMount() { const SU = this.SU(); if (SU) this._off = SU.on(() => this.forceUpdate()); }
+  componentWillUnmount() { if (this._off) this._off(); clearTimeout(this._st); clearTimeout(this._bt); }
+  toast(m) { this.setState({ snack: m }); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ snack: '' }), 5200); }
+  abre(k) { this._ret = document.activeElement; this.setState({ modal: k }); }
+  cierra() { this.setState({ modal: null, busy: false }); const r = this._ret; setTimeout(() => { if (r && r.isConnected && r.focus) r.focus(); }, 80); }
+  fin(fn, msg) { this.setState({ busy: true }); clearTimeout(this._bt); this._bt = setTimeout(() => { fn(); this.setState({ modal: null, busy: false }); this.toast(msg); const r = this._ret; setTimeout(() => { const el = document.getElementById('mp-gmail-t'); if (el && el.focus) el.focus(); }, 80); }, 700); }
+  card(id, titulo, kids, extra) { const h = React.createElement; return h('section', { key: id, 'aria-labelledby': 'mp-' + id + '-t', style: Object.assign({ display: 'flex', flexDirection: 'column', gap: 12, padding: 24, border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: '#FFFFFF', minWidth: 0 }, extra || {}) }, h('h2', { id: 'mp-' + id + '-t', tabIndex: -1, style: { margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-strong)', outline: 'none' } }, titulo), kids); }
+  dl(pairs) { const h = React.createElement; return h('dl', { style: { margin: 0, display: 'grid', gridTemplateColumns: 'minmax(110px,150px) minmax(0,1fr)', gap: '10px 16px' } }, pairs.filter(p => p).map((p, i) => [h('dt', { key: 'k' + i, style: { fontSize: 14, color: 'var(--text-muted)' } }, p[0]), h('dd', { key: 'v' + i, style: { margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--text-strong)', minWidth: 0, overflowWrap: 'anywhere' } }, p[1])])); }
+  renderVals() {
+    const SU = this.SU(), N = window.SIRIUS_NOTIFICACIONES, U = window.SIRIUS_USUARIOS, NS = this.NS(), h = React.createElement, st = this.state, v = { page: null, snackNode: null };
+    if (!SU || !U) return v;
+    const u = SU.usuario(this.props.userName || ''), H1 = h('h1', { key: 'h1', tabIndex: -1, style: { fontWeight: 300, fontSize: 36, lineHeight: 1.05, color: 'var(--text-strong)', margin: 0, outline: 'none' } }, 'Mi perfil');
+    if (!u) { v.page = [H1, h('p', { key: 'n', style: { margin: 0, fontSize: 15, color: 'var(--text-body)' } }, 'No encontramos un perfil para «' + (this.props.userName || '') + '» en Usuarios y roles.')]; return v; }
+    const est = SU.estadoEf(u), inf = SU.estadoInfo(est), interno = u.tipo === 'Interno', ag = u.agencia ? (SU.agencia(u.agencia) || {}).nombre : '', gm = u.gmail, conectada = gm === 'Conectada', tone = { 'Conectada': 'success', 'Sin conectar': 'neutral', 'Permiso vencido': 'warning' }[gm] || 'neutral';
+    const casos = SU.impactoUsuario(u.nombre, 'suspender'), remitente = N && N.remitenteDe ? N.remitenteDe(u.nombre) : '';
+    const badge = (t, l, k) => h(NS.Badge, { tone: t, key: k || l, style: { whiteSpace: 'nowrap' } }, l);
+    const chips = h('div', { key: 'ch', style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, u.roles.map(r => badge((SU.rol(r) || {}).sistema === false ? 'brand' : 'neutral', r)));
+    const datos = this.card('datos', 'Mis datos', this.dl([['Nombre', u.nombre], ['Correo', u.correo], ['Celular', u.celular], ['Tipo', u.tipo], ag ? ['Agencia', ag] : null, u.cargo ? ['Cargo', u.cargo] : null, ['Alcance', SU.alcanceTxt(u.alcance)]]));
+    const roles = this.card('roles', u.roles.length > 1 ? 'Mis roles' : 'Mi rol', [chips, h('p', { key: 'p', style: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-body)', textWrap: 'pretty' } }, u.roles.length > 1 ? 'Cambia de rol desde tu nombre, arriba a la derecha. Cada rol muestra solo lo que sus permisos permiten.' : 'Los permisos de tu rol los define el Administrador en Usuarios y roles.')]);
+    const acceso = this.card('acceso', 'Cómo entro', this.dl([['Método', u.acceso || 'Aún no has entrado'], ['Estado', badge(inf.badge, est, 'e')], ['Último acceso', u.ultimoAcceso ? SU.fmtLargo(u.ultimoAcceso) : 'Nunca'], interno ? ['Métodos permitidos', U.acceso.internos.metodos.join(' o ')] : ['Métodos permitidos', U.acceso.externos.metodos.join(' o ') + ' · ' + U.acceso.externos.segundoFactor]]));
+    const gmailCard = this.card('gmail', 'Envío de correos con tu cuenta', interno ? [
+      h('div', { key: 'st', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 } }, badge(tone, 'Gmail · ' + gm, 'g'), conectada && u.gmailDesde ? h('span', { style: { fontSize: 14, color: 'var(--text-muted)' } }, 'Desde el ' + SU.fmtLargo(u.gmailDesde)) : null),
+      h('p', { key: 't', style: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-body)', textWrap: 'pretty' } }, U.invitacion.textoAutorizacion),
+      h('p', { key: 'r', style: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-body)' } }, 'Hoy tus correos salen de ', h('strong', { style: { color: 'var(--text-strong)', overflowWrap: 'anywhere' } }, remitente), conectada ? '.' : ', la cuenta institucional.'),
+      u.nota && !conectada ? h('p', { key: 'n', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, u.nota + '.') : null,
+      h('div', { key: 'b', style: { display: 'flex', flexWrap: 'wrap', gap: 12 } }, conectada ? h(NS.Button, { key: 'ret', variant: 'secondary', onClick: () => this.abre('retirar') }, 'Retirar permiso') : h(NS.Button, { key: 'con', variant: 'primary', onClick: () => this.abre('conectar') }, 'Conectar Gmail'))
+    ] : [h('p', { key: 'na', style: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-body)' } }, 'No aplica: tu cuenta no es de la compañía, así que SIRIUS no envía correos con tu cuenta. Los avisos que te corresponden salen de la cuenta institucional.')]);
+    let modal = null; const M = window.SiriusModal || NS.Modal;
+    if (st.modal === 'conectar' && M) modal = h(M, { key: 'm1', open: true, onClose: () => this.cierra(), size: 'sm', title: 'Permite que SIRIUS envíe correos con tu cuenta', description: 'Cuenta de Google: ' + u.correo, footer: h(React.Fragment, null, h(NS.Button, { variant: 'ghost', onClick: () => this.cierra(), disabled: st.busy }, 'Ahora no'), h(NS.Button, { loading: st.busy, onClick: () => this.fin(() => SU.conectarGmail(u.nombre, u.nombre), 'Gmail conectada: tus correos ahora salen de tu cuenta.') }, 'Permitir')) }, h('p', { style: { margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)', textWrap: 'pretty' } }, U.invitacion.textoAutorizacion));
+    if (st.modal === 'retirar' && M) modal = h(M, { key: 'm2', open: true, onClose: () => this.cierra(), size: 'sm', title: '¿Retirar el permiso de Gmail?', description: 'Tus correos dejarán de salir de tu cuenta.', footer: h(React.Fragment, null, h(NS.Button, { variant: 'ghost', onClick: () => this.cierra(), disabled: st.busy }, 'Cancelar'), h(NS.Button, { variant: 'danger', loading: st.busy, onClick: () => this.fin(() => SU.retirarGmail(u.nombre, u.nombre), 'Permiso retirado: tus correos salen de la cuenta institucional.') }, 'Retirar permiso')) }, h('p', { style: { margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)', textWrap: 'pretty' } }, 'Desde ahora los correos de los casos en los que participas saldrán de ' + (N ? N.remitente.institucional : 'la cuenta institucional') + '.' + (casos.total ? ' Tienes ' + casos.total + (casos.total === 1 ? ' caso activo' : ' casos activos') + ' a tu cargo: se abrirá una advertencia en Conflictos hasta que vuelvas a conectar Gmail.' : ' Puedes volver a conectarla cuando quieras.')));
+    v.page = [H1, h('p', { key: 'sub', style: { margin: '-8px 0 0', fontSize: 14, color: 'var(--text-muted)' } }, 'Tus datos, tus roles, cómo entras a SIRIUS y desde qué cuenta salen tus correos.'), h('div', { key: 'g', style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(440px,1fr))', gap: 16, alignItems: 'start' } }, datos, gmailCard, roles, acceso), modal];
+    v.snackNode = st.snack ? h('div', { role: 'status', style: { position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 1700, maxWidth: 'min(560px,90vw)', padding: '12px 20px', borderRadius: 'var(--radius-sm)', background: 'var(--neutral-900,#011E41)', color: '#FFFFFF', fontSize: 14, boxShadow: 'var(--shadow-md)' } }, st.snack) : null;
+    return v;
+  }
+}
+</script>
+</body>
+</html>

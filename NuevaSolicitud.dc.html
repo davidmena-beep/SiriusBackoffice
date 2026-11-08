@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script><script src="datos-compania.js"></script><script src="sirius-monto.js"></script>
+<script src="sirius-fecha.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script>
+</helmet>
+<section data-screen-label="BO-04 Nueva solicitud" style="display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Nueva solicitud</h1>
+<p style="font-size:14px;color:var(--text-muted);margin:0">{{ subtitle }}</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ onCancel }}" hint-size="110px,40px">Cancelar</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ onDraft }}" hint-size="170px,40px">Guardar borrador</x-import>
+</div>
+</div>
+<datalist id="ns-brokers"><sc-for list="{{ brokerNames }}" as="b" hint-placeholder-count="4"><option value="{{ b }}"></option></sc-for></datalist>
+<datalist id="ns-casos"><sc-for list="{{ caseOpts }}" as="co" hint-placeholder-count="4"><option value="{{ co.id }}">{{ co.label }}</option></sc-for></datalist>
+<ol aria-label="Pasos de la solicitud" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+<sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+<li aria-current="{{ s.current }}" style="min-width:0">
+<button type="button" onClick="{{ s.go }}" data-motivo="{{ s.tip }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:none;border-bottom:3px solid {{ s.bar }};border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:{{ s.bg }};cursor:{{ s.cursor }};font-family:var(--font-brand);text-align:left" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">
+<span aria-hidden="true" style="width:28px;height:28px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:50%;background:{{ s.dotBg }};border:2px solid {{ s.dotBorder }};color:{{ s.dotFg }};font-size:14px;font-weight:700">{{ s.mark }}</span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:var(--text-muted)">Paso {{ s.n }}</span><span style="font-size:15px;font-weight:{{ s.fw }};color:{{ s.fg }}">{{ s.label }}</span></span>
+<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">{{ s.sr }}</span>
+</button>
+</li>
+</sc-for>
+</ol>
+<sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+<sc-if value="{{ isVehStep }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="ns-vehs-h" style="display:flex;flex-direction:column;gap:14px;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><h2 id="ns-vehs-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Vehículos</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ vehCount }}</x-import></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span title="{{ formOpenTip }}" style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ openBulk }}" unavailable-reason="{{ formOpenTip }}" hint-size="160px,36px">Cargar desde Excel</x-import></span>
+<span title="{{ formOpenTip }}" style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="sm" on-click="{{ addVeh }}" unavailable-reason="{{ formOpenTip }}" hint-size="160px,36px">Agregar vehículo</x-import></span>
+</div>
+</div>
+<sc-if value="{{ showSuggest }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--alert-info-bg);color:var(--alert-info-fg)">
+<span style="font-size:15px;font-weight:600">¿Tienes más vehículos? Cárgalos desde Excel.</span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ openBulk }}" hint-size="160px,36px">Cargar desde Excel</x-import>
+</div>
+</sc-if>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ vehCards }}" as="v" hint-placeholder-count="3">
+<li style="display:grid;grid-template-columns:32px minmax(0,1.4fr) minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:12px 16px;border:{{ v.border }};border-radius:var(--radius-sm);background:{{ v.bg }}">
+<span aria-hidden="true" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface-subtle);font-size:13px;font-weight:700;color:var(--text-strong)">{{ v.n }}</span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:700;color:var(--text-strong);white-space:{{ v.titleWs }}">{{ v.title }}</span><span style="font-size:13px;color:var(--text-muted)">{{ v.sub }}</span><sc-if value="{{ v.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:{{ v.noteColor }}">{{ v.note }}</span></sc-if></span>
+<span style="font-size:14px;color:var(--text-body)">{{ v.cobertura }}</span>
+<span style="font-size:15px;font-weight:700;color:var(--text-strong);white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right">{{ v.total }}</span>
+<span style="display:flex;gap:12px">
+<sc-if value="{{ v.editing }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:700;color:var(--cyan-700);white-space:nowrap">En edición</span></sc-if>
+<sc-if value="{{ v.idle }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ v.onEdit }}" aria-label="{{ v.editLabel }}" data-motivo="{{ v.lockTip }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Editar</button>
+<button type="button" onClick="{{ v.onDel }}" aria-label="{{ v.delLabel }}" data-motivo="{{ v.lockTip }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--color-danger);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Eliminar</button>
+</sc-if>
+</span>
+</li>
+</sc-for>
+<sc-if value="{{ vehEmpty }}" hint-placeholder-val="{{ false }}"><li style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;text-align:center">
+<div style="position:relative;width:320px;max-width:100%;height:180px;display:flex;align-items:center;justify-content:center">
+<svg aria-hidden="true" viewBox="0 0 320 180" style="position:absolute;inset:0;width:100%;height:100%" fill="none" stroke="var(--cyan-100)" stroke-width="1" stroke-linecap="round"><path d="M24 128 L66 82 L114 100 M66 82 L92 32 L152 18 L210 38 L234 84 M210 38 L268 26 L302 66 L234 84 L260 144 M114 100 L94 160"></path><g fill="var(--cyan-100)" stroke="none"><circle cx="24" cy="128" r="2.5"></circle><circle cx="66" cy="82" r="3"></circle><circle cx="114" cy="100" r="2"></circle><circle cx="92" cy="32" r="2.5"></circle><circle cx="152" cy="18" r="3"></circle><circle cx="210" cy="38" r="2"></circle><circle cx="234" cy="84" r="3"></circle><circle cx="268" cy="26" r="2.5"></circle><circle cx="302" cy="66" r="2"></circle><circle cx="260" cy="144" r="2.5"></circle><circle cx="94" cy="160" r="2"></circle></g></svg>
+<img src="assets/empty-state.png" alt="" style="position:relative;width:150px;height:auto">
+</div>
+<p style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Aún no agregas vehículos</p>
+<p style="margin:0;font-size:15px;color:var(--text-muted)">Agrégalos uno por uno o cárgalos desde un archivo de Excel.</p>
+</li></sc-if>
+</ul>
+</section>
+</sc-if>
+<sc-if value="{{ isEqStep }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusEquiposSolicitud" from="./sirius-solicitud-equipos.js" equipos="{{ eqLista }}" on-change="{{ eqOnChange }}" on-estado="{{ eqOnEstado }}" mostrar-errores="{{ eqErr }}" escena="{{ eqEscena }}" hint-size="100%,320px"></x-import></sc-if>
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+<section aria-labelledby="{{ g.hid }}" style="display:flex;flex-direction:column;gap:16px;padding:24px;border:{{ g.frame }};border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<h2 id="{{ g.hid }}" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ g.title }}</h2>
+<sc-if value="{{ g.hasBadge }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="140px,22px"><span style="white-space:nowrap">{{ g.badge }}</span></x-import></sc-if>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 20px;align-items:start">
+<sc-for list="{{ g.fields }}" as="f" hint-placeholder-count="6">
+<div style="grid-column:{{ f.span }};display:flex;flex-direction:column;gap:6px;min-width:0">
+<sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ true }}"><label id="{{ f.lblId }}" for="{{ f.id }}" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ f.label }} <span aria-hidden="true" style="color:var(--color-danger);display:{{ f.star }}">*</span></label></sc-if>
+<sc-if value="{{ f.isFecha }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFecha" id="{{ f.id }}" value="{{ f.value }}" on-change="{{ f.onChange }}" on-blur="{{ f.onBlur }}" modo="fecha" formato="iso" max="{{ f.max }}" max-label="hoy" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" hide-error="{{ true }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isMonto }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusMonto" id="{{ f.id }}" value="{{ f.montoVal }}" on-change="{{ f.onMonto }}" on-blur="{{ f.onBlur }}" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" alto="{{ 44 }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}"><input id="{{ f.id }}" type="{{ f.type }}" list="{{ f.list }}" inputmode="{{ f.inputMode }}" autocomplete="{{ f.ac }}" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);text-align:{{ f.align }}" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></sc-if>
+<sc-if value="{{ f.isInputBtn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;align-items:center"><input id="{{ f.id }}" type="text" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="flex:1;min-width:0;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ f.onBtn }}" unavailable-reason="{{ f.btnWhy }}" hint-size="160px,44px"><span style="white-space:nowrap">{{ f.btnLabel }}</span></x-import></div></sc-if>
+<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}"><select id="{{ f.id }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" disabled="{{ f.disabled }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><option value="">Selecciona</option><sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select></sc-if>
+<sc-if value="{{ f.isCombo }}" hint-placeholder-val="{{ false }}"><div style="position:relative" onBlur="{{ f.onComboBlur }}"><input id="{{ f.id }}" type="text" role="combobox" aria-expanded="{{ f.comboOpen }}" aria-controls="{{ f.listId }}" aria-autocomplete="list" aria-activedescendant="{{ f.activeId }}" autocomplete="off" placeholder="{{ f.ph }}" value="{{ f.comboText }}" disabled="{{ f.disabled }}" onChange="{{ f.onComboIn }}" onKeyDown="{{ f.onComboKey }}" onFocus="{{ f.onComboFocus }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:{{ f.comboBg }};font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<sc-if value="{{ f.comboOpen }}" hint-placeholder-val="{{ false }}"><ul id="{{ f.listId }}" role="listbox" aria-label="{{ f.label }}" onMouseDown="{{ f.noBlur }}" style="list-style:none;margin:0;padding:4px 0;position:absolute;top:48px;left:0;right:0;z-index:5;max-height:260px;overflow-y:auto;background:#FFFFFF;border-radius:var(--radius-sm);box-shadow:var(--shadow-modal)">
+<sc-for list="{{ f.comboOpts }}" as="co" hint-placeholder-count="3"><li id="{{ co.oid }}" role="option" aria-selected="{{ co.sel }}"><button type="button" tabindex="-1" onClick="{{ co.pick }}" style="width:100%;display:block;padding:10px 14px;border:none;background:{{ co.bg }};cursor:pointer;font-family:var(--font-brand);font-size:15px;font-weight:{{ co.fw }};color:var(--text-strong);text-align:left" style-hover="background:var(--table-row-hover)">{{ co.label }}</button></li></sc-for>
+<sc-if value="{{ f.comboNo }}" hint-placeholder-val="{{ false }}"><li style="padding:10px 14px;font-size:14px;color:var(--text-muted)">{{ f.comboNoText }}</li></sc-if>
+</ul></sc-if></div></sc-if>
+<sc-if value="{{ f.isRadio }}" hint-placeholder-val="{{ false }}"><div id="{{ f.id }}" role="radiogroup" aria-labelledby="{{ f.lblId }}" aria-required="true" onBlur="{{ f.onBlur }}" style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ f.radios }}" as="r" hint-placeholder-count="2"><label style="flex:1 1 140px;display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:2px solid {{ r.border }};border-radius:var(--radius-sm);background:{{ r.bg }};cursor:pointer;font-size:15px;font-weight:600;color:var(--text-strong)"><input type="radio" name="{{ f.id }}" value="{{ r.label }}" checked="{{ r.checked }}" onChange="{{ r.pick }}" style="width:18px;height:18px;margin:0;accent-color:var(--cyan-700)">{{ r.label }}</label></sc-for></div></sc-if>
+<sc-if value="{{ f.isTextarea }}" hint-placeholder-val="{{ false }}"><textarea id="{{ f.id }}" rows="3" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" placeholder="{{ f.ph }}" style="width:100%;padding:10px 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea></sc-if>
+<sc-if value="{{ f.isRO }}" hint-placeholder-val="{{ false }}"><span id="{{ f.id }}" style="min-height:44px;display:flex;align-items:center;justify-content:{{ f.roJustify }};font-size:{{ f.roSize }};font-weight:700;color:var(--text-strong);white-space:nowrap;font-variant-numeric:tabular-nums">{{ f.value }}</span></sc-if>
+<sc-if value="{{ f.isCheck }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ f.checked }}" on-change="{{ f.onToggle }}" label="{{ f.label }}" hint-size="260px,24px"></x-import></sc-if>
+<sc-if value="{{ f.isSwitch }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Switch" checked="{{ f.checked }}" on-change="{{ f.onToggle }}" label="{{ f.label }}" hint-size="260px,28px"></x-import></sc-if>
+<sc-if value="{{ f.hasHelp }}" hint-placeholder-val="{{ false }}"><span id="{{ f.helpId }}" style="font-size:13px;color:var(--text-muted)">{{ f.help }}</span></sc-if>
+<sc-if value="{{ f.errShow }}" hint-placeholder-val="{{ false }}"><span id="{{ f.errId }}" role="alert" style="font-size:13px;color:var(--color-danger)">{{ f.err }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ g.hasStatus }}" hint-placeholder-val="{{ false }}">
+<div role="status" aria-live="polite" style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-body)">
+<sc-if value="{{ g.loading }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Spinner" size="sm" hint-size="16px,16px"></x-import></sc-if>
+<span>{{ g.statusText }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ g.hasAlert }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="info" size="sm" hint-size="100%,48px">{{ g.alertText }}</x-import></sc-if>
+<sc-if value="{{ g.hasInfo }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--alert-info-bg);color:var(--alert-info-fg)">
+<span style="font-size:15px;font-weight:600">{{ g.infoText }}</span>
+<button type="button" onClick="{{ g.onVerCaso }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Ver caso</button>
+</div>
+</sc-if>
+<sc-if value="{{ g.hasDup }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--color-warning-bg)">
+<span style="font-size:15px;font-weight:600;color:var(--text-strong)">{{ g.dupText }}</span>
+<button type="button" onClick="{{ g.onVerCaso }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Ver caso</button>
+<sc-if value="{{ g.dupPending }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ g.onAck }}" hint-size="150px,36px">Continuar igual</x-import></sc-if>
+<sc-if value="{{ g.dupAcked }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-body)">Continuarás con este vehículo en una solicitud nueva.</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ g.hasExtras }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-strong)">Extras</h3><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ g.addExtra }}" aria-label="{{ g.addExtraLabel }}" hint-size="140px,36px">Agregar extra</x-import></div>
+<sc-for list="{{ g.extras }}" as="x" hint-placeholder-count="1">
+<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) 40px;gap:12px;align-items:center">
+<input aria-label="{{ x.descLabel }}" placeholder="Descripción del extra" value="{{ x.desc }}" onChange="{{ x.onDesc }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">
+<x-import component-from-global-scope="SiriusMonto" aria-label="{{ x.montoLabel }}" value="{{ x.montoVal }}" on-change="{{ x.onMonto }}" alto="{{ 44 }}" hint-size="100%,44px"></x-import>
+<button type="button" aria-label="{{ x.delLabel }}" onClick="{{ x.onDel }}" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--neutral-600);cursor:pointer" style-hover="background:var(--color-danger-bg);color:var(--color-danger)" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6"></path></svg></button>
+</div>
+</sc-for>
+<sc-if value="{{ g.noExtras }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:var(--text-muted)">Sin extras registrados.</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ g.hasRamos }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span id="ns-ramos-lbl" style="font-size:13px;font-weight:700;color:var(--text-strong)">Ramos <span aria-hidden="true" style="color:var(--color-danger)">*</span></span>
+<sc-if value="{{ ramosHasSel }}" hint-placeholder-val="{{ false }}">
+<ul aria-label="Ramos elegidos" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ ramosChips }}" as="rc" hint-placeholder-count="3"><li style="display:flex;align-items:center;gap:6px;height:32px;padding:0 6px 0 12px;border-radius:var(--radius-pill);background:var(--color-brand-wash);font-size:14px;font-weight:600;color:var(--text-strong)">{{ rc.label }}<button type="button" aria-label="{{ rc.aria }}" onClick="{{ rc.remove }}" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;background:transparent;cursor:pointer;color:var(--text-strong)" style-hover="background:#FFFFFF" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></li></sc-for>
+</ul>
+</sc-if>
+<div onBlur="{{ ramosBlur }}" style="display:flex;flex-direction:column;border:1.5px solid {{ ramosBorder }};border-radius:var(--radius-sm);background:#FFFFFF">
+<label style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-bottom:1px solid var(--border-subtle)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<input type="search" aria-label="Buscar ramo" placeholder="Buscar ramo" value="{{ ramoQ }}" onChange="{{ onRamoQ }}" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)">
+</label>
+<ul role="group" aria-labelledby="ns-ramos-lbl" style="list-style:none;margin:0;padding:4px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:200px;overflow-y:auto">
+<sc-for list="{{ ramoOpts }}" as="ro" hint-placeholder-count="6"><li style="padding:8px 14px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Checkbox" checked="{{ ro.checked }}" on-change="{{ ro.toggle }}" label="{{ ro.label }}" hint-size="220px,24px"></x-import></li></sc-for>
+<sc-if value="{{ ramoNoMatch }}" hint-placeholder-val="{{ false }}"><li style="padding:10px 14px;font-size:14px;color:var(--text-muted)">No hay ramos con ese nombre.</li></sc-if>
+</ul>
+</div>
+<sc-if value="{{ ramosErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Elige al menos un ramo.</span></sc-if>
+</div>
+</div>
+</sc-if>
+</section>
+</sc-for>
+<sc-if value="{{ formOpen }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:-8px">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ saveVeh }}" hint-size="170px,40px">Guardar vehículo</x-import>
+<sc-if value="{{ canCancelVeh }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ cancelVeh }}" hint-size="110px,40px">Cancelar</x-import></sc-if>
+<span style="font-size:13px;color:var(--text-muted)">{{ vehFormHint }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ showCaseTotal }}" hint-placeholder-val="{{ false }}">
+<div aria-live="polite" style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;padding:20px 24px;border-radius:var(--radius-md);background:var(--surface-subtle)">
+<span style="font-size:15px;font-weight:600;color:var(--text-strong)">{{ caseTotalLabel }}</span>
+<span style="display:flex;align-items:baseline;gap:12px"><span style="font-size:14px;color:var(--text-muted)">Valor total del caso</span><span style="font-size:26px;font-weight:300;color:var(--text-strong);white-space:nowrap;font-variant-numeric:tabular-nums">{{ caseTotal }}</span></span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start">
+<sc-for list="{{ review }}" as="rv" hint-placeholder-count="3">
+<section aria-label="{{ rv.title }}" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF;min-width:0">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">{{ rv.title }}</h2><button type="button" onClick="{{ rv.edit }}" aria-label="{{ rv.editLabel }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Editar</button></div>
+<dl style="margin:0;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ rv.fields }}" as="f" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:{{ f.pad }};border-top:{{ f.border }}"><dt style="font-size:13px;color:var(--text-muted)">{{ f.label }}</dt><dd style="margin:0;font-size:{{ f.size }};font-weight:{{ f.fw }};color:var(--text-strong);white-space:{{ f.ws }};overflow-wrap:break-word">{{ f.value }}</dd></div></sc-for>
+</dl>
+</section>
+</sc-for>
+</div>
+</sc-if>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid var(--border-subtle);padding:16px 0 0">
+<sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="lg" on-click="{{ onBack }}" hint-size="120px,48px">Anterior</x-import></sc-if>
+<span style="margin-left:auto;font-size:13px;color:var(--text-muted)">{{ pendingHint }}</span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onNext }}" hint-size="200px,48px">{{ nextLabel }}</x-import>
+</div>
+<input type="file" ref="{{ bulkFileRef }}" accept=".xlsx,.xls,.csv" onChange="{{ onBulkFile }}" aria-hidden="true" tabindex="-1" style="display:none">
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ bulkOpen }}" on-close="{{ closeBulk }}" size="lg" align="left" title="Carga masiva de vehículos" description="{{ bulkDesc }}" footer="{{ bulkFooter }}" hint-size="0px,0px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ bulkUpload }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ bulkFileErr }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--alert-danger-bg);color:var(--alert-danger-fg)">
+<span style="font-size:14px;font-weight:700">{{ bulkFileErrTitle }}</span>
+<sc-for list="{{ bulkFileErrs }}" as="fe" hint-placeholder-count="1"><span style="font-size:14px;font-weight:600">{{ fe }}</span></sc-for>
+</div>
+</sc-if>
+<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--text-body)">
+<li>Descarga la plantilla y completa una fila por vehículo.</li>
+<li>Deja la placa vacía si el vehículo es nuevo o está en trámite; en ese caso, marca, modelo y año son obligatorios.</li>
+<li>Sube el archivo y revisa la vista previa antes de confirmar.</li>
+</ol>
+<div style="display:flex;flex-wrap:wrap;gap:12px">
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ downloadTpl }}" disabled="{{ tplBusy }}" hint-size="230px,40px">{{ tplLabel }}</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ pickBulkFile }}" hint-size="160px,40px">Subir archivo</x-import>
+</div>
+<sc-if value="{{ tplHasMsg }}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size:13px;color:{{ tplMsgColor }}">{{ tplMsg }}</span></sc-if>
+<span style="font-size:13px;color:var(--text-muted)">Formatos: .xlsx, .xls o .csv · máximo 200 vehículos por archivo. Usa la plantilla para elegir marcas y modelos del catálogo.</span>
+</sc-if>
+<sc-if value="{{ bulkPreview }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+<span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ bulkFile }}</span>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="success" hint-size="90px,22px"><span style="white-space:nowrap">{{ bulkOkLabel }}</span></x-import>
+<sc-if value="{{ bulkHasErr }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="danger" hint-size="110px,22px"><span style="white-space:nowrap">{{ bulkErrLabel }}</span></x-import></sc-if>
+</div>
+<sc-if value="{{ bulkHasWarn }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--alert-warning-bg);color:var(--alert-warning-fg)">
+<sc-for list="{{ bulkWarns }}" as="bw" hint-placeholder-count="1"><span style="font-size:14px;font-weight:600">{{ bw }}</span></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ bulkHasErr }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--alert-danger-bg);color:var(--alert-danger-fg)">
+<sc-for list="{{ bulkErrors }}" as="be" hint-placeholder-count="1"><span style="font-size:14px;font-weight:600">{{ be }}</span></sc-for>
+</div>
+</sc-if>
+<div style="max-height:320px;overflow:auto;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
+<table style="width:100%;border-collapse:collapse;font-size:14px;color:var(--text-body)">
+<thead><tr style="background:var(--table-row-hover)">
+<th scope="col" style="padding:8px 10px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong);white-space:nowrap">Fila</th>
+<th scope="col" style="padding:8px 10px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong)">Placa o vehículo</th>
+<th scope="col" style="padding:8px 10px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong)">Cobertura</th>
+<th scope="col" style="padding:8px 10px;text-align:right;font-size:13px;font-weight:700;color:var(--text-strong)">Valor total</th>
+<th scope="col" style="padding:8px 10px;text-align:left;font-size:13px;font-weight:700;color:var(--text-strong)">Resultado</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ bulkRows }}" as="br" hint-placeholder-count="5">
+<tr style="background:{{ br.bg }}">
+<td style="padding:8px 10px;border-top:1px solid var(--border-subtle);font-variant-numeric:tabular-nums">{{ br.fila }}</td>
+<td style="padding:8px 10px;border-top:1px solid var(--border-subtle)"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:700;color:var(--text-strong);white-space:{{ br.ws }}">{{ br.title }}</span><span style="font-size:13px;color:var(--text-muted)">{{ br.sub }}</span></span></td>
+<td style="padding:8px 10px;border-top:1px solid var(--border-subtle)">{{ br.cobertura }}</td>
+<td style="padding:8px 10px;border-top:1px solid var(--border-subtle);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">{{ br.total }}</td>
+<td style="padding:8px 10px;border-top:1px solid var(--border-subtle)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ br.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ br.result }}</span></x-import></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</sc-if>
+</div>
+</x-import>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;cases&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;role&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onRegister&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(data:object)=&gt;void&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;onDirtyChange&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(dirty:boolean)=&gt;void&quot;},&quot;onDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  brokers = [{ n: 'Broker Pacífico', aps: 'emisiones@brokerpacifico.ec' }, { n: 'Asesores Andinos', aps: 'emisiones@asesoresandinos.ec' }, { n: 'Austro Brokers', aps: 'emisiones@austrobrokers.ec' }, { n: 'Directo', aps: '' }];
+  // Ramos inspeccionables de datos-ejemplo.js; Vehículos se elige con «Tipo de riesgo», por eso aquí van los demás grupos.
+  // Etapa 8b · composición del ramo (SIRIUS_EJEMPLO.ramos · tipoObjeto) y equipos de Equipo y maquinaria.
+  compDe(r) { return window.SiriusEquipos ? window.SiriusEquipos.composicionDe(r) : (r === 'Equipo y maquinaria' ? 'Equipo móvil' : 'Ubicación'); }
+  esEM(d) { d = d || this.state.d; return d.tipoRiesgo === 'Ramos Generales' && (d.ramosSel || []).some(r => this.compDe(r) === 'Equipo móvil'); }
+  eqTotal(q) { return (Number(q.suma) || 0) + (q.implementos || []).reduce((a, x) => a + (Number(x.valor) || 0), 0); }
+  get ramosRG() { const E = window.SIRIUS_EJEMPLO || {}; return (E.ramosSirius ? E.ramosSirius() : []).filter(r => r.tipoObjeto !== 'Vehículo').map(r => r.nombre); }
+  get lineas() { const E = window.SIRIUS_EJEMPLO || {}; return E.lineasInspeccion ? E.lineasInspeccion() : []; }
+  tipos = ['Emisión nueva', 'Renovación', 'Inclusión', 'Endoso de aumento de valor'];
+  coberturas = ['Todo riesgo', 'Pérdida total', 'Daños propios', 'Responsabilidad civil (RC)'];
+  provs = { 'Azuay': ['Cuenca'], 'Guayas': ['Durán', 'Guayaquil', 'Samborondón'], 'Imbabura': ['Ibarra', 'Otavalo'], 'Manabí': ['Manta', 'Portoviejo'], 'Pichincha': ['Quito', 'Rumiñahui'], 'Tungurahua': ['Ambato'] };
+  c360db = { '1309876543': { nombres: 'Alfredo Antonio', apellidos: 'Mendoza Zambrano', nac: '1978-04-12', civil: 'Casado(a)', genero: 'Masculino', prov: 'Manabí', canton: 'Manta', dir: 'Av. 24 de Mayo y calle 13, barrio Córdova', correo: 'alfredo.mendoza@gmail.com', cel: '0998124471', fijo: '052621340' } };
+  placas = { 'PBA4521': { marca: 'Toyota', modelo: 'Corolla Cross', anio: '2022' }, 'GSE1098': { marca: 'Chevrolet', modelo: 'D-Max', anio: '2019' }, 'PCK2210': { marca: 'Hyundai', modelo: 'Tucson', anio: '2021' }, 'GBA7781': { marca: 'Nissan', modelo: 'Frontier', anio: '2023' } };
+  bulkFileRef = React.createRef();
+  seq = 0;
+  person() { return { idType: 'Cédula', idNum: '', nombres: '', apellidos: '', nac: '', civil: '', genero: '', prov: '', canton: '', dir: '', correo: '', cel: '', fijo: '' }; }
+  vehBlank() { return { sinPlaca: false, placa: '', marca: '', modelo: '', anio: '', cobertura: '', casco: '', extras: '', ackDup: false, cp: {} }; }
+  // ---------- Marca y modelo desde el catálogo (etapa 10c-c · DEC-079): SIRIUS_CATALOGOS_MAESTROS.marcas ----------
+  mmNorm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  mmMarcas() { return ((window.SIRIUS_CATALOGOS_MAESTROS || {}).marcas || []); }
+  mmMarca(t) { const n = this.mmNorm(t); return n ? this.mmMarcas().find(x => this.mmNorm(x.marca) === n) || null : null; }
+  mmModelos(marca) { const m = this.mmMarca(marca), out = []; if (!m) return out; m.modelos.forEach(o => { out.push(o.modelo); o.versiones.forEach(v => out.push(o.modelo + ' ' + v)); }); return out; }
+  mmModelo(marca, t) { const n = this.mmNorm(t); return n ? this.mmModelos(marca).find(x => this.mmNorm(x) === n) || null : null; }
+  // ---------- Campos personalizados (etapa 10c-consumo): todo sale de SIRIUS_CAMPOS ----------
+  cpCampos(ent) { const C = window.SIRIUS_CAMPOS, g = this.state.d.tipoRiesgo; if (!C || !g) return []; return C.campos.filter(x => x.entidad === ent && x.aplicaA.includes(g) && C.puedeVer(x, this.props.role || '') && C.editable(x, this.props.role || '', true)).sort((a, b) => a.orden - b.orden); }
+  cpParse(x, raw) { if (raw === '' || raw == null) return null; if (x.tipo === 'sino') return raw === 'Sí' ? true : raw === 'No' ? false : null; if ((x.tipo === 'numero' || x.tipo === 'moneda') && /^-?\d+([.,]\d+)?$/.test(String(raw).trim())) return Number(String(raw).trim().replace(',', '.')); return String(raw).trim(); }
+  cpErr(x, raw) { const v = this.cpParse(x, raw); if (v === null) return x.momento === 'Nueva solicitud' ? 'Este dato es obligatorio en la nueva solicitud.' : ''; return window.SIRIUS_CAMPOS.validar(x, v); }
+  cpFields(prefix, ent, vals) {
+    const C = window.SIRIUS_CAMPOS; return this.cpCampos(ent).map(x => {
+      const path = prefix + 'cp.' + x.clave, req = x.momento === 'Nueva solicitud', v = x.validacion || {};
+      const help = [x.ayuda, x.origen !== 'Manual' ? 'En casos de ' + x.origen + ' este dato llega por integración.' : ''].filter(Boolean).join(' ');
+      if (x.tipo === 'lista') return this.F(path, x.etiqueta, 'select', { req, help, options: (x.opciones || []).filter(o => o.activa !== false).map(o => o.v) });
+      if (x.tipo === 'sino') return this.F(path, x.etiqueta, 'radio', { req, help, options: ['Sí', 'No'] });
+      if (x.tipo === 'fecha') return this.F(path, x.etiqueta, 'input', { req, help, type: 'date' });
+      return this.F(path, x.etiqueta, 'input', { req, help, ph: v.ejemplo ? 'Ej. ' + v.ejemplo : '', money: x.tipo === 'moneda', inputMode: x.tipo === 'numero' || x.tipo === 'moneda' ? 'decimal' : 'text' });
+    });
+  }
+  // Datos adicionales en la Revisión: caso (un dato por línea) o vehículo (una línea con todos).
+  cpReview(vals, ent, label) {
+    const C = window.SIRIUS_CAMPOS, fv = (l, v) => ({ label: l, value: v || '—', ws: 'normal', fw: 600, size: '15px', border: 'none', pad: '0' });
+    const list = this.cpCampos(ent).map(x => ({ x, t: C.mostrar(x, this.cpParse(x, (vals || {})[x.clave])) }));
+    if (!list.length) return [];
+    return ent === 'caso' ? list.map(o => fv(o.x.etiqueta, o.t)) : [fv(label, list.map(o => o.x.etiqueta + ': ' + o.t).join(' · '))];
+  }
+  state = this.initial();
+  initial() {
+    const d = { broker: '', aps: '', sucursal: '', orden: '', tipoRiesgo: '', lineaVeh: '', ramosSel: [], ramoLinea: {}, tipo: '', garantias: false, casoOrig: '', sol: this.person(), mismo: true, ase: this.person(),
+      vehs: [], eqs: [], vehForm: null, vehEditId: null, manualAdds: 0, ubic: { tipoBien: '', prov: '', canton: '', dir: '' }, ramoData: {}, cp: {} };
+    const s = { step: 1, maxStep: 1, touched: {}, d, c360: { sol: 'idle', ase: 'idle' }, placaSt: 'idle', ramoQ: '', bulk: null, tpl: null, bpmSt: 'idle', bpmDup: '', cb: null };
+    const pr = this.props.preset || '';
+    if (!pr) return s;
+    Object.assign(d, { broker: 'Broker Pacífico', aps: 'emisiones@brokerpacifico.ec', sucursal: 'Manta', tipo: 'Emisión nueva' });
+    d.sol = Object.assign(this.person(), { idNum: '1309876543' }, this.c360db['1309876543']); s.c360.sol = 'found';
+    if (pr === 'nsbpm') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'EMI-408332', broker: 'Austro Brokers', aps: 'emisiones@austrobrokers.ec' }); s.bpmSt = 'dup'; s.bpmDup = '20186'; return s; }
+    if (pr === 'cpersnueva') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz' }); d.cp = { canal_venta: 'Agencia', numero_cotizacion: 'COT-26-4512' }; s.touched = { 'cp.numero_cotizacion': true }; return s; }
+    if (pr === 'nsvacio') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'OE-2026-09020' }); s.step = 3; s.maxStep = 3; return s; }
+    if (pr === 'nsmarca') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'OE-2026-09020' }); d.vehForm = Object.assign(this.vehBlank(), { sinPlaca: true, marca: 'Kia' }); s.step = 3; s.maxStep = 3; s.cb = { path: 'vehForm.modelo', q: '', hi: 0 }; return s; }
+    // Etapa 8b · Equipo y maquinaria: emsolicitud (paso 3 con 2 equipos) y embulk (carga masiva con vista previa).
+    if (['emsolicitud', 'embulk', 'emotro'].includes(pr)) {
+      Object.assign(d, { tipoRiesgo: 'Ramos Generales', lineaVeh: 'Corporativos', orden: 'OE-2026-09051', ramosSel: ['Equipo y maquinaria'] });
+      d.cp = { canal_venta: 'Agencia' };
+      d.eqs = [{ id: 'q1', categoria: 'Construcción y minería', tipo: 'Retroexcavadora', marca: 'Caterpillar', modelo: '416F2', anio: '2019', serie: 'CAT0416FCLJW03184', motor: 'C4.4-JW8821', suma: 98000, implementos: [{ desc: 'Martillo hidráulico', valor: 12500 }] },
+        { id: 'q2', categoria: 'Izaje y montacargas', tipo: 'Montacargas', marca: 'Toyota', modelo: '8FD30', anio: '2021', serie: '8FD30-30455', motor: '1DZ-0471812', suma: 36500, implementos: [] }];
+      if (pr === 'emotro') d.eqs = d.eqs.concat({ id: 'q3', categoria: 'Equipo especial', tipo: 'Otro (describir)', descripcion: 'Perforadora de roca autopropulsada', marca: 'Volvo', modelo: 'EC220E', anio: '2020', serie: 'VOLEC220E0045511', motor: '', suma: 120000, implementos: [] });
+      s.step = 3; s.maxStep = 3; if (pr === 'embulk') d.eqs = []; return s;
+    }
+    if (['ns3v', 'nsbulk'].includes(pr)) {
+      Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'OE-2026-09020' });
+      d.vehs = [
+        { id: 'v1', sinPlaca: false, placa: 'PBA4521', marca: 'Toyota', modelo: 'Corolla Cross', anio: '2022', cobertura: 'Todo riesgo', casco: '$28.500,00', extras: '$1.200,00', ackDup: true, cp: { uso_comercial: 'Sí' } },
+        { id: 'v2', sinPlaca: false, placa: 'GSE1098', marca: 'Chevrolet', modelo: 'D-Max', anio: '2019', cobertura: 'Pérdida total', casco: '$21.000,00', extras: '', ackDup: true, cp: { uso_comercial: 'Sí' } },
+        { id: 'v3', sinPlaca: true, placa: '', marca: 'Kia', modelo: 'Sportage', anio: '2026', cobertura: 'Todo riesgo', casco: '$34.990,00', extras: '$850,00', ackDup: false, cp: { uso_comercial: 'Sí' } }];
+      s.step = 3; s.maxStep = 3;
+      if (pr === 'nsbulk') s.bulk = { stage: 'preview', file: 'flota-distribuidora.xlsx', rows: this.demoBulk(), err: [], warn: [] };
+      return s;
+    }
+    Object.assign(d, { tipoRiesgo: 'Ramos Generales', orden: 'OE-2026-09014', ramosSel: ['Incendio y líneas aliadas', 'Robo', 'Equipo electrónico'], lineaVeh: 'Corporativos' });
+    if (pr === 'ns1g') return s;
+    d.ubic = { tipoBien: 'Bodega', prov: 'Manabí', canton: 'Manta', dir: 'Vía Manta–Rocafuerte km 4, lote 12' };
+    d.ramoData = {
+      'Incendio y líneas aliadas': { detalles: 'Bodega de 850 m² de hormigón armado con cubierta metálica; almacenamiento de productos de ferretería.', valor: '$320.000,00', extras: [{ id: 'x1', desc: 'Mercadería en stock', monto: '$85.000,00' }] },
+      'Robo': { detalles: 'Cerramiento perimetral, guardianía nocturna y alarma monitoreada.', valor: '$85.000,00', extras: [] },
+      'Equipo electrónico': { detalles: 'Servidor, 6 computadores de escritorio y sistema de cámaras IP.', valor: '$18.400,00', extras: [{ id: 'x2', desc: 'UPS de respaldo', monto: '$1.600,00' }] } };
+    s.step = pr === 'ns2' ? 2 : pr === 'ns3g' ? 3 : 4; s.maxStep = s.step;
+    return s;
+  }
+  demoBulk() {
+    return [['PCK2210', 'Hyundai', 'Tucson', '2021', 'Todo riesgo', '24500', '600'], ['GBA7781', 'Nissan', 'Frontier', '2023', 'Todo riesgo', '31800', ''], ['', 'Kia', 'Soluto', '2026', 'Daños propios', '16990', '400'], ['PDF3350', 'Mazda', 'CX-30', '2022', 'Pérdida total', '26200', ''], ['GSC4410', 'Toyota', 'Hilux', '2020', 'Todo riesgo', '29900', '1100'], ['PB4-21', 'Chevrolet', 'Sail', '2018', 'Pérdida total', '9800', ''], ['TBC9087', 'Renault', 'Duster', '2024', 'Todo riesgo', '21400', '350'], ['', 'Chery', 'Tiggo 4', '2026', 'Todo riesgo', '19990', '']]
+      .map(([placa, marca, modelo, anio, cobertura, casco, extras], i) => ({ fila: i + 2, placa, marca, modelo, anio, cobertura, casco, extras, cp: { uso_comercial: 'No' } }));
+  }
+  componentDidMount() { if (this.props.preset === 'nsmarca') setTimeout(() => { const el = document.getElementById('ns-vehForm-modelo'); if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); } }, 400); }
+  componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey) this.setState(this.initial()); }
+  get(path) { return path.split('.').reduce((o, k) => (o == null ? o : o[k]), this.state.d); }
+  set(path, v) {
+    this.setState(st => {
+      const d = JSON.parse(JSON.stringify(st.d)); const ks = path.split('.'); let o = d;
+      ks.slice(0, -1).forEach(k => { if (o[k] == null) o[k] = {}; o = o[k]; }); o[ks[ks.length - 1]] = v;
+      return { d };
+    }, () => this.props.onDirtyChange && this.props.onDirtyChange(true));
+  }
+  patchD(fn) { this.setState(st => { const d = JSON.parse(JSON.stringify(st.d)); fn(d); return { d }; }, () => this.props.onDirtyChange && this.props.onDirtyChange(true)); }
+  touch(k) { if (!this.state.touched[k]) this.setState(st => ({ touched: Object.assign({}, st.touched, { [k]: true }) })); }
+  money(s) { if (typeof s === 'number') return isFinite(s) ? s : 0; const n = window.SIRIUS_COMPANIA.leerMonto(s); return n == null ? 0 : n; }
+  usd(n) { return window.SIRIUS_COMPANIA.formatoMonto(n); }
+  cedulaOk(v) {
+    if (!/^\d{10}$/.test(v)) return false;
+    const p = Number(v.slice(0, 2)); if (!((p >= 1 && p <= 24) || p === 30) || Number(v[2]) > 5) return false;
+    let s = 0; for (let i = 0; i < 9; i++) { let x = Number(v[i]) * (i % 2 === 0 ? 2 : 1); if (x > 9) x -= 9; s += x; }
+    return (10 - (s % 10)) % 10 === Number(v[9]);
+  }
+  demoIds = ['1309876543'];
+  idErr(p) {
+    const v = (p.idNum || '').trim(); if (!v) return 'Ingresa el número de identificación.';
+    if (p.idType === 'Cédula') return /^\d{10}$/.test(v) ? (this.cedulaOk(v) || this.demoIds.includes(v) ? '' : 'La cédula no es válida: revisa el dígito verificador.') : 'La cédula tiene 10 dígitos.';
+    if (p.idType === 'RUC') return /^\d{13}$/.test(v) ? (v.endsWith('001') ? '' : 'El RUC termina en 001.') : 'El RUC tiene 13 dígitos.';
+    return /^[A-Za-z0-9]{5,20}$/.test(v) ? '' : 'El pasaporte tiene entre 5 y 20 letras o números.';
+  }
+  lookup(who) {
+    const p = this.state.d[who]; if (this.idErr(p)) return;
+    this.setState(st => ({ c360: Object.assign({}, st.c360, { [who]: 'loading' }) }));
+    clearTimeout(this['t' + who]);
+    this['t' + who] = setTimeout(() => {
+      const hit = this.c360db[p.idNum.trim()];
+      this.setState(st => { const d = JSON.parse(JSON.stringify(st.d)); if (hit) Object.assign(d[who], hit); return { d, c360: Object.assign({}, st.c360, { [who]: hit ? 'found' : 'notfound' }) }; });
+    }, 900);
+  }
+  // Placa (etapa 16g-c · DEC-116): regla única en SIRIUS_PLACA (lee validacionesFormato «placa» de datos-motores-ia.js).
+  pl(v) { const P = window.SIRIUS_PLACA; return P ? P.normalizar(v) : String(v == null ? '' : v).toUpperCase().replace(/[-\s]/g, ''); }
+  plateOk(v) { const P = window.SIRIUS_PLACA; return !!P && P.valida(v); }
+  plateMsg() { return (window.SIRIUS_PLACA || {}).mensaje || 'Usa el formato ABC1234 (auto) o AB123C (moto).'; }
+  lookupPlaca() {
+    const f = this.state.d.vehForm; if (!f || f.sinPlaca) return;
+    const v = this.pl(f.placa); if (!this.plateOk(v)) return;
+    if (f.placa !== v) this.set('vehForm.placa', v);
+    this.setState({ placaSt: 'loading' });
+    clearTimeout(this.tp);
+    this.tp = setTimeout(() => {
+      const hit = this.placas[v];
+      this.setState(st => { const d = JSON.parse(JSON.stringify(st.d)); if (hit && d.vehForm) Object.assign(d.vehForm, hit); return { d, placaSt: hit ? 'found' : 'notfound' }; });
+    }, 900);
+  }
+  bpmDb = { 'EMI-408332': { dupCase: '20186' }, 'EMI-408400': { broker: 'Austro Brokers', aps: 'emisiones@austrobrokers.ec', tipo: 'Emisión nueva', tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', sol: { idType: 'Cédula', idNum: '1710034065', nombres: 'Gabriela', apellidos: 'Salazar Ortega', prov: 'Pichincha', canton: 'Quito', dir: 'Av. De los Shyris N36-120 y Suecia', correo: 'gsalazar@gmail.com', cel: '0987766554' }, vehs: [{ id: 'bpm1', sinPlaca: false, placa: 'PCK2210', marca: 'Hyundai', modelo: 'Tucson', anio: '2021', cobertura: 'Todo riesgo', casco: '$24.500,00', extras: '', ackDup: false }] } };
+  lookupBPM() {
+    const o = this.state.d.orden.trim().toUpperCase(); if (!o) return;
+    this.setState({ bpmSt: 'loading' }); clearTimeout(this.tb);
+    this.tb = setTimeout(() => {
+      const hit = this.bpmDb[o];
+      if (hit && hit.dupCase) { this.setState({ bpmSt: 'dup', bpmDup: hit.dupCase }); return; }
+      if (!hit) { this.setState({ bpmSt: 'notfound' }); return; }
+      this.patchD(d => { Object.assign(d, { broker: hit.broker, aps: hit.aps, tipo: hit.tipo, tipoRiesgo: hit.tipoRiesgo, lineaVeh: hit.lineaVeh }); d.sol = Object.assign(this.person(), hit.sol); d.vehs = JSON.parse(JSON.stringify(hit.vehs)); d.vehForm = null; });
+      this.setState({ bpmSt: 'found' });
+    }, 800);
+  }
+  dupFor(kind, val) {
+    const closed = ['Inspeccionado', 'Enviado a emisión', 'Emitida', 'No emitida', 'Cancelado'];
+    const cs = (this.props.cases || []).filter(c => !closed.includes(c.estado));
+    const v = kind === 'id' ? String(val || '').trim().toUpperCase() : this.pl(val); if (!v) return null;
+    return cs.find(c => kind === 'id' ? c.ident === v : (c.placas || [c.placa]).some(p => p && this.pl(p) === v)) || null;
+  }
+  vehLabel(v) { return v.sinPlaca || !v.placa ? [v.marca, v.modelo, v.anio].filter(Boolean).join(', ') : this.pl(v.placa); }
+  vehTotal(v) { return this.money(v.casco) + this.money(v.extras); }
+  vehErrors(v, others) {
+    const e = {};
+    if (!v.sinPlaca) {
+      const p = this.pl(v.placa);
+      if (!this.plateOk(p)) e.placa = p ? this.plateMsg() : 'Ingresa la placa.';
+      else { const ix = others.findIndex(o => !o.sinPlaca && this.pl(o.placa) === p); if (ix >= 0) e.placa = 'Placa repetida: ya está en el vehículo ' + (ix + 1) + ' de este caso.'; }
+    }
+    const mk = this.mmMarca(v.marca);
+    if (!String(v.marca || '').trim()) e.marca = 'Selecciona la marca.'; else if (!mk || mk.marca !== v.marca) e.marca = 'Elige una marca de la lista.';
+    if (!String(v.modelo || '').trim()) e.modelo = 'Selecciona el modelo.'; else if (!mk || this.mmModelos(mk.marca).indexOf(v.modelo) < 0) e.modelo = 'Elige un modelo de la lista.';
+    if (!/^\d{4}$/.test(v.anio) || Number(v.anio) < 1980 || Number(v.anio) > 2027) e.anio = 'Ingresa un año entre 1980 y 2027.';
+    if (!this.coberturas.includes(v.cobertura)) e.cobertura = 'Selecciona el tipo de cobertura.';
+    if (this.money(v.casco) <= 0) e.casco = 'Ingresa el valor del casco.';
+    return e;
+  }
+  vehFormErrors() {
+    const s = this.state, f = s.d.vehForm; if (!f) return {};
+    const others = s.d.vehs.map((v, i) => Object.assign({}, v, { _i: i })).filter(v => v.id !== s.d.vehEditId);
+    const raw = this.vehErrors(f, s.d.vehs.filter(v => v.id !== s.d.vehEditId)), e = {};
+    if (raw.placa && raw.placa.startsWith('Placa repetida')) { const o = others.find(x => !x.sinPlaca && this.pl(x.placa) === this.pl(f.placa)); raw.placa = 'Placa repetida: ya está en el vehículo ' + (o._i + 1) + ' de este caso.'; }
+    Object.keys(raw).forEach(k => { e['vehForm.' + k] = raw[k]; });
+    if (!f.sinPlaca && this.dupFor('placa', f.placa) && !f.ackDup) e['vehForm.dup'] = '!Confirma el aviso de caso existente para guardar el vehículo';
+    if (!f.sinPlaca && s.placaSt === 'loading') e['vehForm.loading'] = '!Consultando el servicio de placas…';
+    this.cpCampos('riesgo').forEach(x => { const m = this.cpErr(x, (f.cp || {})[x.clave]); if (m) e['vehForm.cp.' + x.clave] = m; });
+    return e;
+  }
+  ramoTotal(r) { const x = this.state.d.ramoData[r] || {}; return this.money(x.valor) + (x.extras || []).reduce((a, y) => a + this.money(y.monto), 0); }
+  errors(step) {
+    const d = this.state.d, e = {};
+    const req = (k, v, msg) => { if (!String(v || '').trim()) e[k] = msg; };
+    if (step === 1) {
+      req('broker', d.broker, 'Selecciona el broker.'); req('sucursal', d.sucursal, 'Elige la sucursal.'); if (d.broker && !this.brokers.some(b => b.n === d.broker)) e.broker = 'Elige un broker del catálogo.';
+      if (d.aps.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.aps.trim())) e.aps = 'Revisa el formato del correo.';
+      req('tipoRiesgo', d.tipoRiesgo, 'Elige el tipo de riesgo.');
+      if (this.state.bpmSt === 'dup') e['orden.dup'] = '!La orden ya tiene un caso; usa otra orden o déjala vacía';
+      if (this.state.bpmSt === 'loading') e['orden.loading'] = '!Consultando el BPM de Emisión…';
+      req('lineaVeh', d.lineaVeh, 'Selecciona la línea de negocio.');
+      if (d.tipoRiesgo === 'Ramos Generales') { if (!d.ramosSel.length) e.ramos = 'Elige al menos un ramo.'; else if (this.esEM(d) && d.ramosSel.some(r => this.compDe(r) !== 'Equipo móvil')) e.ramos = 'Un caso no mezcla composiciones: Equipo y maquinaria (equipo móvil) va en su propia solicitud, sin ramos de ubicación.'; }
+      req('tipo', d.tipo, 'Selecciona el tipo de solicitud.');
+      this.cpCampos('caso').forEach(x => { const m = this.cpErr(x, (d.cp || {})[x.clave]); if (m) e['cp.' + x.clave] = m; });
+    }
+    if (step === 2) {
+      ['sol'].concat(d.mismo ? [] : ['ase']).forEach(w => {
+        const p = d[w], ie = this.idErr(p); if (ie) e[w + '.idNum'] = ie;
+        req(w + '.nombres', p.nombres, p.idType === 'RUC' ? 'Ingresa la razón social.' : 'Ingresa los nombres.');
+        if (p.idType !== 'RUC') req(w + '.apellidos', p.apellidos, 'Ingresa los apellidos.');
+        if (!/^09\d{8}$/.test((p.cel || '').trim())) e[w + '.cel'] = 'Ingresa un celular de 10 dígitos que empiece con 09.';
+        if (p.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.correo.trim())) e[w + '.correo'] = 'Revisa el formato del correo.';
+        req(w + '.prov', p.prov, 'Selecciona la provincia.'); req(w + '.canton', p.canton, 'Selecciona el cantón.'); req(w + '.dir', p.dir, 'Ingresa la dirección.');
+        if (this.state.c360[w] === 'loading') e[w + '.loading'] = '!Consultando Cliente 360…';
+      });
+    }
+    if (step === 3) {
+      if (d.tipoRiesgo === 'Vehículos') {
+        Object.assign(e, this.vehFormErrors());
+        if (d.vehForm) e['vehs.form'] = '!Guarda o cancela el vehículo en edición';
+        else if (!d.vehs.length) e['vehs.none'] = '!Agrega al menos un vehículo';
+        Object.assign(e, this.vehsCpErrors());
+      } else if (this.esEM(d)) {
+        if (this.state.eqEdit) e['eqs.form'] = '!Guarda o cancela el equipo en edición'; else if (!d.eqs.length) e['eqs.none'] = '!Agrega al menos un equipo';
+      } else {
+        const u = d.ubic;
+        req('ubic.tipoBien', u.tipoBien, 'Selecciona el tipo de bien.'); req('ubic.prov', u.prov, 'Selecciona la provincia.'); req('ubic.canton', u.canton, 'Selecciona el cantón.'); req('ubic.dir', u.dir, 'Ingresa la dirección.');
+        d.ramosSel.forEach(r => { const x = d.ramoData[r] || {}; req('ramoData.' + r + '.detalles', x.detalles, 'Describe los detalles de emisión.'); if (this.money(x.valor) <= 0) e['ramoData.' + r + '.valor'] = 'Ingresa el valor asegurado.'; });
+      }
+    }
+    if (step === 4) { this.cpCampos('caso').forEach(x => { const m = this.cpErr(x, (d.cp || {})[x.clave]); if (m) e['cp.' + x.clave] = m; }); if (d.tipoRiesgo === 'Vehículos') Object.assign(e, this.vehsCpErrors()); }
+    return e;
+  }
+  // Datos adicionales obligatorios de cada vehículo ya agregado (los de «Nueva solicitud» no pueden quedar sin dato).
+  vehsCpErrors() { const e = {}, d = this.state.d; d.vehs.forEach((v, i) => this.cpCampos('riesgo').forEach(x => { const m = this.cpErr(x, (v.cp || {})[x.clave]); if (m) e['vehs.' + i + '.cp.' + x.clave] = m; })); return e; }
+  jumpErr(k) { [60, 300].forEach(t => setTimeout(() => { let el = (k && document.getElementById('ns-' + k.replace(/[^A-Za-z0-9]+/g, '-'))) || document.querySelector('[id^="ns-"][aria-invalid="true"]'); if (!el) return; if (!el.matches('input,select,textarea,button')) el = el.querySelector('input,select,textarea,button') || el; el.focus(); }, t)); }
+  F(path, label, kind, o) {
+    o = o || {};
+    const e = this.errors(this.state.step), t = this.state.touched;
+    const err = e[path] && e[path][0] !== '!' ? e[path] : '';
+    const show = !!(t[path] && err);
+    const val = o.value !== undefined ? o.value : this.get(path);
+    const id = 'ns-' + path.replace(/[^A-Za-z0-9]+/g, '-');
+    let cmb = {};
+    if (kind === 'combo') {
+      const cb = this.state.cb, cur = val == null ? '' : String(val), open = !!cb && cb.path === path && !o.disabled, q = open ? cb.q : cur;
+      const all = !open || !q.trim() || q === cur, opts = (o.options || []).filter(x => all || this.mmNorm(x).includes(this.mmNorm(q)));
+      const hi = open ? Math.min(Math.max(cb.hi || 0, 0), Math.max(opts.length - 1, 0)) : 0;
+      const close = () => this.setState({ cb: null });
+      const pick = (x) => { const ch = x !== cur; this.set(path, x); if (ch) o.after && o.after(x); close(); this.touch(path); setTimeout(() => { const el = document.getElementById(id); if (el && el !== document.activeElement) { this._cbSkip = true; el.focus(); } }, 40); };
+      cmb = { isCombo: true, comboOpen: open, comboText: q, listId: id + '-list', activeId: open && opts[hi] ? id + '-opt' + hi : undefined, comboBg: o.disabled ? 'var(--surface-subtle)' : '#FFFFFF', comboNo: open && !opts.length, comboNoText: o.noText || 'Sin resultados.',
+        comboOpts: opts.map((x, i) => ({ label: x, oid: id + '-opt' + i, sel: x === cur, bg: i === hi ? 'var(--table-row-hover)' : x === cur ? 'var(--color-brand-wash)' : '#FFFFFF', fw: x === cur ? 700 : 400, pick: () => pick(x) })),
+        onComboIn: (ev) => this.setState({ cb: { path, q: ev.target.value, hi: 0 } }),
+        onComboFocus: () => { if (this._cbSkip) { this._cbSkip = false; return; } if (!o.disabled) this.setState({ cb: { path, q: cur, hi: 0 } }); },
+        onComboKey: (ev) => { const k = ev.key; if (k === 'ArrowDown' || k === 'ArrowUp') { ev.preventDefault(); if (!open) { this.setState({ cb: { path, q: cur, hi: 0 } }); return; } const n = opts.length; if (n) this.setState({ cb: { path, q: cb.q, hi: (hi + (k === 'ArrowDown' ? 1 : n - 1)) % n } }); } else if (k === 'Enter') { if (open && opts[hi]) { ev.preventDefault(); pick(opts[hi]); } } else if (k === 'Escape' && open) { ev.preventDefault(); close(); } },
+        onComboBlur: (ev) => { if (ev.currentTarget.contains(ev.relatedTarget)) return; const typed = open ? cb.q : null;
+          if (typed != null && typed !== cur) { const hit = (o.options || []).find(x => this.mmNorm(x) === this.mmNorm(typed)); if (hit) { this.set(path, hit); if (hit !== cur) o.after && o.after(hit); } else if (!typed.trim()) { this.set(path, ''); o.after && o.after(''); } }
+          close(); this.touch(path); },
+        noBlur: (ev) => ev.preventDefault() };
+    }
+    return Object.assign({
+      id, lblId: id + '-lbl', label, hasLabel: kind !== 'check' && kind !== 'switch', star: o.req ? 'inline' : 'none',
+      isInput: kind === 'input' && o.type !== 'date' && !o.money, isMonto: kind === 'input' && !!o.money, montoVal: o.money && val !== '' && val != null ? this.money(val) : null, onMonto: (n, err) => this.set(path, err || n == null ? '' : n), isFecha: kind === 'input' && o.type === 'date', max: o.max || '', isSelect: kind === 'select', isTextarea: kind === 'textarea', isRO: kind === 'ro', isCheck: kind === 'check', isSwitch: kind === 'switch', isRadio: kind === 'radio', isCombo: false, isInputBtn: kind === 'inputbtn', btnLabel: o.btnLabel || '', onBtn: o.onBtn || (() => {}), btnDisabled: !!o.btnDisabled, btnWhy: o.btnWhy || '',
+      radios: kind === 'radio' ? (o.options || []).map(label => ({ label, checked: val === label, border: val === label ? 'var(--cyan-500)' : 'var(--border-default)', bg: val === label ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.set(path, label); o.after && o.after(label); } })) : [],
+      type: o.type || 'text', list: o.list, inputMode: o.inputMode || 'text', ac: o.ac || 'off', ph: o.ph || '', align: o.money ? 'right' : 'left', roSize: o.roSize || '16px', roJustify: o.roJustify || 'flex-start',
+      value: val == null ? '' : val, checked: !!val, options: o.options || [], disabled: !!o.disabled,
+      onChange: (ev) => { this.set(path, o.upper ? ev.target.value.toUpperCase() : ev.target.value); o.after && o.after(ev.target.value); },
+      onToggle: () => { const nv = !this.get(path); this.set(path, nv); o.after && o.after(nv); },
+      onBlur: (ev) => { if (kind === 'radio' && ev && ev.currentTarget && ev.currentTarget.contains && ev.currentTarget.contains(ev.relatedTarget)) return; this.touch(path); o.onBlur && o.onBlur(); },
+      span: o.span || 'auto', hasHelp: !!o.help, help: o.help || '', helpId: id + '-help', errShow: show, err, errId: id + '-err',
+      descId: [o.help ? id + '-help' : '', show ? id + '-err' : ''].filter(Boolean).join(' ') || undefined,
+      invalid: show ? 'true' : undefined, border: show ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+    }, cmb);
+  }
+  personFields(w) {
+    const p = this.state.d[w], ruc = p.idType === 'RUC';
+    return [
+      this.F(w + '.idType', 'Tipo de identificación', 'select', { options: ['Cédula', 'RUC', 'Pasaporte'], req: true, after: () => this.setState(st => ({ c360: Object.assign({}, st.c360, { [w]: 'idle' }) })) }),
+      this.F(w + '.idNum', 'Número de identificación', 'input', { req: true, inputMode: p.idType === 'Pasaporte' ? 'text' : 'numeric', onBlur: () => this.lookup(w) }),
+      this.F(w + '.nombres', ruc ? 'Razón social' : 'Nombres', 'input', { req: true, ac: 'given-name' }),
+      ruc ? null : this.F(w + '.apellidos', 'Apellidos', 'input', { req: true, ac: 'family-name' }),
+      ruc ? null : this.F(w + '.nac', 'Fecha de nacimiento', 'input', { type: 'date', max: 'hoy' }),
+      ruc ? null : this.F(w + '.civil', 'Estado civil', 'select', { options: ['Soltero(a)', 'Casado(a)', 'Unión de hecho', 'Divorciado(a)', 'Viudo(a)'] }),
+      ruc ? null : this.F(w + '.genero', 'Género', 'select', { options: ['Femenino', 'Masculino', 'Prefiero no decir'] }),
+      this.F(w + '.prov', 'Provincia', 'select', { options: Object.keys(this.provs), req: true, after: () => this.set(w + '.canton', '') }),
+      this.F(w + '.canton', 'Cantón', 'select', { options: this.provs[p.prov] || [], req: true, disabled: !p.prov }),
+      this.F(w + '.dir', 'Dirección', 'input', { req: true, span: '1 / -1', ac: 'street-address' }),
+      this.F(w + '.cel', 'Celular', 'input', { req: true, type: 'tel', inputMode: 'numeric', ph: '09XXXXXXXX', help: 'Se usará para coordinar por WhatsApp.', ac: 'tel' }),
+      this.F(w + '.fijo', 'Teléfono fijo', 'input', { type: 'tel', inputMode: 'numeric' }),
+      this.F(w + '.correo', 'Correo electrónico', 'input', { type: 'email', inputMode: 'email', ac: 'email' }),
+    ].filter(Boolean);
+  }
+  personGroup(w, title) {
+    const st = this.state.c360[w], p = this.state.d[w], dup = this.dupFor('id', p.idNum);
+    return { hid: 'ns-g-' + w, title, hasBadge: st === 'found' || (w === 'sol' && this.state.bpmSt === 'found'), badge: w === 'sol' && this.state.bpmSt === 'found' ? 'Datos del BPM de Emisión' : 'Datos de Cliente 360', fields: this.personFields(w),
+      hasStatus: st === 'loading', loading: st === 'loading', statusText: 'Consultando Cliente 360…',
+      hasAlert: st === 'notfound', alertText: 'No se encontró en Cliente 360; ingresa los datos manualmente.',
+      hasInfo: !!dup, infoText: dup ? 'Este cliente tiene el caso ' + dup.id + ' en curso.' : '',
+      onVerCaso: () => dup && this.props.onOpenCase && this.props.onOpenCase(dup.id) };
+  }
+  openVehForm(v) { this.patchD(d => { d.vehForm = v ? Object.assign({}, v) : this.vehBlank(); d.vehEditId = v ? v.id : null; }); this.setState(st => { const t = {}; Object.keys(st.touched).forEach(k => { if (!k.startsWith('vehForm.')) t[k] = st.touched[k]; }); if (v) this.cpCampos('riesgo').forEach(x => { if (this.cpErr(x, (v.cp || {})[x.clave])) t['vehForm.cp.' + x.clave] = true; }); return { touched: t, placaSt: v && !v.sinPlaca && this.placas[v.placa] ? 'found' : 'idle' }; }); }
+  // ---------- Carga masiva (etapa 16g-b): lectura real del archivo, validación por fila y plantilla con catálogos ----------
+  hdrNorm(t) { return this.mmNorm(t).replace(/[^a-z0-9]/g, ''); }
+  bulkCp() { return window.SIRIUS_CAMPOS ? this.cpCampos('riesgo').filter(x => x.estado === 'Activo') : []; }
+  bulkCols() {
+    const base = [
+      { key: 'placa', label: 'Placa', alias: ['placa'], req: true },
+      { key: 'marca', label: 'Marca', alias: ['marca'], req: true },
+      { key: 'modelo', label: 'Modelo', alias: ['modelo'], req: true },
+      { key: 'anio', label: 'Año', alias: ['ano', 'anio'], req: true },
+      { key: 'cobertura', label: 'Cobertura', alias: ['cobertura'], req: true },
+      { key: 'casco', label: 'Valor del casco', alias: ['valordelcasco', 'valorcasco', 'casco'], req: true },
+      { key: 'extras', label: 'Extras', alias: ['extras'], req: false }];
+    return base.concat(this.bulkCp().map(x => ({ key: 'cp.' + x.clave, cp: x, label: x.etiqueta, alias: [this.hdrNorm(x.etiqueta), this.hdrNorm(x.clave)], req: x.momento === 'Nueva solicitud' })));
+  }
+  loadScript(url, key) {
+    const L = (window.__sirLibs = window.__sirLibs || {});
+    if (window[key]) return Promise.resolve(window[key]);
+    if (L[key]) return L[key];
+    return (L[key] = new Promise((ok, no) => { const s = document.createElement('script'); s.src = url; s.async = true; s.onload = () => (window[key] ? ok(window[key]) : (delete L[key], no(new Error(key)))); s.onerror = () => { delete L[key]; s.remove(); no(new Error(key)); }; document.head.appendChild(s); }));
+  }
+  loadXlsx() { return this.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'XLSX'); }
+  loadExcelJS() { return this.loadScript('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js', 'ExcelJS'); }
+  cellText(v) {
+    if (v == null) return '';
+    if (v instanceof Date) return isNaN(v) ? '' : v.getFullYear() + '-' + String(v.getMonth() + 1).padStart(2, '0') + '-' + String(v.getDate()).padStart(2, '0');
+    return typeof v === 'number' ? String(v) : String(v).trim();
+  }
+  // Número escrito en formato ecuatoriano (1.234,56) o internacional (1234.56); null si no es un número.
+  numParse(raw) {
+    if (typeof raw === 'number') return isFinite(raw) ? raw : null;
+    let t = String(raw == null ? '' : raw).replace(/usd|\$|\s/gi, ''); if (!t || !/^-?[\d.,]+$/.test(t)) return null;
+    const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+    if (lc >= 0 && ld >= 0) t = lc > ld ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+    else if (lc >= 0) t = (t.match(/,/g) || []).length > 1 ? t.replace(/,/g, '') : t.replace(',', '.');
+    else if (ld >= 0 && /^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+    const n = Number(t); return isFinite(n) ? n : null;
+  }
+  // CSV → matriz de filas: separador ; o , detectado en el encabezado, comillas, comillas dobles y BOM.
+  csvGrid(text) {
+    text = String(text || '').replace(/^﻿/, '');
+    const first = text.split(/\r?\n/).find(l => l.trim()) || '';
+    let q = false, nS = 0, nC = 0; for (const ch of first) { if (ch === '"') q = !q; else if (!q) { if (ch === ';') nS++; else if (ch === ',') nC++; } }
+    const sep = nC > nS ? ',' : ';', rows = []; let row = [], cur = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQ) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === sep) { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  // Matriz → { err, warn, rows }. Columnas por encabezado (sin importar orden, mayúsculas ni tildes); r0 = fila de Excel anterior al primer renglón de la matriz.
+  bulkRead(grid, r0) {
+    const cols = this.bulkCols(), err = [], warn = [], empty = c => this.cellText(c) === '';
+    const hi = grid.findIndex(r => r.some(c => !empty(c)));
+    if (hi < 0) return { err: ['El archivo está vacío.'], warn, rows: [] };
+    const idx = {}, head = grid[hi].map(h => this.hdrNorm(this.cellText(h)));
+    cols.forEach(c => { const i = head.findIndex(h => h && c.alias.includes(h)); if (i >= 0) idx[c.key] = i; });
+    cols.filter(c => c.req && idx[c.key] == null).forEach(c => err.push('Falta la columna ' + c.label));
+    const used = Object.keys(idx).map(k => idx[k]);
+    grid[hi].forEach((h, i) => { const t = this.cellText(h); if (t && !used.includes(i)) warn.push('Se ignoró la columna ' + t); });
+    const rows = [];
+    grid.slice(hi + 1).forEach((r, k) => {
+      if (r.every(empty)) return;
+      const g = key => idx[key] == null ? '' : this.cellText(r[idx[key]]), cp = {};
+      cols.filter(c => c.cp).forEach(c => { cp[c.cp.clave] = g(c.key); });
+      rows.push({ fila: r0 + hi + k + 2, placa: g('placa'), marca: g('marca'), modelo: g('modelo'), anio: g('anio'), cobertura: g('cobertura'), casco: g('casco'), extras: g('extras'), cp });
+    });
+    if (!err.length && !rows.length) err.push('El archivo no tiene vehículos para cargar.');
+    if (rows.length > 200) err.push('El archivo tiene ' + rows.length + ' vehículos; el máximo es 200.');
+    return { err, warn, rows: err.length ? [] : rows };
+  }
+  async bulkParseFile(f) {
+    if (/\.csv$/i.test(f.name)) {
+      const buf = await f.arrayBuffer(); let text;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+      return this.bulkRead(this.csvGrid(text), 0);
+    }
+    const X = await this.loadXlsx(), buf = await f.arrayBuffer(), wb = X.read(buf, { type: 'array', cellDates: true });
+    const nm = wb.SheetNames.find(n => this.hdrNorm(n) === 'vehiculos') || wb.SheetNames[0], ws = nm && wb.Sheets[nm];
+    if (!ws || !ws['!ref']) return { err: ['El archivo está vacío.'], warn: [], rows: [] };
+    const rg = X.utils.decode_range(ws['!ref']);
+    return this.bulkRead(X.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: true }), rg.s.r);
+  }
+  bulkCob(t) {
+    const n = this.mmNorm(t); if (!n) return '';
+    return this.coberturas.find(c => this.mmNorm(c) === n || this.mmNorm(c.replace(/\s*\(.*\)\s*$/, '')) === n) || String(t).trim();
+  }
+  // Valida cada fila y reúne todos sus errores; las válidas llevan sus campos personalizados.
+  bulkCheck(rows) {
+    const existing = this.state.d.vehs.slice(), seen = {}, cps = this.bulkCp();
+    return rows.map(r => {
+      const txt = x => String(x == null ? '' : x).trim(), mk = this.mmMarca(r.marca), placa = this.pl(txt(r.placa)), m = [];
+      const cas = this.numParse(r.casco), ext = this.numParse(r.extras);
+      const v = { sinPlaca: !placa, placa: this.plateOk(placa) ? placa : txt(r.placa).toUpperCase(), marca: mk ? mk.marca : txt(r.marca), modelo: (mk && this.mmModelo(mk.marca, r.modelo)) || txt(r.modelo), anio: txt(r.anio), cobertura: this.bulkCob(r.cobertura), casco: cas > 0 ? this.usd(cas) : '', extras: ext > 0 ? this.usd(ext) : '', cp: {} };
+      const e = this.vehErrors(v, []);
+      if (placa) { if (!this.plateOk(placa)) m.push('placa con formato inválido'); else if (existing.some(x => !x.sinPlaca && this.pl(x.placa) === placa) || seen[placa]) m.push('placa repetida en este caso'); }
+      if (e.marca) m.push(v.marca ? 'marca fuera del catálogo' : 'falta la marca');
+      if (!v.modelo) m.push('falta el modelo'); else if (e.modelo && mk) m.push('modelo fuera del catálogo para esa marca');
+      if (e.anio) m.push('año inválido');
+      if (e.cobertura) m.push(v.cobertura ? 'cobertura no reconocida' : 'falta la cobertura');
+      if (e.casco) m.push(txt(r.casco) && cas === null ? 'valor del casco inválido' : 'falta el valor del casco');
+      if (txt(r.extras) && ext === null) m.push('valor de extras inválido');
+      cps.forEach(x => {
+        const raw = txt((r.cp || {})[x.clave]), lab = x.etiqueta; let val = raw;
+        if (!raw) { if (x.momento === 'Nueva solicitud') m.push('falta ' + lab); return; }
+        if (x.tipo === 'sino') { const n = this.mmNorm(raw); if (['si', 's', 'yes', 'true', '1'].includes(n)) val = 'Sí'; else if (['no', 'n', 'false', '0'].includes(n)) val = 'No'; else { m.push(lab + ': usa Sí o No'); return; } }
+        else if (x.tipo === 'numero' || x.tipo === 'moneda') { const n = this.numParse(raw); if (n === null) { m.push(lab + ': ingresa un número'); return; } val = String(n); }
+        else if (x.tipo === 'lista') { const o = (x.opciones || []).find(o => o.activa !== false && this.mmNorm(o.v) === this.mmNorm(raw)); if (o) val = o.v; }
+        const msg = this.cpErr(x, val);
+        if (msg) m.push(lab + ': ' + msg.replace(/\.$/, '').replace(/^./, c => c.toLowerCase())); else v.cp[x.clave] = val;
+      });
+      if (placa) seen[placa] = true;
+      const msg = m.join('; ');
+      return { r, v, msg, dup: !msg && !v.sinPlaca ? this.dupFor('placa', v.placa) : null };
+    });
+  }
+  // Plantilla .xlsx (ExcelJS, bajo demanda): hoja Vehículos con listas y validaciones, hoja Catálogos e Instrucciones.
+  async buildTemplate() {
+    const E = await this.loadExcelJS(), wb = new E.Workbook();
+    wb.creator = 'SIRIUS'; wb.created = new Date();
+    const marcas = this.mmMarcas().slice().sort((a, b) => a.marca.localeCompare(b.marca, 'es')), pares = [];
+    marcas.forEach(mk => this.mmModelos(mk.marca).forEach(x => pares.push([mk.marca, x])));
+    const cobs = this.coberturas.slice(), cols = this.bulkCols(), nP = pares.length + 1, nM = marcas.length + 1, nC = cobs.length + 1, CAT = "'Catálogos'!", LAST = 201;
+    const ws = wb.addWorksheet('Vehículos', { views: [{ state: 'frozen', ySplit: 1 }] });
+    ws.columns = cols.map(c => ({ header: c.label, key: c.key, width: Math.max(14, c.label.length + 6) }));
+    const hdr = ws.getRow(1); hdr.height = 28;
+    hdr.eachCell((cell, n) => { const req = cols[n - 1].req; cell.font = { bold: true, color: { argb: req ? 'FFFFFFFF' : 'FF0B3C49' }, name: 'Calibri', size: 11 }; cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: req ? 'FF0E7490' : 'FFCFE8EF' } }; cell.alignment = { vertical: 'middle', wrapText: true }; });
+    const ex = (placa, mk, k) => { const m = marcas.find(x => x.marca === mk) || marcas[0], row = { placa, marca: m.marca, modelo: this.mmModelos(m.marca)[0], anio: 2024 + k, cobertura: cobs[0], casco: k ? 34990 : 30000, extras: k ? 850 : 1000 };
+      cols.filter(c => c.cp).forEach(c => { row[c.key] = c.cp.tipo === 'sino' ? 'No' : c.cp.tipo === 'lista' && c.req ? ((c.cp.opciones || []).find(o => o.activa !== false) || {}).v || '' : ''; }); return row; };
+    ws.addRow(ex('PBA4521', 'Toyota', 0)); ws.addRow(ex('', 'Kia', 1));
+    const L = key => ws.getColumn(key).letter;
+    ['casco', 'extras'].forEach(k => { ws.getColumn(k).numFmt = '#,##0.00'; });
+    // Una validación por columna (rango B2:B201): las fórmulas relativas se leen desde la primera celda del rango.
+    const set = (key, dv) => ws.dataValidations.add(L(key) + '2:' + L(key) + LAST, Object.assign({ allowBlank: true, showErrorMessage: true, errorStyle: 'stop' }, dv));
+    set('marca', { type: 'list', formulae: [CAT + '$D$2:$D$' + nM], errorTitle: 'Marca no válida', error: 'Elige una marca de la lista. Si no está, pídele al Administrador que la agregue en Catálogos maestros.' });
+    set('modelo', { type: 'list', formulae: ['OFFSET(' + CAT + '$B$1,MATCH($' + L('marca') + '2,' + CAT + '$A$1:$A$' + nP + ',0)-1,0,COUNTIF(' + CAT + '$A$1:$A$' + nP + ',$' + L('marca') + '2),1)'], showInputMessage: true, promptTitle: 'Modelo', prompt: 'Elige primero la marca; el modelo se elige de la lista de esa marca.', errorTitle: 'Modelo no válido', error: 'Elige primero la marca y luego un modelo de su lista.' });
+    set('anio', { type: 'whole', operator: 'between', formulae: [1980, 2027], errorTitle: 'Año no válido', error: 'Ingresa un año entero entre 1980 y 2027.' });
+    set('cobertura', { type: 'list', formulae: [CAT + '$F$2:$F$' + nC], errorTitle: 'Cobertura no válida', error: 'Elige una cobertura de la lista.' });
+    cols.filter(c => c.cp).forEach(c => { const x = c.cp, v = x.validacion || {};
+      if (x.tipo === 'sino') set(c.key, { type: 'list', formulae: ['"Sí,No"'], errorTitle: x.etiqueta, error: 'Elige Sí o No.' });
+      else if (x.tipo === 'lista') { const o = (x.opciones || []).filter(q => q.activa !== false).map(q => q.v); if (o.length && o.join(',').length < 250 && !o.some(t => t.includes(','))) set(c.key, { type: 'list', formulae: ['"' + o.join(',') + '"'], errorTitle: x.etiqueta, error: 'Elige una opción de la lista.' }); }
+      else if ((x.tipo === 'numero' || x.tipo === 'moneda') && v.min != null && v.max != null) set(c.key, { type: 'decimal', operator: 'between', formulae: [v.min, v.max], errorTitle: x.etiqueta, error: 'Ingresa un número entre ' + v.min + ' y ' + v.max + '.' }); });
+    const cat = wb.addWorksheet('Catálogos', { views: [{ state: 'frozen', ySplit: 1 }] });
+    cat.columns = [{ header: 'Marca', width: 18 }, { header: 'Modelo', width: 30 }, { width: 4 }, { header: 'Marcas', width: 18 }, { width: 4 }, { header: 'Coberturas', width: 30 }];
+    pares.forEach((p, i) => { cat.getCell(i + 2, 1).value = p[0]; cat.getCell(i + 2, 2).value = p[1]; });
+    marcas.forEach((mk, i) => { cat.getCell(i + 2, 4).value = mk.marca; });
+    cobs.forEach((c, i) => { cat.getCell(i + 2, 6).value = c; });
+    [1, 2, 4, 6].forEach(n => { const c = cat.getCell(1, n); c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0E7490' } }; });
+    const ins = wb.addWorksheet('Instrucciones'); ins.columns = [{ width: 110 }];
+    const lines = ['Plantilla de carga masiva de vehículos · SIRIUS', '',
+      '1. Completa una fila por vehículo en la hoja «Vehículos». Máximo 200 vehículos por archivo.',
+      '2. Borra las 2 filas de ejemplo antes de subir el archivo. No cambies los encabezados ni el nombre de la hoja.',
+      '3. Placa: ABC1234 (auto) o AB123C (moto); se aceptan guiones, espacios y minúsculas, y se guarda sin guion. Déjala vacía si el vehículo es nuevo o está en trámite; en ese caso marca, modelo y año son obligatorios.',
+      '4. Marca y Modelo se eligen de las listas (hoja «Catálogos»); el modelo depende de la marca. Si no está, pídele al Administrador que lo agregue en Catálogos maestros.',
+      '5. Año entero entre 1980 y 2027. Cobertura: elige de la lista. Valor del casco y Extras: en dólares.']
+      .concat(cols.filter(c => c.cp).map((c, i) => (6 + i) + '. ' + c.label + (c.req ? ' (obligatorio)' : ' (opcional)') + (c.cp.tipo === 'sino' ? ': Sí o No.' : '.') + (c.cp.ayuda ? ' ' + c.cp.ayuda : '')))
+      .concat(['', 'Los encabezados en azul oscuro son obligatorios; los de azul claro son opcionales.']);
+    lines.forEach((t, i) => { const c = ins.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true, vertical: 'top' }; if (!i) c.font = { bold: true, size: 14 }; });
+    const buf = await wb.xlsx.writeBuffer(), name = 'plantilla-carga-vehiculos.xlsx';
+    const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return name;
+  }
+  downloadTpl() {
+    if ((this.state.tpl || {}).busy) return;
+    this.setState({ tpl: { busy: true } });
+    this.buildTemplate().then(name => this.setState({ tpl: { ok: name } }), () => this.setState({ tpl: { err: 'No se pudo generar la plantilla. Revisa tu conexión e inténtalo de nuevo.' } }));
+  }
+  bulkVals(btn) {
+    const b = this.state.bulk;
+    const checked = b && b.stage === 'preview' ? this.bulkCheck(b.rows) : [];
+    const ok = checked.filter(x => !x.msg), bad = checked.filter(x => x.msg);
+    const close = () => this.setState({ bulk: null });
+    return {
+      bulkOpen: !!b, closeBulk: close, bulkFileRef: this.bulkFileRef,
+      bulkUpload: !!b && b.stage === 'upload', bulkPreview: !!b && b.stage === 'preview',
+      bulkDesc: b && b.stage === 'preview' ? 'Revisa la vista previa. Solo se agregarán las filas válidas; corrige las demás en el archivo y vuelve a subirlo.' : 'Agrega muchos vehículos a este caso con un archivo Excel.',
+      bulkFile: b ? b.file : '', bulkOkLabel: ok.length === 1 ? '1 fila válida' : ok.length + ' filas válidas', bulkHasErr: bad.length > 0, bulkErrLabel: bad.length === 1 ? '1 fila con error' : bad.length + ' filas con errores',
+      bulkErrors: bad.map(x => 'Fila ' + x.r.fila + ': ' + x.msg),
+      bulkFileErr: !!b && (b.err || []).length > 0, bulkFileErrTitle: b ? 'No se pudo cargar ' + b.file : '', bulkFileErrs: b ? b.err || [] : [],
+      bulkHasWarn: !!b && b.stage === 'preview' && (b.warn || []).length > 0, bulkWarns: b ? b.warn || [] : [],
+      tplBusy: !!(this.state.tpl || {}).busy, tplLabel: (this.state.tpl || {}).busy ? 'Generando plantilla…' : 'Descargar plantilla',
+      tplHasMsg: !!((this.state.tpl || {}).ok || (this.state.tpl || {}).err), tplMsg: (this.state.tpl || {}).err || ((this.state.tpl || {}).ok ? 'Plantilla descargada · ' + this.state.tpl.ok : ''), tplMsgColor: (this.state.tpl || {}).err ? 'var(--color-danger)' : 'var(--text-muted)',
+      bulkRows: checked.map(x => ({ fila: String(x.r.fila), title: x.v.sinPlaca ? [x.v.marca, x.v.modelo, x.v.anio].filter(Boolean).join(', ') || '—' : x.v.placa || '—', ws: x.v.sinPlaca ? 'normal' : 'nowrap', sub: [x.v.sinPlaca ? 'Sin placa' : [x.v.marca, x.v.modelo, x.v.anio].filter(Boolean).join(', ')].concat(this.bulkCp().filter(c => (x.v.cp || {})[c.clave]).map(c => c.etiqueta + ': ' + window.SIRIUS_CAMPOS.mostrar(c, this.cpParse(c, x.v.cp[c.clave])))).join(' · '), cobertura: x.v.cobertura || '—', total: this.vehTotal(x.v) ? this.usd(this.vehTotal(x.v)) : '—',
+        result: x.msg ? 'Error' : x.dup ? 'Válida · caso ' + x.dup.id + ' en curso' : 'Válida', tone: x.msg ? 'danger' : x.dup ? 'warning' : 'success', bg: x.msg ? 'var(--color-danger-bg)' : '#FFFFFF' })),
+      downloadTpl: () => this.downloadTpl(),
+      pickBulkFile: () => this.bulkFileRef.current && this.bulkFileRef.current.click(),
+      onBulkFile: (ev) => {
+        const f = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!f) return;
+        const fail = (err) => this.setState({ bulk: { stage: 'upload', file: f.name, rows: [], err: [err], warn: [] } });
+        this.bulkParseFile(f).then(res => this.setState({ bulk: res.err.length ? { stage: 'upload', file: f.name, rows: [], err: res.err, warn: [] } : { stage: 'preview', file: f.name, rows: res.rows, err: [], warn: res.warn } }),
+          e => fail(e && /^XLSX$/.test(e.message) ? 'No se pudo cargar el lector de Excel. Revisa tu conexión o sube el archivo en .csv.' : 'No se pudo leer el archivo. Revisa que sea un .xlsx, .xls o .csv válido.'));
+      },
+      bulkFooter: React.createElement(React.Fragment, null,
+        btn('ghost', 'Cancelar', close),
+        b && b.stage === 'preview' ? btn('secondary', 'Subir otro archivo', () => this.bulkFileRef.current && this.bulkFileRef.current.click()) : null,
+        b && b.stage === 'preview' ? btn('primary', ok.length === 1 ? 'Agregar 1 vehículo válido' : 'Agregar ' + ok.length + ' vehículos válidos', () => {
+          if (!ok.length) return;
+          this.patchD(d => { ok.forEach(x => { d.vehs.push(Object.assign({ id: 'b' + (++this.seq) + '-' + Date.now() }, x.v, { ackDup: !!x.dup })); }); });
+          this.setState({ bulk: null });
+        }, !ok.length) : null),
+    };
+  }
+  renderVals() {
+    const s = this.state, d = s.d, step = s.step;
+    const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
+    const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
+    const veh = d.tipoRiesgo === 'Vehículos', rg = d.tipoRiesgo === 'Ramos Generales';
+    const errs = this.errors(step), keys = Object.keys(errs);
+    const labels = ['Datos de la solicitud', 'Solicitante y asegurado', 'Objeto a asegurar', 'Revisión y envío'];
+    const steps = labels.map((label, i) => {
+      const n = i + 1, cur = n === step, done = n < step || (n <= s.maxStep && n !== step);
+      return { n: String(n), label, current: cur ? 'step' : undefined, locked: n > s.maxStep, tip: n > s.maxStep ? 'Completa los pasos anteriores para continuar' : undefined, go: () => n <= s.maxStep && this.setState({ step: n }),
+        mark: done && !cur ? '✓' : String(n), sr: cur ? 'Paso actual' : done ? 'Completado' : 'Pendiente',
+        bar: cur ? 'var(--color-brand)' : done ? 'var(--cyan-300)' : 'var(--border-subtle)', bg: cur ? 'var(--color-brand-wash)' : 'transparent', cursor: n <= s.maxStep ? 'pointer' : 'default',
+        dotBg: done && !cur ? 'var(--cyan-500)' : '#FFFFFF', dotBorder: cur || done ? 'var(--cyan-500)' : 'var(--neutral-300)', dotFg: done && !cur ? '#FFFFFF' : cur ? 'var(--cyan-700)' : 'var(--text-muted)', fg: cur ? 'var(--text-strong)' : 'var(--text-body)', fw: cur ? 700 : 500 };
+    });
+    let groups = [];
+    const extrasFor = (path, list, label) => ({ hasExtras: true, noExtras: !list.length, addExtraLabel: 'Agregar extra a ' + label,
+      addExtra: () => this.set(path, list.concat([{ id: 'x' + Date.now(), desc: '', monto: '' }])),
+      extras: list.map((x, i) => ({ desc: x.desc, montoVal: x.monto === '' || x.monto == null ? null : this.money(x.monto), descLabel: 'Descripción del extra ' + (i + 1) + ' · ' + label, montoLabel: 'Monto del extra ' + (i + 1) + ' · ' + label, delLabel: 'Eliminar extra ' + (i + 1) + ' · ' + label,
+        onDesc: (e) => this.set(path, list.map(y => y.id === x.id ? Object.assign({}, y, { desc: e.target.value }) : y)),
+        onMonto: (n, err) => this.set(path, list.map(y => y.id === x.id ? Object.assign({}, y, { monto: err || n == null ? '' : n }) : y)),
+        onDel: () => this.set(path, list.filter(y => y.id !== x.id)) })) });
+    if (step === 1) {
+      groups = [{ hid: 'ns-g1', title: 'Datos de la solicitud', hasRamos: rg, hasBadge: s.bpmSt === 'found', badge: 'Datos del BPM de Emisión', hasStatus: s.bpmSt === 'loading', loading: s.bpmSt === 'loading', statusText: 'Consultando el BPM de Emisión…', hasAlert: s.bpmSt === 'notfound', alertText: 'No encontramos esa orden en el BPM de Emisión. Revisa el número o continúa sin orden.', hasDup: s.bpmSt === 'dup', dupText: 'La orden ' + d.orden + ' ya tiene el caso ' + s.bpmDup + ', creado por integración.', dupPending: false, dupAcked: false, onVerCaso: () => this.props.onOpenCase && this.props.onOpenCase(s.bpmDup), fields: [
+        this.F('fecha', 'Fecha y hora de solicitud', 'ro', { value: '16/10/26 · 13:40' }),
+        this.F('broker', 'Broker', 'input', { req: true, list: 'ns-brokers', ph: 'Busca por nombre', after: (v) => { const b = this.brokers.find(x => x.n === v); if (b) this.set('aps', b.aps); } }),
+        this.F('aps', 'Correo electrónico APS', 'input', { type: 'email', inputMode: 'email', help: 'Se precarga con el broker; puedes editarlo.' }),
+        this.F('orden', 'Número de orden de emisión (opcional)', 'inputbtn', { upper: true, ph: 'Ej. EMI-408400', help: s.bpmSt === 'found' ? '' : 'Si lo dejas vacío, el caso queda “Sin orden de emisión”.', btnLabel: s.bpmSt === 'loading' ? 'Consultando…' : 'Consultar en BPM', btnDisabled: !d.orden.trim() || s.bpmSt === 'loading', btnWhy: s.bpmSt === 'loading' ? 'Consultando en BPM…' : !d.orden.trim() ? 'Escribe el número de orden para consultar' : '', onBtn: () => this.lookupBPM(), after: () => this.setState({ bpmSt: 'idle' }), span: '1 / span 2' }),
+        this.F('tipo', 'Tipo de solicitud', 'select', { options: this.tipos, req: true }),
+        this.F('sucursal', 'Sucursal', 'select', { options: ((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || [], req: true }),
+      ].concat(
+        [this.F('tipoRiesgo', 'Tipo de riesgo', 'radio', { req: true, options: ['Vehículos', 'Ramos Generales'], span: '1 / span 2', after: () => this.patchD(x => { x.vehForm = null; x.vehEditId = null; }) })],
+        [this.F('lineaVeh', 'Línea de negocio', 'select', { req: true, options: this.lineas, help: 'Una sola por caso, para todos sus ramos o vehículos.' })]) }];
+      const cpf = this.cpFields('', 'caso', d.cp); if (cpf.length) groups.push({ hid: 'ns-gcp', title: 'Datos adicionales', fields: cpf });
+    }
+    if (step === 2) {
+      groups = [this.personGroup('sol', 'Solicitante'), { hid: 'ns-gm', title: 'Asegurado', fields: [this.F('mismo', 'El asegurado es el mismo solicitante', 'check', { span: '1 / -1' })] }];
+      if (!d.mismo) groups.push(this.personGroup('ase', 'Datos del asegurado'));
+    }
+    if (step === 3 && veh && d.vehForm) {
+      const v = d.vehForm, dup = !v.sinPlaca && this.dupFor('placa', v.placa);
+      const ix = d.vehEditId ? d.vehs.findIndex(x => x.id === d.vehEditId) : d.vehs.length;
+      groups = [{ hid: 'ns-gv', title: d.vehEditId ? 'Editar vehículo ' + (ix + 1) : 'Nuevo vehículo · ' + (ix + 1), frame: '2px solid var(--cyan-300)', hasBadge: s.placaSt === 'found' && !v.sinPlaca, badge: 'Datos del servicio de placas', fields: [
+        this.F('vehForm.sinPlaca', 'Vehículo sin placa (nuevo o en trámite)', 'check', { span: '1 / -1', after: () => this.setState({ placaSt: 'idle' }) }),
+      ].concat(v.sinPlaca ? [] : [this.F('vehForm.placa', 'Placa', 'input', { req: true, upper: true, ph: 'ABC1234', help: 'Auto ABC1234 o moto AB123C; puedes escribirla con guion o espacios.', onBlur: () => this.lookupPlaca(), after: () => this.set('vehForm.ackDup', false) })], [
+        this.F('vehForm.marca', 'Marca', 'combo', { req: true, ph: 'Busca la marca', options: this.mmMarcas().map(m => m.marca), noText: 'No hay marcas con ese nombre.', after: () => this.set('vehForm.modelo', '') }),
+        this.F('vehForm.modelo', 'Modelo', 'combo', { req: true, ph: this.mmMarca(v.marca) ? 'Busca el modelo' : 'Elige primero la marca', disabled: !this.mmMarca(v.marca), options: this.mmModelos(v.marca), noText: 'No hay modelos con ese nombre.', help: '¿No está? Pídele al Administrador que lo agregue en Catálogos maestros.' }), this.F('vehForm.anio', 'Año', 'input', { req: true, inputMode: 'numeric', ph: '2025' }),
+        this.F('vehForm.cobertura', 'Tipo de cobertura', 'select', { req: true, options: this.coberturas }),
+        this.F('vehForm.casco', 'Valor del casco (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { req: true, money: true, inputMode: 'decimal' }),
+        this.F('vehForm.extras', 'Extras (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { money: true, inputMode: 'decimal' }),
+        this.F('vtotal', 'Total del vehículo', 'ro', { value: this.usd(this.vehTotal(v)), roSize: '20px' }),
+      ]),
+        hasStatus: s.placaSt === 'loading', loading: s.placaSt === 'loading', statusText: 'Consultando el servicio de placas…',
+        hasAlert: s.placaSt === 'notfound' && !v.sinPlaca, alertText: 'No se encontró la placa; ingresa marca, modelo y año manualmente.',
+        hasDup: !!dup, dupText: dup ? 'Ya existe el caso ' + dup.id + ' en curso para esta placa.' : '', dupPending: !!dup && !v.ackDup, dupAcked: !!dup && !!v.ackDup,
+        onVerCaso: () => dup && this.props.onOpenCase && this.props.onOpenCase(dup.id), onAck: () => this.set('vehForm.ackDup', true) }];
+      const cpv = this.cpFields('vehForm.', 'riesgo', v.cp); if (cpv.length) groups.push({ hid: 'ns-gvcp', title: 'Datos adicionales del vehículo ' + (ix + 1), frame: '2px solid var(--cyan-300)', fields: cpv });
+    }
+    if (step === 3 && rg && !this.esEM(d)) {
+      const u = d.ubic;
+      groups = [{ hid: 'ns-gu', title: 'Ubicación del bien', fields: [
+        this.F('ubic.tipoBien', 'Tipo de bien', 'select', { req: true, options: ['Bodega', 'Galpón industrial', 'Local comercial', 'Oficina', 'Vivienda', 'Hotel', 'Clínica'] }),
+        this.F('ubic.prov', 'Provincia', 'select', { req: true, options: Object.keys(this.provs), after: () => this.set('ubic.canton', '') }),
+        this.F('ubic.canton', 'Cantón', 'select', { req: true, options: this.provs[u.prov] || [], disabled: !u.prov }),
+        this.F('ubic.dir', 'Dirección del bien', 'input', { req: true, span: '1 / -1' }),
+      ] }].concat(d.ramosSel.map(r => {
+        const x = d.ramoData[r] || {};
+        return Object.assign({ hid: 'ns-gr-' + r.replace(/[^A-Za-z]+/g, ''), title: r, hasBadge: false, badge: '', fields: [
+          this.F('ramoData.' + r + '.detalles', 'Detalles de emisión', 'textarea', { req: true, span: '1 / -1', ph: 'Construcción, área, uso, medidas de seguridad…' }),
+          this.F('ramoData.' + r + '.valor', 'Valor asegurado (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { req: true, money: true, inputMode: 'decimal' }),
+          this.F('rt-' + r, 'Total del ramo', 'ro', { value: this.usd(this.ramoTotal(r)), roSize: '20px', span: '3 / -1', roJustify: 'flex-end' }),
+        ] }, extrasFor('ramoData.' + r + '.extras', x.extras || [], r));
+      }));
+    }
+    groups = groups.map(g => Object.assign({ frame: '1px solid var(--border-subtle)', hasBadge: false, badge: '', hasStatus: false, loading: false, statusText: '', hasAlert: false, alertText: '', hasInfo: false, infoText: '', hasDup: false, dupText: '', dupPending: false, dupAcked: false, onVerCaso: () => {}, onAck: () => {}, hasExtras: false, noExtras: false, extras: [], addExtra: () => {}, addExtraLabel: '', hasRamos: false }, g));
+    const q = s.ramoQ.trim().toLowerCase(), opts = this.ramosRG.filter(r => !q || r.toLowerCase().includes(q));
+    const toggleRamo = (r) => this.patchD(x => { x.ramosSel = x.ramosSel.includes(r) ? x.ramosSel.filter(y => y !== r) : x.ramosSel.concat(r); });
+    const ramosErrShow = !!(s.touched.ramos && errs.ramos);
+    const vErr = this.vehFormErrors(), vKeys = Object.keys(vErr), vField = vKeys.filter(k => vErr[k][0] !== '!');
+    const vehTotalAll = d.vehs.reduce((a, v) => a + this.vehTotal(v), 0), rgTotal = d.ramosSel.reduce((a, r) => a + this.ramoTotal(r), 0);
+    const nm = (p) => (p.nombres + ' ' + (p.idType === 'RUC' ? '' : p.apellidos)).trim();
+    const fv = (label, value, nowrap, strong) => ({ label, value: value || '—', ws: nowrap ? 'nowrap' : 'normal', fw: strong ? 700 : 600, size: strong ? '17px' : '15px', border: strong ? '1px solid var(--border-default)' : 'none', pad: strong ? '10px' : '0' });
+    const review = [
+      { title: 'Datos de la solicitud', edit: () => this.setState({ step: 1 }), editLabel: 'Editar datos de la solicitud', fields: [fv('Fecha y hora', '16/10/26 · 13:40', 1), fv('Broker', d.broker), fv('Correo APS', d.aps), fv('Orden de emisión', d.orden || 'Sin orden de emisión', 1), fv('Origen', s.bpmSt === 'found' ? 'BPM de Emisión' : 'Manual'), fv('Tipo de riesgo', d.tipoRiesgo)].concat([fv('Línea de negocio', d.lineaVeh)]).concat([fv('Tipo de solicitud', d.tipo)]).concat(this.cpReview(d.cp, 'caso', '')) },
+      { title: 'Solicitante y asegurado', edit: () => this.setState({ step: 2 }), editLabel: 'Editar solicitante y asegurado', fields: [fv(d.mismo ? 'Solicitante y asegurado' : 'Solicitante', nm(d.sol)), fv('Identificación', d.sol.idType + ' ' + d.sol.idNum, 1), fv('Celular (WhatsApp)', d.sol.cel, 1), fv('Correo', d.sol.correo), fv('Ubicación', [d.sol.canton, d.sol.prov].filter(Boolean).join(', '))].concat(d.mismo ? [] : [fv('Asegurado', nm(d.ase)), fv('Identificación del asegurado', d.ase.idType + ' ' + d.ase.idNum, 1)]) },
+      { title: 'Objeto a asegurar', edit: () => this.setState({ step: 3 }), editLabel: 'Editar objeto a asegurar', fields: veh
+        ? d.vehs.reduce((acc, v, i) => acc.concat([fv('Vehículo ' + (i + 1) + ' · ' + this.vehLabel(v), (v.sinPlaca ? 'Sin placa' : [v.marca, v.modelo, v.anio].join(', ')) + ' · ' + v.cobertura + ' · ' + this.usd(this.vehTotal(v)))], this.cpReview(v.cp, 'riesgo', 'Datos adicionales · vehículo ' + (i + 1))), []).concat([fv(d.vehs.length === 1 ? 'Total del caso · 1 vehículo' : 'Total del caso · ' + d.vehs.length + ' vehículos', this.usd(vehTotalAll), 1, 1)])
+        : this.esEM(d) ? d.eqs.map((q, i) => fv('Equipo ' + (i + 1) + ' · ' + q.marca + ' ' + q.modelo, (window.SiriusEquiposSolicitud ? window.SiriusEquiposSolicitud.tipoTxt(q) : q.tipo) + ' · ' + q.anio + ' · Serie ' + q.serie + (q.implementos.length ? ' · ' + q.implementos.length + (q.implementos.length === 1 ? ' implemento' : ' implementos') : '') + ' · ' + this.usd(this.eqTotal(q)))).concat([fv(d.eqs.length === 1 ? 'Total del caso · 1 equipo' : 'Total del caso · ' + d.eqs.length + ' equipos', this.usd(d.eqs.reduce((a, q) => a + this.eqTotal(q), 0)), 1, 1)])
+        : [fv('Ubicación del bien', [d.ubic.tipoBien, d.ubic.dir, d.ubic.canton, d.ubic.prov].filter(Boolean).join(', '))].concat(d.ramosSel.map(r => fv(r, this.usd(this.ramoTotal(r)))), [fv(d.ramosSel.length === 1 ? 'Total del caso · 1 ramo' : 'Total del caso · ' + d.ramosSel.length + ' ramos', this.usd(rgTotal), 1, 1)]) },
+    ];
+    const blocker = keys.map(k => errs[k]).find(m => m[0] === '!');
+    const fieldN = keys.filter(k => errs[k][0] !== '!').length;
+    const valid = keys.length === 0;
+    const hint = valid ? '' : fieldN ? (fieldN === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + fieldN + ' campos obligatorios') : blocker.slice(1);
+    const editing = d.vehEditId;
+    return Object.assign({
+      subtitle: 'Completa los 4 pasos; puedes volver a cualquier paso sin perder datos.',
+      brokerNames: this.brokers.map(b => b.n),
+      caseOpts: (this.props.cases || []).filter(c => !c.parentId).map(c => ({ id: c.id, label: c.id + ' · ' + c.asegurado })),
+      steps, groups, isForm: step < 4, isReview: step === 4, review,
+      ramoQ: s.ramoQ, onRamoQ: (e) => this.setState({ ramoQ: e.target.value }),
+      ramoOpts: opts.map(r => ({ label: r, checked: d.ramosSel.includes(r), toggle: () => toggleRamo(r) })), ramoNoMatch: opts.length === 0,
+      ramosHasSel: d.ramosSel.length > 0,
+      ramosChips: d.ramosSel.map(r => ({ label: r, aria: 'Quitar ' + r, remove: () => toggleRamo(r) })),
+      ramosBlur: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) this.touch('ramos'); },
+      ramosErrShow, ramosBorder: ramosErrShow ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      isVehStep: step === 3 && veh,
+      vehCount: String(d.vehs.length), formOpen: step === 3 && veh && !!d.vehForm, formOpenTip: step === 3 && veh && d.vehForm ? 'Guarda o cancela el vehículo en edición' : undefined, vehEmpty: !d.vehs.length && !d.vehForm,
+      showSuggest: step === 3 && veh && d.manualAdds >= 10,
+      vehCards: d.vehs.map((v, i) => { const dup = !v.sinPlaca && this.dupFor('placa', v.placa); const ed = editing === v.id; return {
+        n: String(i + 1), title: this.vehLabel(v), titleWs: v.sinPlaca ? 'normal' : 'nowrap', sub: v.sinPlaca ? 'Sin placa' : [v.marca, v.modelo, v.anio].join(', '), cobertura: v.cobertura, total: this.usd(this.vehTotal(v)),
+        hasNote: (!!dup && v.ackDup) || this.cpCampos('riesgo').some(x => s.touched['vehs.' + i + '.cp.' + x.clave] && this.cpErr(x, (v.cp || {})[x.clave])),
+        noteColor: this.cpCampos('riesgo').some(x => s.touched['vehs.' + i + '.cp.' + x.clave] && this.cpErr(x, (v.cp || {})[x.clave])) ? 'var(--color-danger)' : 'var(--text-body)',
+        note: [dup && v.ackDup ? 'Caso ' + dup.id + ' en curso · continuaste igual' : '', this.cpCampos('riesgo').filter(x => s.touched['vehs.' + i + '.cp.' + x.clave] && this.cpErr(x, (v.cp || {})[x.clave])).map(x => 'Falta ' + x.etiqueta).join(' · ')].filter(Boolean).join(' · '),
+        editing: ed, idle: !ed, lock: !!d.vehForm, lockTip: d.vehForm ? 'Guarda o cancela el vehículo en edición' : undefined, border: ed ? '2px solid var(--cyan-300)' : '1px solid var(--border-subtle)', bg: ed ? 'var(--color-brand-wash)' : '#FFFFFF',
+        editLabel: 'Editar vehículo ' + (i + 1) + ' ' + this.vehLabel(v), delLabel: 'Eliminar vehículo ' + (i + 1) + ' ' + this.vehLabel(v),
+        onEdit: () => this.openVehForm(v), onDel: () => this.patchD(x => { x.vehs = x.vehs.filter(y => y.id !== v.id); }) }; }),
+      addVeh: () => this.openVehForm(null), openBulk: () => { this.loadXlsx().catch(() => {}); this.setState({ bulk: { stage: 'upload', file: '', rows: [], err: [], warn: [] }, tpl: null }); },
+      vehFormInvalid: vKeys.length > 0, canCancelVeh: true,
+      vehFormHint: vKeys.length ? (vField.length ? (vField.length === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + vField.length + ' campos obligatorios') : vErr[vKeys[0]].slice(1)) : '',
+      saveVeh: () => {
+        if (vKeys.length) { const t = Object.assign({}, s.touched); vKeys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); this.jumpErr(vKeys.find(k => vErr[k][0] !== '!')); return; }
+        this.patchD(x => { const f = Object.assign({}, x.vehForm, { placa: x.vehForm.sinPlaca ? '' : this.pl(x.vehForm.placa) });
+          if (x.vehEditId) x.vehs = x.vehs.map(y => y.id === x.vehEditId ? Object.assign({ id: y.id }, f) : y); else { x.vehs.push(Object.assign({ id: 'v' + (++this.seq) + '-' + Date.now() }, f)); x.manualAdds += 1; }
+          x.vehForm = null; x.vehEditId = null; });
+        this.setState({ placaSt: 'idle' });
+      },
+      cancelVeh: () => this.patchD(x => { x.vehForm = null; x.vehEditId = null; }),
+      showCaseTotal: step === 3 && !this.esEM(d) && (veh ? d.vehs.length > 0 : d.ramosSel.length > 0),
+      isEqStep: step === 3 && this.esEM(d), eqLista: d.eqs, eqOnChange: (L) => this.patchD(x => { x.eqs = L; }), eqOnEstado: (o) => { if (!!o.editando !== !!this.state.eqEdit) this.setState({ eqEdit: !!o.editando }); }, eqErr: !!(s.touched['eqs.none'] || s.touched['eqs.form']), eqEscena: this.props.preset || '',
+      caseTotalLabel: veh ? (d.vehs.length === 1 ? '1 vehículo' : d.vehs.length + ' vehículos') : (d.ramosSel.length === 1 ? '1 ramo' : d.ramosSel.length + ' ramos') + ' · ' + (d.ubic.tipoBien || 'Ubicación') + (d.ubic.canton ? ', ' + d.ubic.canton : ''),
+      caseTotal: this.usd(veh ? vehTotalAll : rgTotal),
+      canBack: step > 1, onBack: () => this.setState({ step: step - 1 }),
+      pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : 'Registrar solicitud',
+      onNext: () => {
+        if (!valid) { const t = Object.assign({}, s.touched); keys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); this.jumpErr(keys.find(k => errs[k][0] !== '!')); if (step === 4) { const back = keys.some(k => k.startsWith('cp.')) ? 1 : keys.some(k => k.startsWith('vehs.')) ? 3 : 0; if (back) { this.setState({ step: back }); this.jumpErr(keys.find(k => k.startsWith(back === 1 ? 'cp.' : 'vehs.'))); } } return; }
+        if (step < 4) {
+          this.setState({ step: step + 1, maxStep: Math.max(s.maxStep, step + 1) });
+          if (typeof window !== 'undefined') window.scrollTo(0, 0);
+          return;
+        }
+        this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found' }));
+      },
+      onDraft: () => { this.props.onDraft && this.props.onDraft(); },
+      onCancel: () => { this.props.onCancel && this.props.onCancel(); },
+    }, this.bulkVals(btn));
+  }
+}
+</script>
+</body>
+</html>

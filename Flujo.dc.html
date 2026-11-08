@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
+<script src="sirius-fecha.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="sirius-modal.js"></script><script src="datos-usuarios.js"></script><script src="datos-flujo-motor.js"></script><script src="sirius-flujo-motor.js"></script><script src="datos-monitor.js"></script><script src="datos-monitor-ejemplo.js"></script><script src="sirius-monitor.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
+</helmet>
+<section data-screen-label="BO-23 Flujo y SLA" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ showHead }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
+<div style="flex:1 1 420px;display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Flujo y SLA</h1>
+<p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">{{ subTit }}</p>
+</div>
+<div style="flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:8px;white-space:nowrap">
+<sc-if value="{{ noMon }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" icon-left="{{ histIcon }}" on-click="{{ openHist }}" hint-size="210px,40px">Historial de cambios</x-import></sc-if>
+<sc-if value="{{ tabCal }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ openNewFer }}" hint-size="190px,40px">Agregar feriado</x-import></sc-if>
+</div>
+</div>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tabAct }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
+<sc-if value="{{ noMon }}" hint-placeholder-val="{{ true }}"><div role="search" aria-label="Filtrar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<label for="fl-aplica" style="font-size:14px;font-weight:700;color:var(--text-strong)">Aplica a</label>
+<span id="fl-aplica-why" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">{{ aplicaWhy }}</span>
+<select id="fl-aplica" key="{{ tab }}-{{ aplica }}" defaultValue="{{ aplica }}" onChange="{{ onAplica }}" disabled="{{ aplicaDis }}" aria-describedby="fl-aplica-why" style="height:40px;min-width:220px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ aplicaOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select>
+<span style="flex:1 1 240px;font-size:13px;color:var(--text-muted)">{{ aplicaNote }}</span>
+</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ tabEst }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px"><p data-solo-lectura="flujo" style="margin:0;flex:1 1 360px;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ roTxt }}</p><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ irFlujos }}" hint-size="150px,32px">Ir a «Flujos»</x-import></div>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ estCols }}" rows="{{ estRows }}" row-actions="{{ estActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onEstAction }}" page-size="{{ 25 }}" item-noun="{{ estNoun }}" storage-key="sirius.adm.flujo.estados" empty-title="Sin estados" empty-text="No hay estados para mostrar." hint-size="100%,520px"></dc-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabSla }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">Horas hábiles desde el ingreso a cada etapa; el reloj no se pausa. Edita las celdas y guarda: cada cambio pide un motivo y muestra el impacto antes de confirmar.</p>
+<div tabIndex="0" aria-label="Plazos por etapa y grupo de ramo" style="overflow-x:auto;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<table style="width:100%;min-width:{{ slaMinW }};border-collapse:collapse;font-size:14px">
+<thead><tr style="background:var(--table-row-hover)">
+<th scope="col" style="text-align:left;padding:12px 16px;font-size:13px;color:var(--text-strong);min-width:260px">Etapa</th>
+<sc-for list="{{ slaCols }}" as="g" hint-placeholder-count="2"><th scope="col" style="text-align:left;padding:12px 16px;font-size:13px;color:var(--text-strong);min-width:190px;white-space:nowrap">{{ g.l }} <span style="font-weight:400;color:var(--text-muted)">· horas hábiles</span></th></sc-for>
+</tr></thead>
+<tbody>
+<sc-for list="{{ slaRows }}" as="r" hint-placeholder-count="6">
+<tr style="border-top:1px solid var(--border-subtle)">
+<th scope="row" style="text-align:left;vertical-align:top;padding:12px 16px;font-weight:400"><span style="display:block;font-size:14px;font-weight:700;color:var(--text-strong)">{{ r.nombre }}</span><span style="display:block;font-size:12px;line-height:1.4;color:var(--text-muted);text-wrap:pretty">{{ r.desc }}</span></th>
+<sc-if value="{{ r.isAg }}" hint-placeholder-val="{{ false }}"><td colspan="{{ r.span }}" style="padding:10px 16px;vertical-align:top"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--text-strong)">Fin de la visita + <input type="number" min="0" max="24" step="1" inputMode="numeric" aria-label="{{ r.tol.aria }}" aria-invalid="{{ r.tol.invalid }}" value="{{ r.tol.val }}" onChange="{{ r.tol.onInput }}" style="width:76px;height:40px;padding:0 10px;border:1.5px solid {{ r.tol.bd }};border-radius:var(--radius-sm);background:{{ r.tol.bg }};font-family:var(--font-brand);font-size:15px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"> h</span><span style="display:block;margin-top:4px;font-size:12px;line-height:1.4;color:var(--text-muted);text-wrap:pretty">{{ r.nota }}</span></td></sc-if>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="2">
+<td style="padding:10px 16px;vertical-align:top">
+<sc-if value="{{ c.na }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;padding-top:9px;font-size:14px;color:var(--text-muted)">No aplica</span></sc-if>
+<sc-if value="{{ c.edit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--text-strong)"><input type="number" min="1" max="240" step="1" inputMode="numeric" aria-label="{{ c.aria }}" aria-invalid="{{ c.invalid }}" value="{{ c.val }}" onChange="{{ c.onInput }}" style="width:84px;height:40px;padding:0 10px;border:1.5px solid {{ c.bd }};border-radius:var(--radius-sm);background:{{ c.bg }};font-family:var(--font-brand);font-size:15px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"> h</span></sc-if>
+</td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px 40px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:420px">
+<label for="fl-pv" style="font-size:14px;font-weight:700;color:var(--text-strong)">Por vencer: {{ pvTxt }}</label>
+<span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--text-strong)"><input id="fl-pv" type="number" min="0" max="40" step="1" inputMode="numeric" aria-invalid="{{ pv.invalid }}" value="{{ pv.val }}" onChange="{{ pv.onInput }}" style="width:84px;height:40px;padding:0 10px;border:1.5px solid {{ pv.bd }};border-radius:var(--radius-sm);background:{{ pv.bg }};font-family:var(--font-brand);font-size:15px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"> h hábiles</span>
+<span style="font-size:12px;line-height:1.4;color:var(--text-muted);text-wrap:pretty">Un caso se muestra «Por vencer» cuando le restan estas horas o menos.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:420px">
+<label for="fl-hito" style="font-size:14px;font-weight:700;color:var(--text-strong)">Hito «Primer contacto»: {{ hitoTxt }}</label>
+<span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--text-strong)"><input id="fl-hito" type="number" min="1" max="72" step="1" inputMode="numeric" aria-invalid="{{ hito.invalid }}" value="{{ hito.val }}" onChange="{{ hito.onInput }}" style="width:84px;height:40px;padding:0 10px;border:1.5px solid {{ hito.bd }};border-radius:var(--radius-sm);background:{{ hito.bg }};font-family:var(--font-brand);font-size:15px;font-weight:700;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"> h hábiles</span>
+<span style="font-size:12px;line-height:1.4;color:var(--text-muted);text-wrap:pretty">Indicador de la etapa Coordinación; no cambia el Badge.</span>
+</div>
+</div>
+<sc-if value="{{ slaInvalid }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ slaInvalidTxt }}</span></sc-if>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+<sc-if value="{{ slaDirty }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ saveSla }}" hint-size="190px,40px">{{ slaSaveLabel }}</x-import><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ discardSla }}" hint-size="130px,40px">Descartar</x-import></sc-if>
+<sc-if value="{{ slaClean }}" hint-placeholder-val="{{ true }}"><button type="button" data-motivo="No hay cambios para guardar. Edita una celda para habilitar el guardado." style="height:40px;padding:0 20px;border:none;border-radius:var(--radius-pill);background:var(--neutral-200,#DDE3EA);color:var(--text-muted);font-family:var(--font-brand);font-size:15px;font-weight:700;cursor:not-allowed" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Guardar cambios</button><span style="font-size:13px;color:var(--text-muted)">Sin cambios por guardar.</span></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabCal }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;gap:20px 48px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span id="fl-dias" style="font-size:14px;font-weight:700;color:var(--text-strong)">Días hábiles</span>
+<ul aria-labelledby="fl-dias" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ dias }}" as="d" hint-placeholder-count="7"><li style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:var(--radius-pill);border:1.5px solid {{ d.bd }};background:{{ d.bg }};font-size:14px;font-weight:700;color:{{ d.fg }};white-space:nowrap">{{ d.l }}<span style="font-size:12px;font-weight:400">{{ d.st }}</span></li></sc-for></ul>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span id="fl-jor" style="font-size:14px;font-weight:700;color:var(--text-strong)">Jornada hábil</span>
+<ul aria-labelledby="fl-jor" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center"><sc-for list="{{ jornada }}" as="j" hint-placeholder-count="2"><li style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:var(--radius-sm);background:var(--table-row-hover);font-size:14px;color:var(--text-strong);white-space:nowrap"><span style="font-size:12px;color:var(--text-muted)">{{ j.n }}</span><strong>{{ j.t }}</strong></li></sc-for><li style="font-size:13px;color:var(--text-muted)">{{ jornadaTxt }}</li></ul>
+</div>
+</div>
+<p style="margin:0;font-size:13px;line-height:1.5;color:var(--text-muted);text-wrap:pretty">Los días y la jornada son parámetros del sistema en esta versión. Los feriados se editan aquí, piden motivo y muestran el impacto en los vencimientos antes de confirmar.</p>
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Feriados</h2>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ ferCols }}" rows="{{ ferRows }}" row-actions="{{ ferActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onFerAction }}" page-size="{{ 25 }}" item-noun="{{ ferNoun }}" storage-key="sirius.adm.flujo.feriados" empty-title="Sin feriados" empty-text="Agrega un feriado para excluir ese día del cálculo." hint-size="100%,520px"></dc-import>
+<sc-if value="{{ noLocales }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">No hay feriados por sucursal. Los feriados nacionales se aplican a todas las sucursales.</p></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabRes }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:28px;min-width:0">
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Regla de responsable por estado</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">El responsable actual del caso se obtiene del estado. La regla es del sistema; cambia quién ocupa cada puesto en las tablas siguientes.</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ rgCols }}" rows="{{ rgRows }}" selectable="{{ false }}" page-size="{{ 25 }}" item-noun="{{ estNoun }}" storage-key="sirius.adm.flujo.regla" empty-title="Sin reglas" empty-text="No hay reglas para mostrar." hint-size="100%,520px"></dc-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Coordinador por sucursal</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ coordNote }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ coCols }}" rows="{{ coRows }}" row-actions="{{ coActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onCoAction }}" page-size="{{ 25 }}" item-noun="{{ coNoun }}" storage-key="sirius.adm.flujo.coordinador" empty-title="Sin sucursales" empty-text="No hay sucursales para mostrar." hint-size="100%,420px"></dc-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Suscriptor por grupo de ramo</h2>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ suCols }}" rows="{{ suRows }}" row-actions="{{ suActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onSuAction }}" page-size="{{ 25 }}" item-noun="{{ suNoun }}" storage-key="sirius.adm.flujo.suscriptor" empty-title="Sin grupos" empty-text="No hay grupos para mostrar." hint-size="100%,220px"></dc-import>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:980px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Asignación inicial del Ejecutivo de inspecciones</h2>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ asigTxt }}</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Reasignación</h2>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ reCols }}" rows="{{ reRows }}" selectable="{{ false }}" page-size="{{ 25 }}" item-noun="{{ reNoun }}" storage-key="sirius.adm.flujo.reasignacion" empty-title="Sin reglas" empty-text="No hay reglas de reasignación." hint-size="100%,260px"></dc-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabTra }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px"><p data-solo-lectura="flujo" style="margin:0;flex:1 1 360px;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ roTxt }}</p><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ irFlujos }}" hint-size="150px,32px">Ir a «Flujos»</x-import></div>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ traCols }}" rows="{{ traRows }}" selectable="{{ false }}" page-size="{{ 25 }}" item-noun="{{ traNoun }}" storage-key="sirius.adm.flujo.transiciones" empty-title="Sin transiciones" empty-text="No hay transiciones para mostrar." hint-size="100%,640px"></dc-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabFlu }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+<sc-if value="{{ fluLista }}" hint-placeholder-val="{{ true }}">
+<p id="fl-flujos-intro" style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ fluIntro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ fluCols }}" rows="{{ fluRows }}" row-actions="{{ fluActions }}" selectable="{{ false }}" on-row-action="{{ onFluAction }}" page-size="{{ 25 }}" item-noun="{{ fluNoun }}" storage-key="sirius.adm.flujo.flujos" empty-title="Sin flujos" empty-text="No hay flujos para mostrar." hint-size="100%,320px"></dc-import>
+</sc-if>
+<sc-if value="{{ fluMig }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFlujoMotor.Migrar" key="{{ mig.key }}" flujo="{{ mig.flujo }}" casos="{{ mig.casos }}" motivo="{{ mig.motivo }}" on-volver="{{ mig.onVolver }}" on-migrar="{{ mig.onMigrar }}" hint-size="100%,700px"></x-import></sc-if>
+<sc-if value="{{ fluEditor }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFlujoMotor.Editor" key="{{ fm.key }}" flujo="{{ fm.flujo }}" version="{{ fm.version }}" casos="{{ fm.casos }}" usuario="{{ fm.usuario }}" inicial="{{ fm.inicial }}" on-volver="{{ fm.onVolver }}" on-ver="{{ fm.onVer }}" on-conflicto="{{ fm.onConflicto }}" on-publicado="{{ fm.onPublicado }}" hint-size="100%,900px"></x-import></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ tabMon }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusMonitor.Vista" casos="{{ monCasos }}" extras="{{ monExtras }}" escena="{{ monEscena }}" alcance="{{ monAlcance }}" ir="{{ monIr }}" on-bandeja="{{ monBandeja }}" on-caso="{{ monCaso }}" on-reasignar="{{ monReasignar }}" hint-size="100%,1100px"></x-import></sc-if>
+
+<sc-if value="{{ pn.open }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;inset:0;z-index:70;display:flex;justify-content:flex-end"><div onClick="{{ pn.close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.2)"></div>
+<aside role="dialog" aria-modal="true" aria-labelledby="fl-pn-t" style="position:relative;width:480px;max-width:100%;height:100%;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:24px 24px 12px"><h2 id="fl-pn-t" style="margin:0;font-size:20px;font-weight:700;color:var(--text-strong);text-wrap:pretty">{{ pn.title }}</h2><button type="button" aria-label="Cerrar" onClick="{{ pn.close }}" style="flex:none;width:36px;height:36px;border:none;border-radius:50%;background:transparent;cursor:pointer;font-size:20px;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">×</button></div>
+<div style="flex:1 1 auto;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:8px 24px 16px">
+<sc-if value="{{ pn.isHist }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ pn.histEmpty }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">Aún no hay cambios en esta sesión. La configuración inicial viene de datos-flujo.js (v{{ pn.version }}, {{ pn.vigencia }}).</p></sc-if>
+<ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column"><sc-for list="{{ pn.hist }}" as="h" hint-placeholder-count="2"><li style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:12px;padding-bottom:18px"><span style="display:flex;flex-direction:column;align-items:center"><span style="width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--color-brand)"></span><span style="flex:1;width:2px;margin-top:4px;background:var(--border-subtle)"></span></span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;color:var(--text-muted)">{{ h.when }} · {{ h.by }} · {{ h.tab }}</span><span style="font-size:15px;font-weight:700;line-height:1.35;color:var(--text-strong)">{{ h.what }}</span><sc-if value="{{ h.hasDetail }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;line-height:1.4;color:var(--text-body)">{{ h.detail }}</span></sc-if><span style="font-size:13px;line-height:1.4;color:var(--text-body)">Motivo: {{ h.motivo }}</span></span></li></sc-for></ol>
+</sc-if>
+<sc-if value="{{ pn.isSla }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><strong style="font-size:14px;color:var(--text-strong)">Cambios de plazos</strong><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px"><sc-for list="{{ pn.changes }}" as="c" hint-placeholder-count="2"><li style="font-size:14px;color:var(--text-strong)">{{ c.l }}</li></sc-for></ul></div></sc-if>
+<sc-if value="{{ pn.isFer }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px"><label for="fl-fe-fecha" style="font-size:13px;font-weight:700;color:var(--text-strong)">Fecha <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><x-import component-from-global-scope="SiriusFecha" id="fl-fe-fecha" value="{{ pn.fecha }}" on-change="{{ pn.onFecha }}" modo="fecha" formato="iso" width="190px" req="{{ true }}" invalid="{{ pn.errFecha }}" hint-size="190px,44px"></x-import><sc-if value="{{ pn.errFecha }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ pn.errFechaTxt }}</span></sc-if></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="fl-fe-nombre" style="font-size:13px;font-weight:700;color:var(--text-strong)">Nombre <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><input id="fl-fe-nombre" type="text" value="{{ pn.nombre }}" onChange="{{ pn.onNombre }}" aria-invalid="{{ pn.errNombre }}" placeholder="Ej. Fiestas de Quito" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ pn.nombreBd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ pn.errNombre }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el nombre del feriado.</span></sc-if></div>
+<div role="radiogroup" aria-labelledby="fl-fe-alc" style="display:flex;flex-direction:column;gap:6px"><span id="fl-fe-alc" style="font-size:13px;font-weight:700;color:var(--text-strong)">Alcance</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ pn.alcances }}" as="o" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="height:38px;padding:0 16px;border:1.5px solid {{ o.bd }};border-radius:var(--radius-pill);background:{{ o.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</button></sc-for></div></div>
+<sc-if value="{{ pn.showSuc }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="fl-fe-suc" style="font-size:13px;font-weight:700;color:var(--text-strong)">Sucursal <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select id="fl-fe-suc" defaultValue="{{ pn.sucursal }}" onChange="{{ pn.onSuc }}" aria-invalid="{{ pn.errSuc }}" style="height:44px;padding:0 8px;border:1.5px solid {{ pn.sucBd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ pn.sucOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select><sc-if value="{{ pn.errSuc }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Elige la sucursal.</span></sc-if></div></sc-if>
+</sc-if>
+<sc-if value="{{ pn.isFerDel }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-strong);text-wrap:pretty">{{ pn.delTxt }}</p></sc-if>
+<sc-if value="{{ pn.isPerson }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="fl-pe-nombre" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ pn.personLabel }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><input id="fl-pe-nombre" type="text" value="{{ pn.person }}" onChange="{{ pn.onPerson }}" aria-invalid="{{ pn.errPerson }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ pn.personBd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-if value="{{ pn.errPerson }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el nombre de la persona.</span></sc-if></div></sc-if>
+<sc-if value="{{ pn.hasImpact }}" hint-placeholder-val="{{ false }}"><div role="status" style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--gold-100)"><strong style="font-size:14px;color:var(--text-strong)">Impacto antes de confirmar</strong><span style="font-size:14px;color:var(--text-strong)">{{ pn.impactHead }}</span><sc-for list="{{ pn.impact }}" as="x" hint-placeholder-count="3"><span style="font-size:14px;color:var(--text-strong)">{{ x.l }}</span></sc-for></div></sc-if>
+<sc-if value="{{ pn.needsMotivo }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="fl-pn-motivo" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo del cambio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="fl-pn-motivo" rows="3" value="{{ pn.motivo }}" onChange="{{ pn.onMotivo }}" aria-invalid="{{ pn.mInvalid }}" aria-describedby="fl-pn-help" placeholder="Ej. Ajuste aprobado por el comité de operaciones" style="width:100%;padding:9px 12px;border:1.5px solid {{ pn.mBd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;line-height:1.45;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ pn.mErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo para guardar.</span></sc-if><span id="fl-pn-help" style="font-size:12px;line-height:1.4;color:var(--text-muted)">Queda en el historial con la fecha y hora del reloj y tu nombre.</span></div></sc-if>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--border-subtle)"><sc-if value="{{ pn.needsMotivo }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ pn.close }}" hint-size="110px,40px">Cancelar</x-import><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ pn.save }}" hint-size="150px,40px">{{ pn.saveLabel }}</x-import></sc-if><sc-if value="{{ pn.isHist }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ pn.close }}" hint-size="110px,40px">Cerrar</x-import></sc-if></div>
+</aside></div></sc-if>
+<sc-if value="{{ snack }}" hint-placeholder-val="{{ false }}"><div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;max-width:min(560px,90vw);padding:12px 20px;border-radius:var(--radius-sm);background:var(--neutral-900,#011E41);color:#FFFFFF;font-size:14px;box-shadow:var(--shadow-md)">{{ snack }}</div></sc-if>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;flujo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;casos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onVerCasos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(estado:string)=&gt;void&quot;},&quot;ir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onConflicto&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onMigrar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;rol&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;monitorCasos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;monitorIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onBandeja&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;monitorExtras&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCaso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onReasignar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+class Component extends DCLogic {
+  GROUPS = ['Vehículos', 'Ramos Generales'];
+  TABS = ['Estados', 'SLA', 'Calendario', 'Responsables', 'Transiciones', 'Flujos', 'Monitor'];
+  // Etapa 16f-3 · DEC-170: «Monitor» para Administrador y Coordinador; quien no configura (Coordinador) solo ve esa pestaña.
+  // 16f-3b: la pestaña «Monitor» sale de la matriz («Ver el monitor del proceso»); las de configuración, de «Configurar…».
+  puedeCfg() { const r = this.props.rol || 'Administrador', SU = window.SiriusUsuarios; return SU && SU.puede ? SU.puede(r, 'config') : r === 'Administrador'; }
+  tabsVis() { const r = this.props.rol || 'Administrador', M = window.SiriusMonitor, mon = !!(M && M.puedeVer(r)), cfg = this.puedeCfg(); const t = (cfg ? this.TABS.slice(0, 6) : []).concat(mon ? ['Monitor'] : []); return t.length ? t : this.TABS.slice(0, 6); }
+  // Etapa 16f-1c · escenas del editor «blueprint» (inicial: selección, pestaña y subpestaña del panel, lista de errores, vista de tabla, bloqueo o publicar).
+  FM_ESC = { s: null, migrar: null, panel: { flujo: 'FL-RG', version: 'b' }, editor: { flujo: 'FL-VEH', version: 1, inicial: { panel: true } }, borrador: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'estado', id: 'Revisión técnica' }, foco: '#fm-p-agregar-salida' } }, valido: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'estado', id: 'Revisión técnica' } } }, slapropio: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'estado', id: 'Revisión técnica' }, foco: '#fm-p-plazo' } },
+    publicar: { flujo: 'FL-RG', version: 'b', inicial: { publicar: true, motivo: 'Agregar la revisión técnica para riesgos con puntaje en banda «Requiere revisión».' } }, nucleo: { flujo: 'FL-VEH', version: 'b', inicial: { sel: { tipo: 'estado', id: 'Inspeccionado' }, bloqueo: 'Inspeccionado', foco: '#fm-p-eliminar' } },
+    corregir: { flujo: 'FL-RG', version: 'b', inicial: { errores: true, foco: '#fm-errores-lista [data-corregir]' } }, tabla: { flujo: 'FL-RG', version: 'b', inicial: { tabla: true, tab: 'transiciones', scroll: { top: 300, left: 560 } } },
+    transicion: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'trans', id: 'T22' }, sub: 'antes' } }, durante: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'trans', id: 'T11' }, sub: 'durante' } }, despues: { flujo: 'FL-RG', version: 'b', inicial: { sel: { tipo: 'trans', id: 'T03' }, sub: 'despues' } } };
+  DIAS = [[1, 'Lun'], [2, 'Mar'], [3, 'Mié'], [4, 'Jue'], [5, 'Vie'], [6, 'Sáb'], [0, 'Dom']];
+  TONO = { success: 'En tiempo', warning: 'Por vencer', danger: 'Vencido' };
+  state = (() => {
+    const e = this.props.escena || '';
+    this._miN = this.props.monitorIr ? this.props.monitorIr.n : null;
+    const tab = /^monitor/.test(e) || this.props.monitorIr || !this.puedeCfg() ? 6 : { sla: 1, slaedit: 1, cal: 2, feriado: 2, resp: 3, trans: 4, s: 5, editor: 5, borrador: 5, valido: 5, slapropio: 5, publicar: 5, nucleo: 5, corregir: 5, tabla: 5, transicion: 5, durante: 5, despues: 5, migrar: 5, panel: 5 }[e] || 0;
+    const st = { tab, aplica: 'all', draft: {}, panel: null, pd: {}, err: {}, motivo: '', motErr: false, hist: [], snack: '', fm: null, fmN: 0 };
+    // Etapa 16f-1 · escenas del motor de flujo: flujos (lista), flujoeditor, flujoborrador, flujovalido, flujopublicar y flujonucleo.
+    const FMx = window.SiriusFlujoMotor; if (FMx && Object.prototype.hasOwnProperty.call(this.FM_ESC, e)) { if (e === 'valido' || e === 'publicar' || e === 'slapropio') FMx.salidaEjemplo('FL-RG'); if (e === 'nucleo') FMx.crearBorrador('FL-VEH'); if (e === 'migrar') { /* 16f-2: v2 de RG con «Revisión técnica» (bandeja) y sin «Reaperturado»: la reapertura vuelve a «En coordinación» */ FMx.salidaEjemplo('FL-RG'); FMx.editar('FL-RG', b => { b.estados = b.estados.filter(x => x.nombre !== 'Reaperturado'); b.transiciones.forEach(t => { t.de = t.de.filter(d => d !== 'Reaperturado'); if (t.a === 'Reaperturado') t.a = 'En coordinación'; }); }, 'Quitó el estado «Reaperturado»: «Reaperturar» lleva a «En coordinación»'); FMx.publicar('FL-RG', 'Revisión técnica y reapertura directa a coordinación', this.props.casos || []); st.fmMig = { flujo: 'FL-RG', motivo: 'Pasar los casos activos a la revisión técnica de la v2' }; } if (e === 'corregir') FMx.editar('FL-RG', b => { if (!b.estados.some(x => x.nombre === 'Revisión de garantías')) b.estados.push({ nombre: 'Revisión de garantías', corta: 'Rev. garantías', tipo: 'intermedio', etapa: 'calificacion', rol: 'Ejecutivo de inspecciones', asignacion: { tipo: 'delCaso' }, nucleo: false, propio: true }); }, 'Agregó el estado «Revisión de garantías»'); if (this.FM_ESC[e]) st.fm = Object.assign({}, this.FM_ESC[e]); }
+    const ir = this.props.ir; this._irN = ir ? ir.n : null; if (ir && ir.flujo && ir.n !== window.__siriusFmIr) { window.__siriusFmIr = ir.n; st.tab = 5; st.fm = { flujo: ir.flujo, version: ir.version || 'b' }; }
+    if (e === 'slaedit') { st.draft = { 'cal|Vehículos': 6 }; st.panel = 'sla'; }
+    if (e === 'feriado') { st.panel = 'fer'; st.pd = { id: null, fecha: '2026-10-19', nombre: '', alcance: 'Nacional', sucursal: '' }; }
+    return st;
+  })();
+  F() { return window.SIRIUS_FLUJO || null; }
+  E() { return window.SIRIUS_EJEMPLO || {}; }
+  user() { return this.props.userName || 'Andrea Salazar'; }
+  p2(n) { return String(n).padStart(2, '0'); }
+  now() { const d = this.E().ahora ? this.E().ahora() : new Date(2026, 9, 18, 20, 30); return d.getFullYear() + '-' + this.p2(d.getMonth() + 1) + '-' + this.p2(d.getDate()) + ' ' + this.p2(d.getHours()) + ':' + this.p2(d.getMinutes()); }
+  fmt(iso) { const [y, m, d] = String(iso).slice(0, 10).split('-'); return d + '/' + m + '/' + y.slice(2); }
+  fmtT(s) { return this.fmt(s) + ' · ' + s.slice(11, 16); }
+  sucursales() { const c = (this.E().catalogos || {}).sucursales; return c ? c.slice() : []; }
+  casos() { return this.props.casos || []; }
+  toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); }
+  sl(c) { try { return this.F().calcular(c); } catch (er) { return null; } }
+  // Casos activos cuyo SLA (etiqueta o semáforo) o responsable cambian si se aplica `mutate` (que devuelve cómo deshacerlo).
+  impactOf(mutate) {
+    const F = this.F(), cs = this.casos(); if (!F) return [];
+    const snap = () => cs.map(c => { const s = this.sl(c); return { t: s ? s.etiqueta : '—', z: s ? s.tono : '', r: F.responsable(c) }; });
+    const b = snap(); const undo = mutate(); let a; try { a = snap(); } finally { if (undo) undo(); }
+    const out = [];
+    cs.forEach((c, i) => {
+      if (b[i].t !== a[i].t || b[i].z !== a[i].z) out.push({ id: c.id, kind: 'sla', from: b[i].t, to: a[i].t, fz: b[i].z, tz: a[i].z });
+      if (b[i].r !== a[i].r) out.push({ id: c.id, kind: 'resp', from: b[i].r, to: a[i].r });
+    });
+    return out;
+  }
+  impactLines(list) {
+    return list.map(x => ({ l: x.kind === 'resp' ? x.id + ' · ' + x.from + ' → ' + x.to : x.id + ' · ' + x.from + ' → ' + x.to + (x.fz !== x.tz ? ' · ' + (this.TONO[x.fz] || 'Sin SLA') + ' → ' + (this.TONO[x.tz] || 'Sin SLA') : '') }));
+  }
+  plural(n, s, p) { return n + ' ' + (n === 1 ? s : p); }
+  // ---------- Plazos ----------
+  slaKeyVal(k) {
+    const F = this.F();
+    if (k === 'pv') return F.porVencerHoras;
+    if (k === 'hito') return F.etapas.find(x => x.id === 'coord').hito.horas;
+    const [a, b] = k.split('|'), et = F.etapas.find(x => x.id === a);
+    return b === 'tol' ? et.toleranciaHoras : et.sla[b];
+  }
+  slaLabel(k) {
+    const F = this.F(); if (k === 'pv') return 'Por vencer'; if (k === 'hito') return 'Hito «Primer contacto»';
+    const [a, b] = k.split('|'), et = F.etapas.find(x => x.id === a); return et.nombre + (b === 'tol' ? ' · tolerancia después del fin de la visita' : ' · ' + b);
+  }
+  slaRange(k) { return k === 'pv' ? [0, 40] : k === 'hito' ? [1, 72] : k.endsWith('|tol') ? [0, 24] : [1, 240]; }
+  slaParse(k, raw) { const r = this.slaRange(k), s = String(raw).trim(), n = Number(s); return s !== '' && Number.isInteger(n) && n >= r[0] && n <= r[1] ? n : null; }
+  slaChanges() {
+    const d = this.state.draft, list = []; let invalid = 0;
+    Object.keys(d).forEach(k => { const n = this.slaParse(k, d[k]); if (n == null) { invalid++; return; } const o = this.slaKeyVal(k); if (n !== o) list.push({ k, from: o, to: n, l: this.slaLabel(k) + ': ' + o + ' h → ' + n + ' h' }); });
+    return { list, invalid };
+  }
+  applySla(list) {
+    const F = this.F(), undo = [];
+    list.forEach(c => {
+      if (c.k === 'pv') { const o = F.porVencerHoras; F.porVencerHoras = c.to; undo.push(() => { F.porVencerHoras = o; }); }
+      else if (c.k === 'hito') { const h = F.etapas.find(x => x.id === 'coord').hito, o = h.horas; h.horas = c.to; undo.push(() => { h.horas = o; }); }
+      else { const [a, b] = c.k.split('|'), et = F.etapas.find(x => x.id === a);
+        if (b === 'tol') { const o = et.toleranciaHoras; et.toleranciaHoras = c.to; undo.push(() => { et.toleranciaHoras = o; }); }
+        else { const o = et.sla[b]; et.sla[b] = c.to; undo.push(() => { et.sla[b] = o; }); } }
+    });
+    return () => undo.reverse().forEach(f => f());
+  }
+  cell(k, aria) {
+    const d = this.state.draft, has = Object.prototype.hasOwnProperty.call(d, k), orig = this.slaKeyVal(k), raw = has ? d[k] : orig;
+    const n = this.slaParse(k, raw), invalid = n == null, changed = !invalid && n !== orig;
+    return { val: String(raw), aria, invalid, bd: invalid ? 'var(--color-danger)' : 'var(--input-outlined-border)', bg: changed ? 'var(--gold-100)' : '#FFFFFF',
+      onInput: (e) => { const v = e.target.value; this.setState(s => ({ draft: Object.assign({}, s.draft, { [k]: v }) })); } };
+  }
+  // ---------- Panel ----------
+  openPanel(panel, pd) {
+    if (!this.state.panel) this._opener = document.activeElement;
+    this.setState({ panel, pd: pd || {}, err: {}, motivo: '', motErr: false });
+    setTimeout(() => { const a = document.querySelector('aside[aria-labelledby="fl-pn-t"]'); if (!a) return; const f = a.querySelector('input:not([type=hidden]),textarea,select') || a.querySelector('button'); if (f) f.focus(); }, 80);
+  }
+  closePanel() { if (!this.state.panel) return; this.setState({ panel: null }); this.restoreFocus(); }
+  restoreFocus() { const o = this._opener; setTimeout(() => { if (o && o.isConnected && o.focus) o.focus(); }, 60); }
+  componentDidMount() {
+    const FMx = window.SiriusFlujoMotor; if (FMx) { FMx.usuario(this.user()); this._fmOff = FMx.on(() => this.forceUpdate()); }
+    this._k = (ev) => { if (ev.key === 'Escape' && this.state.panel && !ev.defaultPrevented) { ev.preventDefault(); this.closePanel(); } };
+    document.addEventListener('keydown', this._k, true);
+    if (this.state.panel) setTimeout(() => { const a = document.querySelector('aside[aria-labelledby="fl-pn-t"]'); const f = a && (a.querySelector('input:not([type=hidden]),textarea,select') || a.querySelector('button')); if (f) f.focus(); }, 120);
+  }
+  componentWillUnmount() { document.removeEventListener('keydown', this._k, true); if (this._fmOff) this._fmOff(); }
+  componentDidUpdate() { const mi = this.props.monitorIr; if (mi && mi.n !== this._miN) { this._miN = mi.n; if (this.state.tab !== 6) this.setState({ tab: 6, fm: null, fmMig: null }); }
+    const ir = this.props.ir; if (ir && ir.flujo && ir.n !== this._irN) { this._irN = ir.n; window.__siriusFmIr = ir.n; this.setState(s => ({ tab: 5, fm: { flujo: ir.flujo, version: ir.version || 'b' }, fmN: s.fmN + 1 })); } }
+  abrirFlujo(flujo, version) { this.setState(s => ({ tab: 5, fm: { flujo, version }, fmN: s.fmN + 1 })); setTimeout(() => { const t = document.getElementById('fm-titulo'); if (t) t.focus(); try { window.scrollTo(0, 0); } catch (er) {} }, 120); }
+  log(tab, what, detail, motivo) { return [{ when: this.fmtT(this.now()), by: this.user(), tab, what, detail, motivo }].concat(this.state.hist); }
+  calMut(add, rem) {
+    const F = this.F(), cal = F.calendario, a = cal.feriados, key = f => f.fecha + '|' + (f.sucursal || '*');
+    const nf = a.filter(f => key(f) !== rem);
+    if (add) nf.push(add);
+    cal.feriados = nf; return () => { cal.feriados = a; };
+  }
+  ferEntry(pd) { return pd.alcance === 'Sucursal' ? { fecha: pd.fecha, nombre: pd.nombre.trim(), alcance: 'Sucursal', sucursal: pd.sucursal, origen: 'Administración' } : { fecha: pd.fecha, nombre: pd.nombre.trim(), alcance: 'Nacional', origen: 'Administración' }; }
+  ferKey(f) { return f.fecha + '|' + (f.sucursal || '*'); }
+  ferAll() { return (this.F().calendario.feriados || []).slice().sort((x, y) => x.fecha < y.fecha ? -1 : x.fecha > y.fecha ? 1 : 0); }
+  ferErr(pd) {
+    const e = {}; if (!pd.fecha) e.fecha = 'Elige la fecha del feriado.';
+    else { const k = this.ferKey(this.ferEntry(pd)); if (k !== pd.id && this.ferAll().some(f => this.ferKey(f) === k)) e.fecha = 'Ya existe un feriado con esa fecha y ese alcance.'; }
+    if (!(pd.nombre || '').trim()) e.nombre = true;
+    if (pd.alcance === 'Sucursal' && !pd.sucursal) e.suc = true;
+    return e;
+  }
+  save() { const had = this.state.panel; this.save0(); if (had) setTimeout(() => { if (!this.state.panel) this.restoreFocus(); }, 40); }
+  save0() {
+    const st = this.state, F = this.F(), motivo = st.motivo.trim(), pd = st.pd;
+    let err = {};
+    if (st.panel === 'fer') err = this.ferErr(pd);
+    if (st.panel === 'coord' || st.panel === 'susc') { if (!(pd.person || '').trim()) err.person = true; }
+    const motErr = !motivo;
+    if (Object.keys(err).length || motErr) { this.setState({ err, motErr }); return; }
+    if (st.panel === 'sla') {
+      const ch = this.slaChanges().list; this.applySla(ch);
+      this.setState({ draft: {}, panel: null, hist: this.log('SLA', 'Cambió ' + this.plural(ch.length, 'plazo', 'plazos'), ch.map(c => c.l).join(' · '), motivo) });
+      this.toast('Plazos guardados. La Bandeja y el Detalle ya los usan; al recargar vuelven a los datos del archivo.'); return;
+    }
+    if (st.panel === 'fer') {
+      const en = this.ferEntry(pd); this.calMut(en, pd.id || null);
+      const donde = en.sucursal ? 'sucursal ' + en.sucursal : 'nacional';
+      this.setState({ panel: null, hist: this.log('Calendario', (pd.id ? 'Editó' : 'Agregó') + ' el feriado «' + en.nombre + '»', this.fmt(en.fecha) + ' · ' + donde, motivo) });
+      this.toast((pd.id ? 'Feriado actualizado.' : 'Feriado agregado.') + ' Los vencimientos ya lo consideran.'); return;
+    }
+    if (st.panel === 'ferdel') {
+      this.calMut(null, pd.id);
+      this.setState({ panel: null, hist: this.log('Calendario', 'Eliminó el feriado «' + pd.nombre + '»', this.fmt(pd.fecha), motivo) });
+      this.toast('Feriado eliminado. Los vencimientos ya lo consideran.'); return;
+    }
+    if (st.panel === 'coord') {
+      const old = F.coordinadorPorSucursal[pd.suc] || F.coordinadorPorSucursal['*']; F.coordinadorPorSucursal[pd.suc] = pd.person.trim();
+      this.setState({ panel: null, hist: this.log('Responsables', 'Cambió el coordinador de ' + pd.suc, old + ' → ' + pd.person.trim(), motivo) });
+      this.toast('Coordinador actualizado. La Bandeja y el Detalle ya lo muestran.'); return;
+    }
+    if (st.panel === 'susc') {
+      const old = F.suscriptorPorGrupo[pd.grupo] || '—'; F.suscriptorPorGrupo[pd.grupo] = pd.person.trim();
+      this.setState({ panel: null, hist: this.log('Responsables', 'Cambió el Suscriptor de ' + pd.grupo, old + ' → ' + pd.person.trim(), motivo) });
+      this.toast('Suscriptor actualizado. La Bandeja y el Detalle ya lo muestran.'); return;
+    }
+  }
+  impactFor() {
+    const st = this.state, F = this.F(), pd = st.pd;
+    if (st.panel === 'sla') { const ch = this.slaChanges().list, list = this.impactOf(() => this.applySla(ch)); return { head: list.length ? this.plural(list.length, 'caso activo cambia', 'casos activos cambian') + ' de etiqueta o semáforo.' : 'Ningún caso activo cambia de etiqueta ni de semáforo.', lines: this.impactLines(list) }; }
+    if (st.panel === 'fer') {
+      if (!pd.fecha || ((pd.alcance === 'Sucursal') && !pd.sucursal)) return { head: 'Elige la fecha' + (pd.alcance === 'Sucursal' ? ' y la sucursal' : '') + ' para ver el impacto en los vencimientos.', lines: [] };
+      const en = this.ferEntry(Object.assign({}, pd, { nombre: pd.nombre || 'Feriado' })), list = this.impactOf(() => this.calMut(en, pd.id || null));
+      return { head: list.length ? this.plural(list.length, 'vencimiento cambia', 'vencimientos cambian') + '.' : 'Ningún vencimiento cambia.', lines: this.impactLines(list) };
+    }
+    if (st.panel === 'ferdel') { const list = this.impactOf(() => this.calMut(null, pd.id)); return { head: list.length ? this.plural(list.length, 'vencimiento cambia', 'vencimientos cambian') + '.' : 'Ningún vencimiento cambia.', lines: this.impactLines(list) }; }
+    if (st.panel === 'coord' || st.panel === 'susc') {
+      const nm = (pd.person || '').trim(); if (!nm) return { head: 'Escribe el nombre para ver los casos que cambian de responsable.', lines: [] };
+      const list = this.impactOf(() => { if (st.panel === 'coord') { const o = F.coordinadorPorSucursal[pd.suc], had = Object.prototype.hasOwnProperty.call(F.coordinadorPorSucursal, pd.suc); F.coordinadorPorSucursal[pd.suc] = nm; return () => { if (had) F.coordinadorPorSucursal[pd.suc] = o; else delete F.coordinadorPorSucursal[pd.suc]; }; } const o = F.suscriptorPorGrupo[pd.grupo]; F.suscriptorPorGrupo[pd.grupo] = nm; return () => { F.suscriptorPorGrupo[pd.grupo] = o; }; });
+      return { head: list.length ? this.plural(list.length, 'caso activo cambia', 'casos activos cambian') + ' de responsable.' : 'Ningún caso activo cambia de responsable.', lines: this.impactLines(list) };
+    }
+    return null;
+  }
+  renderVals() {
+    const st = this.state, NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {}, F = this.F();
+    if (!F) return { tabs: this.TABS, tab: 0, tabEst: true, snack: '' };
+    if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
+    const cs = this.casos(), aplica = st.aplica, vis = aplica === 'all' ? this.GROUPS : [aplica], cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    const inGroup = (c) => aplica === 'all' || F.grupoDe(c) === aplica;
+    const aplicaApply = st.tab !== 2 && st.tab !== 4 && st.tab !== 5;
+    const sl = this.slaChanges(), dirty = sl.list.length > 0 || sl.invalid > 0;
+    const badge = (e, i) => ({ label: e.nombre, tone: e.badge, sort: i });
+    const v = {
+      tabs: this.tabsVis(), tab: st.tab, tabAct: Math.max(0, this.tabsVis().indexOf(this.TABS[st.tab])), onTab: (i) => this.setState({ tab: this.TABS.indexOf(this.tabsVis()[i]) }),
+      noMon: st.tab !== 6, tabMon: st.tab === 6, subTit: st.tab === 6 ? 'Monitor del proceso: indicadores, flujo acumulado y cuellos de botella con su causa.' : 'Estados del caso, plazos, calendario hábil y responsables.',
+      monCasos: this.props.monitorCasos || [], monExtras: this.props.monitorExtras || null, monCaso: this._mc || (this._mc = (id) => { if (this.props.onCaso) this.props.onCaso(id); }), monReasignar: this._mr || (this._mr = (d) => { if (this.props.onReasignar) this.props.onReasignar(d); }), monEscena: /^monitor/.test(this.props.escena || '') ? this.props.escena : '', monIr: this.props.monitorIr || null, monBandeja: this._mb || (this._mb = (x) => { if (this.props.onBandeja) this.props.onBandeja(x); }),
+      monAlcance: (() => { const U = window.SIRIUS_USUARIOS, u = U && U.usuarios ? U.usuarios.find(x => x.nombre === this.user()) : null, s = u && u.alcance ? u.alcance.sucursales : 'Todas'; return this.props.rol === 'Administrador' || !this.props.rol ? 'Todas' : s; })(),
+      showHead: !(st.tab === 5 && (st.fm || st.fmMig)), tabEst: st.tab === 0, tabSla: st.tab === 1, tabCal: st.tab === 2, tabRes: st.tab === 3, tabTra: st.tab === 4, tabFlu: st.tab === 5,
+      histIcon: this.histIcon || (this.histIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' }))),
+      plusIcon: this.plusIcon || null, openHist: () => this.openPanel('hist'), openNewFer: () => this.openPanel('fer', { id: null, fecha: '', nombre: '', alcance: 'Nacional', sucursal: '' }),
+      aplica, onAplica: (e) => this.setState({ aplica: e.target.value }), aplicaDis: !aplicaApply,
+      aplicaOpts: [{ v: 'all', l: 'Todos los grupos de ramo' }].concat(this.GROUPS.map(g => ({ v: g, l: g }))),
+      aplicaWhy: aplicaApply ? '' : st.tab === 5 ? 'No aplica en esta pestaña: cada flujo indica a qué ramo, composición o grupo aplica' : 'No aplica en esta pestaña: es igual para todos los grupos de ramo',
+      aplicaNote: aplicaApply ? 'Grupo de ramo: Vehículos o Ramos Generales.' : st.tab === 5 ? 'Cada flujo indica a qué aplica.' : 'Esta pestaña es igual para todos los grupos de ramo.',
+      snack: st.snack,
+    };
+    // Estados
+    v.estNoun = ['estado', 'estados'];
+    v.estCols = [
+      { key: 'estado', label: 'Estado', type: 'badge', width: 300, sticky: true },
+      { key: 'corta', label: 'Etiqueta corta', width: 150 },
+      { key: 'tipo', label: 'Tipo', width: 120 },
+      { key: 'etapa', label: 'Etapa de SLA', minWidth: 170, flex: true },
+      { key: 'resp', label: 'Responsable', minWidth: 280, flex: true },
+      { key: 'casos', label: 'Casos activos', width: 130 },
+    ];
+    v.estRows = F.estados.map((e, i) => { const et = F.etapaDe(e.nombre), closed = e.tipo === 'cierre', n = closed ? 0 : cs.filter(c => F.normalizar(c.estado) === e.nombre && inGroup(c)).length;
+      return { id: e.nombre, ariaName: e.nombre, estado: badge(e, i), corta: e.corta, tipo: cap(e.tipo), etapa: et ? et.nombre : '—', resp: F.responsables[e.resp].etiqueta, casos: closed ? '—' : String(n) }; });
+    v.estActions = [{ id: 'ver', label: 'Ver casos', icon: 'eye', menu: true }];
+    v.onEstAction = (a, row) => { if (this.props.onVerCasos) this.props.onVerCasos(row.id); };
+    // SLA
+    v.slaCols = vis.map(g => ({ l: g })); v.slaMinW = (260 + vis.length * 190) + 'px';
+    v.slaRows = F.etapas.map(et => {
+      const isAg = et.venceCon === 'visita', r = { id: et.id, nombre: et.nombre, desc: et.inicio + ' → ' + et.fin, isAg, span: vis.length, cells: [], nota: et.nota || '' };
+      if (isAg) r.tol = this.cell(et.id + '|tol', 'Visita agendada, horas después del fin de la visita');
+      else r.cells = vis.map(g => et.sla[g] == null ? { na: true, edit: false, g } : Object.assign({ na: false, edit: true, g }, this.cell(et.id + '|' + g, et.nombre + ', ' + g + ', horas hábiles')));
+      return r;
+    });
+    v.pv = this.cell('pv', 'Por vencer, horas hábiles'); v.hito = this.cell('hito', 'Primer contacto, horas hábiles');
+    v.pvTxt = F.porVencerHoras + ' h'; v.hitoTxt = F.etapas.find(x => x.id === 'coord').hito.horas + ' h';
+    v.slaDirty = dirty; v.slaClean = !dirty; v.slaInvalid = sl.invalid > 0; v.slaInvalidTxt = 'Revisa las celdas marcadas: escribe horas enteras dentro del rango permitido.';
+    v.slaSaveLabel = 'Guardar cambios' + (sl.list.length ? ' (' + sl.list.length + ')' : '');
+    v.saveSla = () => { const c = this.slaChanges(); if (c.invalid) { this.toast('Corrige las celdas marcadas antes de guardar.'); return; } if (!c.list.length) return; this.openPanel('sla'); };
+    v.discardSla = () => this.setState({ draft: {} });
+    // Calendario
+    const cal = F.calendario;
+    v.dias = this.DIAS.map(([n, l]) => { const on = cal.dias.includes(n); return { l, st: on ? 'hábil' : 'no hábil', bd: on ? 'var(--color-brand)' : 'var(--border-subtle)', bg: on ? 'var(--cyan-100)' : '#FFFFFF', fg: on ? 'var(--text-strong)' : 'var(--text-muted)' }; });
+    v.jornada = cal.jornada.map((j, i) => ({ n: 'Tramo ' + (i + 1), t: j[0] + ' – ' + j[1] }));
+    const mins = cal.jornada.reduce((a, j) => a + (parseInt(j[1]) * 60 + parseInt(j[1].slice(3)) - parseInt(j[0]) * 60 - parseInt(j[0].slice(3))), 0);
+    v.jornadaTxt = (mins / 60) + ' h hábiles por día';
+    v.ferNoun = ['feriado', 'feriados'];
+    v.ferCols = [
+      { key: 'fecha', label: 'Fecha', width: 110, sticky: true },
+      { key: 'nombre', label: 'Nombre', minWidth: 260, flex: true, sticky: true },
+      { key: 'alcance', label: 'Alcance', minWidth: 160, flex: true },
+      { key: 'origen', label: 'Origen', minWidth: 200, flex: true },
+    ];
+    v.ferRows = this.ferAll().map(f => ({ id: this.ferKey(f), ariaName: f.nombre, fecha: this.fmt(f.fecha), nombre: f.nombre, alcance: f.sucursal ? 'Sucursal · ' + f.sucursal : 'Nacional', origen: f.origen }));
+    v.ferActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }, { id: 'del', label: 'Eliminar', icon: 'trash', menu: true }];
+    v.onFerAction = (a, row) => { const f = this.ferAll().find(x => this.ferKey(x) === row.id); if (!f) return; if (a === 'edit') this.openPanel('fer', { id: row.id, fecha: f.fecha, nombre: f.nombre, alcance: f.sucursal ? 'Sucursal' : 'Nacional', sucursal: f.sucursal || '' }); else this.openPanel('ferdel', { id: row.id, fecha: f.fecha, nombre: f.nombre, alcance: f.sucursal || 'Nacional' }); };
+    v.noLocales = !(cal.feriados || []).some(f => f.alcance === 'Sucursal');
+    // Responsables
+    v.rgCols = [{ key: 'estado', label: 'Estado', type: 'badge', width: 300, sticky: true }, { key: 'resp', label: 'Responsable', minWidth: 300, flex: true }, { key: 'regla', label: 'Regla', minWidth: 360, flex: true }];
+    v.rgRows = F.estados.map((e, i) => ({ id: e.nombre, ariaName: e.nombre, estado: badge(e, i), resp: F.responsables[e.resp].etiqueta, regla: F.responsables[e.resp].regla }));
+    v.coordNote = 'Las sucursales sin coordinador propio usan el coordinador por defecto: ' + F.coordinadorPorSucursal['*'] + '.';
+    v.coNoun = ['sucursal', 'sucursales'];
+    v.coCols = [{ key: 'suc', label: 'Sucursal', width: 200, sticky: true }, { key: 'coord', label: 'Coordinador de inspecciones', minWidth: 260, flex: true }, { key: 'origen', label: 'Origen', minWidth: 200, flex: true }];
+    v.coRows = this.sucursales().map(s => { const own = F.coordinadorPorSucursal[s]; return { id: s, ariaName: s, suc: s, coord: own || F.coordinadorPorSucursal['*'], origen: own ? 'Propio de la sucursal' : 'Por defecto' }; });
+    v.coActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }];
+    v.onCoAction = (a, row) => this.openPanel('coord', { suc: row.id, person: F.coordinadorPorSucursal[row.id] || F.coordinadorPorSucursal['*'] });
+    v.suNoun = ['grupo', 'grupos'];
+    v.suCols = [{ key: 'grupo', label: 'Grupo de ramo', width: 200, sticky: true }, { key: 'susc', label: 'Suscriptor', minWidth: 260, flex: true }, { key: 'origen', label: 'Origen', minWidth: 300, flex: true }];
+    v.suRows = vis.map(g => { const has = Object.prototype.hasOwnProperty.call(F.suscriptorPorGrupo, g); return { id: g, ariaName: g, grupo: g, susc: has ? F.suscriptorPorGrupo[g] : '—', origen: has ? 'Asignado al grupo' : 'No aplica: este grupo no pasa por suscripción', hideActions: has ? [] : ['edit'] }; });
+    v.suActions = [{ id: 'edit', label: 'Editar', icon: 'edit' }];
+    v.onSuAction = (a, row) => this.openPanel('susc', { grupo: row.id, person: F.suscriptorPorGrupo[row.id] || '' });
+    const ini = F.reasignacion.find(x => x.que.indexOf('Asignación inicial') === 0);
+    v.asigTxt = ini ? 'La hace el ' + ini.quien + ': ' + ini.efecto.charAt(0).toLowerCase() + ini.efecto.slice(1) + '.' : '—';
+    v.reNoun = ['regla', 'reglas'];
+    v.reCols = [{ key: 'que', label: 'Qué se reasigna', minWidth: 240, flex: true, sticky: true }, { key: 'quien', label: 'Quién', minWidth: 200, flex: true }, { key: 'donde', label: 'Dónde', minWidth: 220, flex: true }, { key: 'motivo', label: 'Motivo', width: 90 }, { key: 'efecto', label: 'Efecto', minWidth: 320, flex: true }];
+    v.reRows = F.reasignacion.filter(x => x !== ini).map((x, i) => ({ id: 're' + i, ariaName: x.que, que: x.que, quien: x.quien, donde: x.donde, motivo: x.motivo ? 'Sí' : 'No', efecto: x.efecto }));
+    // Transiciones
+    v.traNoun = ['transición', 'transiciones'];
+    v.traCols = [{ key: 'de', label: 'De', minWidth: 200, flex: true, sticky: true }, { key: 'a', label: 'A', width: 220 }, { key: 'accion', label: 'Acción', minWidth: 320, flex: true }, { key: 'quien', label: 'Quién', minWidth: 240, flex: true }, { key: 'motivo', label: 'Motivo', width: 90 }];
+    v.traRows = F.transiciones.map((t, i) => ({ id: 't' + i, ariaName: t.de + ' a ' + t.a, de: t.de, a: t.a, accion: t.accion, quien: t.quien, motivo: t.motivo ? 'Sí' : 'No' }));
+    // Flujos (etapa 16f-1 · DEC-145): lista de flujos y versiones, y el editor del borrador con diagrama y validación.
+    const FMx = window.SiriusFlujoMotor, MM = window.SIRIUS_FLUJO_MOTOR || {};
+    v.roTxt = 'Vista de solo lectura del flujo vigente (Vehículos, Ramos Generales y Equipo y maquinaria). Para crear un borrador, validarlo y publicarlo, ve a «Flujos».';
+    v.irFlujos = () => this.setState(s => ({ tab: 5, fm: null, fmN: s.fmN + 1 }));
+    v.fluLista = st.tab === 5 && !st.fm && !st.fmMig; v.fluMig = st.tab === 5 && !!st.fmMig && !!FMx;
+    v.mig = st.fmMig ? { key: 'mig' + st.fmN, flujo: st.fmMig.flujo, casos: cs, motivo: st.fmMig.motivo || '', onVolver: () => this.setState(s => ({ fmMig: null, fmN: s.fmN + 1 })), onMigrar: (d) => { if (this.props.onMigrar) this.props.onMigrar(d); else if (FMx) FMx.registrarMigracion(d.flujo, d.de, d.a, d.casos.length, d.mapeo, d.motivo); this.setState(s => ({ fmMig: null, fmN: s.fmN + 1 })); this.toast(this.plural(d.casos.length, 'caso migrado', 'casos migrados') + ' a la v' + d.a + '; queda en el Historial de cada caso.'); } } : {}; v.fluEditor = st.tab === 5 && !!st.fm && !!FMx; v.fluNoun = ['versión de flujo', 'versiones de flujo'];
+    v.fluIntro = (MM.resolucion || '') + ' Los casos activos siguen la versión con la que nacieron; los nuevos usan la vigente.';
+    v.fluCols = [{ key: 'flujo', label: 'Flujo', type: 'sub', minWidth: 230, flex: true, sticky: true, subWrap: true }, { key: 'aplica', label: 'Aplica a', minWidth: 230, flex: true }, { key: 'version', label: 'Versión', width: 90 }, { key: 'estado', label: 'Estado', type: 'badge', width: 140 }, { key: 'casos', label: 'Casos activos', width: 120 }, { key: 'act', label: 'Actualizado', minWidth: 220, flex: true }];
+    const fl = FMx ? FMx.lista(cs) : [], tonoF = { Vigente: 'success', Borrador: 'warning', Reemplazada: 'neutral' };
+    v.fluRows = fl.map(x => ({ id: x.flujo + '|' + x.version, ariaName: x.nombre + ' v' + x.version, flujo: { label: x.nombre, sub: x.flujo + (x.susc ? ' · con suscripción' : ' · sin suscripción') }, aplica: x.aplica, version: 'v' + x.version, estado: { label: x.estado + (x.errores ? ' · ' + this.plural(x.errores, 'error', 'errores') : ''), tone: x.errores ? 'danger' : tonoF[x.estado] || 'neutral' }, casos: x.casos == null ? '—' : String(x.casos), act: x.actualizado,
+      disabledActions: Object.assign({}, x.estado === 'Vigente' && x.tieneBorrador ? { editar: 'Ya hay un borrador: ábrelo con «Ver» en su fila' } : x.estado !== 'Vigente' && x.estado !== 'Borrador' ? { editar: 'Versión reemplazada: el borrador se crea desde la vigente' } : {}, x.estado !== 'Borrador' ? { publicar: 'Solo se publica un borrador' } : x.errores ? { publicar: 'Corrige ' + this.plural(x.errores, 'error', 'errores') + ' del borrador para publicar' } : {}, x.estado !== 'Vigente' || !x.migrables ? { migrar: x.estado !== 'Vigente' ? 'Solo se migra hacia la versión vigente' : 'No hay casos activos en una versión anterior' } : {}), _x: x }));
+    v.fluActions = [{ id: 'ver', label: 'Ver', icon: 'eye' }, { id: 'editar', label: 'Editar (crea el borrador)', icon: 'edit' }, { id: 'publicar', label: 'Publicar', path: 'M12 19V5 M5 12l7-7 7 7' }, { id: 'migrar', label: 'Migrar casos de la versión anterior', icon: 'users', menu: true }];
+    v.onFluAction = (a, row) => { const x = (row || {})._x; if (!x || !FMx) return; const dis = (row.disabledActions || {})[a]; if (dis) return;
+      if (a === 'ver') this.abrirFlujo(x.flujo, x.estado === 'Borrador' ? 'b' : x.version);
+      if (a === 'editar') { FMx.crearBorrador(x.flujo); this.abrirFlujo(x.flujo, 'b'); }
+      if (a === 'migrar') { this.setState(s => ({ tab: 5, fm: null, fmMig: { flujo: x.flujo }, fmN: s.fmN + 1 })); return; }
+      if (a === 'publicar') { this.setState(s => ({ tab: 5, fm: { flujo: x.flujo, version: 'b', inicial: { publicar: true } }, fmN: s.fmN + 1 })); } };
+    v.fm = st.fm ? { key: st.fm.flujo + '|' + st.fm.version + '|' + st.fmN, flujo: st.fm.flujo, version: st.fm.version, casos: cs, usuario: this.user(), inicial: st.fm.inicial || null,
+      onVolver: () => this.setState(s => ({ fm: null, fmN: s.fmN + 1 })), onVer: (ver) => this.abrirFlujo(st.fm.flujo, ver),
+      onConflicto: (k) => { if (this.props.onConflicto) this.props.onConflicto(k); else this.toast('El Centro de conflictos está en Administración › Conflictos.'); },
+      onPublicado: (ver) => { this.setState(s => ({ fm: { flujo: st.fm.flujo, version: ver }, fmN: s.fmN + 1 })); this.toast('Publicada la v' + ver + '. Los casos activos siguen con la versión con la que nacieron.'); } } : {};
+    // Panel
+    const k = st.panel, pd = st.pd || {}, err = st.err || {}, needs = !!k && k !== 'hist', imp = needs ? this.impactFor() : null;
+    const titles = { hist: 'Historial de cambios', sla: 'Confirmar cambios de plazos', fer: pd.id ? 'Editar feriado' : 'Agregar feriado', ferdel: 'Eliminar feriado', coord: 'Cambiar coordinador · ' + (pd.suc || ''), susc: 'Cambiar Suscriptor · ' + (pd.grupo || '') };
+    const setPd = (o) => this.setState(s => ({ pd: Object.assign({}, s.pd, o), err: Object.assign({}, s.err, Object.keys(o).reduce((a, x) => (a[x === 'person' ? 'person' : x === 'sucursal' ? 'suc' : x] = false, a), {})) }));
+    const personLabel = k === 'coord' ? 'Coordinador de inspecciones' : 'Suscriptor';
+    v.pn = {
+      open: !!k, close: () => this.closePanel(), title: titles[k] || '', isHist: k === 'hist', isSla: k === 'sla', isFer: k === 'fer', isFerDel: k === 'ferdel', isPerson: k === 'coord' || k === 'susc', needsMotivo: needs,
+      hist: (FMx ? FMx.historial() : []).concat(st.hist).map(h => Object.assign({ hasDetail: !!h.detail }, h)), histEmpty: !st.hist.length && !(FMx && FMx.historial().length), version: F.version, vigencia: String(F.vigencia || '').toLowerCase(),
+      changes: this.slaChanges().list.map(c => ({ l: c.l })),
+      fecha: pd.fecha || '', onFecha: (e) => setPd({ fecha: e.target.value }), errFecha: !!(err.fecha || (k === 'fer' && err.fecha)), errFechaTxt: typeof err.fecha === 'string' ? err.fecha : 'Elige la fecha del feriado.',
+      nombre: pd.nombre || '', onNombre: (e) => setPd({ nombre: e.target.value }), errNombre: !!err.nombre, nombreBd: err.nombre ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      alcances: ['Nacional', 'Sucursal'].map(a => ({ l: a, on: pd.alcance === a, bd: pd.alcance === a ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: pd.alcance === a ? 'var(--cyan-100)' : '#FFFFFF', pick: () => setPd({ alcance: a, sucursal: a === 'Nacional' ? '' : pd.sucursal }) })),
+      showSuc: pd.alcance === 'Sucursal', sucursal: pd.sucursal || '', onSuc: (e) => setPd({ sucursal: e.target.value }), errSuc: !!err.suc, sucBd: err.suc ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      sucOpts: [{ v: '', l: 'Elige una sucursal' }].concat(this.sucursales().map(s => ({ v: s, l: s }))),
+      delTxt: k === 'ferdel' ? 'Se elimina «' + pd.nombre + '» del ' + this.fmt(pd.fecha) + ' (' + pd.alcance + '). Ese día volverá a contar como hábil si cae entre lunes y viernes.' : '',
+      personLabel, person: pd.person || '', onPerson: (e) => setPd({ person: e.target.value }), errPerson: !!err.person, personBd: err.person ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      hasImpact: !!imp, impactHead: imp ? imp.head : '', impact: imp ? imp.lines : [],
+      motivo: st.motivo, onMotivo: (e) => this.setState({ motivo: e.target.value, motErr: false }), mErr: st.motErr, mInvalid: st.motErr, mBd: st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      save: () => this.save(), saveLabel: k === 'ferdel' ? 'Eliminar' : k === 'sla' ? 'Confirmar y guardar' : 'Guardar',
+    };
+    return v;
+  }
+}
+</script>
+</body>
+</html>

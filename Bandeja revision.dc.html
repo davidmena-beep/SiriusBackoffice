@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/colors.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/typography.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<style>html,body{margin:0;background:var(--neutral-100)}*{box-sizing:border-box}a{color:var(--text-link)}a:hover{opacity:.8}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:40px;padding:40px;font-family:var(--font-brand)">
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-weight:300;font-size:32px;color:var(--text-strong)">BO-03 Bandeja · revisión a 1440 px</h1>
+<p style="margin:0;font-size:15px;color:var(--text-muted)">Vistas reales del back-office en vivo, a escala 75%. Coordinador, sin paneles abiertos.</p>
+</div>
+<section data-screen-label="Bandeja SideNav expandida" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">SideNav expandida · anchos por defecto</h2>
+<div style="width:1080px;height:900px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?nav=expandida&amp;loader=off&amp;demo=off" title="Bandeja con SideNav expandida" style="width:1440px;height:1200px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+<section data-screen-label="Bandeja SideNav colapsada" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">SideNav colapsada · anchos por defecto</h2>
+<div style="width:1080px;height:900px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?nav=colapsada&amp;loader=off&amp;demo=off" title="Bandeja con SideNav colapsada" style="width:1440px;height:1200px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+<section data-screen-label="Bandeja Asegurado ensanchada" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">SideNav expandida · Asegurado ensanchada a 360 px por el usuario</h2>
+<p style="margin:0;font-size:14px;color:var(--text-muted)">Las columnas ya no caben: aparece scroll horizontal solo dentro de la tabla; selección, # Caso y Acciones quedan fijas.</p>
+<div style="width:1080px;height:900px;overflow:hidden;border-radius:var(--radius-md);box-shadow:var(--shadow-md);background:#FFFFFF">
+<iframe src="SIRIUS Back-office.dc.html?nav=expandida&amp;loader=off&amp;demo=off&amp;w=asegurado:360" title="Bandeja con Asegurado ensanchada" style="width:1440px;height:1200px;border:0;transform:scale(.75);transform-origin:0 0"></iframe>
+</div>
+</section>
+</div>
+</x-dc>
+</body>
+</html>

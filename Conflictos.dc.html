@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-compania.js"></script><script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}</style>
+</helmet>
+<section data-screen-label="BO-26 Conflictos" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0;outline:none">Conflictos de configuración</h1>
+<p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">Lo que una configuración deja sin funcionar en otra: variables, plantillas, reglas, cuentas, campos, catálogos y responsables.</p>
+</div>
+<sc-if value="{{ resOn }}" hint-placeholder-val="{{ false }}"><div id="cf-resaltado" role="status" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border-radius:var(--radius-md);border:1.5px solid var(--color-danger);background:var(--alert-danger-bg,#fdecea)"><span style="flex:1 1 420px;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-size:14px;color:var(--text-strong)">Desde el editor de flujos · {{ res.t }}</strong><span style="font-size:13px;color:var(--text-body)">{{ res.x }}</span></span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ res.ir }}" hint-size="190px,32px">Abrir el borrador del flujo</x-import><button type="button" onClick="{{ res.cerrar }}" style="border:none;background:transparent;color:var(--text-link);font-weight:700;text-decoration:underline;cursor:pointer;font-family:var(--font-brand);font-size:13px">Cerrar aviso</button></div></sc-if>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
+<div role="search" aria-label="Filtrar los conflictos" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="cf-sev" style="font-size:14px;font-weight:700;color:var(--text-strong)">Severidad</label><select id="cf-sev" key="{{ fk }}-cf-sev" defaultValue="{{ fSev }}" onChange="{{ onSev }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ sevOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<span style="display:inline-flex;align-items:center;gap:8px"><label for="cf-mod" style="font-size:14px;font-weight:700;color:var(--text-strong)">Módulo</label><select id="cf-mod" key="{{ fk }}-cf-mod" defaultValue="{{ fMod }}" onChange="{{ onMod }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:200px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ modOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
+<sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ clear }}" style="height:40px;padding:0 12px;border:none;background:transparent;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);cursor:pointer;text-decoration:underline;text-underline-offset:3px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)">Limpiar filtros</button></sc-if>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ intro }}</p>
+<dc-import name="DataTable" fill="{{ true }}" columns="{{ cols }}" rows="{{ rows }}" row-actions="{{ noActs }}" selectable="{{ false }}" on-row-action="{{ onAction }}" page-size="{{ 25 }}" item-noun="{{ noun }}" storage-key="sirius.adm.conflictos" empty-title="{{ empty.t }}" empty-text="{{ empty.x }}" hint-size="100%,420px"></dc-import>
+<details style="font-size:14px;color:var(--text-body)"><summary style="cursor:pointer;font-weight:700;color:var(--text-strong)">Cómo funcionan</summary><ul style="margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px"><sc-for list="{{ principios }}" as="pr" hint-placeholder-count="3"><li>{{ pr.t }}</li></sc-for></ul></details>
+<sc-if value="{{ pnOpen }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;inset:0;z-index:70;display:flex;justify-content:flex-end"><div onClick="{{ pn.close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.2)"></div>
+<aside role="dialog" aria-modal="true" aria-labelledby="cf-pn-t" style="position:relative;width:520px;max-width:100%;height:100%;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:24px 24px 12px"><h2 id="cf-pn-t" style="margin:0;font-size:20px;font-weight:700;color:var(--text-strong);text-wrap:pretty">{{ pn.title }}</h2><button type="button" aria-label="Cerrar" onClick="{{ pn.close }}" style="flex:none;width:36px;height:36px;border:none;border-radius:50%;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></div>
+<div style="flex:1 1 auto;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:8px 24px 16px"><p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-strong);text-wrap:pretty">{{ pn.txt }}</p>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="cf-motivo" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="cf-motivo" rows="3" value="{{ pn.motivo }}" onInput="{{ pn.onMot }}" aria-invalid="{{ pn.inv }}" aria-describedby="cf-motivo-h" style="width:100%;padding:9px 12px;border:1.5px solid {{ pn.bd }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);resize:vertical" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><span id="cf-motivo-h" style="font-size:13px;color:{{ pn.helpC }}">{{ pn.help }}</span></div></div>
+<div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--border-subtle)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ pn.close }}" hint-size="110px,40px">Cancelar</x-import><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ pn.save }}" hint-size="190px,40px">Descartar advertencia</x-import></div>
+</aside></div></sc-if>
+<sc-if value="{{ hasSnack }}" hint-placeholder-val="{{ false }}"><div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;max-width:min(560px,90vw);padding:12px 20px;border-radius:var(--radius-sm);background:var(--neutral-900,#011E41);color:#FFFFFF;font-size:14px;box-shadow:var(--shadow-md)">{{ snack }}</div></sc-if>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:800},&quot;escena&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;resaltar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+// BO-26 · Administración › Conflictos de configuración (etapa 10n-conflictos · DEC-124). Lee SIRIUS_CONFLICTOS y el registro en vivo de
+// SiriusConflictos (se calcula desde la configuración). Resolver = enlaces directos; «Descartar» con motivo solo para advertencias.
+class Component extends DCLogic {
+  TABS = ['Abiertos', 'Resueltos', 'Descartados'];
+  EST = ['Abierto', 'Resuelto', 'Descartado'];
+  state = (() => { let r = this.props.resaltar; this._resN = r ? r.n : null; if (r && r.n === window.__siriusCfRes) r = null; else if (r) window.__siriusCfRes = r.n; return { tab: this.props.escena === 'resueltos' ? 1 : 0, fSev: 'all', fMod: r ? 'Flujo y SLA' : 'all', fk: 0, panel: null, orig: null, motivo: '', motErr: false, snack: '', res: r ? r.key : null }; })();
+  // Etapa 16f-1 · «Ver en el Centro de conflictos» desde el editor de flujos: filtra por el módulo y resalta ese conflicto.
+  componentDidUpdate() { const r = this.props.resaltar; if (r && r.n !== this._resN) { this._resN = r.n; window.__siriusCfRes = r.n; this.setState(s => ({ tab: 0, fSev: 'all', fMod: 'Flujo y SLA', fk: s.fk + 1, res: r.key })); } }
+  Z() { return window.SiriusConflictos || null; }
+  K() { return window.SIRIUS_CONFLICTOS || null; }
+  user() { return this.props.userName || 'Andrea Salazar'; }
+  fmtT(s) { const [y, m, d] = String(s || '').slice(0, 10).split('-'); return s ? d + '/' + m + '/' + y.slice(2) + ' · ' + String(s).slice(11, 16) : ''; }
+  componentDidMount() { const Z = this.Z(); if (Z) this._off = Z.on(() => this.forceUpdate());
+    this._k = (ev) => { if (ev.key === 'Escape' && this.state.panel && !ev.defaultPrevented) { ev.preventDefault(); this.cerrar(); } }; document.addEventListener('keydown', this._k, true); }
+  componentWillUnmount() { if (this._off) this._off(); document.removeEventListener('keydown', this._k, true); clearTimeout(this._st); }
+  toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ snack: '' }), 4500); }
+  abrir(id) { this._ret = document.activeElement; this.setState({ panel: 'desc', orig: id, motivo: '', motErr: false }); setTimeout(() => { const el = document.getElementById('cf-motivo'); if (el) el.focus(); }, 80); }
+  cerrar() { this.setState({ panel: null }); const r = this._ret; setTimeout(() => { if (r && r.isConnected && r.focus) r.focus(); }, 60); }
+  descartar() { const m = this.state.motivo.trim(); if (m.length < 10) { this.setState({ motErr: true }); const el = document.getElementById('cf-motivo'); if (el) el.focus(); return; }
+    const Z = this.Z(), e = Z.registro().find(x => x.id === this.state.orig); Z.descartar(e.id, m, this.user()); this.setState({ panel: null }); this.toast('Advertencia descartada. Queda en la pestaña Descartados con su motivo.');
+    setTimeout(() => { const t = document.querySelector('h1'); if (t) { t.setAttribute('tabindex', '-1'); t.focus(); } }, 60); }
+  ir(go, e) { const Z = this.Z(); if (go.act === 'invitar') { if (this.props.onIr) this.props.onIr({ act: 'invitar', usuario: go.usuario }); return; }
+    if (this.props.onIr) this.props.onIr(go); }
+  renderVals() {
+    const Z = this.Z(), K = this.K(), st = this.state, opt = (a, b) => ({ v: a, l: b }), v = { tabs: [], tab: st.tab, onTab: (i) => this.setState({ tab: i }), snack: st.snack, hasSnack: !!st.snack, rows: [], cols: [], noActs: [] };
+    if (!Z || !K) return v;
+    const R = Z.registro(), cuenta = (e) => R.filter(x => x.estado === e).length, ab = R.filter(x => x.estado === 'Abierto'), nb = ab.filter(x => x.severidad === 'bloqueante').length;
+    v.tabs = this.TABS.map((t, i) => t + ' (' + cuenta(this.EST[i]) + ')');
+    v.intro = ab.length ? ab.length + (ab.length === 1 ? ' conflicto abierto: ' : ' conflictos abiertos: ') + nb + (nb === 1 ? ' bloqueante' : ' bloqueantes') + ' y ' + (ab.length - nb) + (ab.length - nb === 1 ? ' advertencia.' : ' advertencias.') + ' Se calculan en vivo desde la configuración; un bloqueante inactiva la plantilla y pausa sus reglas solo en el canal afectado, y todo vuelve solo al resolverse.' : 'No hay conflictos abiertos. La configuración se revisa en vivo después de cada cambio.';
+    v.sevOpts = [opt('all', 'Todas')].concat(K.severidades.map(s => opt(s.id, s.nombre))); v.modOpts = [opt('all', 'Todos')].concat(Array.from(new Set(K.tipos.map(t => t.modulo))).map(m => opt(m, m)));
+    v.fSev = st.fSev; v.fMod = st.fMod; v.fk = st.fk; v.onSev = (e) => this.setState({ fSev: e.target.value }); v.onMod = (e) => this.setState({ fMod: e.target.value });
+    v.hasFilters = st.fSev !== 'all' || st.fMod !== 'all'; v.clear = () => this.setState({ fSev: 'all', fMod: 'all', fk: st.fk + 1 });
+    const est = this.EST[st.tab], sevN = (s) => (K.severidades.find(x => x.id === s) || { nombre: s }).nombre, tone = (s) => (K.severidades.find(x => x.id === s) || { badge: 'neutral' }).badge;
+    const L = R.filter(e => e.estado === est && (st.fSev === 'all' || e.severidad === st.fSev) && (st.fMod === 'all' || e.modulo === st.fMod)).sort((a, b) => (a.severidad === b.severidad ? 0 : a.severidad === 'bloqueante' ? -1 : 1) || (a.abierto.fecha < b.abierto.fecha ? 1 : -1));
+    v.noun = ['conflicto', 'conflictos'];
+    v.cols = [
+      { key: 'sev', label: 'Severidad', type: 'badge', width: 130, sticky: true },
+      { key: 'conf', label: 'Conflicto', type: 'sub', minWidth: 250, flex: true, subWrap: true },
+      { key: 'obj', label: 'Objeto', minWidth: 170 },
+      { key: 'mod', label: 'Módulo', minWidth: 130 },
+      { key: 'origen', label: 'Origen', type: 'sub', minWidth: 190, subWrap: true },
+      { key: 'afecta', label: 'Afecta', minWidth: 220, flex: true },
+      { key: 'estado', label: 'Estado', type: 'badge', width: 130 },
+      { key: 'acc', label: 'Acciones', minWidth: 220 },
+    ];
+    this._rows = {};
+    v.rows = L.map(e => { this._rows[e.id] = e; const acts = e.estado === 'Abierto' ? Z.acciones(e) : [], links = acts.map((a, i) => ({ label: a.label, action: 'a' + i, aria: a.label + ' · ' + e.objNombre })).concat(e.estado === 'Abierto' && e.severidad !== 'bloqueante' ? [{ label: 'Descartar', action: 'desc', aria: 'Descartar · ' + e.objNombre }] : []);
+      const fin = e.estado === 'Resuelto' ? e.resuelto : e.estado === 'Descartado' ? e.descartado : null;
+      return { id: e.id, ariaName: e.nombre + ' · ' + e.objNombre, sev: { label: sevN(e.severidad), tone: tone(e.severidad) }, conf: { label: e.nombre, sub: e.detalle },
+        obj: { label: e.objNombre, link: true, linkAction: 'obj', title: 'Abrir ' + e.objNombre }, mod: e.modulo, origen: { label: e.abierto.que, sub: e.abierto.quien + ' · ' + this.fmtT(e.abierto.fecha) },
+        afecta: { label: e.afecta, title: e.afecta }, estado: { label: e.estado, tone: e.estado === 'Abierto' ? tone(e.severidad) : e.estado === 'Resuelto' ? 'success' : 'neutral', note: fin ? this.fmtT(fin.fecha) + ' · ' + (fin.quien || '') : '', title: fin ? (e.estado === 'Resuelto' ? 'Se resolvió: ' + fin.que : 'Motivo: ' + fin.motivo) : undefined },
+        acc: links.length ? { label: '', links } : { label: e.estado === 'Descartado' ? 'Motivo: ' + e.descartado.motivo : '—', dim: true } }; });
+    v.empty = { t: ['Sin conflictos abiertos', 'Sin conflictos resueltos', 'Sin advertencias descartadas'][st.tab], x: st.tab === 0 ? 'La configuración no tiene conflictos con estos filtros.' : 'No hay registros con estos filtros en esta sesión.' };
+    v.onAction = (a, row) => { const e = this._rows[row.id]; if (!e) return; if (a === 'obj') return this.ir(Z.destinoObjeto(e), e); if (a === 'desc') return this.abrir(e.id); const i = +String(a).slice(1), x = Z.acciones(e)[i]; if (x) this.ir(x.go, e); };
+    // Panel Descartar
+    const e = st.panel ? R.find(x => x.id === st.orig) : null; v.pnOpen = !!e; v.pn = { title: e ? 'Descartar advertencia · ' + e.objNombre : '', txt: e ? e.nombre + ': ' + e.detalle + ' Descartarla no cambia la configuración: deja de contar como abierta y queda en «Descartados» con tu motivo.' : '', close: () => this.cerrar(), save: () => this.descartar(), motivo: st.motivo, onMot: (ev) => this.setState({ motivo: ev.target.value, motErr: false }), err: st.motErr, bd: st.motErr ? 'var(--color-danger)' : 'var(--input-outlined-border)', inv: st.motErr ? 'true' : 'false', help: st.motErr ? 'Escribe el motivo (mínimo 10 caracteres).' : 'Mínimo 10 caracteres. Queda con la advertencia descartada.', helpC: st.motErr ? 'var(--color-danger)' : 'var(--text-muted)' };
+    const rz = st.res ? R.find(x => x.key === st.res && x.estado === 'Abierto') || R.filter(x => x.key === st.res).slice(-1)[0] : null;
+    v.resOn = !!rz; v.res = rz ? { t: rz.id + ' · ' + rz.nombre + ' · ' + rz.objNombre + ' (' + rz.estado.toLowerCase() + ')', x: rz.detalle, ir: () => this.ir({ flujo: rz.flujo }, rz), cerrar: () => this.setState({ res: null }) } : { t: '', x: '' };
+    v.principios = K.principios.slice(0, 3).map(t => ({ t }));
+    return v;
+  }
+}
+</script>
+</body>
+</html>

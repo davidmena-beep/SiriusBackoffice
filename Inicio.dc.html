@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<style>html,body{margin:0}*{box-sizing:border-box}
+.ini-ind{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.ini-ind{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ini-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}
+@media (min-width:1440px){.ini-cols{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}
+.ini-card{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF}
+.ini-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;min-width:0;padding:18px 20px;text-align:left;font-family:var(--font-brand);cursor:pointer;border-left-width:4px}
+.ini-kpi:hover{box-shadow:var(--shadow-sm)}
+.ini-kpi[aria-disabled=true]{cursor:default;box-shadow:none}
+.ini-kpi:focus-visible,.ini-lk:focus-visible,.ini-seg:focus-visible,.ini-row-lk:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+.ini-lk{border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.ini-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;align-items:center;gap:8px 16px;padding:12px 0;border-top:1px solid var(--border-subtle)}
+@media (max-width:1100px){.ini-row{grid-template-columns:76px minmax(0,1fr) auto}.ini-row>.ini-act{grid-column:2/4;justify-self:start}}
+.ini-seg{border:none;padding:0;cursor:pointer;height:100%}
+.ini-nw{white-space:nowrap}
+</style>
+</helmet>
+<section data-screen-label="BO-01 Inicio por rol" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:24px">{{ page }}</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:800},&quot;modelo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+// BO-01 · Inicio por rol (etapa 9 · DEC-131). Dibuja el modelo que arma SiriusInicio con SIRIUS_INICIO y los datos vigentes
+// (lo calcula el Back-office). Responde «¿qué tengo que hacer ahora?»: saludo, hasta 4 indicadores, «Para hoy» (hasta 5 filas
+// por urgencia, «Ver todos»), bloques y accesos rápidos. Cada clic devuelve su destino con onIr.
+class Component extends DCLogic {
+  state = { todos: false };
+  NS() { return window.AseguradoraDelSurDesignSystem_4fbf29 || {}; }
+  ir(go) { if (go && this.props.onIr) this.props.onIr(go); }
+  componentDidUpdate(prev) { prev = prev || {}; if (prev.modelo && this.props.modelo && prev.modelo.rol !== this.props.modelo.rol && this.state.todos) this.setState({ todos: false }); }
+  badge(label, tono, title, key) { const NS = this.NS(), h = React.createElement; if (!label) return null; const inner = h('span', { className: 'ini-nw', title: title || undefined }, label); return NS.Badge ? h(NS.Badge, { key: key, tone: tono || 'neutral' }, inner) : h('span', { key: key }, inner); }
+  boton(label, onClick, variant, key, extra) { const NS = this.NS(), h = React.createElement; return NS.Button ? h(NS.Button, Object.assign({ key: key, variant: variant || 'secondary', size: 'sm', onClick: onClick }, extra || {}), label) : h('button', { key: key, type: 'button', onClick: onClick }, label); }
+  card(id, titulo, kids, extra, aside) { const h = React.createElement;
+    return h('section', { key: id, className: 'ini-card', 'aria-labelledby': 'ini-' + id + '-t', style: Object.assign({ display: 'flex', flexDirection: 'column', gap: 12, padding: '20px 24px', minWidth: 0 }, extra || {}) },
+      h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' } }, h('h2', { id: 'ini-' + id + '-t', style: { margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' } }, titulo), aside || null), kids); }
+  vacio(t) { return React.createElement('p', { key: 'v', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, t); }
+  // ---------- Indicadores ----------
+  indicador(x) { const h = React.createElement, on = !!x.ir, color = x.tono === 'danger' ? 'var(--color-danger)' : x.tono === 'warning' ? 'var(--color-warning)' : 'var(--border-subtle)';
+    const ver = !on ? 'Nada que mostrar' : x.n === 1 ? 'Ver detalle' : 'Ver los ' + x.n;
+    // Etapa 12d-3b · enlace secundario bajo el indicador (p. ej. «1 con alertas altas sin revisar»): la tarjeta pasa a contener dos botones hermanos.
+    if (x.extra) return h('div', { key: x.id, className: 'ini-card', style: { display: 'flex', flexDirection: 'column', minWidth: 0, borderLeftWidth: 4, borderLeftColor: color } }, this.indicador(Object.assign({}, x, { extra: null, _dentro: true })),
+      h('button', { type: 'button', className: 'ini-lk', 'data-ini-extra': x.id, onClick: () => this.ir(x.extra.ir), style: { alignSelf: 'flex-start', margin: '-10px 20px 16px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, color: 'var(--color-danger)', textDecoration: 'underline', textUnderlineOffset: 3 } }, '! ' + x.extra.texto));
+    return h('button', { key: x.id, type: 'button', className: 'ini-card ini-kpi', 'aria-disabled': on ? undefined : 'true', title: on ? x.regla + ' · Abre: ' + x.destino : 'No hay nada que mostrar con este indicador', 'aria-label': x.titulo + ': ' + (x.texto || x.n) + '. ' + (x.sub ? x.sub + '. ' : '') + (on ? ver + ' en ' + x.destino : 'Nada que mostrar'), onClick: on ? () => this.ir(x.ir) : undefined, style: x._dentro ? { border: 'none', background: 'transparent' } : { borderLeftColor: color } },
+      h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)', lineHeight: 1.3 } }, x.titulo),
+      h('span', { className: 'ini-nw', style: { fontSize: x.texto ? 32 : 44, fontWeight: 300, lineHeight: 1, color: x.tono === 'danger' ? 'var(--color-danger)' : 'var(--text-strong)' } }, x.texto || String(x.n)),
+      h('span', { style: { fontSize: 13, lineHeight: 1.4, color: 'var(--text-muted)', minHeight: 18 } }, x.sub || ''),
+      h('span', { 'aria-hidden': 'true', style: { fontSize: 14, fontWeight: 700, color: on ? 'var(--text-link)' : 'var(--neutral-500)', textDecoration: on ? 'underline' : 'none', textUnderlineOffset: 3 } }, ver)); }
+  // ---------- Para hoy ----------
+  paraHoy(p) { const h = React.createElement, todos = this.state.todos, filas = todos ? p.filas : p.filas.slice(0, 5);
+    if (!p.filas.length) { const s = p.vacio.siguiente;
+      return this.card('hoy', p.titulo, [h('div', { key: 'vac', role: 'status', style: { display: 'flex', flexDirection: 'column', gap: 6, padding: '16px 0 4px' } },
+        h('p', { style: { margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--text-strong)' } }, p.vacio.titulo),
+        h('p', { style: { margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)' } }, s ? 'Siguiente vencimiento: ' + s.texto + ', el ' + s.fecha + '.' : 'No tienes vencimientos próximos.'))]); }
+    const aside = p.filas.length > 5 ? h('button', { type: 'button', className: 'ini-lk', 'aria-expanded': todos ? 'true' : 'false', onClick: () => this.setState({ todos: !todos }) }, todos ? 'Ver menos' : 'Ver todos (' + p.filas.length + ')') : h('span', { style: { fontSize: 14, color: 'var(--text-muted)' } }, p.filas.length === 1 ? '1 pendiente' : p.filas.length + ' pendientes');
+    const sub = h('p', { key: 'sub', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Primero lo vencido, luego lo que está por vencer y después por fecha. ' + (p.filas.length > 5 && !todos ? 'Se muestran 5 de ' + p.filas.length + '.' : ''));
+    const lista = h('ul', { key: 'l', 'aria-label': 'Pendientes para hoy', style: { listStyle: 'none', margin: 0, padding: 0 } }, filas.map(f => h('li', { key: f.id, className: 'ini-row' },
+      h('span', { className: 'ini-nw', style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, f.caso),
+      h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', overflowWrap: 'anywhere' } }, f.asegurado), h('span', { style: { fontSize: 14, lineHeight: 1.4, color: 'var(--text-body)', overflowWrap: 'anywhere' } }, f.motivo)),
+      h('span', { style: { justifySelf: 'end' } }, f.urg ? this.badge(f.urg.label, f.urg.tono, f.urg.title) : null),
+      h('span', { className: 'ini-act' }, this.boton(f.accion.label, () => this.ir(f.accion.ir), 'secondary', 'b', { 'aria-label': f.accion.label + ' · ' + f.caso + ' · ' + f.asegurado })))));
+    return this.card('hoy', p.titulo, [sub, lista], null, aside); }
+  // ---------- Bloques ----------
+  bloque(b, i) { const h = React.createElement, id = 'b' + i;
+    if (b.tipo === 'barras') { const tot = b.total || 0, TONE = { neutral: 'var(--neutral-400, #9AA4B2)', brand: 'var(--color-brand)', teal: 'var(--color-accent-teal)', warning: 'var(--color-warning)', success: 'var(--color-success)', danger: 'var(--color-danger)' };
+      if (!tot) return this.card(id, b.titulo, [this.vacio(b.vacio)]);
+      const barra = h('div', { key: 'bar', style: { display: 'flex', width: '100%', height: 20, borderRadius: 999, overflow: 'hidden', gap: 2, background: 'var(--surface-subtle, #F3F5F8)' } }, b.tramos.map(t => h('button', { key: t.estado, type: 'button', className: 'ini-seg', title: t.label + ': ' + t.n, 'aria-label': t.label + ': ' + t.n + ' casos. Ver en la bandeja', onClick: () => this.ir(t.ir), style: { flex: t.n + ' 1 0', minWidth: 6, background: TONE[t.tono] || TONE.neutral } })));
+      const ley = h('ul', { key: 'ley', style: { listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: '6px 16px' } }, b.tramos.map(t => h('li', { key: t.estado, style: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 } }, h('span', { 'aria-hidden': 'true', style: { width: 10, height: 10, borderRadius: 3, flex: 'none', background: TONE[t.tono] || TONE.neutral } }), h('button', { type: 'button', className: 'ini-lk', onClick: () => this.ir(t.ir), style: { fontWeight: 600 } }, t.label), h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)', marginLeft: 'auto' } }, String(t.n)))));
+      return this.card(id, b.titulo, [h('p', { key: 'n', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, tot + (tot === 1 ? ' caso activo' : ' casos activos') + ' · clic en un estado para verlos en la bandeja'), barra, ley]); }
+    if (b.tipo === 'lista') return this.card(id, b.titulo, b.items.length ? [h('ul', { key: 'l', style: { listStyle: 'none', margin: 0, padding: 0 } }, b.items.map((x, k) => h('li', { key: k, style: { display: 'flex', flexDirection: 'column', gap: 2, padding: '10px 0', borderTop: k ? '1px solid var(--border-subtle)' : 'none' } },
+      x.ir ? h('button', { type: 'button', className: 'ini-lk', onClick: () => this.ir(x.ir), style: { alignSelf: 'flex-start', whiteSpace: 'normal', textAlign: 'left', fontSize: 15 } }, x.a) : h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, x.a),
+      x.b ? h('span', { style: { fontSize: 14, color: 'var(--text-body)' } }, x.b) : null, h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, x.c))))] : [this.vacio(b.vacio)]);
+    if (b.tipo === 'carga') { const max = Math.max(1, ...b.items.map(x => x.n));
+      return this.card(id, b.titulo, [h('p', { key: 'n', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, b.nota), h('ul', { key: 'l', style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 } }, b.items.map(x => h('li', { key: x.label, style: { display: 'grid', gridTemplateColumns: 'minmax(0,180px) minmax(0,1fr) 28px', alignItems: 'center', gap: 12 } },
+        h('span', { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } }, x.n ? h('button', { type: 'button', className: 'ini-lk', onClick: () => this.ir(x.ir), style: { textAlign: 'left', whiteSpace: 'normal' } }, x.label) : h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, x.label), h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, x.sub)),
+        h('span', { 'aria-hidden': 'true', style: { height: 10, borderRadius: 999, background: 'var(--surface-subtle, #F3F5F8)', overflow: 'hidden' } }, h('span', { style: { display: 'block', height: '100%', width: (x.n / max * 100) + '%', background: 'var(--color-brand)', borderRadius: 999 } })),
+        h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', textAlign: 'right' } }, String(x.n)))))]); }
+    if (b.tipo === 'visitas') return this.card(id, b.titulo, b.items.length ? [h('ul', { key: 'l', style: { listStyle: 'none', margin: 0, padding: 0 } }, b.items.map((x, k) => h('li', { key: k, style: { display: 'grid', gridTemplateColumns: '140px minmax(0,1fr)', gap: 12, padding: '10px 0', borderTop: k ? '1px solid var(--border-subtle)' : 'none' } },
+      h('span', { style: { display: 'flex', flexDirection: 'column' } }, h('span', { className: 'ini-nw', style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, x.fecha), h('span', { className: 'ini-nw', style: { fontSize: 13, color: 'var(--text-muted)' } }, x.franja)),
+      h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('button', { type: 'button', className: 'ini-lk', onClick: () => this.ir(x.ir), style: { alignSelf: 'flex-start' } }, 'Caso ' + x.caso), h('span', { style: { fontSize: 14, color: 'var(--text-body)' } }, x.inspector + (x.mod ? ' · ' + x.mod : ''))))))] : [this.vacio(b.vacio)]);
+    if (b.tipo === 'semana') return this.card(id, b.titulo, [h('ul', { key: 'l', style: { listStyle: 'none', margin: 0, padding: 0 } }, b.dias.map((d, k) => h('li', { key: k, style: { display: 'grid', gridTemplateColumns: '140px minmax(0,1fr)', gap: 12, padding: '10px 0', borderTop: k ? '1px solid var(--border-subtle)' : 'none' } },
+      h('span', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 } }, h('span', { className: 'ini-nw', style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, d.dia), d.hoy ? this.badge('Hoy', 'brand', null, 'hoy') : null),
+      d.items.length ? h('span', { style: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 } }, d.items.map((x, j) => h('span', { key: j, style: { display: 'flex', flexDirection: 'column', gap: 2 } }, h('span', { style: { display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' } }, h('span', { className: 'ini-nw', style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, x.franja), h('button', { type: 'button', className: 'ini-lk', onClick: () => this.ir(x.ir) }, 'Caso ' + x.caso), h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, x.mod + ' · ' + x.estado)), h('span', { style: { fontSize: 13, color: 'var(--text-body)', overflowWrap: 'anywhere' } }, x.dir)))) : h('span', { style: { fontSize: 14, color: 'var(--text-muted)' } }, b.vacio))))]);
+    if (b.tipo === 'ramos') return this.card(id, b.titulo, [h('p', { key: 'n', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, b.nota)].concat(b.items.length ? [h('table', { key: 't', style: { width: '100%', borderCollapse: 'collapse', fontSize: 14 } }, h('thead', null, h('tr', null, ['Ramo', 'Asegurables', 'No asegurables'].map((t, k) => h('th', { key: k, scope: 'col', style: { textAlign: k ? 'right' : 'left', padding: '6px 0', fontSize: 13, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' } }, t)))), h('tbody', null, b.items.map(x => h('tr', { key: x.ramo }, h('td', { style: { padding: '8px 0', color: 'var(--text-strong)' } }, x.ramo), h('td', { style: { padding: '8px 0', textAlign: 'right', fontWeight: 700 } }, String(x.a)), h('td', { style: { padding: '8px 0', textAlign: 'right', fontWeight: 700 } }, String(x.n))))))] : [this.vacio(b.vacio)]));
+    return null; }
+  renderVals() {
+    const h = React.createElement, m = this.props.modelo;
+    if (!m) return { page: h('p', { style: { margin: 0, color: 'var(--text-muted)' } }, 'Cargando el inicio…') };
+    const head = h('header', { key: 'h', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px 24px' } },
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 } }, h('h1', { style: { margin: 0, fontWeight: 300, fontSize: 36, lineHeight: 1.05, color: 'var(--text-strong)' } }, 'Hola, ' + m.saludo.primer),
+        h('p', { style: { margin: 0, fontSize: 15, color: 'var(--text-body)', display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'center' } }, h('span', null, m.saludo.fecha), h('span', { 'aria-hidden': 'true' }, '·'), h('span', null, 'Rol activo: '), this.badge(m.saludo.rol, 'brand', null, 'rol'))),
+      m.accesos.length ? h('nav', { 'aria-label': 'Accesos rápidos', style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, m.accesos.map((a, i) => this.boton(a.label, () => this.ir(a.ir), i === 0 ? 'primary' : 'secondary', a.label, { size: 'md' }))) : null);
+    const parts = [head];
+    if (m.nota) parts.push(h('p', { key: 'nota', role: 'note', className: 'ini-card', style: { margin: 0, padding: '16px 20px', fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)', maxWidth: 760 } }, m.nota));
+    if (m.indicadores.length) parts.push(h('div', { key: 'ind', className: 'ini-ind', role: 'group', 'aria-label': 'Indicadores' }, m.indicadores.map(x => this.indicador(x))));
+    const cols = [];
+    if (m.paraHoy) cols.push(h('div', { key: 'c1', style: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 } }, this.paraHoy(m.paraHoy)));
+    if (m.bloques.length) cols.push(h('div', { key: 'c2', style: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 } }, m.bloques.map((b, i) => this.bloque(b, i))));
+    if (cols.length) parts.push(h('div', { key: 'cols', className: 'ini-cols' }, cols));
+    return { page: parts };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
+<script src="datos-compania.js"></script><script src="sirius-fecha.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-salida-rg.js"></script><script src="datos-salida-veh.js"></script><script src="datos-documentos-pdf.js"></script><script src="datos-informe-veh.js"></script>
+<script src="datos-motores-ia.js"></script><script src="sirius-placa.js"></script><script src="sirius-pdf.js"></script><script src="sirius-salida-veh.js"></script><script src="sirius-documentos-pdf.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>a{color:var(--text-link)}a:hover{opacity:.8}#sv-panel{transition:grid-template-rows 160ms ease-out}@media (prefers-reduced-motion: reduce){#sv-panel{transition:none}}</style>
+</helmet>
+<div data-screen-label="BO-27 Salida de Vehículos" style="min-width:0;margin-bottom:20px;font-family:var(--font-brand);color:var(--text-body)">
+<section aria-labelledby="sv-t" onKeyDown="{{ onPanelKey }}" style="display:flex;flex-direction:column;padding:10px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;min-height:40px">
+<h2 id="sv-t" style="margin:0;font-size:15px;font-weight:700;line-height:1.3;color:var(--text-strong)"><span>Informe en PDF</span> <span style="font-weight:400;color:var(--text-muted)">· Resumen para el APS e Informe de inspección</span></h2>
+<button type="button" id="sv-open" aria-expanded="{{ expanded }}" aria-controls="sv-panel" onClick="{{ onToggle }}" style="min-height:40px;padding:8px 18px;border:1.5px solid var(--color-brand);border-radius:var(--radius-sm);background:#FFFFFF;color:var(--cyan-700);font:700 14px var(--font-brand);cursor:pointer;white-space:nowrap" style-hover="background:var(--color-brand-wash)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Generar informe</button>
+</div>
+<div id="sv-panel" style="display:grid;grid-template-rows:{{ rows }}">
+<div style="min-height:0;overflow:hidden">
+<sc-if value="{{ open }}" hint-placeholder-val="{{ false }}"><div role="group" aria-label="Generar informe" style="display:flex;flex-direction:column;gap:14px;padding:14px 0 6px;border-top:1px solid var(--border-subtle);margin-top:10px">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px 32px">
+<sc-if value="{{ showVeh }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px;min-width:260px"><label for="sv-veh" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ nS }}</label><select id="sv-veh" key="{{ selKey }}" defaultValue="{{ vehVal }}" onChange="{{ onVeh }}" style="height:44px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ vehOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></div></sc-if>
+<div role="radiogroup" aria-labelledby="sv-doc-l" aria-describedby="sv-doc-h" style="display:flex;flex-direction:column;gap:6px;min-width:0"><span id="sv-doc-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Documento</span>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ docOpts }}" as="o" hint-placeholder-count="3"><span style="position:relative;display:inline-flex"><button type="button" role="radio" id="{{ o.id }}" aria-checked="{{ o.on }}" aria-disabled="{{ o.ad }}" aria-describedby="{{ o.tipId }}" tabindex="{{ o.ti }}" onClick="{{ o.pick }}" onKeyDown="{{ o.key }}" onFocus="{{ o.tipOn }}" onBlur="{{ o.tipOff }}" onMouseEnter="{{ o.tipOn }}" onMouseLeave="{{ o.tipOff }}" style="height:40px;padding:0 16px;border:1.5px solid {{ o.bd }};border-radius:var(--radius-pill);background:{{ o.bg }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:{{ o.fg }};cursor:{{ o.cur }};white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ o.l }}</button><sc-if value="{{ o.showTip }}" hint-placeholder-val="{{ false }}"><span role="tooltip" id="{{ o.tipId }}" style="position:absolute;left:0;top:46px;z-index:5;width:max-content;max-width:320px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface-navy);color:#FFFFFF;font-size:13px;font-weight:400;line-height:1.4;white-space:normal;box-shadow:var(--shadow-md)">{{ o.motivo }}</span></sc-if></span></sc-for></div>
+<span id="sv-doc-h" style="font-size:12px;line-height:1.4;color:var(--text-muted);text-wrap:pretty">{{ docHelp }}</span></div>
+</div>
+</div>
+<sc-if value="{{ hasOmit }}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:0;padding:10px 12px;border-radius:var(--radius-sm);background:var(--alert-warning-bg);font-size:14px;line-height:1.45;color:var(--text-strong)">{{ omitText }}</p></sc-if>
+<sc-if value="{{ noDocs }}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:0;font-size:14px;color:var(--text-body)">{{ noDocsText }}</p></sc-if>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
+<sc-if value="{{ canVer }}" hint-placeholder-val="{{ true }}"><button type="button" id="sv-ver" aria-haspopup="dialog" onClick="{{ onVer }}" style="min-height:40px;padding:8px 18px;border:none;border-radius:var(--radius-sm);background:var(--color-brand);color:var(--text-strong);font:700 14px var(--font-brand);cursor:pointer;white-space:nowrap" style-hover="background:var(--cyan-600)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Ver vista previa</button></sc-if>
+<button type="button" onClick="{{ onClose }}" style="min-height:40px;padding:8px 18px;border:1.5px solid var(--color-brand);border-radius:var(--radius-sm);background:#FFFFFF;color:var(--cyan-700);font:700 14px var(--font-brand);cursor:pointer;white-space:nowrap" style-hover="background:var(--color-brand-wash)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Cerrar</button>
+<span style="font-size:12px;color:var(--text-muted)">{{ verNota }}</span>
+</div>
+</div></sc-if>
+</div></div>
+</section>
+<sc-if value="{{ pv }}" hint-placeholder-val="{{ false }}"><div onClick="{{ onBackdrop }}" aria-hidden="true" style="position:fixed;inset:0;z-index:950;background:rgba(1,30,65,.55)"></div>
+<div id="sv-dlg" role="dialog" aria-modal="true" aria-labelledby="sv-dlg-t" onKeyDown="{{ onDlgKey }}" style="position:fixed;z-index:951;top:16px;bottom:16px;left:max(16px, 2vw);right:max(16px, 2vw);display:flex;flex-direction:column;background:#FFFFFF;border-radius:var(--radius-md);box-shadow:var(--shadow-modal);overflow:hidden">
+<div style="flex:none;display:flex;flex-direction:column;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border-subtle);background:#FFFFFF">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px">
+<h2 id="sv-dlg-t" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ sd.titulo }}</h2>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px"><sc-if value="{{ dl.hasMsg }}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size:13px;color:{{ dl.msgColor }}">{{ dl.msg }}</span></sc-if><button type="button" id="sv-dl" onClick="{{ dl.click }}" aria-disabled="{{ dl.ad }}" style="min-height:40px;padding:8px 18px;border:none;border-radius:var(--radius-sm);background:{{ dl.bg }};color:var(--text-strong);font:700 14px var(--font-brand);cursor:{{ dl.cur }};white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ dl.label }}</button><button type="button" id="sv-dlg-x" onClick="{{ onCloseDlg }}" aria-label="Cerrar la vista previa" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-default);border-radius:var(--radius-sm);background:#FFFFFF;cursor:pointer" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px">
+<sc-if value="{{ sd.nav }}" hint-placeholder-val="{{ false }}"><div role="group" aria-label="{{ nS }} en la vista previa" style="display:flex;align-items:center;gap:6px"><button type="button" onClick="{{ sd.prev }}" aria-label="{{ nS }} anterior" aria-disabled="{{ sd.prevAd }}" title="{{ sd.prevTip }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-default);border-radius:var(--radius-sm);background:#FFFFFF;color:{{ sd.prevFg }};cursor:{{ sd.prevCur }}" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><span aria-live="polite" style="min-width:150px;text-align:center;font-size:14px;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ sd.navTxt }}</span><button type="button" onClick="{{ sd.next }}" aria-label="{{ nS }} siguiente" aria-disabled="{{ sd.nextAd }}" title="{{ sd.nextTip }}" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-default);border-radius:var(--radius-sm);background:#FFFFFF;color:{{ sd.nextFg }};cursor:{{ sd.nextCur }}" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></div></sc-if>
+<div role="tablist" aria-label="Documentos del {{ ns }}" style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ sd.tabs }}" as="t" hint-placeholder-count="2"><button type="button" role="tab" id="{{ t.id }}" aria-selected="{{ t.sel }}" aria-controls="sv-tabpanel" tabindex="{{ t.ti }}" onClick="{{ t.pick }}" onKeyDown="{{ t.key }}" style="min-height:40px;padding:8px 18px;border:1.5px solid {{ t.bd }};border-radius:var(--radius-sm);background:{{ t.bg }};color:var(--text-strong);font:700 14px var(--font-brand);cursor:pointer;white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ t.l }}</button></sc-for></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;font-size:13px;color:var(--text-muted)"><span>{{ sd.dest }}</span><span>Archivo: <span style="white-space:nowrap">{{ sd.archivo }}</span></span><span aria-live="polite">{{ sd.qc }}</span></div>
+</div>
+<div id="sv-tabpanel" role="tabpanel" aria-label="{{ sd.aria }}" tabindex="0" style="flex:1 1 auto;min-height:0;overflow:auto;background:var(--surface-subtle);padding:20px">
+<div id="sv-doc" style="display:flex;flex-direction:column;gap:20px;align-items:center">
+<sc-for list="{{ sd.pages }}" as="pg" hint-placeholder-count="1">
+<article data-page="{{ pg.n }}" aria-label="{{ pg.aria }}" class="sheet" style="box-sizing:border-box;flex:none;width:210mm;height:{{ pg.h }};padding:10mm {{ sd.hd.mx }} 0;background:#FFFFFF;box-shadow:var(--shadow-md);display:flex;flex-direction:column;font-family:{{ sd.hd.font }};color:#14263f">
+<header style="flex:none;box-sizing:border-box;height:16mm;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid {{ sd.hd.cp }}"><div style="display:flex;align-items:center;gap:10px;min-width:0"><img src="{{ sd.hd.logo }}" alt="{{ sd.hd.logoAlt }}" style="display:block;height:9mm;width:auto"><span style="padding-left:10px;border-left:1px solid #d9e0e8;font-size:10pt;font-weight:800;color:{{ sd.hd.cp }}">{{ sd.hd.titulo }}</span></div><div style="display:flex;align-items:center;gap:10px;flex:none"><sc-if value="{{ sd.hd.hasLogoDer }}" hint-placeholder-val="{{ false }}"><img src="{{ sd.hd.logoDer }}" alt="{{ sd.hd.logoDerAlt }}" style="display:block;height:9mm;width:auto"></sc-if><sc-if value="{{ sd.hd.hasAg }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;justify-content:center;height:9mm;padding:0 10px;border:1px dashed #b8c3cf;border-radius:4px;font-size:7.5pt;color:#5b6b80;white-space:nowrap">{{ sd.hd.ag }}</span></sc-if><div style="font-size:8pt;line-height:1.35;color:#5b6b80;text-align:right;white-space:nowrap"><sc-for list="{{ pg.cab }}" as="cl" hint-placeholder-count="3"><div>{{ cl.t }}</div></sc-for></div></div></header>
+<div style="flex:none;height:{{ pg.ch }};margin-top:3mm;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<sc-for list="{{ pg.blocks }}" as="b" hint-placeholder-count="6"><div data-bi="{{ b.bi }}" ref="{{ b.ref }}"></div></sc-for>
+</div>
+<sc-if value="{{ pg.hasPie }}" hint-placeholder-val="{{ false }}"><footer class="pie" style="flex:none;box-sizing:border-box;margin-top:auto;margin-bottom:8mm;padding-top:4px;border-top:1px solid #d9e0e8;display:flex;justify-content:space-between;gap:12px;font-size:7.5pt;color:#5b6b80"><span>{{ pg.pieIzq }}</span><span style="white-space:nowrap">{{ pg.pieDer }}</span></footer></sc-if>
+</article>
+</sc-for>
+</div></div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1600},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20196&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;asegurado&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;vehiculos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;escena&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;caso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;usuario&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sustantivo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;vehículo&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+// BO-27 · Salida en PDF de Vehículos (etapa SV · DEC-117 y DEC-118; formato nuevo en la etapa DP1 · DEC-125 y DEC-126).
+// Un informe por vehículo, dos documentos por vehículo: veh-informe y veh-resumen de SIRIUS_DOCUMENTOS_PDF, armados por
+// sirius-documentos-pdf.js (un renderizador por tipo de sección) con los valores de sirius-salida-veh.js (contexto, disponibilidad,
+// nombres de archivo). Paginación y PDF: sirius-pdf.js, el mismo motor del PDF de Ramos Generales; cada bloque es atómico.
+// Cada página lleva el encabezado (logo de la compañía y de la agencia) y el pie (Página N de M, código y generación). JSZip se carga solo al pedir el .zip.
+class Component extends DCLogic {
+  DOCS = [['resumen', 'Resumen para el APS'], ['informe', 'Informe de inspección'], ['ambos', 'Ambos']];
+  JSZIP = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+  state = (() => {
+    const e = this.props.escena || '', st = { pv: false, open: false, veh: '', doc: '', idx: 0, tab: '', tip: '', pg: null, dl: null, sel: 0 };
+    const pre = { svpdq: 'informe', svresumen: 'resumen', svflota: 'ambos', svsinveredicto: 'informe', dp1veh: 'informe', dp1diag: 'informe', dp1sinhall: 'informe', dp1aps: 'resumen', empdf: 'informe', empdfaps: 'resumen', empdftarjetas: 'informe', empdfdiag: 'informe', empdfdiag3: 'informe' }[e];
+    // svflota: panel desplegado con «Todos los vehículos» y Ambos; las demás abren además la vista previa superpuesta.
+    if (pre) { st.open = true; st.doc = pre; if (e === 'svflota') st.veh = 'todos'; else st.pv = true; if (/^dp1(veh|diag|aps)$/.test(e)) st.veh = '20196-V1'; if (/^empdf/.test(e)) st.veh = e === 'empdfdiag3' ? '20204-E3' : '20204-E1'; }
+    return st;
+  })();
+  G() { return window.SiriusSalidaVeh || null; }
+  PDF() { return window.SiriusPdf || null; }
+  componentDidMount() { if (this.state.pv) setTimeout(() => { const b = document.getElementById('sv-dlg-x'); if (b) b.focus(); }, 400); setTimeout(() => { if (!this._dead) this.pgMeasure(); }, 120); }
+  componentDidUpdate() { this.pgMeasure(); this.irDiagrama(); this.irTarjetas(); }
+  // empdftarjetas (etapa 8c): con la vista previa paginada, lleva el capítulo con las tarjetas al inicio del panel.
+  irTarjetas() { if (this.props.escena !== 'empdftarjetas' || this._tjOk || !this.state.pg || this.state.pg.key !== this._sig) return; const sv = document.querySelector('#sv-doc [data-tarjeta="1"]'), tp = document.getElementById('sv-tabpanel'); if (!sv || !tp) return; this._tjOk = true;
+    setTimeout(() => { const h = sv.closest('[data-bi]') || sv; tp.scrollTop += h.getBoundingClientRect().top - tp.getBoundingClientRect().top - 40; }, 60); }
+  // dp1diag: con la vista previa paginada, lleva el diagrama de averías al inicio del panel.
+  irDiagrama() { if (!['dp1diag', 'empdfdiag', 'empdfdiag3'].includes(this.props.escena) || this._diagOk || !this.state.pg || this.state.pg.key !== this._sig) return; const sv = document.querySelector('#sv-doc article[data-page]:not([data-page="0"]) svg[data-carroceria]'), tp = document.getElementById('sv-tabpanel'); if (!sv || !tp) return; this._diagOk = true;
+    setTimeout(() => { const h = sv.closest('[data-bi]') || sv; tp.scrollTop += h.getBoundingClientRect().top - tp.getBoundingClientRect().top - 12; }, 60); }
+  // Bloques HTML del documento: se pintan con innerHTML (los arma sirius-documentos-pdf.js con estilos en línea).
+  refFor(html) { this._refs = this._refs || {}; if (!this._refs[html]) { if (Object.keys(this._refs).length > 400) this._refs = {}; this._refs[html] = (el) => { if (el && el.__h !== html) { el.innerHTML = html; el.__h = html; } }; } return this._refs[html]; }
+  componentWillUnmount() { this._dead = true; }
+  // Vehículos del caso con su estado de la sesión (prop del Back-office); sin prop, los del archivo.
+  lista() {
+    const G = this.G(), E = window.SIRIUS_EJEMPLO || {}; if (!G || !E.vehiculos) return [];
+    const src = (this.props.vehiculos && this.props.vehiculos.length) ? this.props.vehiculos : E.vehiculos.filter(v => v.caso === this.props.caseId).map(v => ({ riesgo: v.riesgo, ov: {}, inf: (v.informe || {}).estado || '' }));
+    const key = JSON.stringify([this.props.caseId, this.props.asegurado, src, this.props.caso || null, this.props.usuario || '', (window.SIRIUS_DOCUMENTOS_PDF || {}).rev || 0]); if (this._lk === key) return this._l;
+    this._lk = key; this._l = src.map(x => { const c = G.contexto(x.riesgo, x.ov || {}, this.props.caseId, this.props.asegurado); return c ? Object.assign(c, { disp: G.disponibilidad(c, x.inf) }) : null; }).filter(Boolean); this._docs = {}; return this._l;
+  }
+  D() { return window.SiriusDocumentosPdf || null; }
+  // Etapa DP2: cada PDF descargado suma a «PDF generados» de la versión Vigente con la que se hizo.
+  registrar(cd) { const D = this.D(); if (D && cd && D.registrarGenerado) D.registrarGenerado(cd.id, 1, cd.version); }
+  docOf(c, id) { const k = c.rid + '|' + id; this._docs = this._docs || {}; if (!this._docs[k]) { const L = this.lista(), idx = L.indexOf(c), caso = Object.assign({ numero: this.props.caseId, asegurado: this.props.asegurado || '' }, this.props.caso || {});
+    this._docs[k] = this.D() ? this.D().documento(id, c, { caso, usuario: this.props.usuario || '', idx: Math.max(0, idx), total: L.length }) : null; } return this._docs[k]; }
+  ids(doc) { return doc === 'ambos' ? ['resumen', 'informe'] : doc ? [doc] : []; }
+  // Selección efectiva: vehículos elegidos, documentos pedidos y lo que se omite.
+  seleccion() {
+    const L = this.lista(), st = this.state, multi = L.length > 1, veh = multi ? (st.veh && L.some(c => c.rid === st.veh) ? st.veh : 'todos') : (L[0] ? L[0].rid : '');
+    const elegidos = veh === 'todos' ? L : L.filter(c => c.rid === veh);
+    const disp = (id) => elegidos.some(c => c.disp[id].ok);
+    const okDoc = (d) => d === 'ambos' ? (veh === 'todos' ? disp('resumen') && disp('informe') : elegidos.every(c => c.disp.resumen.ok && c.disp.informe.ok)) : disp(d);
+    let doc = st.doc && okDoc(st.doc) ? st.doc : ['ambos', 'informe', 'resumen'].find(okDoc) || '';
+    const pedidos = this.ids(doc), items = [], omit = [];
+    elegidos.forEach(c => { const ok = pedidos.filter(id => c.disp[id].ok), no = pedidos.filter(id => !c.disp[id].ok);
+      ok.forEach(id => items.push({ c, id })); if (no.length) omit.push(no.length === pedidos.length ? c.etiqueta + ' (' + c.disp[no[0]].corto + ')' : c.etiqueta + ': ' + no.map(id => this.DOCS.find(d => d[0] === id)[1] + ' (' + c.disp[id].corto + ')').join(', ')); });
+    const vehs = elegidos.filter(c => items.some(it => it.c === c));
+    return { L, multi, veh, elegidos, doc, okDoc, items, omit, vehs };
+  }
+  // ---------- Paginación (motor común) ----------
+  pgMeasure() {
+    const P = this.PDF(), sig = this._sig; if (!P || !sig || (this.state.pg && this.state.pg.key === sig) || this._pgBusy === sig) return;
+    const doc = document.getElementById('sv-doc'); if (!doc || !doc.querySelector('[data-bi]') || !doc.querySelector('article[data-page="0"]')) return; this._pgBusy = sig;
+    P.esperar(() => { try { if (this._dead || this._sig !== sig) { this._pgBusy = null; return; } const d2 = document.getElementById('sv-doc'); if (!d2 || !d2.querySelector('article[data-page="0"]')) { this._pgBusy = null; return; }
+      const r = P.paginar(d2, this._cdb || [], { porFila: 2 }); this._pgBusy = null; this.setState({ pg: { key: sig, pages: r.pages, qc: r.qc } }); } catch (e) { this._pgBusy = null; } });
+  }
+  hash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h); }
+  // Espera a que la vista previa del documento sig esté paginada y pintada.
+  listo(sig) { return new Promise((ok, ko) => { const t0 = Date.now(); const chk = () => { if (this._dead) return ko(new Error('x')); const pg = this.state.pg, d = document.getElementById('sv-doc'), n = d ? d.querySelectorAll('article[data-page]:not([data-page="0"])').length : 0; if (pg && pg.key === sig && n === pg.pages.length && this._sig === sig) return setTimeout(ok, 120); if (Date.now() - t0 > 60000) return ko(new Error('tiempo')); setTimeout(chk, 120); }; chk(); }); }
+  paginas() { const d = document.getElementById('sv-doc'); return d ? Array.from(d.querySelectorAll('article[data-page]')).filter(a => a.getAttribute('data-page') !== '0') : []; }
+  // ---------- Descargas ----------
+  descargar() {
+    const P = this.PDF(), cur = this._cur; if ((this.state.dl || {}).gen || !cur) return;
+    const els = this.paginas(); if (!els.length || !this.state.pg || this.state.pg.key !== this._sig) { this.setState({ dl: { err: 'La vista previa aún se está armando. Espera un momento e inténtalo de nuevo.' } }); return; }
+    if (!P || !P.disponible()) { this.setState({ dl: { err: 'No se pudo cargar el generador de PDF. Revisa tu conexión e inténtalo de nuevo.' } }); return; }
+    if (els.length !== this.state.pg.pages.length) { this.setState({ dl: { err: 'La vista previa cambió mientras se preparaba el PDF. Inténtalo de nuevo.' } }); return; }
+    const name = cur.archivo, tot = els.length; this.setState({ dl: { gen: true, txt: 'Generando PDF… página 0 de ' + tot } });
+    P.capturar(els, (n) => this.setState({ dl: { gen: true, txt: 'Generando PDF… página ' + n + ' de ' + tot } })).then((pdf) => { pdf.save(name); this.registrar(cur); this.setState({ dl: { ok: 'Descargado: ' + name + ' · ' + tot + (tot === 1 ? ' página' : ' páginas') } }); }).catch(() => this.setState({ dl: { err: 'No se pudo generar el PDF. Inténtalo de nuevo.' } }));
+  }
+  // Un .zip con un PDF por vehículo y documento. Cada PDF se arma desde su vista previa paginada, igual que «Descargar PDF».
+  async zip() {
+    const P = this.PDF(), S = this.seleccion(); if ((this.state.dl || {}).gen || !S.items.length) return;
+    if (!P || !P.disponible()) { this.setState({ dl: { err: 'No se pudo cargar el generador de PDF. Revisa tu conexión e inténtalo de nuevo.' } }); return; }
+    const back = { idx: this.state.idx, tab: this.state.tab }, tot = S.items.length, name = this.G().zipNombre(this.props.caseId);
+    try {
+      this.setState({ dl: { gen: true, txt: 'Preparando el .zip…' } });
+      await P.cargar(this.JSZIP); const Z = new window.JSZip();
+      for (let k = 0; k < tot; k++) { const it = S.items[k], idx = S.vehs.indexOf(it.c);
+        await new Promise(r => this.setState({ idx, tab: it.id, dl: { gen: true, txt: 'Generando ' + (k + 1) + ' de ' + tot + ': ' + this.G().archivo(it.id, it.c) } }, r));
+        const sig = this._sig; await this.listo(sig); const pdf = await P.capturar(this.paginas()); Z.file(this.G().archivo(it.id, it.c), pdf.output('arraybuffer')); this.registrar(this._cur); }
+      const blob = await Z.generateAsync({ type: 'blob' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+      this.setState(Object.assign({ dl: { ok: 'Descargado: ' + name + ' · ' + tot + ' PDF' } }, back));
+    } catch (e) { this.setState(Object.assign({ dl: { err: 'No se pudo generar el .zip. Inténtalo de nuevo.' } }, back)); }
+  }
+  // Panel en el mismo lugar (aria-expanded); se contrae con «Cerrar» o Esc y el foco vuelve a «Generar informe».
+  abrir() { this.setState({ open: true, dl: null }); }
+  cerrar() { if ((this.state.dl || {}).gen) return; this.setState({ open: false, pv: false, tip: '', dl: null }, () => setTimeout(() => { const b = document.getElementById('sv-open'); if (b) b.focus(); }, 60)); }
+  // Vista previa en una ventana superpuesta: atrapa el foco, cierra con X o Esc y devuelve el foco a «Ver vista previa».
+  verPrevia() { this.setState({ pv: true, dl: null }, () => setTimeout(() => { const b = document.getElementById('sv-dlg-x'); if (b) b.focus(); }, 60)); }
+  cerrarPrevia() { if ((this.state.dl || {}).gen) return; this.setState({ pv: false, dl: null }, () => setTimeout(() => { const b = document.getElementById('sv-ver') || document.getElementById('sv-open'); if (b) b.focus(); }, 60)); }
+  dlgKey(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.cerrarPrevia(); return; }
+    if (e.key !== 'Tab') return; const d = document.getElementById('sv-dlg'); if (!d) return; const f = Array.from(d.querySelectorAll('button,select,a[href],[tabindex="0"]')).filter(x => x.offsetParent !== null && x.getAttribute('tabindex') !== '-1'); if (!f.length) return;
+    const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); } }
+  renderVals() {
+    const G = this.G(), st = this.state;
+    if (!G || !window.SIRIUS_SALIDA_VEH) return { closed: false, open: false, sd: { has: false }, docOpts: [], vehOpts: [], dl: {} };
+    const S = this.seleccion(), L = S.L;
+    const conVer = L.filter(c => c.res.veredicto).length;
+    // Etapa 8b · el mismo panel sirve para Equipo y maquinaria (sustantivo «equipo»).
+    const nN = this.props.sustantivo || 'vehículo', nS = nN.charAt(0).toUpperCase() + nN.slice(1), nP = nN + 's';
+    const barText = L.length > 1 ? L.length + ' ' + nP + ' · Resumen para el APS e Informe de inspección, uno por ' + nN + (conVer < L.length ? ' · ' + conVer + ' con veredicto' : '') : 'Resumen para el APS e Informe de inspección de ' + (L[0] ? L[0].etiqueta : 'este ' + nN);
+    // Selector de documento (radio con motivo cuando no aplica).
+    const motivoDoc = (d) => { if (S.okDoc(d)) return ''; const ids = this.ids(d), m = []; ids.forEach(id => S.elegidos.forEach(c => { if (!c.disp[id].ok && !m.includes(c.disp[id].motivo)) m.push(c.disp[id].motivo); })); return (d === 'ambos' ? 'Necesita los dos documentos. ' : '') + m.join(' '); };
+    const opts = this.DOCS.map(d => ({ id: d[0], l: d[1], ok: S.okDoc(d[0]), motivo: motivoDoc(d[0]) }));
+    const enabled = opts.filter(o => o.ok), move = (from, dir) => { if (!enabled.length) return; const i = enabled.findIndex(o => o.id === from), n = enabled[(i + dir + enabled.length) % enabled.length]; this.setState({ doc: n.id, idx: 0, tab: '', dl: null }, () => { const b = document.getElementById('sv-d-' + n.id); if (b) b.focus(); }); };
+    const docOpts = opts.map(o => { const on = o.id === S.doc; return { id: 'sv-d-' + o.id, l: o.l, on: on ? 'true' : 'false', ad: o.ok ? 'false' : 'true', ti: on || (!S.doc && o === enabled[0]) ? '0' : '-1', tipId: 'sv-d-' + o.id + '-tip', motivo: o.motivo, showTip: !o.ok && st.tip === o.id,
+      bd: on ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF', fg: o.ok ? 'var(--text-strong)' : 'var(--text-muted)', cur: o.ok ? 'pointer' : 'not-allowed',
+      pick: () => { if (!o.ok || (st.dl || {}).gen) return; this.setState({ doc: o.id, idx: 0, tab: '', dl: null }); }, key: (e) => { if (['ArrowRight', 'ArrowDown'].includes(e.key)) { e.preventDefault(); move(o.id, 1); } else if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { e.preventDefault(); move(o.id, -1); } },
+      tipOn: () => { if (!o.ok) this.setState({ tip: o.id }); }, tipOff: () => { if (st.tip === o.id) this.setState({ tip: '' }); } }; });
+    const docHelp = opts.filter(o => !o.ok && o.id !== 'ambos').map(o => o.l + ': ' + o.motivo).join(' ') || (S.veh === 'todos' ? 'Con «Todos los ' + nP + '» se descarga un .zip con un PDF por ' + nN + ' y documento.' : 'La descarga es idéntica a la vista previa.');
+    // Vista previa: vehículo y documento actuales.
+    const vehs = S.vehs, idx = Math.min(st.idx || 0, Math.max(0, vehs.length - 1)), c = vehs[idx] || null, tabs = c ? this.ids(S.doc).filter(id => c.disp[id].ok) : [], tab = tabs.includes(st.tab) ? st.tab : tabs[0] || '';
+    const cd = c && tab ? this.docOf(c, tab) : null; this._cur = cd;
+    const blocksI = cd ? cd.blocks.map((b, i) => ({ bi: i, brk: !!b.brk, isChap: !!b.isChap, conAnterior: !!b.conAnterior, html: b.html, ref: this.refFor(b.html) })) : [];
+    const sig = cd ? c.rid + '|' + tab + '|' + this.hash(JSON.stringify(cd.blocks)) : ''; this._sig = sig; this._cdb = blocksI;
+    const pgS = st.pg && st.pg.key === sig ? st.pg : null, T = pgS ? pgS.pages.length : 0, P = this.PDF();
+    const cab = (L) => L.map(t => ({ t })), hd = cd ? { logo: cd.logo, logoAlt: cd.logoAlt, titulo: cd.titulo, hasAg: !!cd.agencia, ag: cd.agencia ? 'Logo de ' + cd.agencia : '', hasLogoDer: !!cd.logoDer, logoDer: cd.logoDer || '', logoDerAlt: cd.logoDerAlt || '', mx: cd.margen || '14mm', font: cd.fuente || 'var(--font-brand), Mulish, Arial, sans-serif', cp: cd.colorP || '#0B2E59' } : {};
+    const pages = !cd ? [] : !pgS ? [{ n: 0, aria: cd.nombre + ' · armando páginas', h: 'auto', ch: 'auto', cab: cab(cd.cab1), blocks: blocksI, hasPie: false, pieIzq: '', pieDer: '' }] : pgS.pages.map((pg, k) => ({ n: k + 1, aria: cd.nombre + ' · ' + c.etiqueta + ' · página ' + (k + 1) + ' de ' + T, h: '297mm', ch: '252mm', cab: cab(k ? cd.cabN : cd.cab1), hasPie: true, pieIzq: cd.pieIzq, pieDer: String(cd.pieDer).replace('{N}', k + 1).replace('{M}', T), blocks: pg.map(s => blocksI[s.i]) }));
+    const gen = !!(st.dl || {}).gen, nav = S.veh === 'todos' && vehs.length > 0;
+    const go = (d) => { if (gen) return; const n = idx + d; if (n < 0 || n >= vehs.length) return; this.setState({ idx: n, dl: null }); };
+    const tabKey = (id) => (e) => { if (!['ArrowRight', 'ArrowLeft'].includes(e.key) || tabs.length < 2) return; e.preventDefault(); const i = tabs.indexOf(id), n = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]; this.setState({ tab: n, dl: null }, () => { const b = document.getElementById('sv-tab-' + n); if (b) b.focus(); }); };
+    const sd = cd ? { has: true, titulo: cd.nombre + ' · ' + c.etiqueta, nav, navTxt: nS + ' ' + (idx + 1) + ' de ' + vehs.length + ' · ' + c.etiqueta,
+      prev: () => go(-1), next: () => go(1), prevAd: idx === 0 || gen ? 'true' : 'false', nextAd: idx >= vehs.length - 1 || gen ? 'true' : 'false', prevTip: idx === 0 ? 'Es el primer ' + nN : '', nextTip: idx >= vehs.length - 1 ? 'Es el último ' + nN : '',
+      prevFg: idx === 0 ? 'var(--neutral-500)' : 'var(--text-strong)', nextFg: idx >= vehs.length - 1 ? 'var(--neutral-500)' : 'var(--text-strong)', prevCur: idx === 0 ? 'not-allowed' : 'pointer', nextCur: idx >= vehs.length - 1 ? 'not-allowed' : 'pointer',
+      tabs: tabs.map(id => { const on = id === tab; return { id: 'sv-tab-' + id, l: this.DOCS.find(d => d[0] === id)[1], sel: on ? 'true' : 'false', ti: on ? '0' : '-1', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF', bd: on ? 'var(--color-brand)' : 'var(--border-default)', pick: () => { if (!gen) this.setState({ tab: id, dl: null }); }, key: tabKey(id) }; }),
+      dest: 'Destino: ' + cd.destino, archivo: cd.archivo, hd, qc: pgS ? 'Control de calidad: ' + P.qcTexto(pgS.qc) : 'Armando las páginas…', aria: cd.nombre + ' · ' + c.etiqueta, pages } : { has: false };
+    const isZip = S.veh === 'todos', D = st.dl || {}, nItems = S.items.length;
+    const dl = { label: gen ? (isZip ? 'Generando .zip…' : 'Generando PDF…') : isZip ? 'Descargar .zip (' + nItems + ' PDF)' : 'Descargar PDF', ad: gen ? 'true' : 'false', bg: gen ? 'var(--neutral-100)' : 'var(--color-brand)', cur: gen ? 'not-allowed' : 'pointer',
+      click: () => { if (gen) return; if (isZip) this.zip(); else this.descargar(); }, hasMsg: !!(D.txt || D.err || D.ok), msg: D.err || D.txt || D.ok || '', msgColor: D.err ? 'var(--color-danger)' : 'var(--text-muted)' };
+    return {
+      closed: !st.open, open: !!st.open, barText, expanded: st.open ? 'true' : 'false', rows: st.open ? '1fr' : '0fr', onToggle: () => { if (st.open) this.cerrar(); else this.abrir(); }, onOpen: () => this.abrir(), onClose: () => this.cerrar(),
+      onPanelKey: (e) => { if (e.key === 'Escape' && st.open && !st.pv) { e.preventDefault(); this.cerrar(); } },
+      canVer: !!cd, onVer: () => this.verPrevia(), verNota: cd ? 'Se abre en una ventana superpuesta; la descarga es idéntica a la vista previa.' : '', pv: !!(st.pv && cd), onBackdrop: () => this.cerrarPrevia(), onCloseDlg: () => this.cerrarPrevia(), onDlgKey: (e) => this.dlgKey(e),
+      nS, ns: nN,
+      intro: 'Elige el ' + nN + ' y el documento. La vista previa es la misma página A4 que se descarga.',
+      showVeh: S.multi, selKey: 'sv-veh-' + S.veh, vehVal: S.veh, vehOpts: L.map(x => ({ v: x.rid, l: x.etiqueta + (x.placa ? ' · ' + x.descripcion : '') })).concat(S.multi ? [{ v: 'todos', l: 'Todos los ' + nP }] : []),
+      onVeh: (e) => { if (gen) return; this.setState({ veh: e.target.value, idx: 0, tab: '', dl: null }); },
+      docOpts, docHelp, hasOmit: S.omit.length > 0, omitText: 'No se incluyen: ' + S.omit.join(' · '), noDocs: !cd, noDocsText: 'No hay documentos disponibles para la selección.', sd, dl,
+    };
+  }
+}
+</script>
+</body>
+</html>
