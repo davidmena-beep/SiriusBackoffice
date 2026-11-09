@@ -1,4 +1,6 @@
-// SIRIUS · App del inspector (v1.4 · provisional · etapa C2-5 · 09/11/2026) · DEC-173, DEC-174 y DEC-180
+// SIRIUS · App del inspector (v1.5 · provisional · etapa C2-7 · 09/11/2026) · DEC-173, DEC-174, DEC-180 y DEC-186
+// v1.5 (etapa C2-7 · DEC-186): qué se captura en campo y qué es obligatorio para terminar la visita lo define la plantilla (datos-llenado.js:
+//       «Dónde se captura» y «Obligatorio para»); `terminarVisita.informacionClave` queda solo como respaldo si la plantilla no trae esos atributos.
 // v1.4 (etapa C2-5): «Hoy» pasa a «Mis inspecciones» (por fecha, con «Atrasadas»); «Terminar la visita» con la lista de pendientes e «Ir al siguiente pendiente».
 // v1.3 (etapa C2-4 · DEC-180): «Terminar la visita» con la información clave y el criterio del inspector (sin determinación en campo para
 //       nadie); completar el informe en la app solo para internos e independientes (Vehículos); grupos «Informes por completar» y «Devueltos».
@@ -7,7 +9,7 @@
 // v1.1: visita completa (captura, formulario, determinación), cola sin conexión y horario de confirmación de la visita.
 // Aprobada por el negocio con la maqueta del 15 y sus 5 definiciones. Una sola app (PWA) para inspectores internos y externos.
 window.SIRIUS_APP_INSPECTOR = {
-  version: '1.4', vigencia: 'Provisional',
+  version: '1.5', vigencia: 'Provisional',
   secciones: ['Hoy', 'Ofertas', 'Visitas', 'Yo'],
   // ---------- Acceso ----------
   acceso: {
@@ -62,6 +64,7 @@ window.SIRIUS_APP_INSPECTOR = {
   terminarVisita: {
     // Campos de la plantilla que se capturan en campo («Información clave»): identificación, estado, extras y daños, observaciones.
     // Sin valoración ni campos de oficina (bloqueados, del sistema, del back-office, cálculos y montos).
+    // Reemplazada en C2-7 (DEC-186) por los atributos de la plantilla; se usa solo si un campo no trae «Dónde se captura».
     informacionClave: { secciones: ['veh', 'ver', 'neu', 'tes', 'ext', 'ave'], campos: ['veh_kilometraje', 'veh_observacion_general'], excluir: ['veh_pais_origen', 'veh_cilindraje', 'veh_pasajeros', 'veh_combustible', 'veh_camv_cpn'], nombres: { ase: 'Observaciones', uso: 'Kilometraje' } },
     origenes: ['Campo (lo escribe el inspector)', 'Lectura (foto o documento, con su confianza; 60–89 % «Por confirmar»)', 'Solicitud (precargado de la solicitud)'],
     criterio: { opciones: ['Asegurable', 'No asegurable'], comentario: 'Obligatorio si es No asegurable (al menos 10 caracteres)' },

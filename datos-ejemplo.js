@@ -1184,14 +1184,10 @@
     sec.evidencias = (sec.evidencias || []).concat([Object.assign({ id: 'ev' + String(nx).padStart(3, '0'), etiqueta: cod, req: 'no', min: 0, porInstancia: false, respalda: resp, ia: false }, org ? { origen: org } : {})]);
     if (E.etiquetasEvidencia && !E.etiquetasEvidencia.some(x => x.id === cod)) E.etiquetasEvidencia.push({ id: cod, nombre: nom, descIA: '', estado: 'Vigente', compania: 'Aseguradora del Sur' }); }); })();
 
-// Etapa 10a · VL-F1 (18/10/26 · motivo: "Opciones desde los catálogos maestros"): corrección de la plantilla "Vehículos livianos" v1, sin versión nueva. Origen: ajustePlantillaVL en datos-catalogos-maestros.js. Solo cambia de dónde salen las opciones.
-(function () { const E = window.SIRIUS_EJEMPLO, CM = window.SIRIUS_CATALOGOS_MAESTROS, A = CM && CM.ajustePlantillaVL, T = A && E.plantillas && E.plantillas[A.plantilla + ' v' + A.version]; if (!T) return;
-  const F = (k) => { for (const g of Object.keys(T.campos)) { const c = T.campos[g].find(x => x.k === k); if (c) return c; } return null; };
-  const mapa = {}, todos = []; CM.marcas.forEach(m => { mapa[m.marca] = []; m.modelos.forEach(o => [o.modelo].concat(o.versiones.map(v => o.modelo + ' ' + v)).forEach(t => { mapa[m.marca].push(t); todos.push(t); })); });
-  A.campos.forEach(a => { const c = F(a.clave); if (!c) return; c.opcionesDe = a.opciones;
-    if (a.clave === 'veh_marca') c.opts = CM.marcas.map(m => m.marca);
-    if (a.clave === 'veh_modelo') { c.opts = todos; c.optsPor = { campo: 'veh_marca', mapa }; }
-    if (a.clave === 'veh_tipo_licencia') c.opts = CM.licencias.map(l => l.codigo); }); })();
+// Etapa 10a · VL-F1 (18/10/26 · motivo: "Opciones desde los catálogos maestros"): corrección de la plantilla "Vehículos livianos" v1, sin versión nueva.
+// Etapa C2-7b (18/10/26 20:30 · motivo: "El vínculo con los catálogos lo declara la plantilla"): el vínculo que estaba programado aquí (opciones de
+// veh_marca, veh_modelo filtrado por la marca y veh_tipo_licencia) se reemplazó por los atributos «Catálogo de origen» y «Depende de» de cada campo
+// (datos-llenado.js), que aplica sirius-llenado.js con las listas de datos-catalogos-maestros.js. Lo visible no cambia.
 
 // Envío 5A (24/10/26): caso 20195 (Ramos Generales) movido desde el Back-office. El informe vive solo en datos-informe-rg.js (window.SIRIUS_INFORMES_RG) y se referencia por número de caso.
 // Dependencias explícitas de los cálculos (dep): la interfaz y las políticas leen estas claves, no el texto de la fórmula.
@@ -1236,7 +1232,9 @@
 
 // Etapa 10a · carga de los catálogos maestros en el historial del catálogo (fecha, persona y motivo de "historial").
 (function () { const E = window.SIRIUS_EJEMPLO, CM = window.SIRIUS_CATALOGOS_MAESTROS; if (!E || !E.historialCatalogo || !CM || !CM.historial) return; const h = CM.historial, m = /^(\d\d)\/(\d\d)\/\d\d(\d\d) (\d\d:\d\d)$/.exec(h.fecha);
-  E.historialCatalogo.unshift({ when: m ? m[1] + '/' + m[2] + '/' + m[3] + ' · ' + m[4] : h.fecha, by: h.persona, where: 'Catálogos maestros', what: 'Cargó los catálogos maestros: ' + CM.seguimientos.length + ' seguimientos (norma, prioridad, evidencia, hallazgo y ubicación), ' + CM.licencias.length + ' categorías de licencia, ' + CM.marcas.length + ' marcas con sus modelos, ' + CM.wmi.length + ' WMI y ' + CM.mapasAmenaza.length + ' mapas de amenaza', motivo: h.motivo }); })();
+  E.historialCatalogo.unshift({ when: m ? m[1] + '/' + m[2] + '/' + m[3] + ' · ' + m[4] : h.fecha, by: h.persona, where: 'Catálogos maestros', what: 'Cargó los catálogos maestros: ' + CM.seguimientos.length + ' seguimientos (norma, prioridad, evidencia, hallazgo y ubicación), ' + CM.licencias.length + ' categorías de licencia, ' + CM.marcas.length + ' marcas con sus modelos, ' + CM.wmi.length + ' WMI y ' + CM.mapasAmenaza.length + ' mapas de amenaza', motivo: h.motivo });
+  // Etapa C2-7b: catálogo maestro «Colores».
+  const hc = CM.historialColores; if (hc && CM.colores) E.historialCatalogo.unshift({ when: '18/10/26 · 20:30', by: hc.persona, where: 'Catálogos maestros › Colores', what: 'Creó el catálogo «Colores» con ' + CM.colores.length + ' colores (los que ya usaba la plantilla Vehículos livianos)', motivo: hc.motivo }); })();
 
 // Etapa 6 · 6B: registro del cambio a la matriz v1.1 en el historial del catálogo (fecha del reloj del prototipo).
 (function () { const E = window.SIRIUS_EJEMPLO; if (!E || !E.historialCatalogo || !E.ahora) return; const d = E.ahora(), z = (n) => String(n).padStart(2, '0');

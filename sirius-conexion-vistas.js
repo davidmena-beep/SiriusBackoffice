@@ -52,9 +52,31 @@
   W.SiriusCxEvidencias = SiriusCxEvidencias;
 
   // ---------- Controles ----------
-  function detalleTxt(c) { var d = c.detalle || {}, t = String(c.tipo || '').toLowerCase();
-    if (/llegada|geocerca|radio/.test(t) || d.distancia != null || d.metros != null) { var m = d.distancia != null ? d.distancia : d.metros; return 'Llegada a ' + (m != null ? m + ' m' : 'distancia sin dato') + ' de la dirección' + (d.radio != null ? ' (fuera del radio de ' + d.radio + ' m)' : ' (fuera del radio)') + (d.motivo ? ' · motivo del inspector: ' + d.motivo : ' · sin motivo'); }
-    return Object.keys(d).filter(function (k) { return k !== 'paso' && typeof d[k] !== 'object'; }).map(function (k) { return k + ': ' + d[k]; }).join(' · ') || 'Sin detalle'; }
+  // Etapa P-6d · detalle legible de cualquier control de la conexión: paso de la foto (con su etiqueta), distancia en metros, valor leído o del informe frente
+  // al de la solicitud, año del informe frente al de la solicitud, validaciones no cumplidas, ubicación y motivo. Lo que no se reconoce se muestra como «clave: valor».
+  var VALIDA = { encuadre: 'encuadre', luz: 'luz', nitidez: 'nitidez', reflejo: 'reflejo', vertical: 'posición', horizontal: 'posición', distancia: 'distancia', contorno: 'contorno', enfoque: 'enfoque', movimiento: 'movimiento' };
+  function pick(d, ks) { for (var i = 0; i < ks.length; i++) { if (d[ks[i]] != null && d[ks[i]] !== '') return d[ks[i]]; } return null; }
+  function validTxt(v) { if (v == null || v === '') return null; if (Array.isArray(v)) return v.length ? 'no cumplió ' + v.map(function (x) { return VALIDA[x] || x; }).join(', ') : null;
+    if (typeof v === 'object') { var no = Object.keys(v).filter(function (k) { return v[k] === false; }); if (v.sistema) return 'cámara del sistema (sin validación en el celular)'; if (no.length) return 'no cumplió ' + no.map(function (k) { return VALIDA[k] || k; }).join(', '); if (v.forzada || v.marcada) return 'tomada igual'; return null; }
+    return String(v); }
+  var USADAS = ['paso', 'distancia', 'metros', 'radio', 'motivo', 'leida', 'leido', 'lectura', 'valorLeido', 'informe', 'valorInforme', 'solicitud', 'esperada', 'esperado', 'valorSolicitud', 'anioInforme', 'anioSolicitud', 'validaciones', 'validacion', 'gps', 'url', 'evidencia', 'campo', 'precision'];
+  function detallePartes(c) { var d = c.detalle || {}, t = String(c.tipo || '').toLowerCase(), out = [], m = pick(d, ['distancia', 'metros']), sol = pick(d, ['solicitud', 'esperada', 'esperado', 'valorSolicitud']);
+    var esVin = /vin/.test(t) || d.campo === 'vin', fem = !esVin, inf = pick(d, ['informe', 'valorInforme']), lei = pick(d, ['leida', 'leido', 'lectura', 'valorLeido']);
+    if (d.paso) out.push('Foto «' + etiqueta(d.paso) + '»');
+    if (/llegada|radio/.test(t) && !/foto/.test(t)) out.push('Llegada a ' + (m != null ? m + ' m' : 'distancia sin dato') + ' de la dirección' + (d.radio != null ? ' (fuera del radio de ' + d.radio + ' m)' : ''));
+    else if (m != null) out.push('A ' + m + ' m de la dirección de la visita' + (d.radio != null ? ' (radio de ' + d.radio + ' m)' : ''));
+    if (lei != null || (sol != null && inf == null)) out.push((fem ? 'Leída ' : 'Leído ') + (lei != null ? lei : 'sin lectura') + ' · Solicitud ' + (sol != null ? sol : 'sin dato'));
+    if (inf != null) out.push('Informe ' + inf + ' · Solicitud ' + (sol != null ? sol : 'sin dato'));
+    if (d.anioInforme != null || d.anioSolicitud != null) out.push('Año del informe ' + (d.anioInforme != null ? d.anioInforme : 'sin dato') + ' · Solicitud ' + (d.anioSolicitud != null ? d.anioSolicitud : 'sin dato'));
+    var vt = validTxt(d.validaciones != null ? d.validaciones : d.validacion); if (vt) out.push('Validación: ' + vt);
+    if (/sin ubicaci|sin gps/.test(t) || ('gps' in d && !gpsTxt(d.gps))) out.push('Sin ubicación (GPS) en la foto'); else if (gpsTxt(d.gps)) out.push('GPS ' + gpsTxt(d.gps));
+    Object.keys(d).filter(function (k) { return USADAS.indexOf(k) < 0 && d[k] != null && typeof d[k] !== 'object'; }).forEach(function (k) { out.push(k + ': ' + d[k]); });
+    if (d.motivo) out.push('motivo del inspector: ' + d.motivo);
+    return out.length ? out : ['Sin detalle']; }
+  function detalleTxt(c) { return detallePartes(c).join(' · '); }
+  function evidenciaDe(c, evs) { var d = c.detalle || {}, e = c.evidencia || d.evidencia; if (e && (e.url || e.prueba || e.paso)) return Object.assign({ paso: d.paso, canal: '' }, e);
+    if (d.url) return { paso: d.paso, url: d.url, canal: '', gps: d.gps || null, validacion: d.validaciones || d.validacion };
+    return d.paso ? (evs || []).find(function (x) { return x.paso === d.paso; }) || null : null; }
   var SEV = { Alta: 'danger', Media: 'warning', Baja: 'neutral' }, EST = { Pendiente: 'warning', Conforme: 'success', 'Requiere acción': 'danger' };
   function estadoDe(p, c, i) { var rv = (p.revisiones || {})[i]; return (rv && rv.estado) || c.estado || 'Pendiente'; }
   function SiriusCxControles(p) { var L = p.controles || [], s = R().useState({}), loc = s[0], setLoc = s[1], s3 = R().useState(null), ver = s3[0], setVer = s3[1], evs = p.evidencias || [], M = W.SiriusModal;
@@ -68,12 +90,13 @@
       h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 } }, h('h3', { id: 'cx-ctl-t', style: ST.h3 }, 'Revisión de controles'), badge(pend ? 'warning' : 'success', pend ? (pend === 1 ? '1 pendiente' : pend + ' pendientes') : 'Todos revisados', 'p')),
       altas && p.puede ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-danger)' } }, (altas === 1 ? '1 control de severidad alta pendiente' : altas + ' controles de severidad alta pendientes') + ': la calificación se habilita al revisarlos.') : null,
       h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, 'Controles que llegaron por la conexión de la prueba, con su evidencia cuando aplica. Marca cada uno «Conforme» o «Requiere acción» (con comentario).'),
-      h('ol', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 } }, L.map(function (c, i) { var lc = loc[i] || {}, rv = (p.revisiones || {})[i] || null, est = estadoDe(p, c, i), dec = lc.dec || '', com = lc.com != null ? lc.com : ((rv && rv.comentario) || c.comentario || ''), d = c.detalle || {}, ev = d.paso ? evs.find(function (x) { return x.paso === d.paso; }) : null, sinCom = dec === 'Requiere acción' && !String(com).trim();
+      h('ol', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 } }, L.map(function (c, i) { var lc = loc[i] || {}, rv = (p.revisiones || {})[i] || null, est = estadoDe(p, c, i), dec = lc.dec || '', com = lc.com != null ? lc.com : ((rv && rv.comentario) || c.comentario || ''), d = c.detalle || {}, ev = evidenciaDe(c, evs), sinCom = dec === 'Requiere acción' && !String(com).trim();
         return h('li', { key: i, 'data-cx-control': i, style: { display: 'flex', flexWrap: 'wrap', gap: 16, padding: '14px 16px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)' } },
-          ev ? h(Miniatura, { ev: ev, w: 140, onClick: function () { setVer(ev); } }) : null,
+          ev ? h(Miniatura, { ev: ev, w: 140, onClick: function () { var SE = W.SiriusEvidencias, L = SE && p.caso ? SE.lista(p.caso) : [], x = L.find(function (e) { return e.paso === ev.paso; }); if (x) { SE.abrir(p.caso, x.id); return; } setVer(ev); } /* C2-6: «Ver foto» abre el visor único */ }) : null,
           h('div', { style: { flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 } },
             h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 } }, h('strong', { style: { fontSize: 15, color: 'var(--text-strong)' } }, c.tipo || 'Control'), badge(SEV[c.severidad] || 'neutral', 'Severidad ' + String(c.severidad || '—').toLowerCase(), 's'), badge(EST[est] || 'neutral', est, 'e'), c.hora ? h('span', { style: ST.muted }, nw(c.hora, 'h')) : null),
-            h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, detalleTxt(c)),
+            h('ul', { 'data-cx-detalle': i, style: { margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 2, fontSize: 14, color: 'var(--text-body)' } }, detallePartes(c).map(function (t, k) { return h('li', { key: k, style: { overflowWrap: 'anywhere' } }, t); })),
+            ev ? h('div', null, h('button', { type: 'button', 'data-cx-verfoto': i, onClick: function () { var SE = W.SiriusEvidencias, L = SE && p.caso ? SE.lista(p.caso) : [], x = L.find(function (e) { return e.paso === ev.paso; }); if (x) { SE.abrir(p.caso, x.id); return; } setVer(ev); } /* C2-6: «Ver foto» abre el visor único */, style: { padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 14, fontWeight: 700, color: 'var(--text-link)', textDecoration: 'underline', textUnderlineOffset: 3 } }, 'Ver foto')) : null,
             rv && rv.por && est !== 'Pendiente' ? h('p', { style: Object.assign({ margin: 0 }, ST.muted) }, 'Revisado por ' + rv.por + (rv.hora ? ' · ' : ''), rv.hora ? nw(rv.hora, 'rh') : null, rv.comentario ? ' · «' + rv.comentario + '»' : '') : null,
             lc.msg ? h('p', { role: lc.ok === false ? 'alert' : 'status', style: { margin: 0, fontSize: 13, fontWeight: 700, color: lc.ok === false ? 'var(--color-danger)' : 'var(--text-muted)' } }, lc.msg) : null,
             p.puede ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },

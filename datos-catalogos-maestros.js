@@ -1,4 +1,4 @@
-// SIRIUS · Catálogos maestros (etapa 10a) · v1.1 · PROVISIONAL (v1.1: Sail, Soluto y CX-30, etapa 16g)
+// SIRIUS · Catálogos maestros (etapa 10a) · v1.2 · PROVISIONAL (v1.1: Sail, Soluto y CX-30, etapa 16g · v1.2: catálogo Colores, etapa C2-7b)
 // Preparado en asesoría el 31/10/26. Solo datos: la interfaz los lee de aquí. Fuente única de cada catálogo; nada se duplica en otro archivo.
 // Todo el contenido es provisional (insumos del negocio por conseguir: Suscripción, ANT, catálogo WMI completo, fuentes oficiales de mapas).
 // Decisiones: DEC-077 a DEC-082. Los resultados ya guardados de los casos no se recalculan.
@@ -107,8 +107,15 @@ window.SIRIUS_CATALOGOS_MAESTROS = {
     { amenaza: "Maremoto", fuente: "Amenaza por tsunami INOCAR", institucion: "Instituto Oceanográfico y Antártico de la Armada", estado: "Simulada" },
   ],
 
+  // 7 · Colores del vehículo (etapa C2-7b · DEC-186 ampliada, 18/10/2026 20:30, Andrea Salazar, motivo: «Color con catálogo maestro»). Son los 15 colores que
+  //     ya usaba el prototipo (antes en datos-llenado.js). Catálogo de origen del campo veh_color.
+  colores: ["Blanco", "Negro", "Gris", "Plata", "Rojo", "Azul", "Verde", "Amarillo", "Naranja", "Café", "Beige", "Vino", "Dorado", "Celeste", "Otro"],
+  historialColores: { fecha: "18/10/2026 20:30", persona: "Andrea Salazar", motivo: "Color con catálogo maestro (etapa C2-7b): los 15 colores que ya usaba la plantilla" },
+
   // 6 · Ajuste VL-F1 de la plantilla "Vehículos livianos" v1 (mismo mecanismo que F1 a F3 de RG). Solo cambia de dónde salen las opciones:
   //     no cambia campos, obligatoriedad ni etiquetas. "Elegible para IA" y "Cédula o RUC" siguen en el backlog.
+  //     Etapa C2-7b: el vínculo ya no está programado en datos-ejemplo.js; lo declaran los atributos «Catálogo de origen» y «Depende de» de cada
+  //     campo (datos-llenado.js) y lo aplica sirius-llenado.js. Este bloque queda como registro del ajuste.
   ajustePlantillaVL: {
     plantilla: "Vehículos livianos", version: "1", ajuste: "VL-F1", fecha: "18/10/2026 20:20", persona: "Andrea Salazar",
     motivo: "Opciones desde los catálogos maestros",

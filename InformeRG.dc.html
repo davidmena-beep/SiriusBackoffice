@@ -427,7 +427,7 @@ class Component extends DCLogic {
     return f; }
   // ── Redacción IA-05 (envío 5D): textos en state.vals con origen.tipo "Redacción"; los datos vienen de SIRIUS_INFORMES_RG.redaccion.
   RTONE = { 'Propuesto por IA': 'brand', Aceptado: 'success', Editado: 'teal', Descartado: 'neutral', 'Texto desactualizado': 'warning' };
-  componentDidMount() { if (this.props.modulo === 'rev' && this.RD()) setTimeout(() => this.regenAll(true), 0);
+  componentDidMount() { if (this.props.modulo === 'rev' && this.RD()) setTimeout(() => this.regenAll(true), 0); const SE0 = window.SiriusEvidencias; if (SE0) { this._evOff = SE0.on(() => this.evSync()); if (this.state.vz) { const v0 = this.state.vz.id; setTimeout(() => { if (this.abrirEv(v0)) this.setState({ vz: null }); }, 300); } } // C2-6: visor único
     if (this.props.envio && this.props.envio.base) setTimeout(() => this.applyBase(), 0);
     if ((this.props.modulo === 'envdes' || this.props.modulo === 'enviado') && this.RD() && !this.state.sent) setTimeout(() => this.seedEnvDes(this.props.modulo === 'enviado'), 0);
     this._esc = (e) => { if (e.key === 'Escape' && this.state.modal && this.state.modal.kind === 'regen') { e.preventDefault(); this.closeModal(); } }; document.addEventListener('keydown', this._esc, true); this._vk = (e) => this.vzKey(e); document.addEventListener('keydown', this._vk, true); if (this.state.vz) this._vzRet = 'irg-gal-' + this.state.vz.id; }
@@ -462,7 +462,7 @@ class Component extends DCLogic {
           (Z.cambiosPosteriores || []).forEach(z => { const v = vals.find(x => x.clave === z.clave && x.instancia === z.instancia); if (v) { v.valor = z.valor; v.origen = Object.assign({}, z.origen); } });
           const F3T = ((window.SIRIUS_INFORMES_RG || {}).f3 || {}).textos || []; vals.forEach(v => { if (this.isRed(v) && F3T.some(z => z.clave === v.clave && (z.instancia || '') === (v.instancia || ''))) v.origen.snap = JSON.stringify(this.snapArr(v.origen.campos, v.instancia, vals)); });
           return { vals, red: s.red || { at, omit: R.omitidos.slice() } }; }); }); }); }
-  componentWillUnmount() { document.removeEventListener('keydown', this._esc, true); document.removeEventListener('keydown', this._vk, true); }
+  componentWillUnmount() { if (this._evOff) this._evOff(); document.removeEventListener('keydown', this._esc, true); document.removeEventListener('keydown', this._vk, true); }
   componentDidUpdate(pp) { if (pp && this.props.irPendiente && pp.irPendiente !== this.props.irPendiente) this.irPend(); // etapa C2-3b: «Ir al siguiente pendiente» de la barra del back-office
     if (this.state.vz && !this._vzFoc) { const n = document.getElementById('irg-vz-close'); if (n) { this._vzFoc = true; n.focus(); } } if (!this.state.vz) this._vzFoc = false; }
   // Galería (S5 · DEC-074): la observación de cada foto sale de observacionesFotos.fotos[id] solo con el informe Enviado; en Borrador se escribe aquí.
@@ -476,7 +476,10 @@ class Component extends DCLogic {
   galList(nums) { const F = this.state.fotos.filter(f => f.estado !== 'Documento detectado'), c = (a, b) => String(a.id).localeCompare(String(b.id)); return F.filter(f => nums[f.id]).sort((a, b) => nums[a.id].n - nums[b.id].n).concat(F.filter(f => !nums[f.id]).sort(c)); }
   setFv(v) { try { sessionStorage.setItem('sirius.irg.fotos.vista', v); } catch (e) {} this.setState({ fv: v }); }
   setFf(v) { try { sessionStorage.setItem('sirius.irg.fotos.filtro', v); } catch (e) {} this.setState({ ff: v }); }
-  openVz(id) { this._vzRet = 'irg-gal-' + id; this._vzFoc = false; this.setState({ vz: { id }, vzDraft: null }); }
+  // Etapa C2-6 · DEC-184: las fotos abren el visor único de evidencias (sirius-evidencias.js); el estado que se cambie allí vuelve a esta lista.
+  abrirEv(fid) { const SE = window.SiriusEvidencias, caso = this.props.caseId || '20195'; if (!SE || !SE.lista(caso).some(e => e.idOrigen === fid)) return false; SE.abrir(caso, caso + '-' + fid, (this._galIds || []).length ? this._galIds.map(x => caso + '-' + x) : null); return true; }
+  evSync() { const SE = window.SiriusEvidencias, caso = this.props.caseId || '20195'; if (!SE) return; const L = SE.lista(caso); let cambio = false; const F = this.state.fotos.map(f => { const e = L.find(x => x.idOrigen === f.id); if (!e) return f; const est = e.estado !== SE.estado(f.estado) ? (e.estado === 'Excluida' ? 'Excluida' : e.estado === 'Confirmada' ? 'Confirmada' : 'Asignada') : f.estado, obs = e.observacion || f.obs || ''; if (est === f.estado && obs === (f.obs || '')) return f; cambio = true; return Object.assign({}, f, { estado: est, obs }); }); if (cambio) this.setState({ fotos: F }); }
+  openVz(id) { if (this.abrirEv(id)) return; this._vzRet = 'irg-gal-' + id; this._vzFoc = false; this.setState({ vz: { id }, vzDraft: null }); }
   closeVz() { const r = this._vzRet; this.setState({ vz: null, vzDraft: null }, () => setTimeout(() => { const n = r && document.getElementById(r); if (n) n.focus(); }, 30)); }
   vzGo(d) { const ids = this._galIds || [], i = ids.indexOf((this.state.vz || {}).id), j = i + d; if (i < 0 || j < 0 || j >= ids.length) return; this._vzRet = 'irg-gal-' + ids[j]; this.setState({ vz: { id: ids[j] }, vzDraft: null }); }
   vzKey(e) { if (!this.state.vz) return; const tag = e.target && e.target.tagName;
@@ -707,7 +710,7 @@ class Component extends DCLogic {
       const marcas = (f.marcas || []).map(t => ({ t })).concat(f.usarIgual ? [{ t: 'Usar igual' }] : []);
       const ob = this.obsOf(f.id);
       return { hasObs: !!ob, obs: ob, id: f.id, sel: canSel, noSel: !canSel, checked: on, onSel: () => this.toggleSel(f.id), selAria: 'Seleccionar ' + f.id, bd: on ? 'var(--color-brand)' : 'var(--border-subtle)', bg: on ? 'var(--color-brand-wash)' : exc ? 'var(--surface-subtle)' : '#FFFFFF',
-        aria: 'Abrir ' + f.id + ' · ' + (f.etiqueta || f.estado), open: () => this.setState({ modal: { kind: 'foto', id: f.id } }), estado: f.estado, tone: tone(f.estado), fh: f.fecha + ' · ' + f.hora, gps: f.gps ? 'GPS ' + f.gps.lat + ', ' + f.gps.lon + ' (' + f.gps.precision + ')' : (/sin GPS/.test(f.nota || '') ? f.nota : 'Sin GPS'),
+        aria: 'Abrir ' + f.id + ' · ' + (f.etiqueta || f.estado), open: () => { if (!this.abrirEv(f.id)) this.setState({ modal: { kind: 'foto', id: f.id } }); }, estado: f.estado, tone: tone(f.estado), fh: f.fecha + ' · ' + f.hora, gps: f.gps ? 'GPS ' + f.gps.lat + ', ' + f.gps.lon + ' (' + f.gps.precision + ')' : (/sin GPS/.test(f.nota || '') ? f.nota : 'Sin GPS'),
         hasConf: f.confianza !== null && f.confianza !== undefined, conf: 'Confianza ' + f.confianza + ' %', hasDoc: !!D, docTxt: D ? 'Documento detectado · ' + D.id + ' ' + D.nombre : '', docHref: D ? '#irg-doc-' + D.id : '#', onDoc: (e) => { e.preventDefault(); if (D) this.goDoc(D.id); }, hasMarcas: marcas.length > 0, marcas, notas,
         canConf: edit && f.estado === 'Por confirmar', onConf: () => this.confirmIds([f.id]), confAria: 'Confirmar la foto ' + f.id, canRest: edit && exc, restAria: 'Reincorporar ' + f.id + ' al informe', onRest: () => { this.patchFotos([f.id], x => ({ estado: x.estadoAntes || 'Sin clasificar', estadoAntes: undefined, motivoExclusion: undefined, excluidaPor: undefined, fechaExclusion: undefined })); this.toastMsg(f.id + ' reincorporada al informe'); },
         hasAct: edit && (f.estado === 'Por confirmar' || exc) }; };
@@ -774,7 +777,7 @@ class Component extends DCLogic {
     const modF = st.fotos.filter(f => f.codigo && codes.has(f.codigo)), pAll = !pInst || st.panelAll === m.id + '|' + pInst, shown = pAll ? modF : modF.filter(f => f.instancia === pInst);
     const fotos = shown.map(f => ({ aria: 'Abrir ' + f.id + ' · ' + f.etiqueta, title: f.id + ' · ' + f.etiqueta, sub: [f.instancia, f.confianza !== null && f.confianza !== undefined ? f.confianza + ' %' : ''].filter(Boolean).join(' · ') || '—',
       stamp: f.canal === 'Contexto externo' ? (f.fuente || 'Contexto externo') : f.gps ? f.fecha + ' · ' + f.hora + ' · ' + f.gps.lat + ', ' + f.gps.lon : (f.nota || (f.fecha + ' · ' + f.hora + ' · sin GPS')), ph: f.canal === 'Contexto externo' ? 'Mapa de ejemplo' : 'Imagen de ejemplo', estado: /^Asignada/.test(f.estado) ? 'Asignada' : f.estado, tone: f.estado === 'Por confirmar' ? 'warning' : /^(Asignada|Confirmada)/.test(f.estado) ? 'success' : 'neutral',
-      marcas: (f.marcas || []).map(t => ({ t })), open: () => this.setState({ modal: { kind: 'foto', id: f.id } }) }));
+      marcas: (f.marcas || []).map(t => ({ t })), open: () => { if (!this.abrirEv(f.id)) this.setState({ modal: { kind: 'foto', id: f.id } }); } }));
     const nf = (n) => n + (n === 1 ? ' foto' : ' fotos');
     const ev = { count: pAll ? nf(fotos.length) + ' del módulo' : nf(fotos.length) + ' de ' + pInst, fotos, empty: !fotos.length, emptyTxt: pAll ? 'Este módulo no tiene fotos clasificadas.' : pInst + ' no tiene fotos clasificadas.', req: reqs, hasReq: !!reqs.length,
       hasToggle: !!pInst && modF.length > 0, toggleTxt: pAll ? 'Ver solo las de ' + pInst : 'Ver todas las del módulo (' + modF.length + ')', toggle: () => this.setState({ panelAll: pAll ? null : m.id + '|' + pInst }),
