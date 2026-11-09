@@ -336,6 +336,7 @@
         st.avance ? h('span', { style: Object.assign({ fontSize: 13, color: T.body }, nw) }, st.avance) : null,
         h('span', { style: Object.assign({ marginLeft: 'auto', fontSize: 13, color: T.muted }, nw) }, (st.id === 'vencido' ? 'Venció el ' : 'Vence el ') + corta(l.vence))),
       h('p', { style: { margin: 0, fontSize: 13, color: T.muted } }, st.nota),
+      l.url || l.sinUrl ? h('p', { 'data-enlace-url': '1', style: { margin: 0, fontSize: 13, color: T.body, overflowWrap: 'anywhere' } }, 'Enlace: ', h('b', null, l.url || 'Enlace generado en la base (sin dirección)')) : null, /* etapa P-6c2: enlace real de la base (solo con la conexión) */
       st.id === 'vencido' && st.avance ? h('p', { 'data-enlace-conserva': '1', style: { margin: 0, fontSize: 13, color: T.body } }, 'La autoinspección quedó a medias (' + st.avance + '): lo cargado se conserva. Con «Generar uno nuevo» el cliente continúa desde ahí.') : null,
       prox.length ? h('p', { style: { margin: 0, fontSize: 13, color: T.body } }, 'Próximo recordatorio: ', h('b', null, prox[0].regla), ' · ', h('span', { style: nw }, corta(prox[0].at)), ' · ', prox[0].condicion) : null,
       ocultas > 0 ? h('div', null, h(Boton, { variant: 'ghost', onClick: function () { setTodo(true); }, aria: ocultas === 1 ? 'Ver el hecho anterior del enlace' : 'Ver los ' + ocultas + ' hechos anteriores del enlace' }, ocultas === 1 ? 'Ver 1 anterior' : 'Ver los ' + ocultas + ' anteriores')) : null,

@@ -331,6 +331,12 @@ class Component extends DCLogic {
     return s;
   }
   componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey) this.setState(this.initial()); }
+  // Etapa P-6c2 · con la conexión, el enlace que se muestra y se copia es el real que devolvió la base (enlaceReal); sin dirección, «Enlace generado en la base (sin dirección)».
+  enlaceVer(v) { return (v && v.enlaceReal) || (v && v.enlaceSin ? 'Enlace generado en la base (sin dirección)' : (v && v.enlace) || ''); }
+  enlaceCopia(v) { return (v && v.enlaceReal) || (v && v.enlaceSin ? '' : (v && v.enlace) || ''); }
+  conCx(v, x) { return x && x.cx ? Object.assign({}, v, { enlaceReal: x.enlace || '', enlaceSin: !x.enlace }) : v; }
+  // Si el Back-office devuelve una promesa (conexión), se espera su respuesta: con { ok: false } no se marca como enviado.
+  trasEnvio(r, fin) { if (r && typeof r.then === 'function') { this.setState({ enviando: true }); r.then(x => { this.setState({ enviando: false }); if (!(x && x.ok === false)) fin(x); }, () => this.setState({ enviando: false })); } else fin(null); }
   // Etapa 12d-2b · «Copiar enlace» del modal de envío: copia el enlace exacto del mensaje y lo confirma en pantalla.
   copiarEnlace() { const u = (this.state.wa || {}).enlace || '', ok = () => this.setState({ waCopied: true }), viejo = () => { try { const t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.select(); const r = document.execCommand('copy'); document.body.removeChild(t); if (r) ok(); } catch (e) { /* sin portapapeles */ } };
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, viejo); else viejo(); } catch (e) { viejo(); } }
@@ -399,7 +405,7 @@ class Component extends DCLogic {
     const hi = 'Hola, ' + c + '. Te escribimos de Aseguradora del Sur por tu solicitud ' + cid + '.\n\n';
     if (v.mod === 'Presencial') return hi + 'Agendamos la inspección presencial de ' + items + ' para el ' + this.fmtD(v.fecha) + ' de ' + v.hIni + ' a ' + v.hFin + ' en ' + v.dir + (v.inter ? ' y ' + v.inter : '') + '. Te visitará ' + v.inspector + '.\n\nSi necesitas cambiar la cita, responde a este mensaje.';
     if (v.mod === 'Virtual guiada') return hi + 'Agendamos una videollamada con ' + v.inspector + ' para el ' + this.fmtD(v.fecha) + ' a las ' + v.hIni + ' para inspeccionar ' + items + '. Únete desde este enlace: ' + v.enlace + '\n\nTen a mano el vehículo o el bien y buena conexión.';
-    if (v.mod === 'Autoinspección') return hi + 'Realiza la autoinspección de ' + items + ' desde este enlace: ' + v.enlace + '\n\nEl enlace vence el ' + (v.vence ? this.fmtDT(v.vence) : 'en ' + v.validez) + '. Te guiaremos foto por foto.';
+    if (v.mod === 'Autoinspección') return hi + 'Realiza la autoinspección de ' + items + ' desde este enlace: ' + this.enlaceVer(v) + '\n\nEl enlace vence el ' + (v.vence ? this.fmtDT(v.vence) : 'en ' + v.validez) + '. Te guiaremos foto por foto.';
     if (v.mod === 'Documental') return hi + 'Revisaremos los documentos y fotos de ' + items + ' hasta el ' + this.fmtD(v.fecha) + '. Si te pedimos algo adicional, te escribiremos por aquí.';
     return '';
   }
@@ -439,19 +445,20 @@ class Component extends DCLogic {
     const cF = (k, label, o) => { o = o || {}; const show = !!(s.touched[k] && errs[k]); return { id: 'co-' + k, label, star: o.req ? 'inline' : 'none', isInput: true, isFecha: false, type: o.type || 'text', inputMode: o.inputMode || 'text', ph: o.ph || '', value: p ? p[k] : '', onChange: (ev) => this.setP(k, ev.target.value), onBlur: () => this.touch(k), errShow: show, err: errs[k] || '', invalid: show ? 'true' : undefined, border: show ? 'var(--color-danger)' : 'var(--input-outlined-border)' }; };
     const submit = () => {
       if (eKeys.length) { const t = Object.assign({}, s.touched); eKeys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); return; }
+      if (s.enviando) return; // etapa P-6c2: esperando la respuesta de la conexión
       const mode = p.mode, onA = P.onAction || (() => {});
       if (mode === 'inspector') { onA('inspector', { id: p.visitId, inspector: p.inspector }); this.setState({ pnl: null }); return; }
       if (this.cpPide(p)) { const C = window.SIRIUS_CAMPOS, cambios = []; this.cpCampos().forEach(x => { const nv = String(this.cpVal(p, x)).trim(), old = C.valor(P.caseId, x.clave); if (nv !== (old === null ? '' : String(old))) { if (!C.valores[P.caseId]) C.valores[P.caseId] = {}; C.valores[P.caseId][x.clave] = nv; cambios.push({ etiqueta: x.etiqueta, de: C.mostrar(x, old), a: nv }); } }); if (cambios.length) onA('campos', { cambios }); }
-      if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.setState({ pnl: null, touched: {}, wa: { title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nv), ins: '' } }); return; }
+      if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); const rN = onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.trasEnvio(rN, (x) => { const nx = this.conCx(nv, x); this.setState({ pnl: null, touched: {}, wa: Object.assign({ title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nx), ins: '' }, x && x.cx ? { enlace: this.enlaceCopia(nx) } : {}) }); }); return; }
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
-      let v;
+      let v, rA = null;
       if (mode === 'reagendar') { v = Object.assign({}, src, base); onA('reagendar', { id: p.visitId, patch: base }); }
       else { const id = nextId; v = Object.assign({ id, riesgos: mode === 'dividir' ? [p.split] : p.riesgos.slice(), estado: 'Agendada' }, base);
         if (p.mod === 'Virtual guiada') v.enlace = 'meet.sirius.ec/' + P.caseId + '-' + id.toLowerCase();
         if (p.mod === 'Autoinspección') { v.enlace = 'sirius.ec/ai/' + P.caseId + '-' + id; v.vence = this.addHours(p.validez); }
-        if (mode === 'dividir') onA('dividir', { fromId: p.visitId, visit: v }); else onA('agendar', { visit: v }); }
-      const txt = this.waMessage(v);
-      this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), to: v.cName + ' · ' + v.cCel, text: txt, enlace: v.enlace || '', ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null });
+        if (mode === 'dividir') onA('dividir', { fromId: p.visitId, visit: v }); else rA = onA('agendar', { visit: v }); }
+      this.trasEnvio(rA, (x) => { const vx = this.conCx(v, x), txt = this.waMessage(vx);
+      this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), to: v.cName + ' · ' + v.cCel, text: txt, enlace: this.enlaceCopia(vx), ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null }); });
     };
     const fieldN = eKeys.filter(k => k !== 'riesgos').length;
     const cancel = s.cancel;
@@ -502,11 +509,11 @@ class Component extends DCLogic {
       visits: vis.map(v => {
         const live = v.estado === 'Agendada' || v.estado === 'En curso', pendRamos = v.riesgos.filter(id => !['Pendiente calificación', 'Pendiente calificación de suscripción', 'Inspeccionado: aprobado', 'Inspeccionado: no aprobado'].includes(this.rById(id).estado));
         const when = v.mod === 'Presencial' ? this.fmtD(v.fecha) + ' · ' + v.hIni + '–' + v.hFin : v.mod === 'Virtual guiada' ? this.fmtD(v.fecha) + ' · ' + v.hIni : v.mod === 'Documental' ? 'Revisión hasta ' + this.fmtD(v.fecha) : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? this.fmtDT(v.envio) : v.vence ? 'Vence el ' + this.fmtDT(v.vence) : 'Enlace válido por ' + v.validez) : 'No aplica';
-        const place = v.mod === 'Presencial' ? v.dir + (v.inter ? ' y ' + v.inter : '') : v.enlace || (v.mod === 'Autoinspección' ? 'WhatsApp ' + v.cCel : '—');
+        const place = v.mod === 'Presencial' ? v.dir + (v.inter ? ' y ' + v.inter : '') : this.enlaceVer(v) || (v.mod === 'Autoinspección' ? 'WhatsApp ' + v.cCel : '—');
         const Eo = window.SiriusEnlace, tkE = Eo && v.mod === 'Autoinspección' ? Eo.tokenDe(v.enlace) : '', stE = tkE ? Eo.estado(tkE) : null, conTarjeta = !!stE && v.estado !== 'Cancelada'; // etapa 13: estado del enlace calculado por el motor
         const est = v.mod === 'Autoinspección' && v.estado === 'Agendada' ? ((v.vence && v.vence < this.nowIso) || (stE && stE.id === 'vencido') ? 'Enlace caducado' : 'Enlace enviado') : v.estado;
         const onA = P.onAction || (() => {});
-        const showWa = (vv, title) => this.setState({ wa: { title, to: vv.cName + ' · ' + vv.cCel, text: this.waMessage(vv), enlace: vv.enlace || '', ins: '' } });
+        const showWa = (vv, title) => this.setState({ wa: { title, to: vv.cName + ' · ' + vv.cCel, text: this.waMessage(vv), enlace: this.enlaceCopia(vv), ins: '' } });
         const acts = est === 'Agendada' ? [
           { label: 'Reagendar', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'reagendar', visitId: v.id, riesgos: v.riesgos })), touched: {}, insQ: v.inspector || '', insOpen: false }) },
           v.inspector && { label: 'Cambiar inspector', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })), touched: {}, insQ: '', insOpen: true }) },
@@ -515,7 +522,7 @@ class Component extends DCLogic {
         ] : est === 'Enlace enviado' ? [
           { label: 'Generar uno nuevo', variant: 'secondary', onClick: () => this.setState({ regen: { id: v.id, motivo: '', touched: false } }) },
           P.onAction && this.conPortal(v) && { label: 'Abrir el portal del cliente', variant: 'secondary', onClick: () => onA('portal', { id: v.id, enlace: v.enlace }) },
-          { label: 'Reenviar enlace', variant: 'secondary', onClick: () => { onA('reenviar', { id: v.id }); showWa(v, 'Enlace de ' + v.id + ' reenviado'); } },
+          { label: 'Reenviar enlace', variant: 'secondary', onClick: () => this.trasEnvio(onA('reenviar', { id: v.id }), (x) => showWa(this.conCx(v, x), 'Enlace de ' + v.id + ' reenviado')) },
           { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
         ] : est === 'Enlace caducado' ? [
           { label: 'Generar nuevo enlace', variant: 'primary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }) },
@@ -533,7 +540,7 @@ class Component extends DCLogic {
           hasNote: !!(v.estado === 'Cancelada' && v.motivoCancel) || v.mod === 'No requiere inspección', note: v.estado === 'Cancelada' ? 'Cancelada · ' + (v.motivoCancel || '') : 'Motivo: ' + (v.motivo || '') + (v.nrObs ? ' · ' + v.nrObs : '') + (v.by ? ' · ' + v.by + ' · ' + v.at : ''),
           hasActions: acts2.length > 0, actions: acts2,
           hasEnlace: conTarjeta, raw: v, ro, rev: P.enlaceRev || 0, onAccion: onA,
-          onReenviar: () => { onA('reenviar', { id: v.id }); showWa(v, 'Enlace de ' + v.id + ' reenviado'); },
+          onReenviar: () => this.trasEnvio(onA('reenviar', { id: v.id }), (x) => showWa(this.conCx(v, x), 'Enlace de ' + v.id + ' reenviado')),
           onNuevo: () => { const sn = Eo ? Eo.estado(tkE) : null; if (sn && sn.terminal) this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }); else this.setState({ regen: { id: v.id, motivo: '', touched: false } }); } };
       }),
       hasForm: !!p, drawer,
