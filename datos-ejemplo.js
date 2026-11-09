@@ -542,7 +542,7 @@
       {id: 's3', name: 'Verificación externa con novedad', desc: '', sys: true, scope: 'veh', form: 'Todos los formularios', ver: 'Ambos', root: 'all', motivo: 'Una verificación externa (Fiscalía, ANT, SRI u otra) devolvió novedad.', desde: '2026-10-01', hasta: '', active: true, 'n30':5, mod: {d: '2026-09-15', by: 'Sistema'}, review: null, groups: [{mode: 'all', conds: [{v: 'vext', op: 'igual', a: 'Sí', b: '', list: []}]}]},
     ],
     // Facultad del inspector por tipo de riesgo: valor global y excepciones.
-    facultades: {veh: {fac: 'Sin facultad', mue: 10, exc: [{id: 'e1', level: 'tipo', name: 'Interno', fac: 'Determinar Asegurable y No asegurable', mue: '', desde: '2026-10-01', hasta: '', by: 'Andrea Salazar'}, {id: 'e2', level: 'agencia', name: 'Eurosurvey', fac: 'Determinar solo Asegurable', mue: '', desde: '2026-10-01', hasta: '', by: 'Andrea Salazar'}, {id: 'e3', level: 'insp', name: 'Paola Vinueza', fac: 'Determinar solo Asegurable', mue: 25, desde: '2026-10-01', hasta: '2026-12-31', by: 'Andrea Salazar'}]}},
+    facultades: {veh: {fac: 'Sin facultad', mue: 10, exc: [{id: 'e1', level: 'tipo', name: 'Interno', fac: 'Determinar Asegurable y No asegurable', mue: '', desde: '2026-10-01', hasta: '', by: 'Andrea Salazar'}, {id: 'e2', level: 'agencia', name: 'Eurosurvey', fac: 'Determinar solo Asegurable', mue: '', desde: '2026-10-01', hasta: '', by: 'Andrea Salazar'}, {id: 'e3', level: 'insp', name: 'Paola Vinueza', fac: 'Determinar solo Asegurable', mue: 25, desde: '2026-10-01', hasta: '2026-12-31', by: 'Andrea Salazar'}, {id: 'e4', level: 'insp', name: 'Luis Andrade', fac: 'Determinar Asegurable y No asegurable', mue: '', desde: '2026-10-15', hasta: '', by: 'Andrea Salazar'}]}}, // etapa C2-3 · e4: el independiente Luis Andrade determina desde el back-office (DEC-180)
     // Catálogos del informe.
     catalogos: {
       sucursales: SUC,
@@ -745,6 +745,8 @@
           {k: 'veh_valor_asegurado_casco', l: 'Valor asegurado del casco', t: 'Moneda', locked: true, src: ['Solicitud']},
           {k: 'veh_valor_asegurado_extras', l: 'Valor asegurado de extras', t: 'Moneda', locked: true, src: ['Solicitud']},
           {k: 'veh_valor_asegurado_total', l: 'Valor asegurado total', t: 'Moneda', locked: true, src: ['Solicitud']},
+          {k: 'veh_valor_comercial_referencia', l: 'Valor comercial de referencia', t: 'Moneda', src: ['Guía de precios'], min: 0, help: 'Precio de mercado de la marca, modelo y año.'}, // etapa C2-2 · DEC-179
+          {k: 'veh_fuente_valor', l: 'Fuente del valor', t: 'Catálogo', opts: ['Guía de precios', 'Factura', 'Avalúo', 'Criterio del inspector'], help: 'De dónde sale el valor sugerido.'}, // etapa C2-2 · DEC-179
           {k: 'veh_valor_sugerido_casco', l: 'Valor sugerido del casco', t: 'Moneda', code: 'VAL_SUG_CASCO', req: 'PVD', min: 0, help: 'Lo ingresa el inspector, en USD.'},
           {k: 'veh_valor_sugerido_extras', l: 'Valor sugerido de extras', t: 'Cálculo', code: 'VAL_SUG_EXTRAS', f: 'SUMA({veh_extras}.valor)'},
           {k: 'veh_valor_sugerido_total', l: 'Total sugerido', t: 'Cálculo', code: 'VAL_SUG_TOTAL', f: '{veh_valor_sugerido_casco} + {veh_valor_sugerido_extras}'},
@@ -1197,7 +1199,7 @@
   E.modulos.forEach(m => (m.estructura || []).forEach(s => (s.campos || []).forEach(c => { if (DEP[c.k]) Object.assign(c, DEP[c.k]); })));
   const RG = window.SIRIUS_INFORMES_RG, X = RG && RG.casos && RG.casos['20195']; if (!X || E.casos.some(c => c.id === '20195')) return;
   // Etapa 6: 20195 parte del informe Enviado (bloque envio); las escenas infrg* del Borrador (menos infrgenviado) usan los valores originales.
-  E.borradorRG = () => { let q = ''; try { q = new URLSearchParams(location.search).get('escena') || ''; } catch (er) {} return q.startsWith('infrg') && !['infrgenviado', 'infrgfotosgal', 'infrgvisor'].includes(q); };
+  E.borradorRG = () => { let q = ''; try { q = new URLSearchParams(location.search).get('escena') || ''; } catch (er) {} return (q.startsWith('infrg') && !['infrgenviado', 'infrgfotosgal', 'infrgvisor'].includes(q)) || q === 'infcompletarrg'; }; // etapa C2-3: infcompletarrg redacta el informe en borrador
   const VB = () => { const Z = RG.envio; let l = X.informe.valores; if (!Z || E.borradorRG()) return l; l = l.slice(); (Z.valores || []).concat(Z.cambiosPosteriores || []).forEach(z => { const i = l.findIndex(v => v.clave === z.clave && (z.instancia ? v.instancia === z.instancia : !v.instancia)), nv = Object.assign({ clave: z.clave }, z.instancia ? { instancia: z.instancia } : {}, { valor: z.valor, origen: z.origen }); if (i >= 0) l[i] = nv; else l.push(nv); }); return l; };
   const C = X.caso, U = C.ubicacion, ciudad = U.canton, dir = U.direccion;
   E.casos.push({ id: '20195', orden: 'OE-2026-09014', ramo: C.ramos[0].ramo, ramos: C.ramos.map(r => r.ramo), broker: 'Broker Pacífico', asegurado: C.asegurado, ident: C.identificacion.numero, identTipo: C.identificacion.tipo, giro: C.giro, placa: '',
@@ -1242,7 +1244,7 @@
 
 // S2b: bloque f3 del informe 20195 (12 textos de observaciones aceptados y fotos F35 a F45). Se aplica junto con envio; las escenas del Borrador (etapa 5) no lo aplican.
 // Independiente del orden de carga de los scripts de datos: reintenta hasta que existan el ejemplo, el informe y su bloque f3.
-(function () { const borr = () => { const E = window.SIRIUS_EJEMPLO; if (E && E.borradorRG) return E.borradorRG(); let q = ''; try { q = new URLSearchParams(location.search).get('escena') || ''; } catch (er) {} return q.startsWith('infrg') && !['infrgenviado', 'infrgfotosgal', 'infrgvisor'].includes(q); };
+(function () { const borr = () => { const E = window.SIRIUS_EJEMPLO; if (E && E.borradorRG) return E.borradorRG(); let q = ''; try { q = new URLSearchParams(location.search).get('escena') || ''; } catch (er) {} return (q.startsWith('infrg') && !['infrgenviado', 'infrgfotosgal', 'infrgvisor'].includes(q)) || q === 'infcompletarrg'; };
   let n = 0; const ap = () => { const RG = window.SIRIUS_INFORMES_RG, E = window.SIRIUS_EJEMPLO; if (!E || !RG || !RG.f3 || !RG.redaccion || !RG.casos || !RG.casos['20195']) return false; if (RG.redaccion.__f3 === RG.f3) return true;
     const X = RG.casos['20195'], tx0 = RG.redaccion.textos, fo0 = X.informe.fotos, tx1 = tx0.concat(RG.f3.textos), fo1 = fo0.concat(RG.f3.fotos);
     Object.defineProperty(RG.redaccion, 'textos', { get() { return borr() ? tx0 : tx1; }, configurable: true, enumerable: true }); Object.defineProperty(X.informe, 'fotos', { get() { return borr() ? fo0 : fo1; }, configurable: true, enumerable: true }); RG.redaccion.__f3 = RG.f3; return true; };

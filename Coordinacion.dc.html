@@ -38,7 +38,7 @@
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:var(--radius-sm);background:var(--color-brand-wash);min-width:0">
 <span style="font-size:13px;color:var(--text-muted)">Modalidad recomendada</span>
-<span style="font-size:18px;font-weight:700;color:var(--text-strong)">{{ rec.modalidad }}</span>
+<span style="font-size:18px;font-weight:700;color:var(--text-strong)">{{ recModTxt }}</span>
 <span style="font-size:14px;line-height:1.45;color:var(--text-body)">{{ rec.motivo }}</span>
 </div>
 </section>
@@ -47,9 +47,11 @@
 <div style="display:flex;align-items:center;gap:10px"><h2 id="co-int-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Intentos de contacto</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ intCount }}</x-import></div>
 <sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:8px">
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ openInt }}" hint-size="230px,36px">Registrar intento de contacto</x-import>
+<span data-co-agenda style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ enviarAgenda }}" unavailable-reason="{{ agMotivo }}" hint-size="270px,36px">Enviar enlace de autoagendamiento</x-import></span>
 <sc-if value="{{ canCancelCase }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ openCc }}" hint-size="200px,36px">Cancelar por coordinación</x-import></sc-if>
 </div></sc-if>
 </div>
+<sc-if value="{{ agHas }}" hint-placeholder-val="{{ false }}"><div data-enlace-agenda style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="150px,22px"><span style="white-space:nowrap">Autoagendamiento</span></x-import><span style="font-size:14px;color:var(--text-body);overflow-wrap:anywhere">{{ agLinea }}</span></span><x-import component-from-global-scope="SiriusEnlaceTarjeta" from="./sirius-enlace.js" visita="{{ agRaw }}" ro="{{ agRo }}" rev="{{ agRev }}" on-reenviar="{{ agReenviar }}" on-nuevo="{{ agNuevo }}" on-accion="{{ agAccion }}" hint-size="100%,220px"></x-import></div></sc-if>
 <sc-if value="{{ hasCancelInfo }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface-subtle)">
 <span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="90px,22px"><span style="white-space:nowrap">Cancelado</span></x-import><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ cInfo.motivo }}</span></span>
@@ -176,6 +178,7 @@
 <sc-if value="{{ showMods }}" hint-placeholder-val="{{ true }}">
 <fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
 <legend style="padding:0;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text-strong)">Modalidad <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend>
+<sc-if value="{{ soloPres }}" hint-placeholder-val="{{ false }}"><p data-dec182 role="note" style="margin:0;font-size:13px;color:var(--text-muted)">Virtual guiada y autoinspección no disponibles para Ramos Generales (DEC-182)</p></sc-if>
 <div role="radiogroup" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
 <sc-for list="{{ mods }}" as="m" hint-placeholder-count="5">
 <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:2px solid {{ m.border }};border-radius:var(--radius-sm);background:{{ m.bg }};cursor:pointer">
@@ -270,6 +273,7 @@
 <sc-if value="{{ regenErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo (al menos 10 caracteres).</span></sc-if>
 </div>
 </x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ agOpen }}" on-close="{{ agCerrar }}" size="sm" align="left" title="Enviar enlace de autoagendamiento" description="El cliente agenda la inspección en el portal con los horarios y la duración de la modalidad que elijas." footer="{{ agFooter }}" hint-size="0px,0px"><div data-ag-modal style="display:flex;flex-direction:column;gap:10px"><fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px"><legend style="padding:0;margin:0 0 6px;font-size:13px;font-weight:700;color:var(--text-strong)">Modalidad de la inspección <span aria-hidden="true" style="color:var(--color-danger)">*</span></legend><div role="radiogroup" aria-label="Modalidad de la inspección" style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ agMods }}" as="am" hint-placeholder-count="2"><label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid {{ am.border }};border-radius:var(--radius-sm);background:{{ am.bg }};cursor:pointer"><input type="radio" name="co-ag-mod" value="{{ am.label }}" checked="{{ am.checked }}" onChange="{{ am.pick }}" style="margin-top:3px;accent-color:var(--cyan-700)"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ am.label }}</span><span style="font-size:13px;color:var(--text-muted)">{{ am.hint }}</span></span></label></sc-for></div></fieldset><sc-if value="{{ soloPres }}" hint-placeholder-val="{{ false }}"><p role="note" style="margin:0;font-size:13px;color:var(--text-muted)">Virtual guiada y autoinspección no disponibles para Ramos Generales (DEC-182)</p></sc-if><span style="font-size:13px;color:var(--text-muted)">Para: {{ agPara }}</span></div></x-import>
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ intOpen }}" on-close="{{ closeInt }}" size="sm" align="left" title="Registrar intento de contacto" description="{{ intDesc }}" footer="{{ intFooter }}" hint-size="0px,0px">
 <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px">
 <div style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1"><label for="co-int-f" style="font-size:13px;font-weight:700;color:var(--text-strong)">Fecha y hora <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><x-import component-from-global-scope="SiriusFecha" id="co-int-f" value="{{ intF.fecha }}" on-change="{{ intF.onFecha }}" modo="fechaHora" formato="iso" max="ahora" max-label="la fecha y hora actual" invalid="{{ intF.fechaInv }}" req="{{ true }}" hint-size="100%,44px"></x-import><sc-if value="{{ intF.fechaErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ intF.fechaMsg }}</span></sc-if></div>
@@ -292,7 +296,7 @@
 </div>
 </div>
 </x-import>
-<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ waOpen }}" on-close="{{ closeWa }}" size="sm" align="left" title="{{ waTitle }}" description="Vista previa del mensaje enviado por WhatsApp · solo lectura" footer="{{ waFooter }}" hint-size="0px,0px">
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ waOpen }}" on-close="{{ closeWa }}" size="sm" align="left" title="{{ waTitle }}" description="{{ waDesc }}" footer="{{ waFooter }}" hint-size="0px,0px">
 <div style="display:flex;flex-direction:column;gap:12px">
 <span style="font-size:13px;color:var(--text-muted);overflow-wrap:anywhere">Para: {{ waTo }}</span>
 <p id="co-wa-texto" style="margin:0;padding:14px 16px;border-radius:var(--radius-md) var(--radius-md) var(--radius-md) 4px;background:var(--surface-subtle);font-size:15px;line-height:1.5;color:var(--text-strong);white-space:pre-line;overflow-wrap:anywhere;min-width:0;max-width:100%">{{ waText }}</p>
@@ -335,18 +339,29 @@ class Component extends DCLogic {
   enlaceVer(v) { return (v && v.enlaceReal) || (v && v.enlaceSin ? 'Enlace generado en la base (sin dirección)' : (v && v.enlace) || ''); }
   enlaceCopia(v) { return (v && v.enlaceReal) || (v && v.enlaceSin ? '' : (v && v.enlace) || ''); }
   conCx(v, x) { return x && x.cx ? Object.assign({}, v, { enlaceReal: x.enlace || '', enlaceSin: !x.enlace }) : v; }
+  // Etapa C2-1 · DEC-178: texto del enlace de autoagendamiento desde la plantilla de Notificaciones (R19), por el primer canal que el cliente aceptó.
+  agTexto(o) { const N = window.SIRIUS_NOTIFICACIONES || {}, T = (N.plantillas || []).find(x => x.id === 'enlace_autoagendamiento') || {}, c0 = (o.canales || [])[0] || 'whatsapp';
+    const base = c0 === 'sms' ? ((T.sms || {}).texto || '') : c0 === 'correo' ? (((T.correo || {}).asunto || '') + '\n\n' + ((((T.correo || {}).bloques || [])[0] || {}).contenido || '')) : ((T.whatsapp || {}).cuerpo || '');
+    const V = { 'visita.modalidad': o.modalidad === 'Virtual guiada' ? 'por videollamada (virtual guiada)' : 'presencial', 'contacto.nombre': String(o.nombre || '').split(' ')[0] || 'cliente', 'caso.numero': o.caso || '', 'riesgo.descripcion': o.bien || '', 'riesgo.placa': o.bien || '', 'enlace.portal': o.url || '', 'enlace.vence': o.vence || '' };
+    return base.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (m, k) => V[k] != null ? V[k] : m); }
+  agCanalesTxt(L) { const NM = { whatsapp: 'WhatsApp', sms: 'SMS', correo: 'correo' }; const n = (L || []).map(c => NM[c] || c); return n.length > 1 ? n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1] : n[0] || ''; }
+  agMostrar(x, pl0, title) { const r = x || {}, P = this.props, pl = Object.assign({}, pl0, r.contacto ? { cName: r.contacto.nombre || pl0.cName, cCel: r.contacto.cel || '', cMail: r.contacto.correo || '' } : {}), sin = !!r.cx && !r.enlace, url = sin ? 'Enlace generado en la base (sin dirección)' : (r.enlace || ''), can = r.canales || ['whatsapp'];
+    this.setState({ wa: { title: title || 'Enlace de autoagendamiento enviado', desc: 'Vista previa del mensaje enviado por ' + this.agCanalesTxt(can) + ' · solo lectura', to: (pl.cName || 'Contacto') + ' · ' + (can[0] === 'correo' ? (pl.cMail || 'sin correo') : (pl.cCel || '')), text: this.agTexto({ nombre: pl.cName, caso: P.caseId, bien: r.bien || '', url, vence: r.venceTxt || '', canales: can, modalidad: r.modalidad || pl.modalidad }), enlace: sin ? '' : url, ins: '' } }); }
   // Si el Back-office devuelve una promesa (conexión), se espera su respuesta: con { ok: false } no se marca como enviado.
-  trasEnvio(r, fin) { if (r && typeof r.then === 'function') { this.setState({ enviando: true }); r.then(x => { this.setState({ enviando: false }); if (!(x && x.ok === false)) fin(x); }, () => this.setState({ enviando: false })); } else fin(null); }
+  trasEnvio(r, fin) { if (r && typeof r === 'object' && typeof r.then !== 'function') { fin(r); return; } if (r && typeof r.then === 'function') { this.setState({ enviando: true }); r.then(x => { this.setState({ enviando: false }); if (!(x && x.ok === false)) fin(x); }, () => this.setState({ enviando: false })); } else fin(null); }
   // Etapa 12d-2b · «Copiar enlace» del modal de envío: copia el enlace exacto del mensaje y lo confirma en pantalla.
   copiarEnlace() { const u = (this.state.wa || {}).enlace || '', ok = () => this.setState({ waCopied: true }), viejo = () => { try { const t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.select(); const r = document.execCommand('copy'); document.body.removeChild(t); if (r) ok(); } catch (e) { /* sin portapapeles */ } };
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, viejo); else viejo(); } catch (e) { viejo(); } }
   visits() { return this.props.visitas || []; }
   activeVisit() { return this.visits().find(v => v.estado !== 'Cancelada'); }
   rById(id) { return (this.props.riesgos || []).find(r => r.id === id) || { id, label: id }; }
-  recFor(ids) { const ms = ids.map(id => this.rById(id).recMod).filter(Boolean); return ms.includes('Presencial') ? 'Presencial' : ms[0] || (this.props.rec || {}).modalidad || 'Presencial'; }
+  // Etapa C2-2 · DEC-182: Ramos Generales y Equipo y maquinaria, solo presencial por ahora (sin Virtual guiada ni Autoinspección).
+  soloPresencial() { return (this.props.tipo || 'Vehículos') !== 'Vehículos'; }
+  modOk(m) { return !(this.soloPresencial() && ['Virtual guiada', 'Autoinspección'].includes(m)); }
+  recFor(ids) { const ms = ids.map(id => this.rById(id).recMod).filter(Boolean).filter(m => this.modOk(m)); const r = ms.includes('Presencial') ? 'Presencial' : ms[0] || (this.props.rec || {}).modalidad || 'Presencial'; return this.modOk(r) ? r : 'Presencial'; }
   newForm(ids, extra) {
     const c = this.props.contacto || {}, dirs = ids.map(id => this.rById(id).dir).filter(Boolean);
-    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), inspector: '', fecha: '', hIni: '', hFin: '', dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
+    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: '', hIni: '', hFin: '', dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
   }
   setP(k, v) { this.setState(st => ({ pnl: Object.assign({}, st.pnl, { [k]: v }) })); }
   touch(k) { if (!this.state.touched[k]) this.setState(st => ({ touched: Object.assign({}, st.touched, { [k]: true }) })); }
@@ -471,6 +486,23 @@ class Component extends DCLogic {
     const ccErr = cc ? { motivo: !cc.motivo, obs: !cc.obs.trim() } : {};
     const intVals = {
       intCount: String(nInt), noIntentos: !nInt, canCancelCase: P.canCancel !== false,
+      ...(() => { // etapa C2-1 · DEC-178: enlace de autoagendamiento desde la gestión de contacto (Presencial o Virtual guiada, desde el primer intento)
+        const modAg = s.pnl ? s.pnl.mod : this.recFor((P.riesgos || []).map(r => r.id)), okMod = ['Presencial', 'Virtual guiada'].includes(modAg), ct = P.contacto || {}, AG = P.enlaceAgenda || null;
+        const mot = P.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'Solo en las modalidades Presencial y Virtual guiada (la elegida es ' + modAg + ')' : ''; // etapa C2-2: disponible siempre en Presencial y Virtual guiada
+        const pl = () => ({ modalidad: modAg, cName: (s.pnl && s.pnl.cName) || ct.nombre || '', cCel: (s.pnl && s.pnl.cCel) || ct.cel || '', cMail: (s.pnl && s.pnl.cMail) || ct.correo || '' });
+        const mods = this.soloPresencial() ? ['Presencial'] : ['Presencial', 'Virtual guiada'], agSel = s.agMod && mods.includes(s.agMod) ? s.agMod : (mods.includes(modAg) ? modAg : 'Presencial');
+        const enviarCon = (m) => { const q = Object.assign(pl(), { modalidad: m }); this.setState({ agMod: null, agOpenS: false }); this.trasEnvio(onAct('enlaceAgenda', q), (x) => this.agMostrar(x, q)); };
+        const enviar = () => { if (mot) return; this.setState({ agOpenS: true, agMod: agSel }); }; // etapa C2-2: el Coordinador elige la modalidad antes de enviar
+        this._agEnviarCon = enviarCon;
+        this._agEnviar = enviar; if (P.preset === 'agenda' && !this._agHecho && !mot) { this._agHecho = true; setTimeout(() => this._agEnviarCon && this._agEnviarCon('Presencial'), 400); } // escena enlaceagenda: envía en Presencial y muestra la vista previa
+        if (P.preset === 'agendavirtual' && !this._agHecho && !mot) { this._agHecho = true; setTimeout(() => this.setState({ agOpenS: true, agMod: 'Virtual guiada' }), 400); } // escena enlaceagendamodalidad: ventana con Virtual guiada elegida
+        const btnM = (variant, label, onClick) => { const NB = (window.AseguradoraDelSurDesignSystem_4fbf29 || {}).Button; return NB ? React.createElement(NB, { key: label, variant, size: 'md', onClick }, label) : null; };
+        return { agMotivo: mot, enviarAgenda: enviar, agOpen: !!s.agOpenS, agCerrar: () => this.setState({ agOpenS: false, agMod: null }), agPara: (pl().cName || 'Contacto') + (pl().cCel && pl().cCel !== '—' ? ' · ' + pl().cCel : ''),
+          agMods: mods.map(m => ({ label: m, hint: m === 'Presencial' ? 'El inspector visita la dirección; el cliente elige día y hora' : 'Videollamada con el inspector; el cliente elige día y hora', checked: agSel === m, border: agSel === m ? 'var(--cyan-500)' : 'var(--border-default)', bg: agSel === m ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setState({ agMod: m }) })),
+          agFooter: React.createElement(React.Fragment, null, btnM('ghost', 'Cancelar', () => this.setState({ agOpenS: false, agMod: null })), btnM('primary', 'Enviar enlace', () => enviarCon(agSel))), agHas: !!AG, agRaw: AG || {}, agRo: P.canEdit === false, agRev: P.enlaceRev || 0, agAccion: onAct,
+          agLinea: AG ? ((AG.modalidad || 'Presencial') + ' · ' + this.enlaceVer(AG) + (AG.envio ? ' · enviado el ' + this.fmtDT(AG.envio) : '')) : '',
+          agNuevo: () => { if (!mot) enviar(); },
+          agReenviar: () => { if (!AG) return; const q = { cName: AG.cName, cCel: AG.cCel, cMail: AG.cMail || '' }; this.trasEnvio(onAct('reenviar', { id: 'AG', token: AG.token }), (x) => this.agMostrar(Object.assign({ enlace: this.enlaceCopia(AG), canales: AG.canales, venceTxt: AG.venceTxt, bien: AG.bien, modalidad: AG.modalidad }, x && x.cx ? { cx: true, enlace: x.enlace } : {}), q, 'Enlace de autoagendamiento reenviado')); } }; })(),
       intentos: ints.slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1).map((x, i) => ({ when: this.fmtDT(x.fecha), medio: x.medio, resultado: x.resultado, tone: resTone[x.resultado] || 'neutral', obs: x.obs || '—', by: x.by || '', border: i === 0 ? 'none' : '1px solid var(--border-subtle)' })),
       hasCancelInfo: !!P.cancelacion, cInfo: P.cancelacion ? { motivo: P.cancelacion.motivo, obs: P.cancelacion.obs, meta: 'Cancelado por ' + by(P.cancelacion) + (ccOk[P.cancelacion.motivo] !== undefined ? ' · se notificó al Ejecutivo comercial' : '') } : { motivo: '', obs: '', meta: '' },
       hasReapInfo: !!P.reapertura, rInfo: P.reapertura ? { meta: 'por ' + by(P.reapertura) + ' · responsable: Coordinador de inspecciones', cel: P.reapertura.cel, correo: P.reapertura.correo || 'Sin correo', instr: P.reapertura.instr } : { meta: '', cel: '', correo: '', instr: '' },
@@ -552,8 +584,8 @@ class Component extends DCLogic {
       incl: p ? p.riesgos.map(id => ({ label: this.rById(id).label, canRemove: p.mode === 'nueva' && !single, aria: 'Quitar ' + this.rById(id).label + ' de la visita', remove: () => this.setP('riesgos', p.riesgos.filter(x => x !== id)) })) : [],
       showSplit: !!p && p.mode === 'dividir',
       splitOpts: p && p.mode === 'dividir' ? p.riesgos.map(id => ({ label: this.rById(id).label, checked: p.split === id, border: p.split === id ? 'var(--cyan-500)' : 'var(--border-default)', bg: p.split === id ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('split', id) })) : [],
-      showMods: !!p && p.mode !== 'inspector' && p.mode !== 'enlace',
-      mods: this.MODS.map(([label, hint]) => ({ label, hint, rec: label === recMod, checked: !!p && p.mod === label, border: p && p.mod === label ? 'var(--cyan-500)' : 'var(--border-default)', bg: p && p.mod === label ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('mod', label) })),
+      showMods: !!p && p.mode !== 'inspector' && p.mode !== 'enlace', soloPres: this.soloPresencial(), recModTxt: this.modOk((P.rec || {}).modalidad || 'Presencial') ? ((P.rec || {}).modalidad || 'Presencial') : 'Presencial',
+      mods: this.MODS.filter(([label]) => this.modOk(label)).map(([label, hint]) => ({ label, hint, rec: label === recMod, checked: !!p && p.mod === label, border: p && p.mod === label ? 'var(--cyan-500)' : 'var(--border-default)', bg: p && p.mod === label ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('mod', label) })),
       needsIns: !!p && this.needsIns(p),
       insQ: s.insQ, insOpen: s.insOpen, onInsQ: (e) => this.setState({ insQ: e.target.value, insOpen: true }), openIns: () => this.setState({ insOpen: true }),
       insBlur: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { this.setState({ insOpen: false, insQ: p && p.inspector ? p.inspector : s.insQ }); this.touch('inspector'); } },
@@ -585,7 +617,7 @@ class Component extends DCLogic {
       cancelFooter: React.createElement(React.Fragment, null, btn('ghost', 'Volver', () => this.setState({ cancel: null })), btn('primary', 'Cancelar visita', () => {
         if (!cancel.motivo.trim()) { this.setState({ cancel: Object.assign({}, cancel, { touched: true }) }); return; }
         (P.onAction || (() => {}))('cancelar', { id: cancel.id, motivo: cancel.motivo.trim() }); this.setState({ cancel: null }); })),
-      waHasLink: !!(s.wa && s.wa.enlace), waCopyMsg: s.waCopied ? 'Enlace copiado' : '', copyLink: () => this.copiarEnlace(), waOpen: !!s.wa, waTitle: s.wa ? s.wa.title : '', waTo: s.wa ? s.wa.to : '', waText: s.wa ? s.wa.text : '', waHasIns: !!(s.wa && s.wa.ins), waIns: s.wa ? s.wa.ins : '',
+      waHasLink: !!(s.wa && s.wa.enlace), waCopyMsg: s.waCopied ? 'Enlace copiado' : '', copyLink: () => this.copiarEnlace(), waOpen: !!s.wa, waDesc: (s.wa && s.wa.desc) || 'Vista previa del mensaje enviado por WhatsApp · solo lectura', waTitle: s.wa ? s.wa.title : '', waTo: s.wa ? s.wa.to : '', waText: s.wa ? s.wa.text : '', waHasIns: !!(s.wa && s.wa.ins), waIns: s.wa ? s.wa.ins : '',
       closeWa: () => this.setState({ wa: null, waCopied: false }), waFooter: btn('primary', 'Entendido', () => this.setState({ wa: null, waCopied: false })),
     };
   }

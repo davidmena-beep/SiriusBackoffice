@@ -1,4 +1,4 @@
-// SIRIUS · Ciclo de vida del enlace de autoinspección (prototipo · etapa 13 · DEC-169)
+// SIRIUS · Ciclo de vida del enlace de autoinspección y del de autoagendamiento (prototipo · etapa 13 · DEC-169; tipos de enlace en C2-1 · DEC-178)
 // Motor: calcula el estado del enlace desde su línea de tiempo y el reloj (nunca se escribe a mano), envía y reenvía por canal con consentimiento,
 // amplía la vigencia, revoca, invalida, dispara los recordatorios (reglas R13 a R15 de SIRIUS_NOTIFICACIONES), registra el vencimiento (T05 + aviso R16)
 // y guarda las tareas que el cliente pide desde el portal (R17). Interfaz: SiriusEnlaceTarjeta (estado, línea de tiempo compacta y acciones).
@@ -41,6 +41,10 @@
   var oyentes = [];
   var ctx = { usuario: function () { return 'Coordinador de inspecciones'; }, cronologia: null, alVencer: null, alCambio: null, contacto: null };
   function cambio() { oyentes.slice().forEach(function (f) { try { f(); } catch (e) {} }); if (ctx.alCambio) { try { ctx.alCambio(); } catch (e) {} } }
+  // Etapa C2-1 · DEC-178: cada enlace guarda su tipo («Autoagendamiento» o «Autoinspección»; sin tipo, autoinspección como en 13).
+  function tipoDe(l) { return (l && l.tipo) === 'Autoagendamiento' ? 'Autoagendamiento' : 'Autoinspección'; }
+  function esAgenda(l) { return tipoDe(l) === 'Autoagendamiento'; }
+  function reglasDe(l) { return esAgenda(l) ? ['R20', 'R21', 'R22'] : ['R13', 'R14', 'R15']; } // etapa C2-2: recordatorios de cada tipo de enlace
   function tokenDe(url) { return String(url || '').split(/\/ai?\//)[1] || ''; }
 
   // ---------- Enlaces ----------
@@ -97,6 +101,8 @@
       if (!ultEnvio) return null;
       d = cu.habiles && F && F.sumarHabiles ? F.sumarHabiles(ultEnvio, (cu.horas || 24) * 60) : addMin(ultEnvio, (cu.horas || 24) * 60); ref = iso(ultEnvio);
       var ap = ev.find(function (e) { return e.tipo === 'apertura'; }); if (ap && parse(ap.at) <= d) return null;   // si ya lo abrió antes de las 24 h, no hay recordatorio
+    } else if (cu.fecha === 'enlace.apertura') { // etapa C2-2: abrió el enlace de autoagendamiento y no agendó
+      var apE = ev.find(function (e) { return e.tipo === 'apertura'; }); if (!apE) return null; d = addMin(parse(apE.at), (cu.horas || 24) * 60); ref = apE.at;
     } else if (cu.fecha === 'enlace.ultimaAccion') {
       var acc = ev.filter(function (e) { return e.tipo === 'accion'; }); if (!acc.length) return null;
       var u = acc[acc.length - 1]; d = addMin(parse(u.at), (cu.horas || 24) * 60); ref = u.at;
@@ -113,7 +119,7 @@
   function bitacora(fila) { var B = NT().bitacora; if (!B) return; B.unshift(Object.assign({ _sesion: true }, fila)); }
   // Envía por los canales dados; los que el cliente no aceptó quedan «Omitido» con motivo (misma regla que R05).
   function emitir(l, o) {
-    var at = o.at, soli = o.canales, con = consentimiento(l.caso), efect = canalesDe(l.caso, soli), regla = o.regla || 'R07', fin = [];
+    var at = o.at, soli = o.canales, con = consentimiento(l.caso), efect = canalesDe(l.caso, soli), regla = o.regla || (esAgenda(l) ? 'R19' : 'R07'), fin = [];
     soli.forEach(function (c) {
       var sin = (c === 'whatsapp' && !con.whatsapp) || (c === 'sms' && !con.sms);
       if (sin && efect.indexOf(c) < 0) {
@@ -130,10 +136,11 @@
   }
   function recordar(l, d) {
     var r = reglaDe(d.regla), fin = emitir(l, { at: d.at, canales: r.canales.filter(function (c) { return c !== 'app'; }), origen: 'recordatorio', regla: d.regla, ref: d.ref });
-    if (ctx.cronologia) ctx.cronologia(l.caso, 'Recordatorio automático ' + d.regla + ' («' + d.condicion + '») enviado a ' + contactoDe(l) + ' por ' + fin.map(function (c) { return NOMBRE[c]; }).join(' y ') + ' · enlace ' + l.visita, corta(d.at), 'Sistema · Notificaciones');
+    if (ctx.cronologia) ctx.cronologia(l.caso, 'Recordatorio automático ' + d.regla + ' («' + d.condicion + '») enviado a ' + contactoDe(l) + ' por ' + fin.map(function (c) { return NOMBRE[c]; }).join(' y ') + ' · enlace de ' + (esAgenda(l) ? 'autoagendamiento' : 'autoinspección ' + l.visita), corta(d.at), 'Sistema · Notificaciones');
   }
   function vencer(l) {
     agregar(l.token, { tipo: 'vencimiento', at: l.vence });
+    if (esAgenda(l)) { cambio(); return; } // etapa C2-1: el enlace de autoagendamiento vence sin cambiar el estado del caso (sin T05 ni R16)
     var info = ctx.alVencer ? ctx.alVencer(l) : null; info = info || {};
     var ev = (S.ev[l.token] || []); ev[ev.length - 1].t05 = !!info.t05;
     var coord = reglaDe('R16');
@@ -144,7 +151,7 @@
     var hizo = false, n = now();
     (W.SIRIUS_PORTAL_ENLACES || []).filter(function (x, i, a) { return a.findIndex(function (y) { return y.token === x.token; }) === i; }).forEach(function (l) {
       var st = estado(l.token); if (!st) return;
-      if (['revocado', 'invalidado', 'completado'].indexOf(st.id) < 0) ['R13', 'R14', 'R15'].forEach(function (rid) { var d = debido(l, rid); if (d && d.at <= n && !hecho(l.token, rid, d.ref)) { recordar(l, d); hizo = true; } });
+      if (['revocado', 'invalidado', 'completado'].indexOf(st.id) < 0) reglasDe(l).forEach(function (rid) { var d = debido(l, rid); if (d && d.at <= n && !hecho(l.token, rid, d.ref)) { recordar(l, d); hizo = true; } });
       st = estado(l.token);
       if (st.id === 'vencido' && !(S.ev[l.token] || []).some(function (e) { return e.tipo === 'vencimiento'; })) { vencer(l); hizo = true; }
     });
@@ -153,7 +160,7 @@
   }
   function proximos(token) {
     var l = enlace(token), st = estado(token), out = []; if (!l || !st || !st.vigente) return out; var n = now();
-    ['R13', 'R14', 'R15'].forEach(function (rid) { var d = debido(l, rid); if (d && d.at > n && !hecho(token, rid, d.ref)) out.push({ regla: rid, at: iso(d.at), condicion: d.condicion }); });
+    reglasDe(l).forEach(function (rid) { var d = debido(l, rid); if (d && d.at > n && !hecho(token, rid, d.ref)) out.push({ regla: rid, at: iso(d.at), condicion: d.condicion }); });
     return out.sort(function (a, b) { return a.at.localeCompare(b.at); });
   }
 
@@ -164,7 +171,7 @@
     var fin = emitir(l, { at: now(), canales: lista, origen: o && o.otro ? 'otro' : 'reenvio', por: (o && o.por) || ctx.usuario() });
     cambio(); return fin;
   }
-  function activoDe(caso) { var l = todos().filter(function (x) { return x.caso === caso; }); return l.filter(function (x) { return !x.anulado; })[0] || l[0] || null; }
+  function activoDe(caso) { var l = todos().filter(function (x) { return x.caso === caso && !esAgenda(x); }); return l.filter(function (x) { return !x.anulado; })[0] || l[0] || null; }
   function opcionesAmpliar(token) {
     var l = enlace(token), c = CI().ampliacion || { opciones: [3, 5, 7], maximoDias: 20 }; if (!l) return [];
     var tope = addMin(parse(l.envio), c.maximoDias * 1440), v = parse(l.vence);
@@ -214,7 +221,7 @@
     });
     rows.forEach(function (g) {
       var r = g.regla ? NT().regla(g.regla) : null;
-      g.titulo = g.origen === 'recordatorio' ? 'Recordatorio ' + g.regla : g.origen === 'otro' ? 'Reenviado por otro canal' : g.origen === 'reenvio' ? 'Reenviado' : 'Enlace enviado';
+      g.titulo = g.origen === 'recordatorio' ? 'Recordatorio ' + g.regla : g.origen === 'otro' ? 'Reenviado por otro canal' : g.origen === 'reenvio' ? 'Reenviado' : 'Enlace de ' + tipoDe(l).toLowerCase() + ' enviado';
       g.detalle = g.origen === 'recordatorio' && r ? (r.cuando || {}).condicion || '' : '';
     });
     var acc = ev.filter(function (e) { return e.tipo === 'accion' && parse(e.at) <= n; });
@@ -226,7 +233,7 @@
       else if (e.tipo === 'ampliacion') rows.push({ at: e.at, tipo: 'hito', tono: 'neutral', titulo: 'Vigencia ampliada ' + e.dias + (e.dias === 1 ? ' día' : ' días'), detalle: 'Vence el ' + corta(e.a) + ' · ' + (e.por || '') + ' · Motivo: ' + e.motivo });
       else if (e.tipo === 'revocacion') rows.push({ at: e.at, tipo: 'hito', tono: 'danger', titulo: 'Revocado por ' + (e.por || 'el Coordinador'), detalle: 'Motivo: ' + e.motivo });
       else if (e.tipo === 'invalidacion') rows.push({ at: e.at, tipo: 'hito', tono: 'neutral', titulo: 'Invalidado', detalle: e.motivo || '' });
-      else if (e.tipo === 'vencimiento') rows.push({ at: e.at, tipo: 'hito', tono: 'danger', titulo: 'Venció sin completar', detalle: e.t05 ? 'El caso pasó a «Enlace caducado» (T05) y se avisó al Coordinador' : 'Se avisó al Coordinador; el caso no cambia de estado' });
+      else if (e.tipo === 'vencimiento') rows.push({ at: e.at, tipo: 'hito', tono: 'danger', titulo: esAgenda(l) ? 'Venció' : 'Venció sin completar', detalle: esAgenda(l) ? 'El caso no cambia de estado' : e.t05 ? 'El caso pasó a «Enlace caducado» (T05) y se avisó al Coordinador' : 'Se avisó al Coordinador; el caso no cambia de estado' });
     });
     return rows.sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
   }
@@ -256,6 +263,7 @@
   function dialogoInicial(token) { var d = S.dialogo; if (!d || (d.token && token && d.token !== token)) return null; S.dialogo = null; return d; }
 
   var E = { ctx: ctx, now: now, iso: iso, parse: parse, corta: corta, tokenDe: tokenDe, enlace: enlace, modificar: modificar, eventos: eventos, estado: estado, lineas: lineas, proximos: proximos,
+    tipoDe: tipoDe, registrar: function (l, evs) { W.SIRIUS_PORTAL_ENLACES = [l].concat((W.SIRIUS_PORTAL_ENLACES || []).filter(function (x) { return x.token !== l.token; })); (evs || []).forEach(function (e) { agregar(l.token, e); }); cambio(); return l; }, /* etapa C2-1: siembra de un enlace con su historia */
     procesar: procesar, activoDe: activoDe, reenviar: reenviar, ampliar: ampliar, opcionesAmpliar: opcionesAmpliar, topeAmpliar: topeAmpliar, revocar: revocar, invalidar: invalidar, apertura: apertura, accion: accion, completado: completado,
     tarea: tarea, tareas: tareas, cerrarTareas: cerrarTareas, consentimiento: consentimiento, canalesDe: canalesDe, reset: reset, continuar: continuar, sembrar: sembrar, dialogoInicial: dialogoInicial, NOMBRE: NOMBRE,
     on: function (f) { oyentes.push(f); return function () { oyentes = oyentes.filter(function (x) { return x !== f; }); }; } };
@@ -330,9 +338,10 @@
           h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, fontSize: 15 } }, h('b', null, NOMBRE[d[0]]), no ? h('span', { style: { fontSize: 13, color: T.muted } }, d[1]) : null)); }),
         tocado && !canales.length ? h('span', { role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, 'Elige al menos un canal.') : null));
 
-    return h('section', { 'aria-label': 'Enlace de autoinspección ' + v.id, 'data-enlace-estado': st.id, style: { display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 14, borderTop: '1px solid var(--border-subtle)', minWidth: 0 } },
+    var tipo = tipoDe(l);
+    return h('section', { 'aria-label': 'Enlace de ' + tipo.toLowerCase() + (tipo === 'Autoinspección' ? ' ' + v.id : ''), 'data-enlace-estado': st.id, 'data-enlace-tipo': tipo, style: { display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 14, borderTop: '1px solid var(--border-subtle)', minWidth: 0 } },
       h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 10px' } },
-        h('h3', { style: { margin: 0, fontSize: 14, fontWeight: 700, color: T.strong } }, 'Estado del enlace'), h(Insignia, { tone: st.tono }, st.nombre),
+        h('h3', { style: { margin: 0, fontSize: 14, fontWeight: 700, color: T.strong } }, 'Estado del enlace de ' + tipo.toLowerCase()), h(Insignia, { tone: st.tono }, st.nombre),
         st.avance ? h('span', { style: Object.assign({ fontSize: 13, color: T.body }, nw) }, st.avance) : null,
         h('span', { style: Object.assign({ marginLeft: 'auto', fontSize: 13, color: T.muted }, nw) }, (st.id === 'vencido' ? 'Venció el ' : 'Vence el ') + corta(l.vence))),
       h('p', { style: { margin: 0, fontSize: 13, color: T.muted } }, st.nota),

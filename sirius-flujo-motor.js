@@ -1,6 +1,6 @@
 // SIRIUS · Motor de flujo parametrizable (etapa 16f-1 · DEC-145, reemplaza a DEC-098).
 // Lee SIRIUS_FLUJO_MOTOR (datos-flujo-motor.js, tal cual) y guarda en la sesión las versiones y borradores de cada flujo.
-// SIRIUS_FLUJO (v1.2) sigue siendo la fuente del SLA, el calendario y el cálculo del Badge: aquí solo se toman de él la
+// SIRIUS_FLUJO (v1.3) sigue siendo la fuente del SLA, el calendario y el cálculo del Badge: aquí solo se toman de él la
 // etiqueta corta de cada estado, el nombre de las etapas de SLA y si un estado está cerrado (para contar casos activos).
 // La ejecución de las transiciones en los casos no cambia en esta etapa (16f-1); la migración de casos queda para 16f-2.
 // Piezas: store (lista, borradores, validación, publicación, conflictos) y la interfaz Editor (tablas, diagrama y publicar).
@@ -24,14 +24,17 @@
     return { id: t.id, de: (t.de || []).slice(), a: t.a, boton: t.boton || '', roles: (t.roles || []).slice(), sistema: t.sistema || '', condTexto: typeof t.condiciones === 'string' ? t.condiciones : '', cond: t.cond || { items: [] },
       requisitos: { motivo: !!rq.motivo, motivoTxt: typeof rq.motivo === 'string' ? rq.motivo : '', campos: rq.campos || '' }, efectos: (t.efectos || []).map(x => typeof x === 'string' ? { tipo: tipoEfecto(x), texto: x } : x), confirmacion: t.confirmacion || '', soloFlujos: t.soloFlujos || null }; }
   function normE(e, nucleo) { return Object.assign({ corta: cortaDe(e.nombre), nucleo: nucleo.includes(e.nombre), asignacion: { tipo: 'ninguno' } }, clone(e)); }
-  function base(fl) { const m = M(), ex = fl.excluye || [], est = m.estados.filter(e => !ex.includes(e.nombre)).map(e => normE(e, m.nucleo)), nom = est.map(e => e.nombre);
-    const tr = m.transiciones.filter(t => (!t.soloFlujos || t.soloFlujos.includes(fl.id)) && nom.includes(t.a)).map(normT);
-    return { version: fl.version, estado: fl.estado, estados: est, transiciones: tr, actualizado: '', por: 'Datos v' + m.version + ' · ' + String(m.vigencia || '').toLowerCase(), motivo: '', cambios: [] }; }
+  // Etapa C2-3 · DEC-180: base(fl, v) arma la versión v con los estados y transiciones cuyo desdeVersion es ≤ v (sin desdeVersion: desde la v1).
+  const enVer = (x, v) => !x.desdeVersion || x.desdeVersion <= v;
+  function base(fl, ver) { const m = M(), v = ver || fl.version, ex = fl.excluye || [], est = m.estados.filter(e => !ex.includes(e.nombre) && enVer(e, v)).map(e => { const n = normE(e, m.nucleo); delete n.desdeVersion; return n; }), nom = est.map(e => e.nombre);
+    const tr = m.transiciones.filter(t => (!t.soloFlujos || t.soloFlujos.includes(fl.id)) && enVer(t, v) && nom.includes(t.a) && t.de.every(d => d === '—' || /^\*/.test(d) || nom.includes(d))).map(normT);
+    const pub = v === fl.version && v > 1 && fl.publicada ? fl.publicada : null;
+    return { version: v, estado: v < fl.version ? 'Reemplazada' : fl.estado, estados: est, transiciones: tr, actualizado: pub ? pub.at : '', por: pub ? pub.por : 'Datos v' + m.version + ' · ' + String(m.vigencia || '').toLowerCase(), motivo: pub ? pub.motivo : '', cambios: pub ? pub.cambios.slice() : [] }; }
 
   // ---------- Store de la sesión ----------
   let S = null, oy = [], usuario = 'Andrea Salazar', tSync = null;
   function init() { const m = M(); if (!m) return null; if (S) return S;
-    S = { flujos: m.flujos.map(fl => ({ id: fl.id, nombre: fl.nombre, aplicaA: clone(fl.aplicaA), versiones: [base(fl)], borrador: null, validado: false })), hist: [] };
+    S = { flujos: m.flujos.map(fl => ({ id: fl.id, nombre: fl.nombre, aplicaA: clone(fl.aplicaA), versiones: Array.from({ length: fl.version || 1 }, (x, i) => base(fl, i + 1)), borrador: null, validado: false })), hist: [] };
     const be = m.borradorEjemplo; if (be) { const f = S.flujos.find(x => x.id === be.flujo); if (f) { const b = clone(vigenteDe(f)); b.version = be.version; b.estado = be.estado || 'Borrador'; b.por = 'Borrador de ejemplo'; b.cambios = [];
       (be.cambios || []).forEach(c => { if (c.tipo === 'nuevoEstado') { b.estados.push(normE(c.estado, m.nucleo)); b.cambios.push('Agregó el estado «' + c.estado.nombre + '»'); } if (c.tipo === 'nuevaTransicion') { b.transiciones.push(normT(c.transicion)); b.cambios.push('Agregó la transición ' + c.transicion.id + ' «' + (c.transicion.boton || 'automática') + '» (' + c.transicion.de.join(', ') + ' → ' + c.transicion.a + ')'); } });
       f.borrador = b; } }

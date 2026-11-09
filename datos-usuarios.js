@@ -1,4 +1,8 @@
-// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v1.7 · provisional · etapa 15-4 · 07/11/2026)
+// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v1.8 · provisional · etapa C2-3 · 08/11/2026)
+// v1.8 (etapa C2-3 · DEC-180): rol del sistema «Control de calidad (agencia)» (usuario de la agencia: ve y completa los informes de los inspectores
+//       de su agencia, los devuelve al inspector y ve sus evidencias; no califica, no coordina y no ve otras agencias) con Patricia Andrade (Eurosurvey);
+//       acciones «Completar el informe», «Devolver el informe al inspector» y «Ver evidencias de campo»; opción de la agencia
+//       `operacion.completaInspector` («Sus inspectores completan su propio informe») con su historial.
 // v1.7: acciones «Ver y configurar las tarifas a sus inspectores y las cuentas bancarias» (Usuarios y roles › Agencias y ficha de los independientes:
 //       Administrador edita, Finanzas de agencia lo propio, Coordinador y Finanzas ven) y «Aprobar cambios de cuenta bancaria» (Finanzas · DEC-174).
 // v1.6: inspectores de la red Mauricio Endara (Eurosurvey) y Sofía Arteaga (Inspecciones Andinas); `dispositivos` de la app del inspector
@@ -50,39 +54,42 @@
       { id: 'eje', nombre: 'Ejecutivo de inspecciones', sistema: true, nota: 'Calificador nivel 1' }, { id: 'sus', nombre: 'Suscriptor', sistema: true, nota: 'Calificador nivel 2' },
       { id: 'fin', nombre: 'Finanzas', sistema: true, nota: 'Solo Inicio y Liquidaciones' },
       { id: 'fag', nombre: 'Finanzas de agencia', sistema: true, nota: 'Usuario de la agencia: valida sus honorarios y facturas' },
+      { id: 'cca', nombre: 'Control de calidad (agencia)', sistema: true, nota: 'Usuario de la agencia: completa los informes de sus inspectores' }, // etapa C2-3 · DEC-180
     ],
     acciones: [
-      // [grupo, acción, adm, com, coo, ins, eje, sus, fin, fag]
-      ['Solicitudes', 'Crear solicitud manual', 'C', 'C', 'C', '', '', '', '', ''],
-      ['Solicitudes', 'Ver bandeja de casos', 'V', 'P', 'V', 'P', 'P', 'P', '', ''],
-      ['Coordinación', 'Coordinar visitas, reagendar, cambiar inspector, dividir, cancelar', 'E', '', 'E', '', '', '', '', ''],
-      ['Coordinación', 'Registrar intento de contacto', 'E', '', 'E', '', '', '', '', ''],
-      ['Coordinación', 'Cancelar caso por falta de datos o contacto', 'E', '', 'E', '', '', '', '', ''],
-      ['Coordinación', 'Reaperturar caso cancelado', 'E', 'E', '', '', '', '', '', ''],
-      ['Coordinación', 'Ver visitas', 'V', 'V', 'V', 'P', 'V', 'V', '', ''],
-      ['Agenda', 'Ver agenda', 'V', 'V', 'E', 'P', 'V', 'V', '', ''],
-      ['Informe', 'Registrar informe', 'E', '', '', 'P', 'P', '', '', ''],
-      ['Informe', 'Determinar asegurabilidad desde el informe', '', '', '', 'P', '', '', '', ''],
-      ['Calificación', 'Calificar nivel 1', 'A', '', '', '', 'A', '', '', ''],
-      ['Calificación', 'Calificar nivel 2 (dictamen final)', 'A', '', '', '', '', 'A', '', ''],
-      ['Calificación', 'Marcar revisión de control como revisada', 'A', '', '', '', 'A', '', '', ''],
-      ['Emisión', 'Crear orden de emisión (caso sin orden)', 'C', 'C', '', '', '', '', '', ''],
-      ['Garantías', 'Adjuntar documento o respaldo de garantía', 'C', 'C', '', '', '', '', '', ''],
-      ['Garantías', 'Marcar documento como cumplido o rechazar adjunto', 'A', '', '', '', 'A', 'A', '', ''],
-      ['Garantías', 'Marcar garantía como cumplida o rechazar respaldo', 'A', '', '', '', 'A', '', '', ''],
-      ['Garantías', 'Solicitar inspección de garantías', 'C', 'C', '', '', '', '', '', ''],
-      ['Garantías', 'Solicitar ampliación de plazo o cierre', 'C', 'C', '', '', '', '', '', ''],
-      ['Garantías', 'Aprobar ampliación de plazo', 'A', '', '', '', 'P', 'P', '', ''],
-      ['Liquidaciones', 'Liquidar honorarios', 'V', '', '', 'P', '', '', 'A', 'P'],
-      ['Liquidaciones', 'Aprobar honorarios', 'A', '', '', '', 'A', '', 'A', ''],
-      ['Liquidaciones', 'Validar honorarios y facturas de la agencia', '', '', '', '', '', '', '', 'P'],
-      ['Liquidaciones', 'Aprobar cambios de cuenta bancaria', 'V', '', '', '', '', '', 'A', ''],
-      ['Reportes', 'Ver reportes', 'V', 'V', 'V', '', 'V', 'V', '', ''],
-      ['Administración', 'Configurar formularios, niveles, facultades, reglas, catálogos, plantillas y notificaciones', 'E', '', '', '', '', '', '', ''],
-      ['Administración', 'Gestionar usuarios, roles e invitaciones', 'E', '', '', '', '', '', '', ''],
-      ['Administración', 'Ver y resolver conflictos de configuración', 'E', '', '', '', '', '', '', ''],
-      ['Administración', 'Ver el monitor del proceso', 'V', '', 'V', '', '', '', '', ''],
-      ['Administración', 'Ver y configurar las tarifas a sus inspectores y las cuentas bancarias', 'E', '', 'V', '', '', '', 'V', 'P'],
+      // [grupo, acción, adm, com, coo, ins, eje, sus, fin, fag, cca]
+      ['Solicitudes', 'Crear solicitud manual', 'C', 'C', 'C', '', '', '', '', '', ''],
+      ['Solicitudes', 'Ver bandeja de casos', 'V', 'P', 'V', 'P', 'P', 'P', '', '', ''],
+      ['Coordinación', 'Coordinar visitas, reagendar, cambiar inspector, dividir, cancelar', 'E', '', 'E', '', '', '', '', '', ''],
+      ['Coordinación', 'Registrar intento de contacto', 'E', '', 'E', '', '', '', '', '', ''],
+      ['Coordinación', 'Cancelar caso por falta de datos o contacto', 'E', '', 'E', '', '', '', '', '', ''],
+      ['Coordinación', 'Reaperturar caso cancelado', 'E', 'E', '', '', '', '', '', '', ''],
+      ['Coordinación', 'Ver visitas', 'V', 'V', 'V', 'P', 'V', 'V', '', '', ''],
+      ['Agenda', 'Ver agenda', 'V', 'V', 'E', 'P', 'V', 'V', '', '', ''],
+      ['Informe', 'Registrar informe', 'E', '', '', 'P', 'P', '', '', '', ''],
+      ['Informe', 'Determinar asegurabilidad desde el informe', '', '', '', 'P', '', '', '', '', ''],
+      ['Informe', 'Completar el informe', 'E', '', '', 'P', '', '', '', '', 'P'], // etapa C2-3 · DEC-180
+      ['Informe', 'Devolver el informe al inspector', 'E', '', '', '', '', '', '', '', 'P'],
+      ['Informe', 'Ver evidencias de campo', 'V', 'V', 'V', 'P', 'V', 'V', '', '', 'P'],      ['Calificación', 'Calificar nivel 1', 'A', '', '', '', 'A', '', '', '', ''],
+      ['Calificación', 'Calificar nivel 2 (dictamen final)', 'A', '', '', '', '', 'A', '', '', ''],
+      ['Calificación', 'Marcar revisión de control como revisada', 'A', '', '', '', 'A', '', '', '', ''],
+      ['Emisión', 'Crear orden de emisión (caso sin orden)', 'C', 'C', '', '', '', '', '', '', ''],
+      ['Garantías', 'Adjuntar documento o respaldo de garantía', 'C', 'C', '', '', '', '', '', '', ''],
+      ['Garantías', 'Marcar documento como cumplido o rechazar adjunto', 'A', '', '', '', 'A', 'A', '', '', ''],
+      ['Garantías', 'Marcar garantía como cumplida o rechazar respaldo', 'A', '', '', '', 'A', '', '', '', ''],
+      ['Garantías', 'Solicitar inspección de garantías', 'C', 'C', '', '', '', '', '', '', ''],
+      ['Garantías', 'Solicitar ampliación de plazo o cierre', 'C', 'C', '', '', '', '', '', '', ''],
+      ['Garantías', 'Aprobar ampliación de plazo', 'A', '', '', '', 'P', 'P', '', '', ''],
+      ['Liquidaciones', 'Liquidar honorarios', 'V', '', '', 'P', '', '', 'A', 'P', ''],
+      ['Liquidaciones', 'Aprobar honorarios', 'A', '', '', '', 'A', '', 'A', '', ''],
+      ['Liquidaciones', 'Validar honorarios y facturas de la agencia', '', '', '', '', '', '', '', 'P', ''],
+      ['Liquidaciones', 'Aprobar cambios de cuenta bancaria', 'V', '', '', '', '', '', 'A', '', ''],
+      ['Reportes', 'Ver reportes', 'V', 'V', 'V', '', 'V', 'V', '', '', ''],
+      ['Administración', 'Configurar formularios, niveles, facultades, reglas, catálogos, plantillas y notificaciones', 'E', '', '', '', '', '', '', '', ''],
+      ['Administración', 'Gestionar usuarios, roles e invitaciones', 'E', '', '', '', '', '', '', '', ''],
+      ['Administración', 'Ver y resolver conflictos de configuración', 'E', '', '', '', '', '', '', '', ''],
+      ['Administración', 'Ver el monitor del proceso', 'V', '', 'V', '', '', '', '', '', ''],
+      ['Administración', 'Ver y configurar las tarifas a sus inspectores y las cuentas bancarias', 'E', '', 'V', '', '', '', 'V', 'P', ''],
     ],
     // Niveles en el orden del selector y, por acción, los niveles válidos (además de «Sin acceso») con su explicación corta.
     niveles: [['', 'Sin acceso'], ['V', 'Ver'], ['P', 'Lo propio'], ['E', 'Editar'], ['A', 'Aprobar'], ['C', 'Crear']],
@@ -97,6 +104,9 @@
       'Ver agenda': ['VPE', 'Editar: mover visitas en la agenda'],
       'Registrar informe': ['PE', 'Lo propio: los informes de sus visitas'],
       'Determinar asegurabilidad desde el informe': ['P', 'Solo con la facultad de la ficha del inspector'],
+      'Completar el informe': ['PE', 'Lo propio: el inspector, los de sus visitas si le toca completarlos; Control de calidad, los de los inspectores de su agencia'],
+      'Devolver el informe al inspector': ['PE', 'Lo propio: los informes de los inspectores de su agencia · con motivo'],
+      'Ver evidencias de campo': ['VP', 'Lo propio: las de sus casos o las de los inspectores de su agencia'],
       'Calificar nivel 1': ['A', 'Incluye revisar los controles de la autoinspección'],
       'Calificar nivel 2 (dictamen final)': ['A', 'Dictamen del Suscriptor'],
       'Marcar revisión de control como revisada': ['A', 'Revisión de control por muestreo'],
@@ -120,9 +130,11 @@
     },
     // ---------- Agencias de inspección ----------
     agencias: [
-      { id: 'eurosurvey', nombre: 'Eurosurvey S.A.', ruc: '1791456320001', contacto: 'operaciones@eurosurvey.com.ec', logo: 'proveedor', estado: 'Activa', sucursales: ['Quito Norte', 'Quito Sur', 'Guayaquil'] },
-      { id: 'andinas', nombre: 'Inspecciones Andinas Cía. Ltda.', ruc: '1792788441001', contacto: 'coordinacion@inspeccionesandinas.ec', logo: null, estado: 'Activa', sucursales: ['Ambato', 'Cuenca', 'Ibarra'] },
-      { id: 'pacifico', nombre: 'Peritajes del Pacífico S.A.', ruc: '0992671543001', contacto: 'peritajes@pacifico.ec', logo: null, estado: 'Activa', sucursales: ['Guayaquil', 'Manta'] },
+      // Etapa C2-3 · DEC-180: operacion.completaInspector («Sus inspectores completan su propio informe»). Aplica a los casos cuya visita termina
+      // después del cambio (historial con desde). No: lo completa el Control de calidad de la agencia; Sí: el propio inspector en el back-office.
+      { id: 'eurosurvey', nombre: 'Eurosurvey S.A.', ruc: '1791456320001', contacto: 'operaciones@eurosurvey.com.ec', logo: 'proveedor', estado: 'Activa', sucursales: ['Quito Norte', 'Quito Sur', 'Guayaquil'], operacion: { completaInspector: false, historial: [] } },
+      { id: 'andinas', nombre: 'Inspecciones Andinas Cía. Ltda.', ruc: '1792788441001', contacto: 'coordinacion@inspeccionesandinas.ec', logo: null, estado: 'Activa', sucursales: ['Ambato', 'Cuenca', 'Ibarra'], operacion: { completaInspector: true, historial: [{ fecha: '2026-10-14T09:10', desde: '2026-10-14T09:10', por: 'Andrea Salazar', de: false, a: true, motivo: 'La agencia no tiene Control de calidad; sus inspectores completan el informe en el back-office.' }] } },
+      { id: 'pacifico', nombre: 'Peritajes del Pacífico S.A.', ruc: '0992671543001', contacto: 'peritajes@pacifico.ec', logo: null, estado: 'Activa', sucursales: ['Guayaquil', 'Manta'], operacion: { completaInspector: false, historial: [] } },
     ],
     // ---------- Usuarios ----------
     // gmail: Conectada · Sin conectar · Permiso vencido · No aplica (externos). alcance: sucursales y grupos de ramo que ve.
@@ -143,6 +155,7 @@
       { nombre: 'Sofía Arteaga', correo: 'sofia.arteaga@inspeccionesandinas.ec', celular: '0995520184', tipo: 'Agencia', agencia: 'andinas', roles: ['Inspector'], alcance: { sucursales: ['Quito Norte', 'Ambato', 'Cuenca'], grupos: 'Todos' }, estado: 'Activo', acceso: 'Usuario y contraseña', gmail: 'No aplica', ultimoAcceso: '2026-10-17T16:05', nota: 'Red de inspectores (DEC-172)', dispositivos: [{ id: 'DV-0015-1', nombre: 'iPhone 13 · Safari', registrado: '2026-09-20T08:30', ultimaConexion: '2026-10-17T16:05', desbloqueo: 'Rostro', estado: 'Activo' }] },
       { nombre: 'Jorge Pazmiño', correo: 'jorge.pazmino@inspeccionesandinas.ec', celular: '0993348120', tipo: 'Agencia', agencia: 'andinas', roles: ['Inspector'], alcance: { sucursales: ['Ambato', 'Cuenca'], grupos: 'Todos' }, estado: 'Activo', acceso: 'Usuario y contraseña', gmail: 'No aplica', ultimoAcceso: '2026-10-13T16:25' },
       { nombre: 'Carla Ponce', correo: 'carla.ponce@eurosurvey.com.ec', celular: '0984470213', tipo: 'Agencia', agencia: 'eurosurvey', roles: ['Finanzas de agencia'], alcance: { sucursales: 'Todas', grupos: 'Todos' }, estado: 'Activo', acceso: 'Usuario y contraseña', gmail: 'No aplica', ultimoAcceso: '2026-10-17T15:40', nota: 'Valida los honorarios y las facturas de Eurosurvey' },
+      { nombre: 'Patricia Andrade', correo: 'patricia.andrade@eurosurvey.com.ec', celular: '0983350917', tipo: 'Agencia', agencia: 'eurosurvey', roles: ['Control de calidad (agencia)'], alcance: { sucursales: 'Todas', grupos: 'Todos' }, estado: 'Activo', acceso: 'Usuario y contraseña', gmail: 'No aplica', ultimoAcceso: '2026-10-18T19:55', nota: 'Completa los informes de los inspectores de Eurosurvey' }, // etapa C2-3 · DEC-180
       // Ejemplos de invitación
       { nombre: 'Gabriela Torres', correo: 'gabriela.torres@asur.ec', celular: '0990012355', tipo: 'Interno', roles: ['Ejecutivo comercial'], alcance: { sucursales: ['Cuenca'], grupos: 'Todos' }, estado: 'Invitado', acceso: null, gmail: 'Sin conectar', invitado: ['Andrea Salazar', '2026-10-17T15:30'], vence: '2026-10-20T15:30' },
       { nombre: 'Pedro Lasso', correo: 'pedro.lasso@peritajes-pacifico.ec', celular: '0982261190', tipo: 'Agencia', agencia: 'pacifico', roles: ['Inspector'], alcance: { sucursales: ['Manta'], grupos: ['Ramos Generales'] }, estado: 'Invitación vencida', acceso: null, gmail: 'No aplica', invitado: ['Andrea Salazar', '2026-10-10T09:00'], vence: '2026-10-13T09:00' },

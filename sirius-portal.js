@@ -377,7 +377,8 @@
   // bloqueaFondo: sobre el Back-office, la página de atrás no se desplaza mientras el portal está abierto (sin desplazamiento horizontal a 390 px).
   function SiriusPortalHost(props) { R().useEffect(() => { if (!props.bloqueaFondo) return; const de = document.documentElement, prev = de.style.overflow; de.style.overflow = 'hidden'; return () => { de.style.overflow = prev; }; }, [props.bloqueaFondo]);
     const PCL = window.SiriusPortalCasoLogic, key = [props.token || '', props.preset || '', props.nonce || 0].join('|'); // etapa 14 · DEC-171: el enlace del caso (presencial o virtual guiada) abre el portal del caso
-    if (PCL && window.SiriusPortalCaso && PCL.enlace(props.token)) return h(window.SiriusPortalCaso, Object.assign({ key }, props));
+    const Eo = window.SiriusEnlace, est = Eo && Eo.enlace && Eo.enlace(props.token) ? Eo.estado(props.token) : null; // etapa C2-1 · DEC-178: un enlace de autoagendamiento revocado, invalidado o vencido no abre el portal del caso
+    if (PCL && window.SiriusPortalCaso && PCL.enlace(props.token) && !(est && ['revocado', 'invalidado', 'vencido'].indexOf(est.id) >= 0)) return h(window.SiriusPortalCaso, Object.assign({ key }, props));
     return h(SiriusPortal, Object.assign({ key }, props)); }
   // Borra el avance guardado de todos los enlaces (al cambiar de escena o al enviar un enlace nuevo).
   function borrarTodo() { try { const S = window.sessionStorage, ks = []; for (let i = 0; i < S.length; i++) { const k = S.key(i); if (k && k.indexOf('sirius.portal.v1.') === 0) ks.push(k); } ks.forEach(k => S.removeItem(k)); } catch (e) {} }

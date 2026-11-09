@@ -11,7 +11,7 @@
   var clon = function (o) { return JSON.parse(JSON.stringify(o)); };
   var pad = function (n) { return String(n).padStart(2, '0'); };
   // Etapa 11-c: acciones de Configuración general (se agregan a la matriz del archivo antes de guardar la base de restauración).
-  (function () { var u = U(); if (!u || !u.acciones) return; [['Administración', 'Configurar compañía y moneda', 'E', '', '', '', '', '', '', ''], ['Administración', 'Configurar impuestos', 'E', '', '', '', '', '', 'E', '']].forEach(function (r) { if (!u.acciones.some(function (a) { return a[1] === r[1]; })) u.acciones.push(r); }); })();
+  (function () { var u = U(); if (!u || !u.acciones) return; [['Administración', 'Configurar compañía y moneda', 'E', '', '', '', '', '', '', '', ''], ['Administración', 'Configurar impuestos', 'E', '', '', '', '', '', 'E', '', '']].forEach(function (r) { if (!u.acciones.some(function (a) { return a[1] === r[1]; })) u.acciones.push(r); }); })();
   var BASE = U() ? clon({ usuarios: U().usuarios, roles: U().roles, acciones: U().acciones, agencias: U().agencias }) : null;
   var F0 = window.SIRIUS_FLUJO ? clon({ c: window.SIRIUS_FLUJO.coordinadorPorSucursal, s: window.SIRIUS_FLUJO.suscriptorPorGrupo }) : null;
   SU.on = function (fn) { oyentes.push(fn); return function () { oyentes = oyentes.filter(function (x) { return x !== fn; }); }; };
@@ -54,6 +54,7 @@
     bandeja: ['Ver bandeja de casos'], nueva: ['Crear solicitud manual'],
     calificacion: ['Calificar nivel 1', 'Calificar nivel 2 (dictamen final)', 'Marcar revisión de control como revisada'],
     garantias: ['Adjuntar documento o respaldo de garantía', 'Marcar documento como cumplido o rechazar adjunto', 'Marcar garantía como cumplida o rechazar respaldo', 'Solicitar inspección de garantías', 'Solicitar ampliación de plazo o cierre', 'Aprobar ampliación de plazo'],
+    informes: ['Completar el informe'], // etapa C2-3 · DEC-180: módulo «Informes por completar»
     liquidaciones: ['Liquidar honorarios'], usuarios: ['Gestionar usuarios, roles e invitaciones', 'Ver y configurar las tarifas a sus inspectores y las cuentas bancarias'], // etapa 15-4: Agencias en solo lectura o lo propio conflictos: ['Ver y resolver conflictos de configuración'], cfgGeneral: ['Configurar compañía y moneda'], impuestos: ['Configurar impuestos'],
     config: ['Configurar formularios, niveles, facultades, reglas, catálogos, plantillas y notificaciones'], monitor: ['Ver el monitor del proceso'],
   };
@@ -66,6 +67,7 @@
   SU.visible = function (rol, mod, child) {
     if (!mod || mod === 'inicio' || mod === 'perfil') return true;
     if (mod === 'solicitudes') return child === 'nueva' ? SU.puede(rol, 'nueva') : child === 'bandeja' ? SU.puede(rol, 'bandeja') : (SU.puede(rol, 'bandeja') || SU.puede(rol, 'nueva'));
+    if (mod === 'informes') return SU.puede(rol, 'informes'); // etapa C2-3
     if (mod === 'agenda') return SU.puede(rol, 'agenda');
     if (mod === 'calificacion') return SU.puede(rol, 'calificacion');
     if (mod === 'garantias') return SU.puede(rol, 'garantias');
@@ -235,6 +237,15 @@
     if (c.logoArchivo !== undefined && c.logoArchivo !== (a.logoArchivo || '')) { det.push(c.logoArchivo ? 'subió el logo' : 'quitó el logo'); if (c.logoArchivo) { a.logoArchivo = c.logoArchivo; a.logoNombre = c.logoNombre || 'logo'; a.logo = 'subido'; } else { delete a.logoArchivo; delete a.logoNombre; a.logo = null; } }
     if (det.length) log(por, 'Agencia ' + a.nombre, 'Editó la agencia: ' + det.join('; '), motivo); avisar(); return det;
   };
+  // ---------- Etapa C2-3 · DEC-180: opción de la agencia «Sus inspectores completan su propio informe» ----------
+  // Aplica a los casos cuya visita termina después del cambio: completaPropioEn(agencia, fin) mira el historial (cada cambio con su «desde»).
+  SU.operacion = function (id) { var a = SU.agencia(id); if (!a) return null; if (!a.operacion) a.operacion = { completaInspector: false, historial: [] }; return a.operacion; };
+  SU.completaPropioEn = function (id, fin) { var o = SU.operacion(id); if (!o) return false; var h = (o.historial || []).slice().sort(function (x, y) { return x.desde < y.desde ? -1 : 1; }), v = h.length ? h[0].de : o.completaInspector;
+    h.forEach(function (x) { if (!fin || x.desde <= fin) v = x.a; }); return !!v; };
+  SU.editarOperacion = function (id, valor, por, motivo) { var a = SU.agencia(id), o = SU.operacion(id); if (!a || !o || !!valor === !!o.completaInspector) return false; var f = SU.ahora();
+    o.historial.unshift({ fecha: f, desde: f, por: por, de: !!o.completaInspector, a: !!valor, motivo: motivo || '' }); o.completaInspector = !!valor;
+    log(por, 'Agencia ' + a.nombre, '«Sus inspectores completan su propio informe»: ' + (valor ? 'No → Sí' : 'Sí → No') + ' · aplica a las visitas que terminen desde ahora', motivo); avisar(); return true; };
+  SU.controlCalidadDe = function (id) { return SU.usuarios().filter(function (u) { return u.agencia === id && u.roles.some(function (r) { return SU.base(r) === 'Control de calidad (agencia)'; }) && SU.estadoEf(u) !== 'Inactivo'; }); };
   SU.inspectoresDe = function (id) { return SU.usuarios().filter(function (u) { return u.agencia === id && SU.estadoEf(u) !== 'Inactivo'; }); };
   window.SiriusUsuarios = SU;
 })();

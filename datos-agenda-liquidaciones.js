@@ -39,7 +39,8 @@ window.SIRIUS_AGENDA = {
     { inspector: 'Sofía Arteaga', organizacion: 'Inspecciones Andinas Cía. Ltda.', agencia: 'andinas', tipo: 'Agencia', credencial: 'AND-INS-0015', base: [-0.1950, -78.4890], zonas: ['Quito Norte', 'Ambato', 'Cuenca'], grupos: ['Vehículos', 'Ramos Generales', 'Equipo y maquinaria'], modalidades: ['Presencial'], activo: true },
     { inspector: 'Pedro Lasso', organizacion: 'Peritajes del Pacífico S.A.', tipo: 'Agencia', credencial: 'PAC-INS-0003', zonas: ['Manta', 'Guayaquil'], grupos: ['Ramos Generales'], modalidades: ['Presencial'], activo: false, nota: 'Invitación vencida: no recibe ofertas' },
   ],
-  autoagendamiento: { duracionPorRamo: {}, historial: [] },
+  // Etapa C2-2 · DEC-178: duración de la visita virtual guiada (videollamada) cuando el enlace de autoagendamiento es de esa modalidad; la presencial sigue la del grupo o el ramo.
+  autoagendamiento: { duracionPorRamo: {}, duracionPorModalidad: { 'Virtual guiada': { 'Vehículos': 30 } }, historial: [] },
   // Etapa 15-1 · hora estimada del «Avisar voy en camino» en la app del inspector (distancia en línea recta desde su ubicación base o la visita anterior).
   traslado: { velocidadKmH: 25 },
   // La autoinspección no ocupa agenda de un inspector: se muestra como franja «Enlace vigente» hasta su vencimiento.

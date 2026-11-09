@@ -14,6 +14,9 @@
 // Etapa 15-4 (DEC-174 · SIRIUS_APP_INSPECTOR.honorarios y SiriusTarifasCuentas): el inspector de agencia ve en cada oferta y en «Yo» la tarifa
 // que le paga su agencia (nunca lo de la agencia con la aseguradora); el independiente, la tarifa de la aseguradora, sus honorarios por
 // aprobar, aprobados y pagados (estado de pago simulado de CNX-12) y su cuenta bancaria enmascarada.
+// Etapa C2-4 (DEC-180): la visita termina con la información clave y el criterio del inspector (sin determinación en campo); los internos e
+// independientes completan el informe en la app (Visitas › Informes por completar, S.informe) o después; «Devueltos» con el motivo del
+// Control de calidad para todos; la facultad se muestra en «Yo».
 (function () {
   if (window.SiriusAppInspector) return;
   const W = window, R = () => W.React, h = (...a) => R().createElement(...a), NS = () => W.AseguradoraDelSurDesignSystem_4fbf29 || {};
@@ -33,7 +36,7 @@
   const kmTxt = (k) => k == null ? '—' : (Math.round(k * 10) / 10).toLocaleString('es-EC', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
 
   // ---------- Estado de la sesión del prototipo ----------
-  const S0 = () => ({ sesion: null, online: true, desdeSinSenal: null, cola: [], ultimaSync: null, recibe: {}, rechazos: {}, vistas: {}, llegadas: {}, perfil: {}, pendientes: [], revocados: {}, toast: '', tab: 'hoy', visita: null, pos: {}, aceptada: null,
+  const S0 = () => ({ sesion: null, online: true, desdeSinSenal: null, cola: [], ultimaSync: null, recibe: {}, rechazos: {}, vistas: {}, llegadas: {}, perfil: {}, pendientes: [], revocados: {}, toast: '', tab: 'hoy', visita: null, informe: null, pos: {}, aceptada: null,
     sonido: {}, audio: 'pendiente', conocidas: {}, nuevas: {}, ultimoAviso: null, recibidos: {}, lote: null, sincronizando: false, verCola: false, mapaSel: null, seq: 0 });
   const S = S0();
   const ON = new Set();
@@ -97,12 +100,12 @@
   function enlaceCaso(caso) { const P = PCL(); return ((W.SIRIUS_PORTAL_CASO_ENLACES || []).concat(((EJ().portalCliente || {}).enlaces) || [])).find((x) => x.caso === caso) || null; }
   function visitasDe(n, fecha) { return (ctx.visitas() || []).filter((v) => v.inspector === n && v.fecha && v.estado !== 'Cancelada' && (!fecha || v.fecha === fecha)).sort((a, b) => (a.fecha + a.hIni) < (b.fecha + b.hIni) ? -1 : 1); }
   function durMin(v) { return v.hFin ? min(v.hFin) - min(v.hIni) : 60; }
-  function estadoVisita(v) { if (S.cola.some((x) => x.caso === v.caso)) return 'Por sincronizar'; if (v.estado === 'Realizada') return 'Enviada'; if (v.estado === 'En curso' || S.llegadas[v.caso]) return 'En curso'; const P = PCL(), c = P && P.caminoDe ? P.caminoDe(v.caso) : null; if (c && c.inspector === v.inspector && c.fecha === v.fecha) return 'En camino'; return 'Pendiente'; }
+  function estadoVisita(v) { if (S.cola.some((x) => x.caso === v.caso)) return 'Por sincronizar'; if (v.estado === 'Realizada') return 'Terminada'; if (v.estado === 'En curso' || S.llegadas[v.caso]) return 'En curso'; const P = PCL(), c = P && P.caminoDe ? P.caminoDe(v.caso) : null; if (c && c.inspector === v.inspector && c.fecha === v.fecha) return 'En camino'; return 'Pendiente'; }
   function gpsDe(caso) { const l = enlaceCaso(caso); return l && l.gps ? l.gps : null; }
   function bienDe(caso) { const c = ctx.caso(caso) || {}, l = enlaceCaso(caso) || {}; return l.vehiculo ? l.vehiculo + (c.placa ? ' · ' + c.placa : '') : (c.bien || c.placa || caso); }
   function grupoDe(caso) { const c = ctx.caso(caso) || {}, F = FL(); return F && F.grupoDe ? F.grupoDe(c) : (c.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'); }
   // Ubicación del inspector (en el celular, el GPS; en el prototipo, en la visita en curso o en su base).
-  function ubicacion(n, L) { const enC = (L || visitasDe(n, isoD(now()))).find((v) => S.llegadas[v.caso] && estadoVisita(v) !== 'Enviada'), g = enC ? gpsDe(enC.caso) : null; return g ? [g[0] + .0003, g[1] - .0003] : perfilDe(n).base; }
+  function ubicacion(n, L) { const enC = (L || visitasDe(n, isoD(now()))).find((v) => S.llegadas[v.caso] && estadoVisita(v) !== 'Terminada'), g = enC ? gpsDe(enC.caso) : null; return g ? [g[0] + .0003, g[1] - .0003] : perfilDe(n).base; }
   const navUrl = (g) => 'https://www.google.com/maps/dir/?api=1&destination=' + g[0] + ',' + g[1] + '&travelmode=driving';
   function ruta(n, fecha) { const p = perfilDe(n), L = visitasDe(n, fecha), pts = [p.base].concat(L.map((v) => gpsDe(v.caso))).filter(Boolean); let t = 0; for (let i = 1; i < pts.length; i++) t += km(pts[i - 1], pts[i]) || 0; return { pts, km: t, n: L.length }; }
 
@@ -183,18 +186,27 @@
     const lleg = Object.keys(S.llegadas).map((k) => S.llegadas[k]).filter((x) => x.inspector === n), aTiempo = lleg.filter((x) => { const v = vis.find((y) => y.caso === x.caso); return v && min(x.at.slice(11)) <= min(v.hIni) + 10; }).length;
     return { devoluciones: dev, llegadas: lleg.length, aTiempo }; }
   function reset() { Object.assign(S, S0()); cambio(); }
-  function ir(tab, visita) { S.tab = tab; S.visita = visita || null; cambio(); }
+  function ir(tab, visita) { S.tab = tab; S.visita = visita || null; S.informe = null; cambio(); }
+  // Etapa C2-4 · DEC-180: informe por completar en la app (modo «completar») o visita devuelta por el Control de calidad (modo «devuelto»).
+  function abrirInforme(caso, modo) { S.tab = 'visitas'; S.visita = null; S.informe = { caso, modo: modo || 'completar' }; cambio(); }
+  function cerrarInforme() { S.informe = null; cambio(); }
+  function informesDe(n) { const r = ctx.informes ? ctx.informes(n) : null; return r || { porCompletar: [], devueltos: [] }; }
+  // Plazo de 24 h hábiles desde el fin de la visita, con el reloj de la app (verde, ámbar al 80 % y rojo vencido).
+  function plazoInforme(caso) { const F = FL(), SCx = W.SiriusCompletar; if (!F || !F.sumarHabiles) return null; const c = ctx.caso(caso) || {}, ing = (F.ingresos || {})[caso], desde = (ing && ing.desde) || ((SCx && SCx.info(caso)) || {}).visitaFin; if (!desde) return null;
+    const hs = 24, vence = F.sumarHabiles(parse(desde), hs * 60, c.sucursal), ahora = now(), m = vence >= ahora ? F.minutosHabiles(ahora, vence, c.sucursal) : -F.minutosHabiles(vence, ahora, c.sucursal), hr = m / 60;
+    return Object.assign({ horas: hr, usado: Math.max(0, Math.min(999, Math.round((hs - hr) / hs * 100))) }, F.formato(hr, vence, hs * .2)); }
+  function tipoDe(n) { const SCx = W.SiriusCompletar; return SCx ? SCx.tipoInspector(n).tipo : ((EJ().inspectores || []).find((i) => i.n === n) || {}).tipo || ''; }
   function aviso(t) { S.toast = t; S.toastN = (S.toastN || 0) + 1; cambio(); }
 
   const Logic = { ctx, on, S, now, perfilDe, alcanceRed, recibe, fijarRecibe, dispositivos, dispositivoActual, entrar, desbloquear, salir, revocar, renovacion, senal, encolar, salida, quitarDeCola, sincronizar, acusePerdido, estadoCola, audioOn, sonidoOn, fijarSonido, sonar, revisarOfertas, ofertaPrueba, ubicacion: (n, L) => ubicacion(n, L), visitasDe, estadoVisita, ruta, eta,
-    avisarCamino, llegar, llegadasDe, ofertas, aceptar, noPuedo, visto, honorario, choques, cambiarAlcance, pendientesDe, pendientes: () => S.pendientes.filter((t) => t.estado === 'Pendiente'), resolver, honorariosMes, calificacionDe, reset, ir, aviso, km, kmTxt, fDia, fCorta, iso, parse, PIN, RENUEVA };
+    avisarCamino, llegar, llegadasDe, ofertas, aceptar, noPuedo, visto, honorario, choques, cambiarAlcance, pendientesDe, pendientes: () => S.pendientes.filter((t) => t.estado === 'Pendiente'), resolver, honorariosMes, calificacionDe, reset, ir, aviso, abrirInforme, cerrarInforme, informesDe, plazoInforme, tipoDe, km, kmTxt, fDia, fCorta, iso, parse, PIN, RENUEVA };
   W.SiriusAppInspectorLogic = Logic;
   // En el celular la señal real también cuenta: al volver la conexión se sincroniza sola (en el prototipo, además, «Simular sin señal»).
   try { W.addEventListener('online', () => senal(true)); W.addEventListener('offline', () => senal(false)); } catch (e) {}
 
   // ---------- Piezas visuales ----------
   const C = { ink: '#14263f', strong: '#0B2E59', muted: '#5b6b80', line: '#dde3ea', soft: '#f4f7fa', p: '#0B5CAD', ok: '#1f7a5c', okbg: '#e7f4ee', warn: '#7A4F0E', warnbg: '#FFF4DC', bad: '#B3261E', badbg: '#FDECEA' };
-  const EST = { 'Pendiente': [C.warnbg, C.warn], 'En camino': ['#e8eef6', '#2c4f7c'], 'En curso': ['#e8eef6', '#2c4f7c'], 'Enviada': [C.okbg, C.ok], 'Por sincronizar': [C.badbg, C.bad] };
+  const EST = { 'Pendiente': [C.warnbg, C.warn], 'En camino': ['#e8eef6', '#2c4f7c'], 'En curso': ['#e8eef6', '#2c4f7c'], 'Terminada': [C.okbg, C.ok], 'Por sincronizar': [C.badbg, C.bad] };
   const chip = (t, k, c) => { const x = c || EST[t] || ['#eef1f5', C.ink]; return h('span', { key: k, style: { display: 'inline-block', whiteSpace: 'nowrap', borderRadius: 999, padding: '2px 9px', fontSize: 12, fontWeight: 800, background: x[0], color: x[1] } }, t); };
   const H1 = (t, k) => h('h1', { key: k || 'h1', tabIndex: -1, 'data-app-h1': '1', style: { margin: '2px 0 4px', fontSize: 22, lineHeight: 1.2, fontWeight: 800, color: C.strong, outline: 'none', textWrap: 'balance' } }, t);
   const P = (t, st, k) => h('p', { key: k, style: Object.assign({ margin: 0, fontSize: 14, lineHeight: 1.45, color: C.ink, textWrap: 'pretty' }, st || {}) }, t);
@@ -231,7 +243,7 @@
       cand.sort((a, b) => b.len - a.len); const best = cand.find((q) => evita.every((e) => Math.hypot(e[0] - q.mx, e[1] - q.my) > 30) && puestos.every((e) => Math.hypot(e[0] - q.mx, e[1] - q.my) > 48)); if (!best) return null; puestos.push([best.mx, best.my]);
       let ang = best.ang; if (ang > 90) ang -= 180; if (ang < -90) ang += 180; return h('text', { key: 'r' + k, x: best.mx, y: best.my, transform: 'rotate(' + ang.toFixed(1) + ' ' + best.mx.toFixed(1) + ' ' + best.my.toFixed(1) + ')', dy: -4.5, textAnchor: 'middle', fontSize: 8, fontWeight: 700, fill: '#6b7a8c', stroke: '#eef2f6', strokeWidth: 3, paintOrder: 'stroke', fontFamily: 'Mulish, Arial, sans-serif' }, c.n.replace('Av. ', '')); };
     const elegir = (caso) => { S.mapaSel = S.mapaSel === caso ? null : caso; cambio(); };
-    const xs = sel ? PV.find((x) => x.v.caso === sel) : null, color = (e) => e === 'Enviada' ? C.ok : e === 'Por sincronizar' ? C.bad : C.p;
+    const xs = sel ? PV.find((x) => x.v.caso === sel) : null, color = (e) => e === 'Terminada' ? C.ok : e === 'Por sincronizar' ? C.bad : C.p;
     const marca = (x) => { const on = sel === x.v.caso, lab = 'Visita ' + (x.i + 1) + ' · ' + x.v.hIni + ' · caso ' + x.v.caso + ' · ' + (x.v.dir || '') + (x.fuera ? ' · fuera del mapa' : '');
       return h('g', { key: 'm' + x.v.caso, role: 'button', tabIndex: 0, 'aria-label': lab, 'aria-pressed': on ? 'true' : 'false', 'data-mapa-visita': x.v.caso, onClick: () => elegir(x.v.caso), onKeyDown: (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); elegir(x.v.caso); } }, style: { cursor: 'pointer', outline: 'none' } },
         h('title', null, lab), on ? h('circle', { cx: x.x, cy: x.y, r: 19, fill: 'rgba(11,92,173,.18)' }) : null,
@@ -283,7 +295,7 @@
     return [H1('Hoy, ' + DIAS_L[d.getDay()] + ' ' + d.getDate(), 'h'), P(L.length ? (L.length === 1 ? '1 visita' : L.length + ' visitas') + ' · ruta sugerida ' + kmTxt(rt.km) + ' en línea recta · primera a las ' + L[0].hIni : 'No tienes visitas para hoy.', { fontSize: 13, color: C.muted }, 'r'),
       h(MapaRuta, { key: 'map', visitas: L, yo, n }),
       L.map((v, i) => { const e = estadoVisita(v); return h('button', { key: v.caso + v.id, type: 'button', 'data-visita': v.caso, onClick: () => ir('visitas', v.caso), style: { display: 'grid', gridTemplateColumns: '28px 50px minmax(0,1fr) auto', gap: 8, alignItems: 'center', textAlign: 'left', border: '1px solid #e5eaf0', borderRadius: 16, padding: '10px 12px', background: '#FFFFFF', boxShadow: SH, fontFamily: 'var(--font-brand)', cursor: 'pointer' } },
-        h('span', { 'aria-hidden': 'true', style: { width: 26, height: 26, borderRadius: '50%', background: e === 'Enviada' ? C.ok : e === 'Por sincronizar' ? C.bad : C.p, color: '#FFFFFF', display: 'grid', placeItems: 'center', fontSize: 12.5, fontWeight: 900 } }, String(i + 1)),
+        h('span', { 'aria-hidden': 'true', style: { width: 26, height: 26, borderRadius: '50%', background: e === 'Terminada' ? C.ok : e === 'Por sincronizar' ? C.bad : C.p, color: '#FFFFFF', display: 'grid', placeItems: 'center', fontSize: 12.5, fontWeight: 900 } }, String(i + 1)),
         h('span', null, h('b', { style: { display: 'block', fontSize: 16, color: C.ink, whiteSpace: 'nowrap' } }, v.hIni), h('small', { style: { fontSize: 11.5, color: C.muted, whiteSpace: 'nowrap' } }, durMin(v) + ' min')),
         h('span', { style: { minWidth: 0 } }, h('b', { style: { display: 'block', fontSize: 14.5, color: C.ink } }, bienDe(v.caso)), h('small', { style: { fontSize: 12.5, color: C.muted } }, (v.dir || '') + ' · caso ' + v.caso)), chip(e, 'e')); }),
       L.length ? h('a', { key: 'ruta', id: 'app-ruta', href: rutaUrl, target: '_blank', rel: 'noopener', onClick: () => aviso('Se abre la ruta del día en la navegación del celular'), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 12, border: '1.5px solid ' + C.p, background: '#FFFFFF', color: C.p, fontSize: 15, fontWeight: 800, textDecoration: 'none' } }, svgI(ICO.navegar, 18), 'Navegar la ruta del día')
@@ -317,8 +329,18 @@
         h('div', { role: 'radiogroup', 'aria-label': 'Motivo', style: { display: 'flex', flexDirection: 'column', gap: 8 } }, (((/motivo opcional: ([^)]+)/.exec(((APP().ofertas || {}).acciones || []).join(' ')) || [])[1] || '').split(/, | y /).filter(Boolean).map((x) => x.charAt(0).toUpperCase() + x.slice(1))).map((m) => h('label', { key: m, style: { display: 'flex', gap: 8, alignItems: 'center', fontSize: 15 } }, h('input', { type: 'radio', name: 'np-mot', checked: np.motivo === m, onChange: () => setNp(Object.assign({}, np, { motivo: m })) }), m)))) : null, sim]; }
 
   function Visitas(p) { const n = p.n, s0 = R().useState(null), mot = s0[0], setMot = s0[1], hoy = isoD(now()), Lall = visitasDe(n).filter((v) => v.fecha >= hoy), v = S.visita ? Lall.find((x) => x.caso === S.visita) || visitasDe(n).find((x) => x.caso === S.visita) : null;
+    // Etapa C2-4 · DEC-180: informe por completar en la app o visita devuelta por el Control de calidad.
+    if (S.informe) { const I = S.informe, inf = informesDe(n), dv = inf.devueltos.find((x) => x.caso === I.caso);
+      return [link('‹ Mis visitas', cerrarInforme, 'back', { id: 'app-volver-visitas' }), I.modo === 'devuelto' ? (W.SiriusAppVisita ? h(W.SiriusAppVisita, { key: 'dv' + I.caso, v: { caso: I.caso, id: 'V1', mod: 'Presencial' }, por: n, devuelto: dv || { motivo: '', por: '', at: '' } }) : null) : (W.SiriusAppCompletar ? h(W.SiriusAppCompletar, { key: 'ac' + I.caso, caso: I.caso, por: n }) : null)]; }
     if (!v) { const dias = []; Lall.forEach((x) => { if (dias.indexOf(x.fecha) < 0) dias.push(x.fecha); });
-      return [H1('Mis visitas', 'h'), Lall.length ? dias.map((f) => h('section', { key: f, 'aria-label': fDia(f), style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('h2', { style: { margin: '6px 0 0', fontSize: 15, color: C.strong } }, (f === hoy ? 'Hoy · ' : '') + fDia(f)),
+      const inf = informesDe(n), propio = tipoDe(n) !== 'Agencia', fila = (x, accion, sub, k) => h('div', { key: k + x.caso, 'data-informe-app': x.caso, style: { display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', border: '1px solid ' + C.line, borderRadius: 12, padding: '10px 12px', background: '#FFFFFF' } }, h('span', { style: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 } }, h('b', { style: { fontSize: 14, color: C.ink } }, bienDe(x.caso)), h('small', { style: { fontSize: 12.5, color: C.muted } }, 'Caso ' + x.caso + ' · ' + grupoDe(x.caso)), sub), accion);
+      const grpInf = propio && inf.porCompletar.length ? h('section', { key: 'gpc', 'aria-label': 'Informes por completar', 'data-grupo-app': 'por-completar', style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('h2', { style: { margin: '6px 0 0', fontSize: 15, color: C.strong } }, 'Informes por completar · ' + inf.porCompletar.length),
+        inf.porCompletar.map((x) => { const pl = plazoInforme(x.caso), rg = grupoDe(x.caso) !== 'Vehículos', ton = pl ? (pl.tono === 'danger' ? [C.badbg, C.bad] : pl.tono === 'warning' ? [C.warnbg, C.warn] : [C.okbg, C.ok]) : null;
+          return fila(x, rg ? h('small', { style: { fontSize: 12, fontWeight: 800, color: C.muted, maxWidth: 110, textAlign: 'right' } }, 'Se redacta en el back-office') : btn('Completar', () => abrirInforme(x.caso, 'completar'), { key: 'c', auto: true, id: 'app-completar-' + x.caso }),
+            pl ? h('span', { title: pl.titulo, style: { display: 'flex', alignItems: 'center', gap: 6 } }, chip(pl.horas >= 0 ? 'Quedan ' + pl.etiqueta : pl.etiqueta, 'pl', ton), h('small', { style: { fontSize: 12, color: C.muted, whiteSpace: 'nowrap' } }, 'usado ' + pl.usado + ' %')) : null, 'pc'); })) : null;
+      const grpDev = inf.devueltos.length ? h('section', { key: 'gdv', 'aria-label': 'Devueltos', 'data-grupo-app': 'devueltos', style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('h2', { style: { margin: '6px 0 0', fontSize: 15, color: C.strong } }, 'Devueltos · ' + inf.devueltos.length),
+        inf.devueltos.map((x) => fila(x, btn('Corregir', () => abrirInforme(x.caso, 'devuelto'), { key: 'd', auto: true, id: 'app-corregir-' + x.caso }), h('small', { style: { fontSize: 12.5, color: C.bad, fontWeight: 700, lineHeight: 1.35 } }, 'Motivo: ' + x.motivo), 'dv'))) : null;
+      return [H1('Mis visitas', 'h'), grpDev, grpInf, Lall.length ? dias.map((f) => h('section', { key: f, 'aria-label': fDia(f), style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('h2', { style: { margin: '6px 0 0', fontSize: 15, color: C.strong } }, (f === hoy ? 'Hoy · ' : '') + fDia(f)),
         Lall.filter((x) => x.fecha === f).map((x) => h('button', { key: x.caso + x.id, type: 'button', 'data-visita': x.caso, onClick: () => ir('visitas', x.caso), style: { display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', textAlign: 'left', border: '1px solid ' + C.line, borderRadius: 12, padding: '10px 12px', background: '#FFFFFF', fontFamily: 'var(--font-brand)', cursor: 'pointer' } }, h('span', { style: { minWidth: 0 } }, h('b', { style: { display: 'block', fontSize: 14, color: C.ink } }, x.hIni + ' · ' + bienDe(x.caso)), h('small', { style: { fontSize: 12.5, color: C.muted } }, 'Caso ' + x.caso + ' · ' + x.mod), S.llegadas[x.caso] ? h('small', { style: { display: 'block', fontSize: 12.5, fontWeight: 800, color: S.llegadas[x.caso].dentro ? C.ok : C.warn } }, 'Llegada ' + S.llegadas[x.caso].at.slice(11, 16) + ' · a ' + S.llegadas[x.caso].metros + ' m' + (S.llegadas[x.caso].dentro ? '' : ' · fuera de la geocerca, con motivo')) : null), chip(estadoVisita(x), 'e'))))) : P('No tienes visitas próximas.', { color: C.muted }, 'v')]; }
     const e = estadoVisita(v), ll = S.llegadas[v.caso], c = ctx.caso(v.caso) || {}, radio = LLEG().radioMetros || 150, pos = S.pos[v.caso] != null ? S.pos[v.caso] : null, esHoy = v.fecha === hoy, rec = v.contacto || '';
     const cam = PCL() && PCL().caminoDe ? PCL().caminoDe(v.caso) : null, enCurso = !!ll || e === 'En curso';
@@ -367,6 +389,7 @@
       fila('Zonas', pf.zonas.join(', ') || '—', link('Editar', () => setEd({ campo: 'zonas', sel: pf.zonas.slice(), opts: ZONAS }), 'ez', { id: 'app-zonas' }), 'z', pendTxt('zonas')),
       fila('Horario disponible', jor + ' · bloqueos en la Agenda', null, 'hr'),
       fila('Modalidades', pf.modalidades.join(' · ') || '—', link('Editar', () => setEd({ campo: 'modalidades', sel: pf.modalidades.slice(), opts: MODS }), 'em', { id: 'app-mods' }), 'md', pendTxt('modalidades')),
+      fila('Tu facultad', (() => { const SUx = SU(), f = SUx && SUx.facultadDe ? SUx.facultadDe(n) : null; return f ? f.fac + ' (Vehículos · ' + f.desde + ')' : 'Sin facultad'; })() + (tipoDe(n) === 'Agencia' ? ' · se aplica cuando el Control de calidad de tu agencia confirma tu criterio' : ' · la usas al completar el informe'), null, 'fac'), // etapa C2-4
       honYo(n),
       card([h('b', { key: 'b' }, 'Mi calificación'), P('Devoluciones este mes: ' + cal.devoluciones + ' · llegadas a tiempo: ' + (cal.llegadas ? cal.aTiempo + ' de ' + cal.llegadas : 'sin llegadas registradas') + ' · nota de los clientes: se mide desde la etapa 15-2', { fontSize: 13 }, 'p')], 'cal'),
       link('Cerrar sesión en este celular', salir, 'out', { id: 'app-salir' }),
@@ -380,7 +403,7 @@
     R().useEffect(() => { const chk = () => { if (S.sesion && S.sesion.desbloqueado && !S.sesion.revocadoAviso) revisarOfertas(S.sesion.inspector); }; chk(); const t = setInterval(chk, 1000); return () => clearInterval(t); }, []);
     R().useEffect(() => { if (!S.toast) return; const t = setTimeout(() => { S.toast = ''; cambio(); }, 3200); return () => clearTimeout(t); }, [S.toastN]);
     R().useEffect(() => { const el = top.current && top.current.querySelector('[data-app-h1]'); if (el) { try { el.focus({ preventScroll: true }); } catch (e) {} } if (top.current) top.current.scrollTop = 0; }, [S.tab, S.visita, !!(ses && ses.desbloqueado)]);
-    R().useEffect(() => { if (!S.enfocar || !top.current) return; const sel = S.enfocar, el = top.current.querySelector(sel); S.enfocar = null; if (el) { try { el.scrollIntoView({ block: /hon-yo/.test(sel) ? 'start' : 'center' }); } catch (e) {} } });
+    R().useEffect(() => { if (!S.enfocar || !top.current) return; const sel = S.enfocar, el = top.current.querySelector(sel); if (!el && (S.enfocarN = (S.enfocarN || 0) + 1) < 6) { const t = setTimeout(cambio, 150); return () => clearTimeout(t); } S.enfocar = null; S.enfocarN = 0; if (el) { try { el.scrollIntoView({ block: /hon-yo|info-clave/.test(sel) ? 'start' : 'center' }); } catch (e) {} } });
     const n = ses ? ses.inspector : '', pf = n ? perfilDe(n) : null, d = now();
     const head = h('div', { style: { padding: '8px 14px', background: 'linear-gradient(135deg,#0b1220,#0e2440)', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } },
       h('img', { src: 'assets/sirius-app-logo.png', alt: 'Aseguradora del Sur · SIRIUS', 'data-logo-app': 'encabezado', style: { height: 38, width: 'auto', maxWidth: '46%', display: 'block', flex: '0 1 auto', minWidth: 0, objectFit: 'contain', objectPosition: 'left center' } }),

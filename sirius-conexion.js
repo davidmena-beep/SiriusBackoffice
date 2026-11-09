@@ -68,7 +68,7 @@
     return Promise.all([
       get('evidencias?select=caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas&order=hora'),
       get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'),
-      get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
+      get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,criterio,decision,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
     ]).then(function (res) {
       var evs = res[0], ctr = res[1], inf = res[2], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
       var refrescar = Date.now() - FIRMADO > 45 * 60000; if (refrescar) { FIRMAS = {}; rutas = evs.map(function (e) { return e.ruta; }); }
@@ -76,7 +76,7 @@
         var E = {}, C = {}, I = {};
         evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
         ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado) }); });
-        inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_clave + ' v' + x.plantilla_version, respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en) }); });
+        inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_clave + ' v' + x.plantilla_version, respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en), criterio: x.criterio || null, decision: x.decision || null }); });
         return { evidencias: E, controles: C, informes: I }; }); }); }
   var oyentes = [], huella = '';
   var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {},
@@ -105,6 +105,7 @@
       casos.forEach(function (k) { idPorCaso[k.id] = String(k.numero); });
       return cargarEvidencias(idPorCaso).catch(function (e) { console.warn('[SIRIUS] evidencias:', e.message); return { evidencias: CX.evidencias, controles: CX.controles, informes: CX.informes }; }).then(function (ev) {
         nuevo.evidencias = ev.evidencias; nuevo.controles = ev.controles; nuevo.informes = ev.informes;
+        nuevo.casos.forEach(function (c) { var inf = (ev.informes[c.id] || []).filter(function (x) { return x.criterio; }).slice(-1)[0]; if (inf) c.criterioInspector = { valor: inf.criterio.valor, comentario: inf.criterio.comentario || '', por: inf.criterio.por || '', hora: reloj(inf.criterio.hora) }; });
         var h = JSON.stringify([nuevo.casos, nuevo.eventos, Object.keys(ev.evidencias).map(function (k) { return k + ev.evidencias[k].length; }), ev.controles, ev.informes]);
         if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; CX.evidencias = ev.evidencias; CX.controles = ev.controles; CX.informes = ev.informes; return true; });
     });

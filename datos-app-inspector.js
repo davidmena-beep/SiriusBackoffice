@@ -1,10 +1,12 @@
-// SIRIUS · App del inspector (v1.2 · provisional · etapa 15-2 · 07/11/2026) · DEC-173 y DEC-174
+// SIRIUS · App del inspector (v1.3 · provisional · etapa C2-4 · 09/11/2026) · DEC-173, DEC-174 y DEC-180
+// v1.3 (etapa C2-4 · DEC-180): «Terminar la visita» con la información clave y el criterio del inspector (sin determinación en campo para
+//       nadie); completar el informe en la app solo para internos e independientes (Vehículos); grupos «Informes por completar» y «Devueltos».
 // v1.2: prueba en celular: tipo de vehículo, pasos y formulario de la columna Presencial, interfaz que gira con el celular,
 //       logos, botones con íconos, mapa embebido con la ruta, sonido de ofertas y honorarios según el tipo de inspector.
 // v1.1: visita completa (captura, formulario, determinación), cola sin conexión y horario de confirmación de la visita.
 // Aprobada por el negocio con la maqueta del 15 y sus 5 definiciones. Una sola app (PWA) para inspectores internos y externos.
 window.SIRIUS_APP_INSPECTOR = {
-  version: '1.2', vigencia: 'Provisional',
+  version: '1.3', vigencia: 'Provisional',
   secciones: ['Hoy', 'Ofertas', 'Visitas', 'Yo'],
   // ---------- Acceso ----------
   acceso: {
@@ -17,7 +19,7 @@ window.SIRIUS_APP_INSPECTOR = {
   // ---------- Hoy ----------
   hoy: {
     contenido: 'Visitas del día en orden de hora con duración, bien, dirección, caso y estado (Pendiente, En curso, Enviada); mapa con la ruta sugerida, kilómetros y la primera hora; «Abrir la ruta del día» en el navegador del celular.',
-    estados: ['Pendiente', 'En camino', 'En curso', 'Enviada', 'Por sincronizar'],
+    estados: ['Pendiente', 'En camino', 'En curso', 'Terminada', 'Por sincronizar'], // C2-4: «Enviada» pasa a «Terminada» (fin de la visita)
     voyEnCamino: '«Avisar voy en camino» envía al cliente el aviso del portal («Tu inspector va en camino» con la hora estimada) y queda en la cronología.',
   },
   // ---------- Ofertas de la red (DEC-172) ----------
@@ -40,8 +42,20 @@ window.SIRIUS_APP_INSPECTOR = {
   visitaCompleta: {
     captura: 'Pasos de la columna Presencial de la plantilla (Vehículos livianos: los 10 de la autoinspección más matrícula y licencia, frente y reverso) en una grilla con el siguiente resaltado; cada paso abre la misma cámara guiada de la autoinspección: fotos del vehículo en horizontal con el contorno y el detector (encuadre «Acércate», «Aléjate», «Centra»), documentos en vertical con el marco y la verificación de bordes y reflejo, indicadores abajo con un único mensaje, «Tomar igual» a los 6 s, revisión «Usar esta foto / Repetir». Cada foto guarda hora, ubicación, validación y lecturas.',
     formulario: 'Secciones del formulario vigente de la plantilla; los campos leídos (placa, VIN, kilometraje, año) se precargan con su origen y confianza (90 % precarga, 60–89 % «Por confirmar») y el inspector puede corregirlos (origen «Inspector»). Las secciones obligatorias bloquean el envío con la lista de faltantes.',
-    determinacion: 'Con facultad (Vehículos, monto dentro del tope de su ficha y sin reglas de envío cumplidas): Asegurable, No asegurable (motivo) o Enviar a calificación (T10 o T09). Sin facultad o con una regla cumplida: solo Enviar a calificación (T09), con el motivo de la regla.',
+    determinacion: 'Reemplazada en C2-4 (DEC-180): en campo ya no se determina; el inspector termina la visita con su criterio y la determinación va al completar el informe. Antes: con facultad (Vehículos, monto dentro del tope de su ficha y sin reglas de envío cumplidas): Asegurable, No asegurable (motivo) o Enviar a calificación (T10 o T09). Sin facultad o con una regla cumplida: solo Enviar a calificación (T09), con el motivo de la regla.',
     ramosGenerales: 'En Ramos Generales y Equipo y maquinaria la visita usa el formulario por secciones de su plantilla y siempre envía a calificación (sin determinación del inspector).',
+  },
+  // ---------- Terminar la visita y completar el informe (C2-4 · DEC-180) ----------
+  terminarVisita: {
+    // Campos de la plantilla que se capturan en campo («Información clave»): identificación, estado, extras y daños, observaciones.
+    // Sin valoración ni campos de oficina (bloqueados, del sistema, del back-office, cálculos y montos).
+    informacionClave: { secciones: ['veh', 'ver', 'neu', 'tes', 'ext', 'ave'], campos: ['veh_kilometraje', 'veh_observacion_general'], excluir: ['veh_pais_origen', 'veh_cilindraje', 'veh_pasajeros', 'veh_combustible', 'veh_camv_cpn'], nombres: { ase: 'Observaciones', uso: 'Kilometraje' } },
+    origenes: ['Campo (lo escribe el inspector)', 'Lectura (foto o documento, con su confianza; 60–89 % «Por confirmar»)', 'Solicitud (precargado de la solicitud)'],
+    criterio: { opciones: ['Asegurable', 'No asegurable'], comentario: 'Obligatorio si es No asegurable (al menos 10 caracteres)' },
+    regla: '«Terminar la visita» se habilita sin fotos, obligatorios de campo, confirmaciones, extras ni criterio pendientes. El caso pasa a «Informe por completar» (T23) con su plazo de 24 h hábiles. Sin señal queda en la cola y se sincroniza en orden (15-3).',
+    despues: { interno: 'Interno o independiente: «Completar el informe ahora» o «Completarlo después» (en la app o en el back-office). En Ramos Generales se redacta en el back-office (fase R).', agencia: 'De agencia: «Lo completa el Control de calidad de <agencia>» o, si su agencia lo permite, «Complétalo en el back-office» con el enlace. Sin determinación en la app.' },
+    completarEnApp: 'Informe completo de la plantilla (todas las secciones, incluida la valoración) con la disposición de C2-3b para el celular: índice de secciones arriba (desplegable, con su estado), secciones al centro, «Criterio y decisión» al final (Asegurable dentro de su facultad, No asegurable con motivo, Enviar a calificación; una regla de envío cumplida manda a calificación), evidencias en una hoja y barra fija con «Ir al siguiente pendiente», «Guardar borrador» y «Completar y enviar» (solo sin pendientes).',
+    visitas: { porCompletar: 'Grupo «Informes por completar» en Visitas (solo internos e independientes) con el plazo en color y «Completar».', devueltos: 'Grupo «Devueltos» para todos, con el motivo del Control de calidad: se corrige la información clave o las fotos y se reenvía (el plazo de 24 h se reinicia).' },
   },
   confirmacionVisita: {
     regla: 'R06 sale el día anterior a las 15:00 con «Confirmar» y «Cambiar»; si el cliente no confirma hasta las 18:00, la visita queda «Sin respuesta» y el Coordinador recibe una tarea (resuelve el choque de 15-1 entre R06 y «Sin respuesta» a las 17:00).',

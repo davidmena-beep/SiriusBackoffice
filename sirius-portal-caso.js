@@ -70,7 +70,7 @@
   const ICS_AVISO = () => num(AGC().recordatorio, /aviso (\d+) h antes/, 2);
   const MAXMB = () => 10;
   function duraciones() { if (!S.durRamo) S.durRamo = Object.assign({}, ((AGD().autoagendamiento || {}).duracionPorRamo) || {}); return S.durRamo; }
-  function duracion(d) { const g = AGC().duracionPorGrupo || {}, r = duraciones(); return r[d.ramo] || g[d.ramo] || g[d.grupo] || 60; }
+  function duracion(d) { const g = AGC().duracionPorGrupo || {}, r = duraciones(), DM = ((AGD().autoagendamiento || {}).duracionPorModalidad || {})[d.modalidad]; if (DM) return (typeof DM === 'object' ? DM[d.grupo] || DM.default : DM) || 30; return r[d.ramo] || g[d.ramo] || g[d.grupo] || 60; } // etapa C2-2: la virtual guiada tiene su duración
   function fijarDuracion(ramo, minutos, motivo, por) { const r = duraciones(), antes = r[ramo] || null; if (minutos) r[ramo] = minutos; else delete r[ramo]; S.durHist.unshift({ at: iso(now()), por, ramo, antes, despues: minutos || null, motivo }); cambio(); }
   function bloques() { const f = F(); return (f && f.calendario && f.calendario.jornada) || [['08:30', '13:00'], ['14:00', '17:30']]; }
   function minHab(a, b, suc) { const f = F(); return f && f.minutosHabiles ? f.minutosHabiles(a, b, suc) : Math.max(0, (b - a) / 60000); }
