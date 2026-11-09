@@ -1,4 +1,5 @@
-// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v1.8 · provisional · etapa C2-3 · 08/11/2026)
+// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v1.9 · provisional · etapa C2-5 · 09/11/2026)
+// v1.9 (etapa C2-5): el Administrador puede todas las acciones (Liquidar honorarios y Aprobar cambios de cuenta bancaria en Aprobar).
 // v1.8 (etapa C2-3 · DEC-180): rol del sistema «Control de calidad (agencia)» (usuario de la agencia: ve y completa los informes de los inspectores
 //       de su agencia, los devuelve al inspector y ve sus evidencias; no califica, no coordina y no ve otras agencias) con Patricia Andrade (Eurosurvey);
 //       acciones «Completar el informe», «Devolver el informe al inspector» y «Ver evidencias de campo»; opción de la agencia
@@ -58,6 +59,7 @@
     ],
     acciones: [
       // [grupo, acción, adm, com, coo, ins, eje, sus, fin, fag, cca]
+      // Etapa C2-5: el Administrador puede todas las acciones del sistema (liquidar y aprobar cambios de cuenta pasan de Ver a Aprobar; coordinar, completar y calificar ya estaban).
       ['Solicitudes', 'Crear solicitud manual', 'C', 'C', 'C', '', '', '', '', '', ''],
       ['Solicitudes', 'Ver bandeja de casos', 'V', 'P', 'V', 'P', 'P', 'P', '', '', ''],
       ['Coordinación', 'Coordinar visitas, reagendar, cambiar inspector, dividir, cancelar', 'E', '', 'E', '', '', '', '', '', ''],
@@ -80,10 +82,10 @@
       ['Garantías', 'Solicitar inspección de garantías', 'C', 'C', '', '', '', '', '', '', ''],
       ['Garantías', 'Solicitar ampliación de plazo o cierre', 'C', 'C', '', '', '', '', '', '', ''],
       ['Garantías', 'Aprobar ampliación de plazo', 'A', '', '', '', 'P', 'P', '', '', ''],
-      ['Liquidaciones', 'Liquidar honorarios', 'V', '', '', 'P', '', '', 'A', 'P', ''],
+      ['Liquidaciones', 'Liquidar honorarios', 'A', '', '', 'P', '', '', 'A', 'P', ''],
       ['Liquidaciones', 'Aprobar honorarios', 'A', '', '', '', 'A', '', 'A', '', ''],
       ['Liquidaciones', 'Validar honorarios y facturas de la agencia', '', '', '', '', '', '', '', 'P', ''],
-      ['Liquidaciones', 'Aprobar cambios de cuenta bancaria', 'V', '', '', '', '', '', 'A', '', ''],
+      ['Liquidaciones', 'Aprobar cambios de cuenta bancaria', 'A', '', '', '', '', '', 'A', '', ''],
       ['Reportes', 'Ver reportes', 'V', 'V', 'V', '', 'V', 'V', '', '', ''],
       ['Administración', 'Configurar formularios, niveles, facultades, reglas, catálogos, plantillas y notificaciones', 'E', '', '', '', '', '', '', '', ''],
       ['Administración', 'Gestionar usuarios, roles e invitaciones', 'E', '', '', '', '', '', '', '', ''],

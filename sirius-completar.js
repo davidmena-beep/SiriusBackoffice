@@ -29,19 +29,28 @@
   SC.fmt = fmt;
   SC.ahora = ahoraIso;
   // Inspector de la visita: el que llega en el caso (inspectorVisita), la visita realizada o el responsable.
-  SC.inspectorDe = (c) => { if (!c) return ''; if (c.inspectorVisita) return c.inspectorVisita; const v = ((EJ().visitas || {})[c.id] || []).find(x => x.estado !== 'Cancelada'); return v ? v.inspector : (c.responsable || ''); };
+  // Etapa C2-5 · casos de la conexión: inspector { nombre, tipo, agencia } y vence (ISO del plazo de 24 h hábiles). Las agencias se comparan por nombre,
+  // sin mayúsculas, tildes ni sufijos societarios («S.A.», «Cía. Ltda.», «C.A.»…).
+  const insObj = (c) => c && c.inspector && typeof c.inspector === 'object' ? c.inspector : null;
+  SC.limpiarAgencia = (x) => String(x || '').replace(/[\s,]+(s\.?\s?a\.?s?|c[ií]a\.?\s*ltda\.?|ltda\.?|c\.?\s?a\.?)\s*$/i, '').trim();
+  const normAg = (x) => { const a = SU() && x ? SU().agencia(x) : null; return SC.limpiarAgencia(a ? a.nombre : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
+  SC.mismaAgencia = (a, b) => { const x = normAg(a), y = normAg(b); return !!x && x === y; };
+  const TIPOS = { interno: 'Interno', independiente: 'Externo', externo: 'Externo', agencia: 'Agencia', 'de agencia': 'Agencia' };
+  SC.tipoDe = (c) => { const o = insObj(c); if (o) return { tipo: TIPOS[String(o.tipo || '').toLowerCase()] || o.tipo || '', ag: o.agencia || '' }; return SC.tipoInspector(SC.inspectorDe(c)); };
+  SC.agenciaDeCaso = (c) => { const o = insObj(c); if (o) return o.agencia || ''; return SC.agenciaId(SC.inspectorDe(c)); };
+  SC.inspectorDe = (c) => { if (!c) return ''; const o = insObj(c); if (o) return o.nombre || ''; if (c.inspectorVisita) return c.inspectorVisita; const v = ((EJ().visitas || {})[c.id] || []).find(x => x.estado !== 'Cancelada'); return v ? v.inspector : (c.responsable || ''); };
   SC.tipoInspector = (n) => { const i = (EJ().inspectores || []).find(x => x.n === n); if (i) return { tipo: i.tipo, ag: i.ag || '' }; const u = SU() && SU().usuario(n); return u ? { tipo: u.tipo, ag: u.agencia ? ((SU().agencia(u.agencia) || {}).nombre || '') : '' } : { tipo: '', ag: '' }; };
   SC.agenciaId = (n) => { const t = SC.tipoInspector(n); if (t.tipo !== 'Agencia' || !SU()) return ''; const a = SU().agenciaDeInspector(t.ag); return a ? a.id : ''; };
   SC.agenciaNombre = (id) => { const a = id && SU() ? SU().agencia(id) : null; return a ? a.nombre.replace(/ S\.A\.$| Cía\. Ltda\.$/, '') : ''; };
   // Quién completa: interno o independiente → el inspector; de agencia → Control de calidad de su agencia, o el inspector si la opción estaba en Sí al terminar la visita.
-  SC.quienCompleta = (c) => { const n = SC.inspectorDe(c), t = SC.tipoInspector(n), info = SC.info(c && c.id) || {}, fin = info.visitaFin || '';
+  SC.quienCompleta = (c) => { const n = SC.inspectorDe(c), t = SC.tipoDe(c), info = SC.info(c && c.id) || {}, fin = info.visitaFin || '';
     if (t.tipo !== 'Agencia') return { tipo: 'inspector', nombre: n, agencia: '', texto: n + ' (' + (t.tipo === 'Externo' ? 'independiente' : t.tipo ? t.tipo.toLowerCase() : 'inspector') + ')' };
-    const ag = SC.agenciaId(n), propio = SU() ? SU().completaPropioEn(ag, fin) : false, cc = SU() ? SU().controlCalidadDe(ag) : [];
+    const agC = SC.agenciaDeCaso(c), agK = SU() && agC ? ((SU().agencias ? SU().agencias() : []).find(a => SC.mismaAgencia(a.id, agC)) || {}).id || (SU().agencia(agC) ? agC : '') : '', ag = agK || agC, propio = SU() && agK ? SU().completaPropioEn(agK, fin) : false, cc = SU() && agK ? SU().controlCalidadDe(agK) : [];
     if (propio) return { tipo: 'inspector', nombre: n, agencia: ag, texto: n + ' (la agencia permite que complete su informe)' };
-    const q = cc[0] ? cc[0].nombre : 'Control de calidad de ' + SC.agenciaNombre(ag); return { tipo: 'cc', nombre: q, agencia: ag, texto: q + ' · Control de calidad de ' + SC.agenciaNombre(ag) }; };
+    const agN = SC.agenciaNombre(agK) || SC.limpiarAgencia(agC), q = cc[0] ? cc[0].nombre : 'Control de calidad de ' + agN; return { tipo: 'cc', nombre: q, agencia: ag, texto: q + ' · Control de calidad de ' + agN }; };
   // Quién ve y completa: Administrador (todo); Control de calidad (los de los inspectores de su agencia, aunque la agencia permita que completen ellos); inspector (los suyos si le toca).
   SC.puede = (c, usuario, rolBase, agUsuario) => { if (!c) return false; if (rolBase === 'Administrador') return true; const n = SC.inspectorDe(c), q = SC.quienCompleta(c);
-    if (rolBase === CC) { const u = SU() && SU().usuario(usuario), a = agUsuario || (u ? u.agencia : ''); return !!a && a === SC.agenciaId(n); }
+    if (rolBase === CC) { const u = SU() && SU().usuario(usuario), a = agUsuario || (u ? u.agencia : ''), b = SC.agenciaDeCaso(c); return !!a && !!b && (a === b || SC.mismaAgencia(a, b)); }
     if (rolBase === 'Inspector') return q.tipo === 'inspector' && n === usuario; return false; };
   SC.esVisible = (c, usuario, rolBase) => SC.puede(c, usuario, rolBase) || (rolBase === 'Inspector' && SC.inspectorDe(c) === usuario);
   // Facultad del inspector (Vehículos: Niveles de calificación; Ramos Generales no tiene facultad del inspector).
@@ -56,7 +65,7 @@
     if (v === 'Enviar a calificación') return { destino: 'Pendiente calificación', texto: 'Va a calificación; el Ejecutivo de inspecciones decide.' };
     if (fac.permite[v]) return { destino: 'Inspeccionado', aseg: v, texto: 'Pasa a Inspeccionado como ' + v + ' (dentro de la facultad: ' + fac.texto + ').' };
     return { destino: 'Pendiente calificación', aseg: v, texto: v + ' está fuera de la facultad (' + fac.texto + '): va a calificación.' }; };
-  SC.plazo = (c, escena) => { const Fx = F(); if (!Fx || !c) return null; const r = Fx.calcular(c, escena); if (!r) return null; return r; };
+  SC.plazo = (c, escena) => { const Fx = F(); if (!Fx || !c) return null; if (c.vence && Fx.minutosHabiles && Fx.formato) { const m = String(c.vence).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if (m) { const v = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]), a = EJ().ahora ? EJ().ahora() : new Date(), mn = v >= a ? Fx.minutosHabiles(a, v, c.sucursal) : -Fx.minutosHabiles(v, a, c.sucursal), hr = mn / 60; return Object.assign({ horas: hr, vence: v, plazo: 24, usado: Math.max(0, Math.round((24 - hr) / 24 * 100)) }, Fx.formato(hr, v, 24 * .2)); } } /* etapa C2-5: «vence» de la conexión */ const r = Fx.calcular(c, escena); if (!r) return null; return r; };
   SC.registrarGuardado = (id, por) => { const s = SC.ses(id); s.guardados.unshift({ at: ahoraIso(), por }); avisar(); };
   SC.registrarDecision = (id, d) => { const s = SC.ses(id); if (d.decision === 'devolver') s.devuelto = { at: ahoraIso(), por: d.por, motivo: d.motivo }; else s.completado = { at: ahoraIso(), por: d.por, rol: d.rol, decision: d.decision, criterio: d.criterio, resultado: d.resultado, motivo: d.motivo || '' }; avisar(); };
   SC.registrarInsumo = (id, x) => { const s = SC.ses(id); (s.insumos = s.insumos || []).push(x); avisar(); }; // etapa C2-3b: «Cargar insumos»

@@ -1,4 +1,5 @@
-// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.2 · provisional · etapa C2-4 · 09/11/2026) · DEC-180
+// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.3 · provisional · etapa C2-5 · 09/11/2026) · DEC-180
+// v1.3 (etapa C2-5): `conexionPrueba` (escena infcompletarcx) con casos de la conexión que traen inspector { nombre, tipo, agencia } y vence.
 // v1.2 (etapa C2-4): el caso 20152 nace en la v2 de Vehículos (su visita termina en la app con T23).
 // v1.1 (etapa C2-3b, disposición): `insumosRG` (insumos de campo de la redacción del informe de Ramos Generales).
 // Fuente única de: reglas de quién completa el informe después de la visita, decisiones del Control de calidad y determinación del inspector,
@@ -8,7 +9,7 @@
 // Reloj: SIRIUS_EJEMPLO.ahora() (18/10/2026 · 20:30, domingo). Los casos nuevos nacieron con la versión 2 de su flujo (flujoVersion: 2).
 (function () {
   const C = {
-    version: '1.2', vigencia: 'Provisional', decision: 'DEC-180',
+    version: '1.3', vigencia: 'Provisional', decision: 'DEC-180',
     plazo: { horas: 24, alertaPct: 80, alVencer: 'Tarea al Coordinador de la sucursal', reinicio: 'Al reenviar un informe devuelto, el plazo vuelve a 24 h hábiles' },
     aplica: 'Vehículos (presencial y virtual guiada) y Ramos Generales (presencial), en los flujos v2 o posteriores',
     // Quién completa (se resuelve con el inspector de la visita y la opción de su agencia vigente al terminar la visita).
@@ -74,6 +75,19 @@
     ],
     // Campos del informe que llegan vacíos de la app (obligatorios pendientes) por caso; el resto se toma como en 20202.
     vacios: { '30004': ['veh_numero_motor', 'veh_kilometraje'], '30007': ['veh_numero_motor'], '30008': ['veh_vin'] },
+    // Etapa C2-5 · escena infcompletarcx: conexión de prueba (solo datos) con la forma del contrato: casos en «Informe por completar» o «Devuelto al inspector»
+    // con inspector { nombre, tipo, agencia } y vence (ISO del plazo de 24 h hábiles). La agencia llega escrita de varias formas; el Control de calidad de
+    // Eurosurvey ve las tres primeras (mismo nombre sin mayúsculas ni sufijos), no la de otra agencia ni la del independiente.
+    conexionPrueba: {
+      usuario: { nombre: 'Patricia Andrade', email: 'patricia.andrade@eurosurvey.com.ec', rol: 'Control de calidad (agencia)', roles: ['Control de calidad (agencia)'], agencia: 'Eurosurvey S.A.' },
+      casos: [
+        { id: '40101', ramo: 'Vehículos', estado: 'Informe por completar', asegurado: 'María José Recalde', ident: '1718822450', placa: 'PDF2210', bien: 'Chevrolet Onix 2023', fecha: '2026-10-16', sucursal: 'Quito Norte', responsable: 'Patricia Andrade', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'EUROSURVEY S.A.' }, vence: '2026-10-19T11:00', criterioInspector: { valor: 'Asegurable', comentario: 'Sin daños visibles.', por: 'Mauricio Endara', hora: '16/10/26 · 11:00' } },
+        { id: '40102', ramo: 'Vehículos', estado: 'Informe por completar', asegurado: 'Andrés Salgado Mora', ident: '1715543320', placa: 'PCK8813', bien: 'Kia Sportage 2022', fecha: '2026-10-17', sucursal: 'Quito Norte', responsable: 'Patricia Andrade', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey Cía. Ltda.' }, vence: '2026-10-20T15:30', criterioInspector: { valor: 'No asegurable', comentario: 'Golpe en el larguero delantero derecho.', por: 'Mauricio Endara', hora: '17/10/26 · 15:30' } },
+        { id: '40103', ramo: 'Vehículos', estado: 'Devuelto al inspector', asegurado: 'Daniela Pazmiño', ident: '1720045512', placa: 'PBT4405', bien: 'Toyota Corolla 2021', fecha: '2026-10-15', sucursal: 'Quito Norte', responsable: 'Patricia Andrade', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'eurosurvey' }, vence: '2026-10-19T17:00', devuelto: { motivo: 'Falta la foto del número de motor.', por: 'Patricia Andrade', at: '2026-10-17T09:40' }, criterioInspector: { valor: 'Asegurable', comentario: '', por: 'Mauricio Endara', hora: '15/10/26 · 17:00' } },
+        { id: '40104', ramo: 'Vehículos', estado: 'Informe por completar', asegurado: 'Jorge Proaño', ident: '1712098876', placa: 'PCA7788', bien: 'Hyundai Tucson 2022', fecha: '2026-10-17', sucursal: 'Quito Norte', responsable: 'Diana Cárdenas', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Diana Cárdenas', tipo: 'Agencia', agencia: 'Inspecciones Andinas S.A.' }, vence: '2026-10-20T10:00' },
+        { id: '40105', ramo: 'Vehículos', estado: 'Informe por completar', asegurado: 'Lorena Vaca', ident: '1716677012', placa: 'PDC1190', bien: 'Mazda CX-5 2024', fecha: '2026-10-17', sucursal: 'Quito Norte', responsable: 'Luis Andrade', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: '' }, vence: '2026-10-20T12:00' },
+      ],
+    },
   };
   window.SIRIUS_COMPLETAR = C;
 

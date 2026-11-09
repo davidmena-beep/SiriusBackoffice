@@ -359,4 +359,17 @@
       acciones, modal);
   }
   W.SiriusEnlaceTarjeta = Tarjeta;
+  // Etapa C2-5 · canales del envío de un enlace: casillas WhatsApp, SMS y Correo; las que no aplican quedan deshabilitadas (aria-disabled) con el motivo
+  // en el título y en una línea. Sin ningún canal posible, aviso «Falta un dato de contacto del cliente». props: opciones [{ k, nombre, ok, motivo, destino }],
+  // valor [k], onCambio(lista), marcar (muestra el error si no hay canal elegido).
+  function Canales(p) { var O = p.opciones || [], V = p.valor || [], ninguno = !O.some(function (c) { return c.ok; }), N = W.SIRIUS_NOTIFICACIONES || {};
+    return h('fieldset', { 'data-canales-enlace': '', style: { margin: 0, padding: 0, border: 'none', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 } },
+      h('legend', { style: { padding: 0, margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Canal del mensaje ', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, '*')),
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, O.map(function (c) { var on = c.ok && V.indexOf(c.k) >= 0;
+        return h('label', { key: c.k, 'data-canal': c.k, title: c.ok ? (c.destino ? c.nombre + ' · ' + c.destino : c.nombre) : c.motivo, 'aria-disabled': c.ok ? undefined : 'true', style: { display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 40, padding: '0 12px', border: '1.5px solid ' + (on ? 'var(--cyan-500)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)', background: on ? 'var(--color-brand-wash)' : c.ok ? '#FFFFFF' : 'var(--surface-subtle)', color: c.ok ? 'var(--text-strong)' : 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: c.ok ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' } },
+          h('input', { type: 'checkbox', checked: on, disabled: !c.ok, 'aria-describedby': c.ok ? undefined : 'cn-m-' + c.k, onChange: function () { if (!c.ok || !p.onCambio) return; p.onCambio(on ? V.filter(function (x) { return x !== c.k; }) : V.concat([c.k])); }, style: { width: 16, height: 16, margin: 0, accentColor: 'var(--cyan-700)' } }), c.nombre); })),
+      O.filter(function (c) { return !c.ok; }).map(function (c) { return h('span', { key: 'm' + c.k, id: 'cn-m-' + c.k, style: { fontSize: 12.5, color: 'var(--text-muted)' } }, c.nombre + ': ' + c.motivo.charAt(0).toLowerCase() + c.motivo.slice(1) + '.'); }),
+      ninguno ? h('p', { role: 'alert', 'data-sin-canal': '', style: { margin: '4px 0 0', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--color-danger-wash, #FDECEC)', color: 'var(--color-danger)', fontSize: 14, fontWeight: 700 } }, N.SIN_CANAL || 'Falta un dato de contacto del cliente')
+        : !V.length && p.marcar ? h('span', { role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, 'Elige al menos un canal.') : null); }
+  W.SiriusCanalesEnlace = Canales;
 })();

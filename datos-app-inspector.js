@@ -1,4 +1,5 @@
-// SIRIUS · App del inspector (v1.3 · provisional · etapa C2-4 · 09/11/2026) · DEC-173, DEC-174 y DEC-180
+// SIRIUS · App del inspector (v1.4 · provisional · etapa C2-5 · 09/11/2026) · DEC-173, DEC-174 y DEC-180
+// v1.4 (etapa C2-5): «Hoy» pasa a «Mis inspecciones» (por fecha, con «Atrasadas»); «Terminar la visita» con la lista de pendientes e «Ir al siguiente pendiente».
 // v1.3 (etapa C2-4 · DEC-180): «Terminar la visita» con la información clave y el criterio del inspector (sin determinación en campo para
 //       nadie); completar el informe en la app solo para internos e independientes (Vehículos); grupos «Informes por completar» y «Devueltos».
 // v1.2: prueba en celular: tipo de vehículo, pasos y formulario de la columna Presencial, interfaz que gira con el celular,
@@ -6,7 +7,7 @@
 // v1.1: visita completa (captura, formulario, determinación), cola sin conexión y horario de confirmación de la visita.
 // Aprobada por el negocio con la maqueta del 15 y sus 5 definiciones. Una sola app (PWA) para inspectores internos y externos.
 window.SIRIUS_APP_INSPECTOR = {
-  version: '1.3', vigencia: 'Provisional',
+  version: '1.4', vigencia: 'Provisional',
   secciones: ['Hoy', 'Ofertas', 'Visitas', 'Yo'],
   // ---------- Acceso ----------
   acceso: {
@@ -46,6 +47,18 @@ window.SIRIUS_APP_INSPECTOR = {
     ramosGenerales: 'En Ramos Generales y Equipo y maquinaria la visita usa el formulario por secciones de su plantilla y siempre envía a calificación (sin determinación del inspector).',
   },
   // ---------- Terminar la visita y completar el informe (C2-4 · DEC-180) ----------
+  // ---------- Mis inspecciones (etapa C2-5; reemplaza a «Hoy» como pestaña) ----------
+  misInspecciones: {
+    pestana: 'Mis inspecciones',
+    grupos: 'Por fecha: «Hoy», «Mañana» y la fecha completa (p. ej. «Martes 10/11»); cada grupo con el mapa de su ruta y «Navegar la ruta del día». Cada visita muestra fecha, hora y duración.',
+    atrasadas: 'Visitas de días pasados que no se terminaron, arriba y en rojo, en «Atrasadas».',
+    // Visitas adicionales de la escena inspmisinspecciones (Mauricio Endara): mañana, otra fecha y una atrasada.
+    escena: [
+      { caso: '20188', fecha: '2026-10-21', hIni: '09:00', hFin: '09:45', dir: 'Av. Eloy Alfaro N35-12 y Portugal, Quito', gps: [-0.1712, -78.4818], contacto: 'Rosa Elena Chiriboga' },
+      { caso: '20181', fecha: '2026-10-22', hIni: '10:30', hFin: '11:15', dir: 'Av. Amazonas N24-03 y Colón, Quito', gps: [-0.2012, -78.4937], contacto: 'Esteban Ruiz Calderón' },
+      { caso: '20170', fecha: '2026-10-19', hIni: '16:00', hFin: '16:45', dir: 'Av. República E7-123 y Diego de Almagro, Quito', gps: [-0.1905, -78.4852], contacto: 'Gabriela Montalvo' },
+    ],
+  },
   terminarVisita: {
     // Campos de la plantilla que se capturan en campo («Información clave»): identificación, estado, extras y daños, observaciones.
     // Sin valoración ni campos de oficina (bloqueados, del sistema, del back-office, cálculos y montos).

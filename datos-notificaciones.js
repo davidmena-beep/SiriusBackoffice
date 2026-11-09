@@ -1,4 +1,5 @@
-// SIRIUS · Módulo de Notificaciones (v1.12 · provisional · etapa C2-2 · 08/11/2026)
+// SIRIUS · Módulo de Notificaciones (v1.13 · provisional · etapa C2-5 · 09/11/2026)
+// v1.13 (etapa C2-5): canalesPosibles y canalPorDefecto para el envío de enlaces (datos de contacto y consentimientos; sin canal, «Falta un dato de contacto del cliente»).
 // v1.12: recordatorios por tipo de enlace (DEC-178): R13 a R15 son del enlace de autoinspección y R20 a R22 del de autoagendamiento («Agenda tu inspección»),
 //       con su plantilla; cada regla dice a qué tipo aplica (tipoEnlace). La plantilla del autoagendamiento menciona la modalidad elegida.
 // v1.11: R19 «Enlace de autoagendamiento» y su plantilla (DEC-178): el enlace lleva al portal del caso (estado, Agenda y Documentos), sin la captura de fotos.
@@ -284,6 +285,13 @@
   // Remitente de un correo para un responsable dado.
   N.remitenteDe = (usuario) => { const U = window.SIRIUS_USUARIOS, c = U && U.usuario(usuario); return c && c.gmail === 'Conectada' ? c.correo : N.remitente.institucional; };
   // Canales efectivos para el cliente según consentimiento.
+  // Etapa C2-5 · canales posibles para un enlace (autoagendamiento o autoinspección) según los datos de contacto y los consentimientos:
+  // WhatsApp y SMS piden celular y consentimiento registrado (regla de consentimiento, sin cambios); correo pide correo. Sin ninguno, el envío se bloquea.
+  N.canalesPosibles = (caso, ct) => { ct = ct || {}; const k = N.consentimiento.casos[caso] || null, hay = (v) => !!v && String(v).trim() !== '' && String(v).trim() !== '—', cel = hay(ct.cel), mail = hay(ct.correo);
+    const msj = (c, nom) => !cel ? 'El cliente no tiene celular registrado' : !k ? 'No hay consentimiento registrado para ' + nom : !k[c] ? 'El cliente no aceptó mensajes por ' + nom : '';
+    return [{ k: 'whatsapp', nombre: 'WhatsApp', motivo: msj('whatsapp', 'WhatsApp') }, { k: 'sms', nombre: 'SMS', motivo: msj('sms', 'SMS') }, { k: 'correo', nombre: 'Correo', motivo: mail ? '' : 'El cliente no tiene correo registrado' }].map((x) => Object.assign(x, { ok: !x.motivo, destino: x.k === 'correo' ? (mail ? String(ct.correo).trim() : '') : (cel ? String(ct.cel).trim() : '') })); };
+  N.canalPorDefecto = (L) => { const x = (L || []).find((c) => c.ok); return x ? [x.k] : []; }; // WhatsApp si hay celular y consentimiento; si no, SMS; si no, correo
+  N.SIN_CANAL = 'Falta un dato de contacto del cliente';
   N.canalesCliente = (caso, canales) => { const k = N.consentimiento.casos[caso] || {}; const r = canales.filter(c => (c !== 'whatsapp' || k.whatsapp) && (c !== 'sms' || k.sms)); return r.length ? r : ['correo']; };
   window.SIRIUS_NOTIFICACIONES = N;
 })();
