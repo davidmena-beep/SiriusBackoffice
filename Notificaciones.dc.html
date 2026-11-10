@@ -304,7 +304,7 @@ class Component extends DCLogic {
   save() {
     const st = this.state, N = this.N(), motivo = st.motivo.trim();
     if (!motivo) { this.setState({ motErr: true }); const el = document.getElementById('nt-pn-motivo'); if (el) el.focus(); return; }
-    const by = this.user(), ts = this.nowIso(), H = this.hist(), log = (id, accion) => H.unshift({ fecha: ts, por: by, regla: id, accion, motivo });
+    const by = this.user(), ts = this.nowIso(), H = this.hist(), log = (id, accion) => H.unshift({ fecha: ts, por: by, regla: id, accion, motivo }), snap = JSON.parse(JSON.stringify(N.reglas || [])), h0 = H.length; // C2-10: para revertir
     if (st.panel === 'regla') {
       if (st.orig) {
         const r0 = N.regla(st.orig), r1 = this.toRegla(st.f, r0), d = this.diff(r0, r1), i = N.reglas.indexOf(r0); N.reglas[i] = r1;
@@ -319,6 +319,10 @@ class Component extends DCLogic {
     if (st.panel === 'react') { const r = N.regla(st.orig); r.estado = 'Activa'; log(r.id, 'Reactivó la regla'); this.toast('Regla reactivada. Vuelve a enviar avisos.'); }
     this.sincronizar(st.panel === 'var' ? (SVx => { const x = SVx && SVx.info(st.orig); return (x && x.disponible ? 'Activó' : 'Apagó') + ' «Disponible» de {{' + st.orig + '}}'; })(this.SV()) : st.panel === 'inact' ? 'Inactivó la regla ' + st.orig : st.panel === 'react' ? 'Activó la regla ' + st.orig : st.orig ? 'Editó la regla ' + st.orig : 'Agregó una regla');
     this.setState({ panel: null }); this.restoreFocus();
+    /* Etapa C2-10 · DEC-187: con la conexión, el cambio se publica en la base (SIRIUS_NOTIFICACIONES completo, sin funciones); con { ok: false } se revierte */
+    const SP = window.SiriusPublicar, panel = st.panel, ref = st.orig; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: N, motivo, pantalla: 'Notificaciones',
+      revertir: () => { N.reglas.splice(0, N.reglas.length, ...snap); H.splice(0, H.length - h0); if (panel === 'var') { const SV = this.SV(), x = SV && SV.info(ref); if (x) SV.setDisponible(x.clave, !x.disponible); } this.forceUpdate(); },
+      alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: ref || '', accion: 'Publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } });
   }
   moveCanal(i, d) { const c = this.state.f.canales.slice(), j = i + d; if (j < 0 || j >= c.length) return; const t = c[i]; c[i] = c[j]; c[j] = t; this.setF({ canales: c }); }
   // ---------- Texto con variables resaltadas ----------

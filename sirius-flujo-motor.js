@@ -110,11 +110,16 @@
   // Etapa 16f-1c · «Guardar borrador» marca el punto al que vuelve «Cancelar» (descarta lo no guardado).
   FM.guardar = (id) => { const f = FM.flujo(id); if (!f || !f.borrador) return null; f.borrador.guardado = { at: ahora(), por: usuario }; avisar(); return clone(f.borrador); };
   FM.restaurar = (id, snap) => { const f = FM.flujo(id); if (!f || !f.borrador || !snap) return; f.borrador = clone(snap); avisar(); };
-  FM.publicar = (id, motivo, casos) => { const f = FM.flujo(id); if (!f || !f.borrador) return false; if (FM.validar(f.borrador).length) return false;
+  FM.publicar = (id, motivo, casos) => { const f = FM.flujo(id); if (!f || !f.borrador) return false; if (FM.validar(f.borrador).length) return false; const snapF = clone(f), h0 = S.hist.length; // C2-10: para revertir
     const ant = vigenteDe(f), imp = FM.porEstado(id, ant.version, casos), nAnt = Object.keys(imp).reduce((a, k) => a + imp[k], 0), b = f.borrador;
     ant.estado = 'Reemplazada'; b.estado = 'Vigente'; b.actualizado = ahora(); b.por = usuario; b.motivo = motivo; delete b._claves; f.versiones.push(b); f.borrador = null; f.validado = false;
     S.hist.unshift({ when: fecha(ahora()), by: usuario, tab: 'Flujos', what: 'Publicó «' + f.nombre + '» v' + b.version + ' (reemplaza a la v' + ant.version + ')', detail: (b.cambios.length ? 'Cambios: ' + b.cambios.join('; ') + '. ' : '') + 'Impacto: ' + plural(nAnt, 'caso activo sigue', 'casos activos siguen') + ' en la v' + ant.version + '; los casos nuevos usan la v' + b.version + '.', motivo });
-    avisar(); return true; };
+    avisar();
+    /* Etapa C2-10 · DEC-187: con la conexión, la versión se publica en la base (SIRIUS_FLUJO_MOTOR con todos los flujos y sus versiones); con { ok: false } se revierte */
+    const SP = window.SiriusPublicar; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_FLUJO_MOTOR', version: b.version, datos: { flujos: FM.flujos() }, motivo, pantalla: 'Flujo y SLA › ' + f.nombre,
+      revertir: () => { Object.keys(f).forEach(k => { delete f[k]; }); Object.assign(f, clone(snapF)); S.hist.splice(0, S.hist.length - h0); avisar(); },
+      alPublicar: (i) => { S.hist.unshift({ when: fecha(ahora()), by: usuario, tab: 'Flujos', what: 'Publicada en la base: «' + f.nombre + '» v' + b.version, detail: 'Fecha: ' + i.fecha + '.', motivo }); avisar(); } });
+    return true; };
   // Conflictos del Centro de conflictos: un borrador validado (abierto o editado en la sesión) con errores.
   FM.conflictos = () => FM.flujos().filter(f => f.borrador && f.validado).map(f => ({ flujo: f.id, nombre: f.nombre, version: f.borrador.version, errores: FM.validar(f.borrador) })).filter(x => x.errores.length);
   FM.claveConflicto = (id, v) => 'flujo_invalido:' + id + '-v' + v;

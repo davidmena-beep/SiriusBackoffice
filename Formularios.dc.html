@@ -986,7 +986,7 @@ class Component extends DCLogic {
     this.setState({ forms, hist: [{ when: this.nowStr(), by: this.user(), where: f.name + ' · versión ' + n, what: 'Creó la versión ' + n + ' como borrador a partir de la versión ' + base.n, motivo: '' }].concat(this.state.hist) }, () => { this.openVersion(fid, n); this.toast('Versión ' + n + ' creada como borrador a partir de la versión ' + base.n); });
   }
   publish() {
-    const p = this.state.pub, today = this.todayISO();
+    const p = this.state.pub, today = this.todayISO(), prev = { forms: this.state.forms, hist: this.state.hist }; // C2-10: para revertir
     const badDate = p.when === 'fecha' && !(p.date && p.date > today), noMot = !String(p.mot || '').trim();
     if (badDate || noMot) { this.setState({ pub: Object.assign({}, p, { err: badDate, motErr: noMot }) }); setTimeout(() => { const el = document.getElementById(badDate ? 'pub-date' : 'pub-mot'); if (el) el.focus(); }, 30); return; }
     const forms = this.clone(this.state.forms), f = forms.find(x => x.id === this.state.fid), v = f.versions.find(x => x.n === this.state.vn);
@@ -994,6 +994,9 @@ class Component extends DCLogic {
     else { v.estado = 'Programada'; v.desde = p.date; }
     this.setState({ forms, modal: null, dirty: false, pub: { when: 'hoy', date: '', mot: '' }, hist: [{ when: this.nowStr(), by: this.user(), where: f.name + ' · versión ' + v.n, what: p.when === 'hoy' ? 'Publicó la versión ' + v.n + ', vigente desde hoy' : 'Programó la versión ' + v.n + ' para el ' + this.fmt(p.date), motivo: String(p.mot || '').trim() }].concat(this.state.hist) });
     this.toast(p.when === 'hoy' ? 'Versión ' + v.n + ' publicada y vigente desde hoy' : 'Versión ' + v.n + ' programada para el ' + this.fmt(p.date));
+    /* Etapa C2-10 · DEC-187: con la conexión, la versión se publica en la base: SIRIUS_FORMULARIOS con todos los formularios (cada versión con sus secciones y campos, pasos de foto con guía y validaciones, columnas Presencial, Virtual guiada y Autoinspección, y la configuración de la autoinspección y del portal del cliente); con { ok: false } se revierte */
+    const SP = window.SiriusPublicar, mot = String(p.mot || '').trim(); if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_FORMULARIOS', version: v.n, datos: { formularios: forms, cambio: { formulario: f.id, nombre: f.name, version: v.n } }, motivo: mot, pantalla: 'Formularios › ' + f.name,
+      revertir: () => this.setState({ forms: prev.forms, hist: prev.hist }), alPublicar: (i) => this.setState(s => ({ hist: [{ when: i.fecha, by: this.user(), where: f.name + ' · versión ' + v.n, what: 'Publicada en la base (SIRIUS_FORMULARIOS · versión ' + v.n + ')', motivo: mot }].concat(s.hist) })) });
   }
   createForm() {
     const nf = this.state.nf, err = {};

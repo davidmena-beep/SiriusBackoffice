@@ -320,6 +320,18 @@ class Component extends DCLogic {
   openNew() { const p = this.mkPanel(this.state, this.state.cat, 'new', null); this.setState({ panel: p }); }
   closePanel() { this.setState({ panel: null }); }
   closeModal() { this.setState({ modal: null, histOpen: false, histCat: null }); }
+  // Etapa C2-10 · DEC-187: con la conexión, cada cambio guardado se publica en la base con su clave de configuración y el objeto completo ya con el cambio.
+  // Catálogos maestros → SIRIUS_CATALOGOS_MAESTROS (marcas, licencias, colores, wmi, mapasAmenaza); equipos y grupos → SIRIUS_EQUIPOS; extras → SIRIUS_AUTOINSPECCION;
+  // el resto → SIRIUS_CATALOGOS (SIRIUS_EJEMPLO.catalogos). Con { ok: false } se vuelve al registro y al historial de antes.
+  claveCat(c, reg) { const vig = (r) => r.estado !== 'Inactivo', L = (reg[c.id] || []).filter(vig), cl = (x) => JSON.parse(JSON.stringify(x || {})), strip = (r) => { const o = Object.assign({}, r); ['id', 'estado', 'src', 'fv', 'edited', 'mant', 'dif', 'vsir'].forEach(k => { delete o[k]; }); if (o.subs) o.subs = o.subs.filter(vig).map(strip); return o; };
+    if (c.cm) { const CM = cl(window.SIRIUS_CATALOGOS_MAESTROS), K = { mapas: 'mapasAmenaza' }[c.id] || c.id, M = { marcas: () => L.map(m => ({ marca: m.marca, modelos: (m.subs || []).filter(vig).map(s => ({ modelo: s.modelo, versiones: String(s.versiones || '').split(',').map(v => v.trim()).filter(Boolean) })) })), licencias: () => L.map(x => ({ codigo: x.codigo, tipo: x.tipo, descripcion: x.descripcion })), colores: () => L.map(x => x.nombre), wmi: () => L.map(x => ({ wmi: x.wmi, fabricante: x.fabricante, marca: x.marca, pais: x.pais })), mapas: () => L.map(x => ({ amenaza: x.amenaza, fuente: x.fuente, institucion: x.institucion, estado: x.origen })) };
+      CM[K] = M[c.id] ? M[c.id]() : L.map(strip); return { clave: 'SIRIUS_CATALOGOS_MAESTROS', base: CM.version, datos: CM }; }
+    if (['gruposramos', 'eqcat', 'eqmarcas', 'eqvrn'].includes(c.id)) return { clave: 'SIRIUS_EQUIPOS', datos: cl(window.SIRIUS_EQUIPOS) };
+    if (c.id === 'extras') return { clave: 'SIRIUS_AUTOINSPECCION', base: (window.SIRIUS_AUTOINSPECCION || {}).version, datos: cl(window.SIRIUS_AUTOINSPECCION) };
+    const E = cl((window.SIRIUS_EJEMPLO || {}).catalogos); E[c.id] = L.map(strip); return { clave: 'SIRIUS_CATALOGOS', datos: E }; }
+  publicarCat(c, reg, motivo, st0) { const SP = window.SiriusPublicar; if (!SP || !SP.activo()) return; const x = this.claveCat(c, reg);
+    SP.publicar({ clave: x.clave, base: x.base, datos: x.datos, motivo, pantalla: 'Catálogos › ' + c.n, revertir: () => { this.syncData(st0.reg); this.setState({ reg: st0.reg, hist: st0.hist }); },
+      alPublicar: (i) => this.setState(s => ({ hist: [{ when: i.fecha, by: this.by(), where: c.n, cat: c.id, what: 'Publicada en la base: ' + x.clave + ' versión ' + i.version, motivo }].concat(s.hist) })) }); }
   savePanel() {
     { const p0 = this.state.panel; if (p0 && p0.mode === 'cnx') { const mErr = !p0.motivo.trim(), mapErr = /^No mapear/.test(p0.vals.m0 || ''); if (mErr || mapErr) { this.setState({ panel: Object.assign({}, p0, { mErr, errs: { m0: mapErr } }) }); return; } this.applyConnect(p0); return; } }
     const st = this.state, p = st.panel, c = this.cat(p.cat), fl = p.fl || (p.sub ? c.sub.fields : c.fields), errs = {};
@@ -335,7 +347,7 @@ class Component extends DCLogic {
       const ch = fl.filter(f => f.t !== 'calc' && String(tgt[f.k]) !== String(vals[f.k])).map(f => f.l + ': ' + (this.show(f, tgt[f.k])) + ' → ' + this.show(f, vals[f.k])); if (this.isConn(c.id) && this.modoOf(c.id) === 'ambos' && tgt.src !== 'sirius') { tgt.fv = tgt.fv || {}; fl.forEach(f => { if (String(tgt[f.k]) !== String(vals[f.k]) && !(f.k in tgt.fv)) tgt.fv[f.k] = tgt[f.k]; }); tgt.edited = true; tgt.mant = false; } Object.assign(tgt, vals); if (c.id === 'gruposramos') (reg.ramos || []).forEach(r => { if (r.grupo === p.name) r.grupo = vals.nombre; });
       what = 'Editó «' + p.name + '»' + (ch.length ? ' (' + ch.join(' · ') + ')' : ' sin cambiar valores'); }
     this.syncData(reg); this.setState({ reg, panel: null, hist: [{ when: this.now(), by: this.by(), where: c.n, cat: c.id, what, motivo: p.motivo.trim() }].concat(st.hist) });
-    this.toast(what + '. Queda en el historial.');
+    this.toast(what + '. Queda en el historial.'); this.publicarCat(c, reg, p.motivo.trim(), st); // C2-10 · DEC-187
   }
   // Impacto de editar un grupo: sus ramos y casos activos, y los ramos cuya composición deja de estar en el grupo.
   grupoImpact(p) { const st = this.state, c = this.cat('gruposramos'), f = this.find('gruposramos', p.rid), g = f ? f.r : {}, rs = (st.reg.ramos || []).filter(x => x.grupo === g.nombre), cs = this.casosDe(c, g, null, false), comps = p.vals.composiciones || [];
@@ -355,7 +367,7 @@ class Component extends DCLogic {
       else if (m.kind === 'mantener') { tgt.dif = false; tgt.mant = true; what = 'Mantuvo la edición de SIRIUS en «' + nm + '»'; }
       else if (m.kind === 'tog') { tgt.estado = m.to; what = (m.to === 'Inactivo' ? (c.id === 'gruposramos' ? 'Inactivó el grupo' : 'Desactivó') : 'Activó') + ' «' + nm + '»'; } else { const k = m.fk; tgt[k] = m.val; what = 'Cambió «' + m.fl + '» de «' + nm + '» a ' + (m.val ? 'Sí' : 'No'); } }
     this.syncData(reg); this.setState({ reg, modal: null, hist: [{ when: this.now(), by: this.by(), where: c.n, cat: c.id, what, motivo: m.reason.trim() }].concat(st.hist) });
-    this.toast(what + '. Queda en el historial.');
+    this.toast(what + '. Queda en el historial.'); this.publicarCat(c, reg, m.reason.trim(), st); // C2-10 · DEC-187
   }
   nb(label, kind, onClick, why) {
     const base = { height: 40, padding: '0 20px', border: 'none', borderRadius: 8, fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' };

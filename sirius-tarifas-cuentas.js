@@ -65,7 +65,11 @@
     S.seqT++; var n = { id: 'TAI-' + String(t.agencia).slice(0, 3).toUpperCase() + '-N' + S.seqT, agencia: t.agencia, inspector: t.inspector || null, grupo: t.grupo, unidad: t.unidad, valor: t.valor, desde: t.desde, hasta: null, motivo: String(t.motivo).trim(), por: por, at: TC.ahora() };
     S.tarifas.push(n); var ag = TC.agencia(t.agencia) || { nombre: t.agencia };
     log(por, 'Tarifas de ' + ag.nombre, 'Tarifa ' + (t.inspector ? 'de ' + t.inspector : 'general') + ' · ' + t.grupo + ': ' + TC.tarifaTxt(n) + ' desde el ' + TC.fecha(t.desde) + (r.reemplaza ? ' (antes ' + TC.tarifaTxt(r.reemplaza) + ', hasta el ' + TC.fecha(r.reemplaza.hasta) + ')' : ''), n.motivo);
-    avisar(); return { ok: true, tarifa: n, reemplaza: r.reemplaza }; };
+    avisar();
+    /* Etapa C2-10 · DEC-187: con la conexión, la tarifa se publica en la base (SIRIUS_TARIFAS_CUENTAS con todas las tarifas); con { ok: false } se revierte */
+    var SP = W.SiriusPublicar, rem = r.reemplaza, hastaAnt = rem ? null : null; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_TARIFAS_CUENTAS', version: S.seqT, base: 0, datos: Object.assign({}, D(), { tarifas: S.tarifas }), motivo: n.motivo, pantalla: 'Tarifas de ' + ag.nombre,
+      revertir: function () { S.tarifas = S.tarifas.filter(function (x) { return x !== n; }); if (rem) rem.hasta = null; S.hist.shift(); avisar(); }, alPublicar: function (i) { log(por, 'Tarifas de ' + ag.nombre, 'Publicada en la base: versión ' + i.version, n.motivo); avisar(); } });
+    return { ok: true, tarifa: n, reemplaza: r.reemplaza }; };
 
   // ---------- Honorarios según el tipo de inspector ----------
   var H = function () { return W.SiriusHonorarios || null; }, LQ = function () { return W.SiriusLiquidaciones || null; };

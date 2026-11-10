@@ -119,6 +119,10 @@
   H.impacto = function (id, mapa) { var tars = clon(H.tars), t = tars.find(function (x) { return x.id === id; }); t.mapa = mapa; var a = 0, b = 0, filas = [];
     (H.ctx.informes() || []).forEach(function (inf) { var x = H.hon(inf.id); if (!x || CERR.indexOf(x.estado) >= 0) return; var c0 = H.calcular(inf).total, c1 = H.calcular(inf, tars).total; a += c0; b += c1; if (c0 !== c1) filas.push({ id: inf.id, caso: inf.caso, antes: c0, despues: c1 }); });
     return { antes: H.r2(a), despues: H.r2(b), dif: H.r2(b - a), filas: filas }; };
-  H.guardarTarifario = function (id, mapa, motivo, por, cambios) { var t = H.tarifario(id), imp = H.impacto(id, mapa); t.mapa = mapa; t.version += 1; t.historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: 'Versión ' + t.version + ': ' + cambios.join('; '), motivo: motivo, impacto: imp.dif }); avisar(); return imp; };
+  H.guardarTarifario = function (id, mapa, motivo, por, cambios) { var t = H.tarifario(id), snap = JSON.parse(JSON.stringify({ mapa: t.mapa, version: t.version, historial: t.historial })), imp = H.impacto(id, mapa); t.mapa = mapa; t.version += 1; t.historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: 'Versión ' + t.version + ': ' + cambios.join('; '), motivo: motivo, impacto: imp.dif }); avisar();
+    /* Etapa C2-10 · DEC-187: con la conexión, la versión del tarifario se publica en la base (SIRIUS_HONORARIOS con todos los tarifarios); con { ok: false } se revierte */
+    var SP = window.SiriusPublicar; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_HONORARIOS', version: t.version, datos: Object.assign({}, window.SIRIUS_HONORARIOS || {}, { tarifarios: H.tars }), motivo: motivo, pantalla: 'Honorarios › ' + (t.nombre || id),
+      revertir: function () { t.mapa = snap.mapa; t.version = snap.version; t.historial = snap.historial; avisar(); }, alPublicar: function (i) { t.historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: 'Publicada en la base: versión ' + t.version, motivo: motivo }); avisar(); } });
+    return imp; };
   window.SiriusHonorarios = H;
 })();
