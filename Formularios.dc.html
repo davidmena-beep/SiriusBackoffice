@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
 <script src="sirius-fecha.js"></script><script src="datos-compania.js"></script><script src="sirius-monto.js"></script><script src="sirius-grilla.js"></script>
-<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script><script src="datos-equipo-maquinaria.js"></script><script src="sirius-equipos.js"></script><script src="datos-autoinspeccion.js"></script><script src="sirius-autoinspeccion.js"></script><script src="sirius-portal-cliente.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-agenda.js"></script><script src="datos-portal-cliente.js"></script><script src="sirius-portal-caso.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script><script src="datos-presencial.js"></script><script src="datos-equipo-maquinaria.js"></script><script src="sirius-equipos.js"></script><script src="datos-autoinspeccion.js"></script><script src="sirius-autoinspeccion.js"></script><script src="sirius-portal-cliente.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-agenda.js"></script><script src="datos-portal-cliente.js"></script><script src="sirius-portal-caso.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
 </helmet>
 <div style="font-family:var(--font-brand);color:var(--text-body);min-width:0;display:flex;flex-direction:column;gap:14px">
@@ -458,6 +458,7 @@
 </div>
 <sc-if value="{{ ps.mapaShow }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusMapaCaptura" from="./sirius-siluetas-ui.js" id="fm-mapa" formulario="{{ ps.mapaForm }}" pasos="{{ ps.mapaPasos }}" titulo="{{ ps.mapaTitulo }}" pre="fmm" hint-size="100%,520px"></x-import></sc-if>
 <sc-if value="{{ ps.autoShow }}" hint-placeholder-val="{{ false }}"><div id="fm-autopasos" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF"><span style="flex:1 1 320px;font-size:14px;color:var(--text-body)">{{ ps.autoNota }}</span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ ps.irTaller }}" hint-size="200px,36px">Abrir Autoinspección</x-import></div></sc-if>
+<sc-if value="{{ ps.pres.show }}" hint-placeholder-val="{{ false }}"><section data-presencial="{{ ps.pres.n }}" aria-labelledby="ps-pres-t" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;padding:14px 18px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-subtle)"><div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px"><h2 id="ps-pres-t" style="margin:0;font-size:15px;font-weight:700;color:var(--text-strong)">{{ ps.pres.titulo }}</h2><span style="font-size:13px;line-height:1.45;color:var(--text-muted)">{{ ps.pres.nota }}</span></div><ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 20px;font-size:13px;line-height:1.4;color:var(--text-body)"><sc-for list="{{ ps.pres.items }}" as="it" hint-placeholder-count="6"><li data-pres-paso="{{ it.id }}"><b style="color:var(--text-strong)">{{ it.nombre }}</b><span style="color:var(--text-muted)"> · {{ it.det }}</span><sc-if value="{{ it.nuevo }}" hint-placeholder-val="{{ false }}"><span style="margin-left:6px;font-size:11.5px;font-weight:800;color:var(--cyan-700);white-space:nowrap">Paso nuevo</span></sc-if></li></sc-for></ol></section></sc-if>
 <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
 <nav aria-label="Pasos de foto" style="flex:0 0 280px;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px 8px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 6px"><h2 style="margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)">Pasos de foto</h2><span style="font-size:12px;color:var(--text-muted)">{{ ps.count }}</span></div>
@@ -465,7 +466,7 @@
 <div style="display:flex;flex-direction:column;gap:2px">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px"><h3 style="margin:0;font-size:14px;font-weight:700;color:var(--text-strong)">{{ g.label }}</h3><span style="font-size:12px;color:var(--text-muted)">{{ g.n }}</span></div>
 <ul role="listbox" aria-label="{{ g.label }}" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px">
-<sc-for list="{{ g.steps }}" as="s" hint-placeholder-count="3"><li role="option" aria-selected="{{ s.selected }}" data-tree="{{ s.id }}" tabIndex="0" draggable="{{ dragOn }}" onClick="{{ s.onClick }}" onKeyDown="{{ s.onKey }}" onDragStart="{{ s.onDragStart }}" onDragOver="{{ s.onDragOver }}" onDrop="{{ s.onDrop }}" onDragEnd="{{ s.onDragEnd }}" style="display:flex;align-items:flex-start;gap:6px;padding:6px 8px 6px 4px;border-radius:var(--radius-sm);background:{{ s.bg }};box-shadow:{{ s.drop }};cursor:grab;outline:none" style-hover="background:var(--table-row-hover)" style-focus="box-shadow:inset 0 0 0 2px var(--color-brand)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--neutral-400)" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex:0 0 auto;margin-top:3px"><path d="M9 5h.01 M9 12h.01 M9 19h.01 M15 5h.01 M15 12h.01 M15 19h.01"></path></svg><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;line-height:1.3;font-weight:{{ s.fw }};color:var(--text-strong)">{{ s.name }}</span><sc-if value="{{ s.hasRep }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--cyan-700);font-weight:700">{{ s.repTxt }}</span></sc-if><sc-if value="{{ s.hasEx }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;color:var(--text-muted)">{{ s.exTxt }}</span></sc-if><sc-if value="{{ s.hasAuto }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;font-weight:700;color:{{ s.autoColor }}">{{ s.autoTxt }}</span></sc-if></span></li></sc-for>
+<sc-for list="{{ g.steps }}" as="s" hint-placeholder-count="3"><li role="option" aria-selected="{{ s.selected }}" data-tree="{{ s.id }}" tabIndex="0" draggable="{{ dragOn }}" onClick="{{ s.onClick }}" onKeyDown="{{ s.onKey }}" onDragStart="{{ s.onDragStart }}" onDragOver="{{ s.onDragOver }}" onDrop="{{ s.onDrop }}" onDragEnd="{{ s.onDragEnd }}" style="display:flex;align-items:flex-start;gap:6px;padding:6px 8px 6px 4px;border-radius:var(--radius-sm);background:{{ s.bg }};box-shadow:{{ s.drop }};cursor:grab;outline:none" style-hover="background:var(--table-row-hover)" style-focus="box-shadow:inset 0 0 0 2px var(--color-brand)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--neutral-400)" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex:0 0 auto;margin-top:3px"><path d="M9 5h.01 M9 12h.01 M9 19h.01 M15 5h.01 M15 12h.01 M15 19h.01"></path></svg><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;line-height:1.3;font-weight:{{ s.fw }};color:var(--text-strong)">{{ s.name }}</span><sc-if value="{{ s.hasRep }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--cyan-700);font-weight:700">{{ s.repTxt }}</span></sc-if><sc-if value="{{ s.hasEx }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;color:var(--text-muted)">{{ s.exTxt }}</span></sc-if><sc-if value="{{ s.hasAuto }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.35;font-weight:700;color:{{ s.autoColor }}">{{ s.autoTxt }}</span></sc-if><sc-if value="{{ s.hasPres }}" hint-placeholder-val="{{ false }}"><span data-pres-orden="{{ s.presN }}" style="font-size:12px;line-height:1.35;font-weight:700;color:var(--text-link);white-space:nowrap">{{ s.presTxt }}</span></sc-if></span></li></sc-for>
 </ul>
 <sc-if value="{{ dragOn }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ g.add }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:4px;margin-left:22px;border:none;background:transparent;padding:2px 0;cursor:pointer;font-family:var(--font-brand);font-size:13px;font-weight:700;color:var(--text-link)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Agregar paso</button></sc-if>
 </div>
@@ -732,6 +733,24 @@ class Component extends DCLogic {
     AU.aplicar(v.steps, form, { exmap: (ex) => Array.from(new Set([].concat(...ex.map(e => this.EXMAP[e] || [])))).filter(k => this.findF(v, k)) });
     v.auto.sel = v.steps.filter(s => s.req && s.req.A).map(s => s.id); v.ayudas = JSON.parse(JSON.stringify(A.ayudas || {}));
     v.aiConf = JSON.parse(JSON.stringify({ flujo: A.flujo || [], controles: A.controles || [], video360: A.video360 || {} })); v.extrasMsg = AU.mensajeExtras ? AU.mensajeExtras() : ''; return v; }   // etapa 12d-1b
+  // Etapa C2-11 (configuración viva, DEC-187): la columna Presencial queda con los pasos que usa la app del inspector (SIRIUS_PRESENCIAL), en su orden,
+  // con su guía y su lectura, como versión nueva. Los pasos que falten se crean (solo en Presencial); los demás quedan sin marcar en Presencial y
+  // siguen en las otras modalidades. Devuelve la versión con su registro de cambios (null si no hay datos).
+  prAplicar(v, nombre) { const SP = window.SIRIUS_PRESENCIAL, D = SP && (SP.plantillas || {})[nombre]; if (!D) return null; const ids = D.pasos.map(x => x.id), nuevos = [], antes = v.steps.filter(s => s.req && s.req.P).length; v.log = [];
+    D.pasos.forEach(x => { let s = v.steps.find(q => q.id === x.id);
+      if (!s) { s = { id: x.id, group: x.grupo, name: x.nombre, req: { P: true, V: false, A: false, D: false }, min: x.min || 1, max: x.max || 1, rep: false, ex: [], feeds: [], link: '', guide: x.guide, vis: null, nuevo: true };
+        let i = -1; v.steps.forEach((q, k) => { if (q.group === x.grupo) i = k; }); v.steps.splice(i >= 0 ? i + 1 : v.steps.length, 0, s); nuevos.push(x.nombre); }
+      s.name = x.nombre; s.guide = x.guide; if (x.min) s.min = x.min; if (x.max) s.max = x.max; if (x.ayuda) s.ayuda = x.ayuda;
+      (x.lee || []).forEach(l => { if (s.ex.indexOf(l) < 0) s.ex.push(l); }); s.feeds = Array.from(new Set([].concat(s.feeds || [], ...s.ex.map(e => (this.EXMAP[e] || []).filter(k => this.findF(v, k))), x.alimenta || []))); });
+    const quedan = v.steps.filter(s => s.req && s.req.P && ids.indexOf(s.id) < 0).length;
+    v.steps.forEach(s => { s.req = Object.assign({}, s.req, { P: ids.indexOf(s.id) >= 0 }); }); v.ordenP = ids.slice();
+    Object.assign(v, { n: D.version, estado: 'Vigente', desde: SP.desde, mod: SP.desde, by: SP.por, informes: 0 });
+    v.log.push({ what: 'Alineó la columna Presencial con la app del inspector: de ' + antes + ' a ' + ids.length + ' pasos, en el orden de la app y con su guía y lectura' + (nuevos.length ? ' (pasos nuevos: ' + nuevos.join(' y ') + ')' : '') + '; ' + quedan + ' pasos quedaron sin marcar en Presencial y siguen en las otras modalidades', reason: SP.motivo, by: SP.por, at: SP.desde });
+    return v; }
+  prVista(v, steps) { const O = v && v.ordenP; if (!O) return { show: false, items: [] }; const SP = window.SIRIUS_PRESENCIAL || {}, D = (SP.plantillas || {})[this.state.fid === 'f2' ? 'Motos' : 'Vehículos livianos'] || { pasos: [] };
+    const P = steps.filter(s => s.req && s.req.P), L = O.filter(id => P.some(s => s.id === id)).concat(P.map(s => s.id).filter(id => O.indexOf(id) < 0));
+    const items = L.map((id, i) => { const s = steps.find(x => x.id === id) || {}, d = D.pasos.find(x => x.id === id) || {}; return { id, nombre: (i + 1) + '. ' + (s.name || d.nombre || id), det: (s.guide || '') + (d.lee && d.lee.length ? ' · lee ' + d.lee.join(' y ') : '') + (s.max > 1 ? ' · ' + s.min + ' a ' + s.max + ' fotos' : ''), nuevo: !!s.nuevo }; });
+    return { show: true, n: String(L.length), titulo: 'Columna Presencial · ' + L.length + ' pasos', nota: 'Los que usa la app del inspector, en su orden. Versión ' + v.n + (v.estado ? ' · ' + v.estado : '') + '. Los demás pasos quedan sin marcar en Presencial y siguen en las otras modalidades.', items }; }
   seed() {
     if (!this.tpl() || (!this.tplEM() && !this._emGiveUp) || !window.SiriusAuto || !window.SIRIUS_AUTOINSPECCION) { this._needSeed = true; return []; }
     const v1 = this.aiAplicar(this.seedVersion(1, 'Vigente', '2026-08-01', '2026-07-25', 'Andrea Salazar', 1284), 'veh');
@@ -748,8 +767,11 @@ class Component extends DCLogic {
     const nV = this.all(vC).filter(f => f.llenado && f.llenado.catalogo), SLn = window.SiriusLlenado, fl = (k) => (this.all(vC).find(f => f.key === k) || {}).label || k;
     vC.log.push({ what: 'Declaró el catálogo de origen de ' + nV.length + ' campos (' + nV.map(f => f.label + ': ' + (SLn ? SLn.nombreCatalogo(f.llenado.catalogo) : f.llenado.catalogo) + (f.llenado.dependeDe ? ', depende de ' + fl(f.llenado.dependeDe) : '')).join(' · ') + ')', reason: VI.motivo || '', by: VI.persona || 'Andrea Salazar', at: VI.mod || '2026-10-18' });
     Object.assign(vL, { estado: 'Dada de baja' });
-    const v2 = JSON.parse(JSON.stringify(vC)); v2.log = [];
-    Object.assign(v2, { n: (VI.versionPlantilla || 3) + 1, estado: 'Borrador', desde: '', mod: '2026-10-18', by: 'Andrea Salazar', informes: 0 });
+    // Etapa C2-11: la versión 4 (vigente desde el 18/10/2026) deja la columna Presencial con los 19 pasos de la app del inspector; la 3 queda dada de baja
+    // (los casos en curso conservan su versión) y el borrador de cambios pendientes pasa a ser la versión 5.
+    const vP = this.prAplicar(JSON.parse(JSON.stringify(vC)), 'Vehículos livianos'); if (vP) Object.assign(vC, { estado: 'Dada de baja' });
+    const vB = vP || vC, v2 = JSON.parse(JSON.stringify(vB)); v2.log = [];
+    Object.assign(v2, { n: vB.n + 1, estado: 'Borrador', desde: '', mod: '2026-10-18', by: 'Andrea Salazar', informes: 0 });
     const acc = v2.secs.find(s => s.id === 'acc'); acc.fields.push(this.fld('acc', 'Kit de carretera', 'Sí/No', { opts: ['Sí', 'No'] }));
     v2.secs.find(s => s.id === 'tes').label = 'Luces de advertencia';
     const mat = v2.secs.find(s => s.id === 'mat'); mat.fields = mat.fields.filter(x => x.key !== 'veh_contrato_compraventa'); v2.steps = v2.steps.filter(s => !(s.vis && s.vis.k === 'veh_contrato_compraventa')); v2.auto.sel = v2.auto.sel.filter(id => v2.steps.some(s => s.id === id));
@@ -757,11 +779,12 @@ class Component extends DCLogic {
     const m1 = this.aiAplicar(this.seedVersion(1, 'Vigente', '2026-08-15', '2026-08-05', 'Andrea Salazar', 642), 'moto');
     m1.secs = m1.secs.filter(s => s.id !== 'ext');
     m1.secs.find(s => s.id === 'veh').fields.find(x => x.key === 'veh_tipo_carroceria').opts = ['Scooter', 'Naked', 'Deportiva', 'Touring', 'Enduro', 'Otros'];
+    const m2 = this.prAplicar(JSON.parse(JSON.stringify(m1)), 'Motos'); if (m2) Object.assign(m1, { estado: 'Dada de baja' }); // C2-11: Motos v2 con los 12 pasos de la app
     const p1 = this.seedVersion(1, 'Dada de baja', '2026-03-01', '2026-02-20', 'Andrea Salazar', 3108);
     const p2 = this.seedVersion(2, 'Vigente', '2026-09-01', '2026-08-25', 'Andrea Salazar', 415);
     return [
-      { id: 'f1', name: 'Vehículos livianos', tipo: 'Vehículos', alcance: 'Vehículos livianos', versions: [v1, vL, vC, v2] },
-      { id: 'f2', name: 'Motos', tipo: 'Vehículos', alcance: 'Motos', versions: [m1] },
+      { id: 'f1', name: 'Vehículos livianos', tipo: 'Vehículos', alcance: 'Vehículos livianos', versions: [v1, vL, vC, vP, v2].filter(Boolean) },
+      { id: 'f2', name: 'Motos', tipo: 'Vehículos', alcance: 'Motos', versions: [m1, m2].filter(Boolean) },
       { id: 'f3', name: 'Pesados', tipo: 'Vehículos', alcance: 'Pesados', versions: [p1, p2] },
     ].map(x => Object.assign(x, { compania: 'Aseguradora del Sur', modoCaptura: 'Guiado', prefijo: 'veh_' })).concat(this.seedRG(), this.seedEM());
   }
@@ -789,6 +812,8 @@ class Component extends DCLogic {
   state = (() => {
     const e = this.props.escena || '';
     const s = { aplica: '', estadoF: '', histOpen: false, hist: [
+      { when: '18/10/2026 · 20:30', by: 'Andrea Salazar', where: 'Motos · versión 2', what: 'Publicó la versión 2, vigente desde 18/10/26: columna Presencial con los 12 pasos de la app del inspector; la versión 1 pasó a Dada de baja', motivo: 'Presencial alineada con la app del inspector (etapa C2-11)' },
+      { when: '18/10/2026 · 20:30', by: 'Andrea Salazar', where: 'Vehículos livianos · versión 4', what: 'Publicó la versión 4, vigente desde 18/10/26: columna Presencial con los 19 pasos de la app del inspector (nuevos «Número de motor» y «Neumáticos»); la versión 3 pasó a Dada de baja y el borrador pasó a ser la versión 5', motivo: 'Presencial alineada con la app del inspector (etapa C2-11)' },
       { when: '16/10/2026 · 11:20', by: 'Andrea Salazar', where: 'Vehículos livianos · versión 2', what: 'Creó la versión 2 como borrador a partir de la versión 1', motivo: '' },
       { when: '01/09/2026 · 08:00', by: 'Sistema', where: 'Pesados · versión 2', what: 'Versión 2 entró en vigencia; la versión 1 pasó a Dada de baja', motivo: '' },
       { when: '15/08/2026 · 08:00', by: 'Sistema', where: 'Motos · versión 1', what: 'Versión 1 entró en vigencia', motivo: '' },
@@ -797,7 +822,8 @@ class Component extends DCLogic {
     if (e === 'rg') Object.assign(s, { view: 'editor', fid: 'f4', vn: 1, sec: null });
     if (e === 'em') Object.assign(s, { view: 'editor', fid: 'f5', vn: 1, sec: null, tab: 0 });
     // Etapa 12a · DEC-132: propiedad «Guía» del paso de foto y bloque «Mapa de captura» (pestaña Pasos de foto).
-    if (e === 'pasoguia') Object.assign(s, { view: 'editor', fid: 'f1', vn: 4, sec: null, tab: 1, step: 'exteriores_frontal', irA: 'fm-guia' }); // etapa 12d-1: frente en horizontal con el contorno ajustado
+    if (e === 'presencial19') Object.assign(s, { view: 'editor', fid: 'f1', vn: 4, sec: null, tab: 1, step: 'identificacion_numero_motor' }); // etapa C2-11: columna Presencial en 19 pasos (versión 4)
+    if (e === 'pasoguia') Object.assign(s, { view: 'editor', fid: 'f1', vn: 5, sec: null, tab: 1, step: 'exteriores_frontal', irA: 'fm-guia' }); // etapa 12d-1: frente en horizontal con el contorno ajustado
     // Etapa 12d-1 · columna «Autoinspección» (DEC-155), ayuda del VIN y mapa de captura de la autoinspección.
     // Etapa 12d-1c · los pasos de autoinspección se configuran en el espacio de trabajo (pestaña Autoinspección › Recorrido).
     if (e === 'autopasos' || e === 'autopasosmoto' || e === 'autopasosem') Object.assign(s, { view: 'editor', fid: e === 'autopasosmoto' ? 'f2' : e === 'autopasosem' ? 'f5' : 'f1', vn: 1, sec: null, tab: 2, aiSub: 'recorrido', irA: 'fm-taller' });
@@ -831,8 +857,8 @@ class Component extends DCLogic {
     { const AJ = (window.SIRIUS_CATALOGOS_MAESTROS || {}).ajustePlantillaVL; if (AJ) s.hist.unshift({ when: AJ.fecha.replace(' ', ' · '), by: AJ.persona, where: AJ.plantilla + ' · versión ' + AJ.version, what: 'Corrigió la versión ' + AJ.version + ' (' + AJ.ajuste + '): las opciones de Marca, Modelo o versión (filtradas por la marca elegida) y Tipo de licencia (' + window.SIRIUS_CATALOGOS_MAESTROS.licencias.length + ' categorías) salen de los catálogos maestros; sin cambios en campos, obligatoriedad ni etiquetas', motivo: AJ.motivo }); }
     s.hist.unshift({ when: '05/11/2026 · 00:20', by: 'Andrea Salazar', where: 'Vehículos livianos · versión 1, Motos · versión 1 y Equipo y maquinaria · versión 1', what: 'Corrigió la columna Autoinspección de los pasos de foto (DEC-155): vehículos con 14 pasos (7 en el mapa y 7 en Interior), extras declarados y 6 documentos; motos con 8 y 6 documentos; maquinaria con 9 y 4. Parabrisas, placas, los 4 laterales y los 3 pasos de VIN anteriores quedan desactivados con motivo; Presencial y virtual guiada no cambian', motivo: 'Autoinspección simplificada y parametrizable (datos-autoinspeccion.js v1.5)' });
     if (/^mod\d\d$/.test(e)) Object.assign(s, { view: 'modulo', modId: 'm' + e.slice(3), modSec: null, modBack: { to: 'lib' } });
-    if (e === 'llenado') Object.assign(s, { view: 'editor', fid: 'f1', vn: 4, sec: 'veh', fld: 'veh_modelo', open: { veh: true }, irA: 'fp-ll' }); // etapa C2-7 · disenadorllenado (C2-7b: Modelo con su catálogo y «Depende de» Marca)
-    if (e === 'km' || e === 'kmdel') Object.assign(s, { view: 'editor', fid: 'f1', vn: 4, sec: 'uso', fld: 'veh_kilometraje', open: { uso: true } });
+    if (e === 'llenado') Object.assign(s, { view: 'editor', fid: 'f1', vn: 5, sec: 'veh', fld: 'veh_modelo', open: { veh: true }, irA: 'fp-ll' }); // etapa C2-7 · disenadorllenado (C2-7b: Modelo con su catálogo y «Depende de» Marca)
+    if (e === 'km' || e === 'kmdel') Object.assign(s, { view: 'editor', fid: 'f1', vn: 5, sec: 'uso', fld: 'veh_kilometraje', open: { uso: true } });
     if (e === 'kmdel') s.modal = { kind: 'del', key: 'veh_kilometraje' };
     return s;
   })();
@@ -1562,6 +1588,7 @@ class Component extends DCLogic {
     const label = (k) => { const r = this.findF(v, k); return r ? r.f.label : k; };
     const ps = {
       count: steps.length + ' pasos en ' + this.gruposDe(steps).length + ' grupos',
+      pres: this.prVista(v, steps), /* Etapa C2-11: columna Presencial alineada con la app del inspector */
       groups: this.gruposDe(steps).map(g => {
         const list = steps.filter(s => s.group === g);
         return { label: g, n: String(list.length), add: () => { const id = this.slug(g) + '_' + Date.now().toString(36); this.upd(vv => { const last = vv.steps.map(s => s.group).lastIndexOf(g); vv.steps.splice(last + 1, 0, { id, group: g, name: 'Nuevo paso', req: { P: false, V: false, A: false, D: false }, min: 1, max: 1, rep: false, ex: [], feeds: [], link: '', guide: 'Sin imagen guía' }); }, { step: id }); },
@@ -1569,7 +1596,8 @@ class Component extends DCLogic {
             const on = sel && sel.id === s.id;
             const dh = this.dragH('step:', s.id, (d) => { if (d.kind === 'step' && d.key !== s.id) { const src = list.findIndex(x => x.id === d.key); if (src >= 0) this.moveStep(d.key, i - src); } });
             const aT = s.auto ? 'Autoinspección · ' + s.auto.seccion : s.autoDes ? 'Desactivado para autoinspección' : '';
-            return { hasAuto: !!aT && conAutoF, autoTxt: aT, autoColor: s.auto ? 'var(--cyan-700)' : '#8a5a00', id: 'step:' + s.id, name: s.name, repTxt: s.rep ? 'Repetible · hasta ' + s.max : s.max > 1 ? s.min + '–' + s.max + ' fotos' : '', hasRep: s.rep || s.max > 1, exTxt: s.ex.length ? 'Extrae: ' + s.ex.join(', ') : '', hasEx: s.ex.length > 0,
+            const pO = v.ordenP ? v.ordenP.indexOf(s.id) : -1; /* C2-11: orden del paso en la columna Presencial */
+            return { hasPres: !!(v.ordenP && s.req && s.req.P), presN: String(pO + 1), presTxt: 'Presencial · paso ' + (pO >= 0 ? pO + 1 : '—'), hasAuto: !!aT && conAutoF, autoTxt: aT, autoColor: s.auto ? 'var(--cyan-700)' : '#8a5a00', id: 'step:' + s.id, name: s.name, repTxt: s.rep ? 'Repetible · hasta ' + s.max : s.max > 1 ? s.min + '–' + s.max + ' fotos' : '', hasRep: s.rep || s.max > 1, exTxt: s.ex.length ? 'Extrae: ' + s.ex.join(', ') : '', hasEx: s.ex.length > 0,
               selected: on ? 'true' : 'false', bg: on ? 'var(--color-brand-wash)' : 'transparent', fw: on ? 700 : 600, drop: dh.dropShadow,
               onClick: () => this.setState({ step: s.id }),
               onKey: (e) => { if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); if (!ro) this.moveStep(s.id, e.key === 'ArrowUp' ? -1 : 1); } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ step: s.id }); } },
