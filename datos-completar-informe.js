@@ -1,4 +1,5 @@
 // SIRIUS · Completar el informe y Control de calidad de la agencia (v1.3 · provisional · etapa C2-5 · 09/11/2026) · DEC-180
+// v1.4 (etapa C2-9 · DEC-185): los controles de completar traen tipo, severidad y detalle; 30004 con los 9 tipos de control (uno ya «Correcto»).
 // v1.3 (etapa C2-5): `conexionPrueba` (escena infcompletarcx) con casos de la conexión que traen inspector { nombre, tipo, agencia } y vence.
 // v1.2 (etapa C2-4): el caso 20152 nace en la v2 de Vehículos (su visita termina en la app con T23).
 // v1.1 (etapa C2-3b, disposición): `insumosRG` (insumos de campo de la redacción del informe de Ramos Generales).
@@ -41,14 +42,24 @@
       '30003': { visitaFin: '2026-10-15T09:40', criterio: { valor: 'Asegurable', comentario: 'Vehículo sin daños; documentos en regla.', por: 'Diana Cárdenas', hora: '2026-10-15T09:38' },
         completado: { at: '2026-10-15T15:10', por: 'Patricia Andrade', rol: 'Control de calidad (agencia)', decision: 'confirmar', criterio: 'Asegurable', resultado: 'Inspeccionado' }, controles: [] },
       '30004': { visitaFin: '2026-10-16T11:00', criterio: { valor: 'Asegurable', comentario: 'Vehículo en buen estado, sin daños visibles; el kilometraje es coherente con el año.', por: 'Mauricio Endara', hora: '2026-10-16T10:52' },
-        controles: [{ id: 'vin', texto: 'Foto del VIN con poca luz', estado: 'Pendiente' }, { id: 'gps', texto: 'Ubicación de las fotos dentro de la dirección', estado: 'Correcto' }] },
+        // Etapa C2-9 · DEC-185: los 9 tipos de control con tipo, severidad y detalle (misma forma que los controles de la conexión, P-6d); texto y estado siguen para el panel.
+        controles: [
+          { id: 'placa', texto: 'Placa leída no coincide con la solicitud', tipo: 'Placa leída no coincide con la solicitud', severidad: 'Alta', estado: 'Pendiente', detalle: { paso: 'identificacion_placa_trasera', leida: 'PRB2Z04', solicitud: 'PRB2204' } },
+          { id: 'vin', texto: 'Foto del VIN con poca luz', tipo: 'Foto del VIN con poca luz', severidad: 'Media', estado: 'Pendiente', detalle: { paso: 'identificacion_sticker_vin', validaciones: { luz: false } } },
+          { id: 'forzada', texto: 'Foto tomada sin cumplir las validaciones', tipo: 'Foto tomada sin cumplir las validaciones', severidad: 'Media', estado: 'Pendiente', detalle: { paso: 'exteriores_lateral_izquierdo_de_ade', validaciones: { forzada: true } } },
+          { id: 'lejos', texto: 'Foto lejos de la dirección de la visita', tipo: 'Foto lejos de la dirección de la visita', severidad: 'Media', estado: 'Pendiente', detalle: { paso: 'motor_habitaculo_del_motor', distancia: 420, radio: 150 } },
+          { id: 'sinGps', texto: 'Foto sin ubicación', tipo: 'Foto sin ubicación', severidad: 'Baja', estado: 'Pendiente', detalle: { paso: 'interiores_tablero_de_instrumento', gps: null } },
+          { id: 'llegada', texto: 'Llegada del inspector fuera del radio', tipo: 'Llegada del inspector fuera del radio', severidad: 'Media', estado: 'Pendiente', detalle: { distancia: 380, radio: 150 } },
+          { id: 'anio', texto: 'Año del informe distinto al de la solicitud', tipo: 'Año del informe distinto al de la solicitud', severidad: 'Media', estado: 'Pendiente', detalle: { anioInforme: 2023, anioSolicitud: 2024 } },
+          { id: 'km', texto: 'Kilometraje menor que el de la solicitud', tipo: 'Kilometraje menor que el de la solicitud', severidad: 'Baja', estado: 'Pendiente', detalle: { campo: 'km', informe: '12.400 km', solicitud: '15.000 km' } },
+          { id: 'gps', texto: 'Ubicación de las fotos dentro de la dirección', tipo: 'Ubicación de las fotos dentro de la dirección', severidad: 'Baja', estado: 'Correcto', detalle: { distancia: 40, radio: 150 } }] },
       '30005': { visitaFin: '2026-10-14T13:50', criterio: { valor: 'No asegurable', comentario: 'Golpe fuerte en el chasis posterior; reparación sin factura.', por: 'Diana Cárdenas', hora: '2026-10-14T13:45' },
-        controles: [{ id: 'dano', texto: 'Daño en el chasis posterior marcado en 2 fotos', estado: 'Pendiente' }] },
+        controles: [{ id: 'dano', texto: 'Daño en el chasis posterior marcado en 2 fotos', tipo: 'Daño marcado por el inspector', severidad: 'Alta', estado: 'Pendiente', detalle: { paso: 'exteriores_posterior', motivo: 'golpe en el chasis posterior, en 2 fotos' } }] },
       '30006': { visitaFin: '2026-10-16T15:30', criterio: { valor: 'Asegurable', comentario: 'Sin novedades; extras de fábrica.', por: 'Luis Andrade', hora: '2026-10-16T15:26' }, controles: [] },
       '30007': { visitaFin: '2026-10-13T15:00', criterio: { valor: 'Asegurable', comentario: 'Rayón leve en la puerta posterior derecha.', por: 'Mauricio Endara', hora: '2026-10-13T14:55' },
-        controles: [{ id: 'gps', texto: 'Dos fotos sin ubicación', estado: 'Pendiente' }], vencido: { at: '2026-10-16T15:00', tarea: 'Andrea Salazar' } },
+        controles: [{ id: 'gps', texto: 'Dos fotos sin ubicación', tipo: 'Foto sin ubicación', severidad: 'Baja', estado: 'Pendiente', detalle: { fotos: 2, gps: null } }], vencido: { at: '2026-10-16T15:00', tarea: 'Andrea Salazar' } },
       '30008': { visitaFin: '2026-10-15T16:20', criterio: { valor: 'Asegurable', comentario: 'Vehículo con mantenimiento al día.', por: 'Diana Cárdenas', hora: '2026-10-15T16:12' },
-        devuelto: { at: '2026-10-16T16:40', por: 'Patricia Andrade', motivo: 'La foto del VIN está borrosa y no se lee el número; vuelve a tomarla.' }, controles: [{ id: 'vin', texto: 'VIN ilegible en la foto', estado: 'Pendiente' }] },
+        devuelto: { at: '2026-10-16T16:40', por: 'Patricia Andrade', motivo: 'La foto del VIN está borrosa y no se lee el número; vuelve a tomarla.' }, controles: [{ id: 'vin', texto: 'VIN ilegible en la foto', tipo: 'VIN ilegible en la foto', severidad: 'Media', estado: 'Pendiente', detalle: { paso: 'identificacion_sticker_vin', validaciones: { nitidez: false } } }] },
       // Ramos Generales (presencial): 20195 nació con la v2 de su flujo; en la escena infcompletarrg terminó la visita y Luis Andrade redacta el informe.
       '20195': { visitaFin: '2026-10-16T12:00', criterio: { valor: 'Asegurable', comentario: 'Local y bodega con extintores vigentes; instalación eléctrica ordenada.', por: 'Luis Andrade', hora: '2026-10-16T11:55' }, controles: [], soloEscena: 'infcompletarrg' },
     },

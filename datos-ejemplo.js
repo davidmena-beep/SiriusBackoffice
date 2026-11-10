@@ -400,7 +400,7 @@
       extrasDeclarados: { '20186': ['Aros de aleación', 'Cubre balde', 'Radio con pantalla'] },
       // Etapa 12d-3 · autoinspección cerrada de ejemplo de 20186 (escenas calctrl…): lo que dejó el registro en vivo del portal, con las lecturas
       // (valor, confianza, lecturas que coinciden, origen), la validación de capa 1 y el motor de verificación por paso (simulado), la ubicación
-      // de cada foto, el video, los extras y la cronología. Los controles y sus alertas se calculan con SIRIUS_AUTOINSPECCION.controles.
+      // de cada foto, el video, los extras y la cronología. Los controles y sus alertas se calculan con el catálogo único SIRIUS_CONTROLES (DEC-188).
       resultados: {
         '20186': { caso: '20186', riesgo: '20186-V1', visita: 'V1', tipo: 'camioneta', abierto: '2026-10-18T19:40', cerrada: '2026-10-18T20:22', declaracion: 'Jorge Villacís Mora',
           solicitud: { placa: 'GSC7810', vin: 'MPATFS86JLT004512', km: 74200 },

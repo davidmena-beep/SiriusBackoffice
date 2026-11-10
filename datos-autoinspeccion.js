@@ -1,4 +1,5 @@
 // SIRIUS · Autoinspección: enlace, flujo, controles, video y apariencia (v2.4 · provisional · etapa 15-1 · 06/11/2026)
+// v2.5 (etapa C2-9b · DEC-188): el catálogo de controles pasó a Administración › Controles (datos-controles.js); aquí queda la referencia `controlesCatalogo`.
 // v2.4: controles «Año del documento del portal distinto de la solicitud» (media) y «Llegada del inspector fuera de los 150 m» (media) · DEC-173.
 // v2.3: bloques de los horarios cada 30 minutos (confirmación inmediata y red), de la búsqueda en la red (DEC-172), del lugar por grupo de ramo
 //       y de la cámara guiada de documentos; tarea «Sin inspector en la red» para el Coordinador.
@@ -223,29 +224,9 @@ window.SIRIUS_AUTOINSPECCION = {
     estados: 'Enlace enviado (Agendado con enlace vigente) → al primer acción después de abrir: En curso «Autoinspección en curso» con el avance (N de M fotos) visible en la Bandeja y el caso → al enviar: «Autoinspección cerrada» y pasa a Pendiente calificación según las reglas.',
   },
   // ---------- Controles y alertas para el calificador (DEC-149) ----------
-  controles: [
-    { id: 'placaNoCoincide', nombre: 'Placa leída (frente o posterior) distinta de la solicitud', severidad: 'alta', activo: true },
-    { id: 'placasDistintas', nombre: 'Placa del frente distinta de la posterior', severidad: 'alta', activo: true },
-    { id: 'vinNoCoincide', nombre: 'VIN o serie leídos distintos de la solicitud', severidad: 'alta', activo: true },
-    { id: 'extraFueraSolicitud', nombre: 'Extra agregado por el cliente (no estaba declarado)', severidad: 'media', activo: true },
-    { id: 'extraSinFoto', nombre: 'Extra declarado sin foto', severidad: 'media', activo: true },
-    { id: 'extraNoLoTiene', nombre: 'Extra declarado en la solicitud marcado «No lo tengo»', severidad: 'media', activo: true },
-    { id: 'fotoForzada', nombre: 'Foto rechazada por la validación y usada igual', severidad: 'alta', activo: true },
-    { id: 'videoIncompleto', nombre: 'Video sin la vuelta completa', severidad: 'media', umbral: 300, unidad: 'grados', activo: true },
-    { id: 'tipoCambiado', nombre: 'El cliente cambió el tipo de vehículo', severidad: 'media', activo: true },
-    { id: 'pantalla', nombre: 'Posible foto tomada a una pantalla', severidad: 'alta', umbral: 60, unidad: '% de indicio', activo: true },
-    { id: 'ubicacion', nombre: 'Cambio de ubicación entre fotos', severidad: 'media', umbral: 150, unidad: 'm', activo: true },
-    { id: 'precision', nombre: 'Ubicación imprecisa', severidad: 'baja', umbral: 100, unidad: 'm', activo: true },
-    { id: 'sinUbicacion', nombre: 'Fotos sin ubicación', severidad: 'media', activo: true },
-    { id: 'tiempoTotal', nombre: 'Duración total de las fotos', severidad: 'media', umbral: 30, unidad: 'min', activo: true },
-    { id: 'tiempoEntreFotos', nombre: 'Tiempo entre dos fotos', severidad: 'media', umbral: 10, unidad: 'min', activo: true },
-    { id: 'encuadre', nombre: 'Encuadre no verificado', severidad: 'baja', activo: true },
-    { id: 'sinVideo', nombre: 'Sin video de 360°', severidad: 'media', activo: true },
-    { id: 'danos', nombre: 'Daños detectados por el sistema', severidad: 'según gravedad', activo: true },
-    { id: 'documentoPortal', nombre: 'Documento del portal distinto de la solicitud', severidad: 'alta', activo: true }, // etapa 14b
-    { id: 'documentoPortalAnio', nombre: 'Año del documento del portal distinto de la solicitud', severidad: 'media', activo: true }, // etapa 15-1
-    { id: 'llegadaFuera', nombre: 'Llegada del inspector fuera de los 150 m', severidad: 'media', activo: true }, // etapa 15-1 · app del inspector
-  ],
+  // Etapa C2-9b · DEC-188: el catálogo se movió a Administración › Controles (datos-controles.js, SIRIUS_CONTROLES), común a todas las modalidades.
+  // La autoinspección usa los controles activos que aplican a «Autoinspección».
+  controlesCatalogo: { fuente: 'SIRIUS_CONTROLES', modalidad: 'Autoinspección' },
   alertasVisibles: 'Solo roles calificadores (Ejecutivo de inspecciones, Suscriptor y Administrador) en el panel «Controles de la autoinspección» de la calificación y en el Informe interno; nunca en el portal ni en el Resumen para el APS.',
   // ---------- Video (DEC-151) ----------
   video360: { minBytes: 1048576, maxBytes: 10485760, maxSegundos: 45, vueltaMinGrados: 300, completitud: 'En el celular se mide la vuelta con la brújula y el giroscopio mientras graba; si queda por debajo de 300° se avisa al cliente (puede grabar de nuevo) y el motor de análisis del back-office lo confirma sobre el video y muestra la alerta «Video sin la vuelta completa».', orientacion: 'horizontal', bitrate: 1600000, animacion: 'Ícono superior del vehículo centrado en un círculo, con un celular que da la vuelta alrededor (simétrico)', texto: 'Graba una vuelta completa alrededor del vehículo, a unos 2 pasos y con el celular horizontal, sin cortar. Entre 1 y 10 MB (unos 15 a 40 segundos).' },
