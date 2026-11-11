@@ -4,6 +4,61 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-19
+
+Publiqué la etapa C2-19 (Versión 166). Con DEC-198, que reemplaza la parte de DEC-185 que permitía a Control de calidad marcar controles, los controles los revisa solo el calificador (Ejecutivo de inspecciones y Administrador). Control de calidad y el inspector independiente los ven con su evidencia y confirman «Ya los vi»; el Suscriptor solo los consulta.
+
+**Qué cambió**
+- **Paso Controles para quien completa el informe** (Control de calidad e inspector independiente): la pestaña dice «1 Controles · Por ver» y, al confirmar, «✓ Controles · Vistos». La lista, los filtros y la evidencia mantienen la disposición de C2-14. Ya no aparecen Conforme, Requiere acción, el comentario por control, «Marcar todos como conformes» ni los atajos A y R; J y K siguen.
+- **Estado en solo lectura:** cada control muestra el estado del calificador («Pendiente del calificador», «Conforme» o «Requiere acción», con su comentario).
+- **«Ya los vi · continuar al informe ›»:** un solo botón al pie y en la fila bajo la evidencia, con comentario opcional. Registra que se vieron todos los controles del caso, queda en el Historial y pasa al paso Informe. Después la lista muestra «Vistos el <fecha> por <persona>» y «Continuar al informe ›». Si llega un control nuevo, solo ese queda «Por ver» y el paso vuelve a «Por ver».
+- **Pendientes y envío:** para estos roles, el paso Controles cuenta como un solo pendiente («ver los controles») en la barra. «Completar y enviar» exige haberlos visto, también si se llama directamente. Devolver al inspector no lo exige. El resto de las condiciones de envío no cambia.
+- **Calificador:** la revisión de Calificación sigue como en la C2-17 y agrega en el encabezado de la lista «Vistos por <persona> (<rol>) el <fecha>». Sin conexión, los controles del informe de un caso que ya pasó la inspección ahora se revisan en Calificación con la misma lista, el bloqueo por severidad alta y el contador de la pestaña. El Administrador ve el paso Controles completo en «Informe por completar» y además tiene «Ya los vi».
+- **Con la conexión:** «Ya los vi» envía `verControles { caso, comentario }`; con `{ ok: false }` la pantalla vuelve atrás y muestra el mensaje. Los controles con `vistoEn` y `vistoPor` muestran «Vistos el … por …» (y el rol si llega `vistoRol`). `revisarControl` y `revisarControles` solo salen para el calificador; para los demás la pantalla responde «Solo el calificador revisa los controles; tú confirmas que los viste» sin llamar a la base.
+- **Otros lugares:** la pestaña Evidencias, el visor y «Con control» en Informe › Fotos ya eran de solo lectura para los controles (solo filtran o llevan a la lista). El panel de la autoinspección ya dependía de «Calificar nivel 1».
+- **Matriz de permisos** (datos-usuarios.js v2.0): nueva acción «Ver los controles y confirmar que se vieron» (Administrador E; Inspector y Control de calidad P). «Calificar nivel 1» incluye revisar los controles del caso.
+- **Datos:** el caso 30006 (Luis Andrade, independiente) trae dos controles (datos-completar-informe.js v1.6).
+- **Escenas:**
+  - Actualizadas: infcompletarcaso; ctrllista (ahora del Administrador); ctrltodos (ahora del calificador en Calificación); infprimerpendiente (controles vistos, no revisados) y calctrl (solo la descripción). También infcompletarcambiar e infcompletarind, con los controles ya vistos.
+  - Nuevas: ctrlvistos, ctrlvistosok, ctrlindep y calvistos.
+  - KNOWN_ESC pasa a 497 nombres. En el inventario quedó la etapa C2-19 con DEC-198.
+
+**Verificado**
+- **Selector:** abrí, a 1280 × 720 y 1920 × 1080, infcompletarcaso, ctrllista, ctrltodos, infprimerpendiente, calctrl, ctrlvistos, ctrlvistosok, ctrlindep, calvistos, infcompletarcambiar, infcompletarind, calctrlfin y calctrlcalificado: sin errores ni desplazamiento horizontal. Los únicos avisos de la consola son las cargas externas bloqueadas del entorno.
+- **Control de calidad (ctrlvistos):**
+  - No hay botones Conforme, Requiere acción ni «Marcar todos».
+  - J pasa al siguiente control; A y R no cambian ningún estado.
+  - Enviar sin haber visto los controles se rechaza con «No se envió: falta confirmar que viste los controles («Ya los vi»)».
+  - «Ya los vi» del pie lleva al paso Informe, deja el paso en «✓ Vistos», baja la barra de 6 a 5 pendientes y deja «Controles vistos · Patricia Andrade · Control de calidad (agencia) · confirmó que vio 9 controles» en el Historial. Después el envío pasa (30004 quedó Inspeccionado).
+- **Control nuevo (ctrlvistosok):** al quitar un control de los vistos, solo ese muestra «Por ver», aparece «1 control nuevo por ver» y el paso vuelve a «Por ver».
+- **Inspector independiente y otras pantallas:** en ctrlindep el inspector tampoco puede cambiar controles. En evunificadas, evidencias y visorzoom (Control de calidad) no hay ningún botón que cambie un control.
+- **Calificador:** en calctrl la revisión, J/K/A/R, el bloqueo y «Continuar a la calificación ›» funcionan como en la C2-17. calctrl, calctrlcalificado, calctrlbloqueo, calctrltodo, calctrlsusc y svresumen quedaron con el mismo texto y los mismos píxeles que en la C2-18. calctrlfin tiene el mismo texto y una diferencia de píxeles que ya aparecía al compararla consigo misma por la animación.
+- **calvistos:** con «Vistos por Patricia Andrade (Control de calidad) el 18/10/26 · 20:12», A en el control de severidad alta quita el bloqueo de la calificación.
+- **ctrltodos:** «Marcar todos» sin la casilla de altas muestra «Confirma que revisaste los controles de severidad alta.»; con ella deja 9 de 9 revisados, sin bloqueo y con los dos «Continuar a la calificación ›».
+- **Suscriptor:** en calvistos no tiene botones de revisión y A no hace nada.
+- **Administrador (ctrllista):** revisa (A deja «7 pendientes») y tiene «Ya los vi».
+- **Prueba interna con conexión** (cxtest/c219, Patricia Andrade con 30004):
+  - «Ya los vi» envió `verControles { caso: 30004, comentario }`.
+  - Con `{ ok: false }` el paso sigue «Por ver» y aparece el mensaje de la base.
+  - Con `{ ok: true }` el paso queda «✓ Vistos» y la lista dice «Vistos el 18/10/26 · 20:30 por Patricia Andrade».
+  - Con `vistoEn` y `vistoPor`, la lista dice «Vistos el 18/10/26 · 19:58 por Patricia Andrade».
+  - Como Ejecutivo de inspecciones, la Calificación muestra «Vistos por Patricia Andrade (Control de calidad) el 18/10/26 · 19:58» y A envía `revisarControl`.
+  - Como Control de calidad, una llamada directa a `revisarControl` se rechaza sin enviar nada.
+  - Después comparé sirius-conexion.js del proyecto con el contenido mínimo: idéntico.
+
+**No verificado:** la conexión real con la base (`verControles`, `vistoEn`, `vistoPor` y el rechazo de la base a `revisarControl` para otros roles se probaron con una conexión simulada); un envío completo sin datos inyectados (para probar el envío forcé «sin campos pendientes», porque los casos de ejemplo tienen obligatorios pendientes); y la pantalla Roles y permisos con la nueva acción.
+
+**Diferencias**
+- Para que quien completa el informe pueda verlos sin errores, la lista ahora muestra «Conforme» cuando la base trae «Correcto» y «Pendiente» ante un estado desconocido. Antes un control «Correcto» de la base rompía la lista en solo lectura con el filtro Todos.
+- Sin conexión, la lista del calificador en Calificación aparece en los casos de ejemplo con controles del informe que ya pasaron la inspección (30004 a 30008), con el contador de la pestaña. Por eso calpdfcx (30004 Inspeccionado) muestra ahora la revisión y el «8» en la pestaña Calificación.
+- En los pasos de completar con la escena de Control de calidad (evunificadas, infpasoinforme, infvalores, infsino, inftestigos, infextras, infdecision), el paso dice «Por ver» en lugar de «8 pendientes» y la barra cuenta «ver los controles» como uno.
+- El Administrador mantiene el conteo y el envío de antes (no le exige «Ya los vi»), porque revisa.
+- El Ejecutivo de inspecciones que abre «Informe por completar» ve los controles en solo lectura con «el calificador revisa los controles en la pestaña Calificación»: los revisa en Calificación.
+- Con la conexión, «Vistos por … (rol)» solo muestra el rol si la base trae `vistoRol`.
+- La descripción anterior de infcompletarcambiar decía «Todo listo para enviar», pero ya en la C2-18 quedaban 2 obligatorios del informe; no lo cambié.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-18
 
 Publiqué la etapa C2-18 (Versión 165; la herramienta asignó primero la 164 y la republiqué solo para corregir este número, sin otros cambios): con la conexión, «Informe en PDF › Generar informe» evalúa la disponibilidad de cada documento con los datos del caso que llegan de la base y no con los del caso de ejemplo (DEC-197).

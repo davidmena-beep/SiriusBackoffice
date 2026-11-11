@@ -1,4 +1,5 @@
-// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.5 · provisional · etapa C2-16 · 18/10/2026) · DEC-180
+// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.6 · provisional · etapa C2-19 · 11/11/2026) · DEC-180
+// v1.6 (etapa C2-19 · DEC-198): 30006 trae dos controles (llegada fuera del radio y foto sin ubicación) para el paso Controles del inspector independiente.
 // v1.5 (etapa C2-16): `cxFotosPrueba` (escena infcxfotos) con 6 evidencias de 30004 en la forma de la conexión.
 // v1.4 (etapa C2-9 · DEC-185): los controles de completar traen tipo, severidad y detalle; 30004 con los 9 tipos de control (uno ya «Correcto»).
 // v1.3 (etapa C2-5): `conexionPrueba` (escena infcompletarcx) con casos de la conexión que traen inspector { nombre, tipo, agencia } y vence.
@@ -56,7 +57,11 @@
           { id: 'gps', texto: 'Ubicación de las fotos dentro de la dirección', tipo: 'Ubicación de las fotos dentro de la dirección', severidad: 'Baja', estado: 'Correcto', detalle: { distancia: 40, radio: 150 } }] },
       '30005': { visitaFin: '2026-10-14T13:50', criterio: { valor: 'No asegurable', comentario: 'Golpe fuerte en el chasis posterior; reparación sin factura.', por: 'Diana Cárdenas', hora: '2026-10-14T13:45' },
         controles: [{ id: 'dano', texto: 'Daño en el chasis posterior marcado en 2 fotos', tipo: 'Daño marcado por el inspector', severidad: 'Alta', estado: 'Pendiente', detalle: { paso: 'exteriores_posterior', motivo: 'golpe en el chasis posterior, en 2 fotos' } }] },
-      '30006': { visitaFin: '2026-10-16T15:30', criterio: { valor: 'Asegurable', comentario: 'Sin novedades; extras de fábrica.', por: 'Luis Andrade', hora: '2026-10-16T15:26' }, controles: [] },
+      // Etapa C2-19 · DEC-198: 30006 (Luis Andrade, independiente) con dos controles; él los ve y confirma «Ya los vi», el calificador los revisa (escena ctrlindep).
+      '30006': { visitaFin: '2026-10-16T15:30', criterio: { valor: 'Asegurable', comentario: 'Sin novedades; extras de fábrica.', por: 'Luis Andrade', hora: '2026-10-16T15:26' },
+        controles: [
+          { id: 'llegada', texto: 'Llegada del inspector fuera del radio', tipo: 'Llegada del inspector fuera del radio', severidad: 'Media', estado: 'Pendiente', detalle: { distancia: 260, radio: 150 } },
+          { id: 'sinGps', texto: 'Foto sin ubicación', tipo: 'Foto sin ubicación', severidad: 'Baja', estado: 'Pendiente', detalle: { paso: 'interiores_tablero_de_instrumento', gps: null } }] },
       '30007': { visitaFin: '2026-10-13T15:00', criterio: { valor: 'Asegurable', comentario: 'Rayón leve en la puerta posterior derecha.', por: 'Mauricio Endara', hora: '2026-10-13T14:55' },
         controles: [{ id: 'gps', texto: 'Dos fotos sin ubicación', tipo: 'Foto sin ubicación', severidad: 'Baja', estado: 'Pendiente', detalle: { fotos: 2, gps: null } }], vencido: { at: '2026-10-16T15:00', tarea: 'Andrea Salazar' } },
       '30008': { visitaFin: '2026-10-15T16:20', criterio: { valor: 'Asegurable', comentario: 'Vehículo con mantenimiento al día.', por: 'Diana Cárdenas', hora: '2026-10-15T16:12' },

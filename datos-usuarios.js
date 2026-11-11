@@ -1,4 +1,6 @@
-// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v1.9 · provisional · etapa C2-5 · 09/11/2026)
+// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v2.0 · provisional · etapa C2-19 · 11/11/2026)
+// v2.0 (etapa C2-19 · DEC-198): acción «Ver los controles y confirmar que se vieron» (Administrador edita; inspector y Control de calidad, lo propio);
+//       «Calificar nivel 1» incluye revisar los controles del caso: Control de calidad e inspector ya no los marcan.
 // v1.9 (etapa C2-5): el Administrador puede todas las acciones (Liquidar honorarios y Aprobar cambios de cuenta bancaria en Aprobar).
 // v1.8 (etapa C2-3 · DEC-180): rol del sistema «Control de calidad (agencia)» (usuario de la agencia: ve y completa los informes de los inspectores
 //       de su agencia, los devuelve al inspector y ve sus evidencias; no califica, no coordina y no ve otras agencias) con Patricia Andrade (Eurosurvey);
@@ -72,7 +74,9 @@
       ['Informe', 'Determinar asegurabilidad desde el informe', '', '', '', 'P', '', '', '', '', ''],
       ['Informe', 'Completar el informe', 'E', '', '', 'P', '', '', '', '', 'P'], // etapa C2-3 · DEC-180
       ['Informe', 'Devolver el informe al inspector', 'E', '', '', '', '', '', '', '', 'P'],
-      ['Informe', 'Ver evidencias de campo', 'V', 'V', 'V', 'P', 'V', 'V', '', '', 'P'],      ['Calificación', 'Calificar nivel 1', 'A', '', '', '', 'A', '', '', '', ''],
+      ['Informe', 'Ver evidencias de campo', 'V', 'V', 'V', 'P', 'V', 'V', '', '', 'P'],
+      ['Informe', 'Ver los controles y confirmar que se vieron', 'E', '', '', 'P', '', '', '', '', 'P'], // etapa C2-19 · DEC-198: «Ya los vi»; no cambia el estado de los controles
+      ['Calificación', 'Calificar nivel 1', 'A', '', '', '', 'A', '', '', '', ''],
       ['Calificación', 'Calificar nivel 2 (dictamen final)', 'A', '', '', '', '', 'A', '', '', ''],
       ['Calificación', 'Marcar revisión de control como revisada', 'A', '', '', '', 'A', '', '', '', ''],
       ['Emisión', 'Crear orden de emisión (caso sin orden)', 'C', 'C', '', '', '', '', '', '', ''],
@@ -109,7 +113,8 @@
       'Completar el informe': ['PE', 'Lo propio: el inspector, los de sus visitas si le toca completarlos; Control de calidad, los de los inspectores de su agencia'],
       'Devolver el informe al inspector': ['PE', 'Lo propio: los informes de los inspectores de su agencia · con motivo'],
       'Ver evidencias de campo': ['VP', 'Lo propio: las de sus casos o las de los inspectores de su agencia'],
-      'Calificar nivel 1': ['A', 'Incluye revisar los controles de la autoinspección'],
+      'Ver los controles y confirmar que se vieron': ['PE', 'Quien completa el informe ve los controles con su evidencia y confirma «Ya los vi»; no los marca Conforme ni Requiere acción'],
+      'Calificar nivel 1': ['A', 'Incluye revisar los controles del caso (Conforme o Requiere acción, uno por uno o «Marcar todos como conformes»): solo el calificador · DEC-198'],
       'Calificar nivel 2 (dictamen final)': ['A', 'Dictamen del Suscriptor'],
       'Marcar revisión de control como revisada': ['A', 'Revisión de control por muestreo'],
       'Crear orden de emisión (caso sin orden)': ['C', 'Llama al BPM de Emisión'],
