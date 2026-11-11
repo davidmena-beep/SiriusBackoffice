@@ -1,6 +1,9 @@
 // SIRIUS · conexión real de la prueba de concepto (fase P · P-6a) · reemplaza al archivo mínimo del artifact.
 // Con una sesión iniciada en index.html, el back-office trabaja con la base de datos (Supabase); sin sesión, en modo demostración.
 // Usa la API REST de Supabase directamente (sin bibliotecas) y respeta el contrato SIRIUS_CONEXION del artifact (Etapa P-6a).
+// 11/11/2026 · Observación 9 (la v5 publicada volvía a la v4): lo publicado desde Administración (origen «Administración») manda siempre sobre el
+// archivo de datos; SIRIUS_FORMULARIOS (Formularios) y SIRIUS_CATALOGOS (catálogos de SIRIUS_EJEMPLO) se aplican al leer la base y al publicar;
+// SIRIUS_CONTROLES se vigila como las demás claves. Evento «sirius-configuracion» { clave } cada vez que cambia la configuración aplicada.
 (function () {
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
   var CLAVE = 'sb-qdciqoxselwmudlycprq-auth-token', INGRESO = 'index.html', SONDEO_MS = 20000;
@@ -8,21 +11,68 @@
   if (!sesion || !sesion.access_token || /[?&]demo=on/.test(location.search)) { window.SIRIUS_CONEXION = { activo: false }; return; }
 
   // ---------- Configuración: la versión vigente de la base reemplaza a la del archivo de datos (si no es más antigua) ----------
-  var CONFIG = null, ARCH = {}, MEZCLA = {};
+  var CONFIG = null, ORIGEN = {}, ARCH = {}, MEZCLA = {};   // ORIGEN[clave] = { origen, version, creado } de la versión vigente en la base
   function esObj(x) { return x && typeof x === 'object' && !Array.isArray(x); }
   function mezclar(a, b) { if (!esObj(a) || !esObj(b)) return b === undefined ? a : b; var r = {}; Object.keys(a).forEach(function (k) { r[k] = a[k]; }); Object.keys(b).forEach(function (k) { r[k] = mezclar(a[k], b[k]); }); return r; }
   function num(v) { return String(v || '0').split('.').map(function (x) { return parseInt(x, 10) || 0; }); }
   function masNueva(a, b) { var x = num(a), y = num(b); for (var i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; }
+  function deAdministracion(clave) { return !!(ORIGEN[clave] && ORIGEN[clave].origen === 'Administración'); }
+  // Regla: lo publicado desde Administración manda siempre; lo cargado desde el prototipo (SQL de configuración) manda salvo que el archivo sea más nuevo.
   function aplicar(clave) { var f = ARCH[clave], d = CONFIG && CONFIG[clave];
-    if (d && f && masNueva(f.version, d.version)) { console.warn('[SIRIUS] ' + clave + ': el archivo (v' + f.version + ') es más nuevo que la base (v' + d.version + '); se usa el archivo.'); MEZCLA[clave] = f; return; }
+    if (d && f && !deAdministracion(clave) && masNueva(f.version, d.version)) { console.warn('[SIRIUS] ' + clave + ': el archivo (v' + f.version + ') es más nuevo que la base (v' + d.version + '); se usa el archivo.'); MEZCLA[clave] = f; return; }
+    if (d && f && deAdministracion(clave) && masNueva(f.version, d.version)) console.info('[SIRIUS] ' + clave + ': se usa lo publicado desde Administración (v' + d.version + ') aunque el archivo diga v' + f.version + '.');
     MEZCLA[clave] = d ? (f ? mezclar(f, d) : d) : f; }
   function vigilar(clave) { if (Object.getOwnPropertyDescriptor(window, clave)) return;
     Object.defineProperty(window, clave, { configurable: true, enumerable: true, get: function () { return MEZCLA[clave]; }, set: function (v) { ARCH[clave] = v; aplicar(clave); } }); }
   ['SIRIUS_COMPANIA','SIRIUS_CATALOGO_CIIU','SIRIUS_INFORMES_RG','SIRIUS_CATALOGOS_MAESTROS','SIRIUS_FLUJO','SIRIUS_FLUJO_MOTOR','SIRIUS_MONITOR','SIRIUS_SEGUIMIENTO',
    'SIRIUS_EQUIPOS','SIRIUS_SALIDA_RG','SIRIUS_SALIDA_VEH','SIRIUS_DOCUMENTOS_PDF','SIRIUS_INFORME_VEH','SIRIUS_CAMPOS','SIRIUS_USUARIOS','SIRIUS_NOTIFICACIONES','SIRIUS_CONFLICTOS',
    'SIRIUS_INICIO','SIRIUS_AGENDA','SIRIUS_LIQUIDACIONES','SIRIUS_HONORARIOS','SIRIUS_TARIFAS_CUENTAS','SIRIUS_MATRIZ_GARANTIAS','SIRIUS_DATOS_IA','SIRIUS_SILUETAS','SIRIUS_CAPTURA',
-   'SIRIUS_AUTOINSPECCION','SIRIUS_PORTAL_CLIENTE','SIRIUS_APP_INSPECTOR'].forEach(vigilar);
-  // (SIRIUS_EJEMPLO y SIRIUS_MONITOR_EJEMPLO no se reemplazan: son datos de demostración; los casos salen de la base.)
+   'SIRIUS_AUTOINSPECCION','SIRIUS_PORTAL_CLIENTE','SIRIUS_APP_INSPECTOR','SIRIUS_CONTROLES'].forEach(vigilar);
+  // (SIRIUS_EJEMPLO y SIRIUS_MONITOR_EJEMPLO no se reemplazan: son datos de demostración; los casos salen de la base.
+  //  Excepción: sus partes que publica Administración —plantillas (SIRIUS_FORMULARIOS) y catálogos (SIRIUS_CATALOGOS)— se aplican abajo.)
+
+  // ---------- Configuración publicada que no vive en un archivo propio ----------
+  function clon(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function evento(clave) { try { window.dispatchEvent(new CustomEvent('sirius-configuracion', { detail: { clave: clave } })); } catch (e) {} }
+  // SIRIUS_FORMULARIOS → window.SIRIUS_FORMULARIOS (lo lee Formularios) y SIRIUS_EJEMPLO.plantillas / plantillasVigentes (los leen el informe,
+  // las evidencias y la capa de la app del back-office). Cada versión con pasos queda con su estado; los pasos conservan sus atributos del
+  // prototipo (sec, guia, doc…) y toman de Formularios nombre, grupo, modalidades, guía, lecturas y fotos; la columna Presencial va en su orden.
+  function aplicarFormularios(F) {
+    if (!F || !Array.isArray(F.formularios)) return true; window.SIRIUS_FORMULARIOS = F;
+    var E = window.SIRIUS_EJEMPLO; if (!E || !E.plantillas || typeof E.plantillaVigente !== 'function') return false;   // aún no cargan los datos: se reintenta
+    var nombres = {}, claves = {};
+    F.formularios.forEach(function (f) { (f.versions || []).forEach(function (v) {
+      if (!Array.isArray(v.steps) || !v.steps.length || v.n == null) return;   // Ramos Generales y versiones sin pasos de foto: no aplica
+      var k = f.name + ' v' + v.n, previa = E.plantillas[k] || Object.keys(E.plantillas).filter(function (x) { var t = E.plantillas[x]; return (t.nombre || '') === f.name && Number(t.version) < Number(v.n); })
+        .sort(function (a, b) { return Number(E.plantillas[b].version) - Number(E.plantillas[a].version); }).map(function (x) { return E.plantillas[x]; })[0];
+      var T = previa ? clon(previa) : { nombre: f.name, campos: {}, secciones: [], pasos: [] }, antes = {}; (T.pasos || []).forEach(function (p) { antes[p.id] = p; });
+      var O = Array.isArray(v.ordenP) ? v.ordenP : null, pos = function (id) { var i = O ? O.indexOf(id) : -1; return i < 0 ? 1e6 : i; };
+      var pasos = v.steps.map(function (s, i) { var p = Object.assign({}, antes[s.id] || { sec: [], doc: '', pd: false });
+        ['id', 'group', 'name', 'req', 'min', 'max', 'rep', 'ex', 'link', 'guide', 'vis', 'ayuda'].forEach(function (a) { if (s[a] !== undefined) p[a] = clon(s[a]); });
+        if (Array.isArray(s.feeds)) p.feedsX = s.feeds.slice(); p._i = i; return p; });
+      if (O) pasos.sort(function (a, b) { return (pos(a.id) - pos(b.id)) || (a._i - b._i); });
+      pasos.forEach(function (p) { delete p._i; });
+      Object.assign(T, { nombre: f.name, version: v.n, estado: v.estado || 'Vigente', vigenteDesde: v.vigenteDesde || '', motivo: v.motivo || '', pasos: pasos, origen: 'Administración' });
+      if (O) T.ordenPresencial = O.slice(); if (v.retiradaEl) T.retiradaEl = v.retiradaEl;
+      E.plantillas[k] = T; nombres[f.name] = true; claves[k] = true; }); });
+    // Formularios es la fuente de esas plantillas: una versión del prototipo que no viene en lo publicado deja de estar vigente.
+    Object.keys(E.plantillas).forEach(function (k) { var t = E.plantillas[k]; if (nombres[t.nombre] && !claves[k] && t.estado === 'Vigente') t.estado = 'Retirada'; });
+    E.plantillasVigentes = E.plantillasVigentes || {};
+    Object.keys(nombres).forEach(function (n) { var k = E.plantillaVigente(n); if (k) E.plantillasVigentes[n] = k; else delete E.plantillasVigentes[n]; });
+    return true; }
+  // SIRIUS_CATALOGOS → SIRIUS_EJEMPLO.catalogos (Catálogos › Sucursales, Coberturas, Piezas, Tipos de daño…).
+  function aplicarCatalogos(C) { var E = window.SIRIUS_EJEMPLO; if (!C || typeof C !== 'object') return true; if (!E) return false;
+    E.catalogos = E.catalogos || {}; Object.keys(C).forEach(function (k) { E.catalogos[k] = clon(C[k]); }); return true; }
+  var ESPECIALES = { SIRIUS_FORMULARIOS: aplicarFormularios, SIRIUS_CATALOGOS: aplicarCatalogos };
+  function aplicarEspeciales(soloClave) { var pend = [];
+    Object.keys(ESPECIALES).forEach(function (c) { if (soloClave && c !== soloClave) return; var d = CONFIG && CONFIG[c]; if (!d) return;
+      if (ESPECIALES[c](d)) evento(c); else pend.push(c); });
+    if (pend.length) { var n = 0, t = setInterval(function () { n++; pend = pend.filter(function (c) { if (ESPECIALES[c](CONFIG[c])) { evento(c); return false; } return true; });
+      if (!pend.length || n > 200) { clearInterval(t); if (pend.length) console.warn('[SIRIUS] no se pudo aplicar ' + pend.join(', ') + ' (faltan los datos del prototipo).'); } }, 50); } }
+  // Tras publicar con éxito, lo publicado pasa a ser la configuración vigente de esta sesión (al salir y volver a una pantalla se ve lo publicado).
+  function publicado(carga) { if (!carga || !carga.clave || carga.datos == null) return; CONFIG = CONFIG || {};
+    CONFIG[carga.clave] = clon(carga.datos); ORIGEN[carga.clave] = { origen: 'Administración', version: String(carga.version || ''), creado: new Date().toISOString() };
+    if (Object.prototype.hasOwnProperty.call(ARCH, carga.clave)) { aplicar(carga.clave); evento(carga.clave); } else aplicarEspeciales(carga.clave); }
 
   // ---------- API REST ----------
   function cab() { return { apikey: KEY, Authorization: 'Bearer ' + sesion.access_token, 'Content-Type': 'application/json' }; }
@@ -95,8 +145,12 @@
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
+      if (tipo === 'publicarConfiguracion' && r.ok) { try { publicado(datos); } catch (e) { console.warn('[SIRIUS] configuración publicada:', e); } }
       return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
-    cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; } };
+    cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; },
+    // Diagnóstico en la consola: SIRIUS_CONEXION.configuracion() → clave, versión y origen de lo vigente en la base, y la plantilla vigente que se aplicó.
+    configuracion: function () { var E = window.SIRIUS_EJEMPLO || {}; return { origen: clon(ORIGEN), plantillasVigentes: clon(E.plantillasVigentes || {}),
+      formularios: window.SIRIUS_FORMULARIOS && window.SIRIUS_FORMULARIOS.vigentes ? clon(window.SIRIUS_FORMULARIOS.vigentes) : null }; } };
   // Aviso visible si la base no responde (para diagnosticar en la copia publicada sin abrir la consola).
   function aviso(txt) { try { var d = document.getElementById('sirius-aviso-conexion') || document.createElement('div'); d.id = 'sirius-aviso-conexion';
     d.setAttribute('role', 'alert'); d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;max-width:560px;background:#fdecea;color:#b42318;border:1px solid #f1b7b0;border-radius:10px;padding:10px 14px;font:600 13px/1.4 Mulish,system-ui,sans-serif;box-shadow:0 6px 18px #0002';
@@ -128,7 +182,10 @@
       var u = us && us[0]; if (!u) { salir('Tu correo no está habilitado en SIRIUS.'); throw new Error('sin usuario'); }
       var roles = (u.datos && u.datos.roles) || [u.rol]; if (roles.indexOf(u.rol) < 0) roles.unshift(u.rol);
       CX.usuario = { nombre: u.nombre, email: u.email, rol: u.rol, roles: roles, tipoInspector: u.tipo_inspector, agencia: u.agencia ? u.agencia.nombre : null };
-      return Promise.all([rpc('configuracion_vigente', {}).then(function (c) { CONFIG = c || {}; Object.keys(ARCH).forEach(aplicar); }).catch(function (e) { console.warn('[SIRIUS] configuración de la base no disponible:', e.message); }), cargarCasos()]);
+      var origenes = get('configuracion?select=clave,version,origen,creado&vigente=is.true').then(function (fs) { (fs || []).forEach(function (x) { ORIGEN[x.clave] = { origen: x.origen, version: x.version, creado: x.creado }; }); })
+        .catch(function (e) { console.warn('[SIRIUS] origen de la configuración no disponible:', e.message); });
+      return Promise.all([Promise.all([rpc('configuracion_vigente', {}), origenes]).then(function (r) { CONFIG = r[0] || {}; Object.keys(ARCH).forEach(aplicar); aplicarEspeciales(); evento('*'); })
+        .catch(function (e) { console.warn('[SIRIUS] configuración de la base no disponible:', e.message); }), cargarCasos()]);
     })
     .then(function () { avisar(); setInterval(function () { cargarCasos().then(function (c) { if (c) avisar(); }).catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); }); }, SONDEO_MS); })
     .catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); else { console.error('[SIRIUS] conexión:', e); aviso('no se pudieron leer los casos (' + String(e.message || e).slice(0, 220) + ')'); } });
