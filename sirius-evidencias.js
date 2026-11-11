@@ -151,5 +151,9 @@ function fmtDist(m) { if (m == null || isNaN(m)) return '—'; return m < 1000 ?
   W.SiriusEvidenciasPorCanal = PorCanal;
   W.SiriusEvidenciaMini = Mini;
   // Imagen de ejemplo de un paso (Informe › Fotos usa la misma silueta que el panel y el visor).
-  W.SiriusEvidenciaImagen = function (p) { return h('span', { 'aria-hidden': 'true', style: { display: 'block', width: '100%', height: '100%', minHeight: 60 } }, imagen({ paso: p.paso, pasoNombre: p.nombre, documento: /matr[ií]cula|licencia|c[eé]dula|documento|factura/i.test(String(p.nombre || '')) }, false)); };
+  // C2-16: con la conexión la miniatura de Informe › Fotos muestra la imagen real (url firmada) o «Sin imagen»; nunca la figura de ejemplo.
+  W.SiriusEvidenciaImagen = function (p) {
+    if (p.url) return h('img', { src: p.url, alt: (p.nombre || 'Foto') + ' · imagen de la evidencia', 'data-ev-img': '1', style: { width: '100%', height: '100%', minHeight: 60, objectFit: 'cover', display: 'block' } });
+    if (p.sinImagen) return h('span', { 'data-ev-sinimagen': '1', style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', minHeight: 60, fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface-subtle)' } }, 'Sin imagen');
+    return h('span', { 'aria-hidden': 'true', style: { display: 'block', width: '100%', height: '100%', minHeight: 60 } }, imagen({ paso: p.paso, pasoNombre: p.nombre, documento: /matr[ií]cula|licencia|c[eé]dula|documento|factura/i.test(String(p.nombre || '')) }, false)); };
 })();

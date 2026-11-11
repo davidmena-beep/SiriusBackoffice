@@ -4,6 +4,38 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-16
+
+Publiqué la etapa C2-16 (Versión 161): con la conexión activa, Informe › Fotos lee las evidencias de la base (DEC-195). Antes armaba las fotos con el riesgo de ejemplo, por eso 30004 mostraba «Foto 1… Exteriores 16/10/26» con autos dibujados mientras la pestaña Evidencias mostraba las 39 reales.
+- **Misma fuente que Evidencias:** «Por sección» y «Galería» arman las fotos con SIRIUS_CONEXION.evidencias del caso (evLista → evCx), la lista de la pestaña Evidencias, del visor único y de «Fotos de esta sección». Cada foto muestra el nombre del paso, fecha y hora, canal, ubicación («Sin GPS» si no hay), validación, lecturas y la imagen de la URL firmada. Una evidencia sin URL dice «Sin imagen»; nunca un auto de ejemplo.
+- **Plantilla del caso:** el nombre y la sección del paso salen de la plantilla del caso, por el nombre y la versión del informe o, si no los trae, la vigente. La sección sale del atributo sec del paso (DEC-194). evCx ya no fija «Vehículos livianos v1», así que Informe › Fotos y Evidencias muestran los mismos nombres.
+- **Filtros y cumplimiento:** Todas, Asignadas, Confirmadas, Excluidas, Sin GPS y Con control (controles pendientes del caso cuyo detalle.paso es el de la foto) con los mismos conteos de la pestaña Evidencias. El cumplimiento por modalidad («N de M · falta …») y los grupos de «Por sección» usan los pasos de la plantilla del caso y esas evidencias.
+- **Acciones:** confirmar, excluir con motivo (mínimo 5 caracteres), reincorporar y observar pasan por evSet: estado, motivo e historial del caso y la acción «evidencia» de la conexión, que se deshace si la base la rechaza. Quien edita es quien edita en la pestaña Evidencias (el Control de calidad que completa el caso también).
+- **Otros lugares:** el visor único, «Fotos de esta sección» (cpFotosIds ahora usa la plantilla del caso) y la pestaña Evidencias ya leían la conexión. El PDF de vehículos y la salida (SalidaVeh) usaban fotos de ejemplo: con la conexión leen las mismas fotos no excluidas, con la imagen real o «Sin imagen · paso».
+- **Escena infcxfotos:** simula la conexión solo en esta vista, con 6 evidencias de 30004 (2 sin GPS, 1 con el control de la placa, 1 sin imagen) en SIRIUS_COMPLETAR.cxFotosPrueba. La simulación se limpia al cambiar de escena. KNOWN_ESC pasa a 491 nombres. En el inventario quedó la etapa C2-16 con DEC-195.
+
+**Verificado:**
+- Abrí desde el selector, a 1280 × 720 y 1920 × 1080, infcxfotos, evunificadas, infpasoinforme e infcompletarcaso: sin errores ni desplazamiento horizontal. Los únicos avisos de la consola son las cargas externas bloqueadas del entorno (fuentes y bibliotecas).
+- Sin conexión, evunificadas, infpasoinforme e infcompletarcaso quedaron idénticas a la etapa C2-15 en texto y en píxeles. Svresumen, dp1aps y calrgsalida, que usan el PDF y la salida, también quedaron idénticas en píxeles. Sin conexión, el PDF de 30004 y los documentos de SalidaVeh tienen el mismo contenido de antes, con las 39 «Foto de ejemplo».
+- En infcxfotos los conteos son Todas 6, Sin GPS 2 y Con control 1 (la placa trasera). Hay 5 imágenes y 1 «Sin imagen» (el habitáculo del motor), la lectura «Placa: PRB2Z04 · 93 %» y ninguna imagen de ejemplo. Excluir la Foto 1 sin motivo muestra «Escribe el motivo (mínimo 5 caracteres)» y no cambia nada; con motivo dan Excluidas 1 y Asignadas 5, y la tarjeta muestra el motivo. Confirmar la Foto 2 da Confirmadas 1 y Asignadas 4. El visor abre las mismas 6 con «1 de 6».
+- Al pasar de infcxfotos a evunificadas, la simulación se limpia (39 fotos de ejemplo, sin imágenes de la base); al volver a infcxfotos se arma de nuevo.
+- Prueba interna con conexión en una copia aparte (cxtest/c216, con las 39 evidencias de 30004: 36 con imagen, 3 sin URL, 2 sin GPS y 5 con control): Informe › Fotos muestra Todas 39 en «Por sección» y en «Galería», con 36 imágenes y 3 «Sin imagen», sin fotos de ejemplo. Los 39 nombres de paso son los de la pestaña Evidencias, con la plantilla v1, con la v4 y con la vigente a 1280, y con la v1 a 1920.
+- En esa copia, «Fotos de esta sección» coincide con lo esperado en las 12 secciones (Identificación 13, Matrícula 3, Uso 5, Verificación 3, Accesorios 12, Neumáticos 5, Testigos 1, Averías 7). El PDF (Ver PDF en «Criterio y decisión») muestra 38 imágenes (36 fotos y las 2 de referencia), 3 «Sin imagen» y ninguna «Foto de ejemplo». La salida da 39 fotos en el Informe (36 con imagen, 3 sin) y 4 en el Resumen (3 con imagen, 1 sin).
+- En esa copia, excluir la Foto 1 con motivo y confirmar la Foto 2 enviaron la acción «evidencia» a la conexión (exteriores_frontal Excluida, exteriores_posterior Confirmada). Ambas quedaron en la lista de la pestaña Evidencias y en el historial del caso. sirius-conexion.js sigue con su única línea mínima.
+
+**No verificado:** la conexión real con las URL firmadas de la base, que esas imágenes carguen en el PDF descargado (la vista previa sí las muestra; el archivo real y los permisos de origen cruzado no se probaron) y el comportamiento con un caso de varios vehículos de la base.
+
+**Diferencias:**
+- La vista «Fotos» aparece en un caso de la base aunque no tenga un riesgo de ejemplo, siempre que tenga al menos una evidencia que no sea video. Antes ese caso no tenía la vista.
+- Con la conexión, quien edita en Informe › Fotos es quien edita en la pestaña Evidencias (evPuede). Sin la conexión sigue el permiso de antes.
+- Con la conexión, el PDF y la salida no incluyen las fotos excluidas. Sin la conexión no hay exclusión y no cambia nada.
+- Con la conexión, los nombres de paso en la pestaña Evidencias salen primero de la plantilla del caso (antes, de la etiqueta de la plantilla vigente): si el informe trae otra versión, algún nombre puede cambiar. Un paso que la plantilla no tiene conserva su nombre de siempre.
+- Los videos no aparecen en Informe › Fotos (siguen en el panel de evidencias y el visor). La hora de la evidencia se muestra como llega, salvo si es ISO, que se pasa a «dd/mm/aa · hh:mm».
+- En infcxfotos solo Informe › Fotos, el visor y «Fotos de esta sección» leen la simulación: la pestaña Evidencias de esa escena sigue con las de ejemplo, porque la simulación no activa toda la conexión.
+- El bloque de evidencias de la calificación de varios vehículos (vehEvid) sigue leyendo SiriusFotosVeh por riesgo: con un caso de la base sale vacío y no usa fotos de ejemplo. No lo cambié porque no es la vista de fotos.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-15
 
 Publiqué la etapa C2-15 (Versión 160): el mapa de captura y la guía de la cámara de cada paso se editan desde Formularios con la biblioteca de siluetas (DEC-190; observaciones 1 y 2).

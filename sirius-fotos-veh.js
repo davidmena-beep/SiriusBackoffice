@@ -1,5 +1,6 @@
 // SIRIUS · Fotos y evidencias de Vehículos (etapa VF). Arma el modelo `ec` que muestra el componente de S5 (FotosEvidencias.dc.html).
-// Datos: SIRIUS_EJEMPLO.evidencias[riesgo].fotos[pasoId] y los pasos de SIRIUS_EJEMPLO.plantillas['Vehículos livianos v1'].pasos
+// Datos: SIRIUS_EJEMPLO.evidencias[riesgo].fotos[pasoId] y los pasos de SIRIUS_EJEMPLO.plantillas['Vehículos livianos v1'].pasos;
+// con la conexión (etapa C2-16) ec() recibe o.fuente con las evidencias de SIRIUS_CONEXION.evidencias del caso y los pasos de la plantilla del caso.
 // (req por modalidad, sec: la primera es la principal, rep, link). Valores del vehículo (para «Visible si»): SiriusSalidaVeh.contexto.
 // Estado de la sesión (confirmar, excluir con motivo, observación): lo guarda el Back-office y llega en `est`.
 (function () {
@@ -26,8 +27,8 @@
   // Cumplimiento por modalidad: pasos exigidos con sus fotos válidas.
   function cumplimiento(lista, ps, M) { const req = ps.filter(s => necesita(s, M) > 0), falta = req.filter(s => lista.filter(x => x.s.id === s.id && cuenta(x)).length < necesita(s, M)); return { req: req.length, ok: req.length - falta.length, falta: falta.map(s => s.name) }; }
   function textoCumpl(c, modTxt) { if (!c.req) return 'Sin fotos exigidas en ' + modTxt; const f = c.falta, ft = f.length > 3 ? f.slice(0, 3).join(', ') + ' y ' + (f.length - 3) + ' más' : f.join(', '); return c.ok + ' de ' + c.req + (f.length ? ' · falta ' + ft : ' · completo'); }
-  function fecha(at) { const m = /^(\d\d\/\d\d\/\d\d) · (\d\d:\d\d)/.exec(at || ''); return m ? { d: m[1], h: m[2] } : { d: '', h: '' }; }
-  function gps(f) { return f.gps ? f.gps.lat.toFixed(5) + ', ' + f.gps.lng.toFixed(5) + ' · ± ' + f.gps.prec + ' m' + (f.marca === 'gpssim' ? ' · simulado (sin permiso de ubicación)' : '') : 'Sin GPS'; }
+  function fecha(at) { const m = /^(\d\d\/\d\d\/\d\d) · (\d\d:\d\d)/.exec(at || ''); return m ? { d: m[1], h: m[2] } : { d: at || '', h: '' }; }
+  function gps(f) { return f.gps ? f.gps.lat.toFixed(5) + ', ' + f.gps.lng.toFixed(5) + (f.gps.prec != null ? ' · ± ' + f.gps.prec + ' m' : '') + (f.marca === 'gpssim' ? ' · simulado (sin permiso de ubicación)' : '') : 'Sin GPS'; }
   // Paso y, en Extras y Daños (rep), la fila de la grilla a la que se vincula la foto.
   function etiqueta(x) { return x.f.fila ? x.s.name + ' · ' + x.f.fila.label : x.s.name; }
   function grupo(x) { return x.s.group === x.s.name ? '' : x.s.group + ' · '; }
@@ -37,22 +38,23 @@
   // Modelo para FotosEvidencias. o: { rid, est, extra, vista, filtro, vz (id), obsDraft, canEdit, pre (prefijo de ids),
   //   setVista, setFiltro, confirmar(ids), excluir(id), reincorporar(id), abrir(id), cerrar(), setObs(txt), guardarObs(id), irFila(fila) }
   function ec(o) {
-    const v = vehiculo(o.rid); if (!v) return null;
-    const T = plantilla(v), M = modalidad(v), modTxt = v.modalidad || '—', ps = pasos(o.rid), all = fotos(o.rid, o.est, o.extra), pl = placa(v) || v.label || o.rid, pre = o.pre || 'vf';
+    // C2-16: con la conexión, o.fuente = { v: { modalidad }, T: { pasos, secciones }, ps, all, pl } trae las fotos de SIRIUS_CONEXION.evidencias del caso (la misma lista de la pestaña Evidencias).
+    const FU = o.fuente || null, v = FU ? FU.v : vehiculo(o.rid); if (!v) return null;
+    const T = FU ? FU.T : plantilla(v), M = modalidad(v), modTxt = v.modalidad || '—', ps = FU ? FU.ps : pasos(o.rid), all = FU ? FU.all : fotos(o.rid, o.est, o.extra), pl = FU ? FU.pl : (placa(v) || v.label || o.rid), pre = o.pre || 'vf';
     const btn = (on, l, pick) => ({ l, pressed: on ? 'true' : 'false', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF', bd: on ? 'var(--color-brand)' : 'var(--border-default)', pick });
     const vista = o.vista === 'gal' ? 'gal' : 'sec', ff = o.filtro || 'todas';
-    const CT = o.controles || {}, ctlP = (x) => { const a = CT[x.s.id + '#' + x.i]; return !!a && a.st === 'p'; }; // C2-6: control pendiente (filtro «Con control» y punto de aviso)
+    const CT = o.controles || {}, ctlP = FU ? (x) => !!x.f.control : (x) => { const a = CT[x.s.id + '#' + x.i]; return !!a && a.st === 'p'; }; // C2-6: control pendiente (filtro «Con control» y punto de aviso)
     const FIL = { todas: () => true, asig: x => x.estado === 'Asignada', conf: x => x.estado === 'Confirmada', excl: x => x.estado === 'Excluida', sgps: x => !x.f.gps, ctl: ctlP };
     const cnt = {}; Object.keys(FIL).forEach(k => { cnt[k] = all.filter(FIL[k]).length; });
     const L = all.filter(FIL[ff] || FIL.todas), ed = !!o.canEdit, idsL = L.map(x => x.f.id);
     // Etapa 12d-3b · distintivo de alerta de la autoinspección (solo calificadores): abre la bandeja de controles en esa alerta.
     const AL = o.alertas || {}, alDe = (x) => { const a = AL[x.s.id + '#' + x.i]; if (!a || !o.irAlerta) return { hasAlerta: false, fid: x.f.id, punto: ctlP(x), phPaso: x.s.id, phN: etiqueta(x) }; const sv = { alta: 'Alerta alta', media: 'Alerta media', baja: 'Alerta baja' }[a.sev] || 'Alerta', est = { p: 'por revisar', c: 'conforme', a: 'requiere acción' }[a.st] || '';
       return { hasAlerta: true, punto: ctlP(x), phPaso: x.s.id, phN: etiqueta(x), fid: x.f.id, alertaId: a.id, alertaTxt: sv + ' · ' + est, alertaColor: a.st === 'p' ? (a.sev === 'alta' ? 'var(--color-danger, #b42318)' : '#9a6400') : 'var(--text-muted)', alertaAria: sv + ' (' + est + '): ' + a.titulo + ' · abre la revisión de los controles', onAlerta: () => o.irAlerta(a.id) }; };
-    const card = (x) => { const fh = fecha(x.f.at), marcas = [MARCA[x.f.marca], x.f.gps ? '' : (M === 'D' ? '' : 'Sin GPS'), x.f.reint ? 'Reintentos: ' + x.f.reint : ''].filter(Boolean).map(t => ({ t }));
-      const notas = [{ t: grupo(x) + etiqueta(x) + ' · ' + pl }].concat(x.estado === 'Excluida' ? [{ t: 'Motivo de exclusión: ' + (x.motivo || '—') + (x.por ? ' · ' + x.por : '') }] : []);
+    const card = (x) => { const fh = fecha(x.f.at), marcas = (FU ? [x.f.canal, x.f.validacion] : []).concat([MARCA[x.f.marca], x.f.gps ? '' : (M === 'D' ? '' : 'Sin GPS'), x.f.reint ? 'Reintentos: ' + x.f.reint : '']).filter(Boolean).map(t => ({ t }));
+      const notas = [{ t: grupo(x) + etiqueta(x) + ' · ' + pl }].concat((FU ? x.f.lecturas || [] : []).map(l => ({ t: 'Lectura · ' + l.t + (l.conf != null ? ' · ' + l.conf + ' %' : '') })), x.estado === 'Excluida' ? [{ t: 'Motivo de exclusión: ' + (x.motivo || '—') + (x.por ? ' · ' + x.por : '') }] : []);
       // Etapa 12a · DEC-134: la primera foto de un paso con daños detectados se muestra con sus polígonos (SiriusDanosMini).
-      const DN = window.SiriusDanos, nD = DN && x.i === 0 ? DN.deFoto(o.rid, x.s.id).length : 0;
-      return Object.assign(alDe(x), { conDanos: nD > 0, sinDanos: !nD, dRid: o.rid, dPaso: x.s.id, dTexto: 'Imagen de ejemplo', id: 'Foto ' + x.n, sel: false, noSel: true, checked: false, onSel: () => {}, selAria: '', tone: TONE[x.estado] || 'neutral', estado: x.estado, aria: 'Ver en el visor · Foto ' + x.n + ' · ' + etiqueta(x), open: () => o.abrir(x.f.id, idsL),
+      const DN = window.SiriusDanos, nD = !FU && DN && x.i === 0 ? DN.deFoto(o.rid, x.s.id).length : 0;
+      return Object.assign(alDe(x), { url: FU ? x.f.url || '' : '', sinImagen: !!FU && !x.f.url, conDanos: nD > 0, sinDanos: !nD, dRid: o.rid, dPaso: x.s.id, dTexto: 'Imagen de ejemplo', id: 'Foto ' + x.n, sel: false, noSel: true, checked: false, onSel: () => {}, selAria: '', tone: TONE[x.estado] || 'neutral', estado: x.estado, aria: 'Ver en el visor · Foto ' + x.n + ' · ' + etiqueta(x), open: () => o.abrir(x.f.id, idsL),
         fh: fh.d ? fh.d + ' · ' + fh.h : 'Fecha de toma no disponible', gps: gps(x.f), hasObs: !!x.obs, obs: x.obs, hasConf: false, conf: '',
         hasDoc: !!(x.f.fila && o.irFila), docHref: '#', docTxt: x.f.fila ? 'Ver la fila en ' + (x.f.fila.g === 'ext' ? 'Extras' : 'Averías') : '', onDoc: (e) => { if (e && e.preventDefault) e.preventDefault(); if (o.irFila) o.irFila(x.f.fila); },
         hasMarcas: marcas.length > 0, marcas, notas, hasAct: ed, canConf: ed && x.estado === 'Asignada', onConf: () => o.confirmar([x.f.id]), confAria: 'Confirmar Foto ' + x.n,
@@ -62,7 +64,7 @@
     const secs = (T.secciones || []).map(([sid, tit]) => { const pS = ps.filter(s => (s.sec || [])[0] === sid); if (!pS.length && !all.some(x => (x.s.sec || [])[0] === sid)) return null; const fx = L.filter(x => (x.s.sec || [])[0] === sid), c = cumplimiento(all, pS, M), asig = fx.filter(x => x.estado === 'Asignada');
       return { hid: pre + '-sec-' + sid, lv: '3', fs: '17px', title: tit, hasSub: true, sub: textoCumpl(c, modTxt) + ' · ' + (fx.length === 1 ? '1 foto' : fx.length + ' fotos'), hasConf: ed && asig.length > 0, confTxt: 'Confirmar las asignadas (' + asig.length + ')', onConf: () => o.confirmar(asig.map(x => x.f.id)),
         hasGrid: true, path: tit, hasEmpty: !fx.length, emptyTxt: all.length ? 'Ninguna foto de esta sección cumple el filtro.' : 'Sin fotos registradas', fotos: fx.map(card), pad: '18px 22px', ml: '0', bd: '1px solid var(--border-subtle)', bg: '#FFFFFF' }; }).filter(Boolean);
-    const gal = L.map(x => Object.assign(alDe(x), { eid: pre + '-gal-' + x.f.id, aria: 'Ver en el visor · Foto ' + x.n + ' · ' + etiqueta(x) + ' · ' + x.estado, open: () => o.abrir(x.f.id, idsL), bg: x.estado === 'Excluida' ? 'var(--surface-subtle)' : '#FFFFFF', ph: etiqueta(x) + ' · ' + pl, n: 'Foto ' + x.n, et: x.s.group + ' · ' + (fecha(x.f.at).d ? fecha(x.f.at).d + ' · ' + fecha(x.f.at).h : 'sin fecha de toma'), tone: TONE[x.estado] || 'neutral', estado: x.estado, title: x.obs || '', obs: x.obs || (x.estado === 'Excluida' ? 'Excluida: ' + (x.motivo || '—') : 'Sin observación'), obsC: x.obs ? 'var(--text-body)' : 'var(--text-muted)' }));
+    const gal = L.map(x => Object.assign(alDe(x), { url: FU ? x.f.url || '' : '', sinImagen: !!FU && !x.f.url, eid: pre + '-gal-' + x.f.id, aria: 'Ver en el visor · Foto ' + x.n + ' · ' + etiqueta(x) + ' · ' + x.estado, open: () => o.abrir(x.f.id, idsL), bg: x.estado === 'Excluida' ? 'var(--surface-subtle)' : '#FFFFFF', ph: etiqueta(x) + ' · ' + pl, n: 'Foto ' + x.n, et: x.s.group + ' · ' + (fecha(x.f.at).d ? fecha(x.f.at).d + ' · ' + fecha(x.f.at).h : 'sin fecha de toma'), tone: TONE[x.estado] || 'neutral', estado: x.estado, title: x.obs || '', obs: x.obs || (x.estado === 'Excluida' ? 'Excluida: ' + (x.motivo || '—') : 'Sin observación'), obsC: x.obs ? 'var(--text-body)' : 'var(--text-muted)' }));
     // Visor: navega por la lista filtrada.
     const ids = L.map(x => x.f.id), cur = o.vz ? all.find(x => x.f.id === o.vz) : null, ix = cur ? ids.indexOf(cur.f.id) : -1;
     let vz = { open: false, meta: [] };

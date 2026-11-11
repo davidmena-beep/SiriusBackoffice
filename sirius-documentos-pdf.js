@@ -49,11 +49,14 @@
   const TABLE = (head, rows, extra) => '<table style="width:100%;border-collapse:collapse;font-size:9pt;color:' + C.ink + (extra || '') + '"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   const tag = (t, bg, fg) => '<span style="display:inline-block;font-size:7.5pt;line-height:1.5;font-weight:800;border-radius:3px;padding:0 6px;white-space:nowrap;background:' + bg + ';color:' + fg + '">' + esc(t) + '</span>';
   const campoHtml = (l, v) => '<div style="display:flex;flex-direction:column;padding:3px 0;border-bottom:1px dotted ' + C.line + ';min-width:0"><span style="color:' + C.muted + ';font-size:7.5pt">' + esc(l) + '</span><span style="font-size:9pt;color:' + C.ink + ';overflow-wrap:anywhere">' + esc(v) + '</span></div>';
+  const fotoImg = (url, alt, h) => '<img src="' + esc(url) + '" alt="' + esc(alt) + '" style="display:block;width:100%;height:' + h + ';object-fit:cover;border-radius:4px">';
   const fotoPh = (txt, h, bg) => '<div style="height:' + h + ';display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;box-sizing:border-box;border-radius:4px;background:' + (bg || '#e9eef4') + ';background-image:repeating-linear-gradient(45deg,#eef2f6 0,#eef2f6 8px,#e5eaf0 8px,#e5eaf0 16px);color:' + C.muted + ';font-weight:700;font-size:8pt">' + esc(txt) + '</div>';
 
   // ---------- Fotos del vehículo con su número F-n ----------
   // Numeración del vehículo en el orden de los pasos de la plantilla (la misma de «Fotos y evidencias»).
-  function fotosVeh(ctx) { const T = ctx.T || {}, EV = ((E().evidencias || {})[ctx.rid] || {}).fotos || {}, out = []; let n = 0;
+  // Etapa C2-16: con la conexión, las fotos del documento son las evidencias de la base del caso (window.SiriusFotosCx, la misma lista de Informe › Fotos y de la pestaña Evidencias); sin imagen se rotula «Sin imagen».
+  function fotosVeh(ctx) { const X = window.SiriusFotosCx, fu = X && ctx.caso ? X.lista(ctx.caso) : null; if (fu) { const out0 = []; fu.filter(x => x.estado !== 'Excluida').forEach((x, k) => out0.push({ n: k + 1, f: Object.assign({ cx: true }, x.f), p: x.s, F: 'F-' + (k + 1) })); return out0; }
+    const T = ctx.T || {}, EV = ((E().evidencias || {})[ctx.rid] || {}).fotos || {}, out = []; let n = 0;
     (T.pasos || []).forEach(p => (EV[p.id] || []).forEach(f => { n++; out.push({ n, f, p, F: 'F-' + n }); })); return out; }
   function gpsTxt(f, dec) { if (!f.gps) return 'Sin GPS'; const d = dec || 5, x = (v) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d).replace('.', ','); return x(f.gps.lat) + ', ' + x(f.gps.lng); }
   function dispCorto(d) { return String(d || '').split(' · ')[0]; }
@@ -259,7 +262,7 @@
     const tit = [val.veh_marca, val.veh_modelo, val.veh_anio_modelo].filter(x => !vacio(x)).join(' ') || RAYA;
     const kv = campos.map(c => '<span style="white-space:nowrap"><span style="color:' + C.muted + '">' + esc(c.l) + '</span> <b style="font-weight:700">' + esc(c.v) + '</b></span>').join('');
     const ref = (s.fotosReferencia || []).map(id => { const f = d.fotos.find(x => x.p.id === id), nom = id === 'exteriores_frontal' ? 'Foto frontal' : id === 'exteriores_posterior' ? 'Foto posterior' : ((d.fotos.find(x => x.p.id === id) || {}).p || {}).name || id;
-      return '<div style="min-width:0">' + fotoPh(f ? nom : (s.sinFoto || 'Sin foto'), '78px') + '<div style="font-size:7pt;color:' + C.muted + ';margin-top:2px;white-space:nowrap">' + (f ? esc(f.F + ' · ' + sinPunto(f.f.at)) : esc(s.sinFoto || 'Sin foto')) + '</div></div>'; }).join('');
+      return '<div style="min-width:0">' + (f && f.f.url ? fotoImg(f.f.url, nom, '78px') : fotoPh(f ? (f.f.cx ? 'Sin imagen · ' : '') + nom : (s.sinFoto || 'Sin foto'), '78px')) + '<div style="font-size:7pt;color:' + C.muted + ';margin-top:2px;white-space:nowrap">' + (f ? esc(f.F + ' · ' + sinPunto(f.f.at)) : esc(s.sinFoto || 'Sin foto')) + '</div></div>'; }).join('');
     return '<div style="display:grid;grid-template-columns:120px minmax(0,1fr) 250px;gap:14px;align-items:center;background:' + C.soft + ';border-radius:8px;padding:12px 14px">'
       + '<div style="border:2.5px solid ' + C.ink + ';border-radius:6px;text-align:center;font-weight:800;font-size:17pt;line-height:1;padding:9px 4px;letter-spacing:1px;background:#fff;color:' + C.ink + ';white-space:nowrap">' + (pl ? '<small style="display:block;font-size:6.5pt;letter-spacing:.5px;color:' + C.muted + ';margin-bottom:3px;font-weight:700">ECUADOR</small>' + esc(pl) : '<span style="font-size:12pt">Sin placa</span>') + '</div>'
       + '<div style="min-width:0"><div style="font-size:13pt;font-weight:800;color:' + C.ink + '">' + esc(tit) + '</div><div style="display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:4px;font-size:9pt;color:' + C.ink + '">' + kv + '</div></div>'
@@ -366,9 +369,9 @@
     let L; if (s.pasos) L = s.pasos.map(id => d.fotos.find(x => x.p.id === id)).filter(Boolean);
     else { const G = s.grupos || []; L = d.fotos.filter(x => G.includes(x.p.group)); }
     if (!L.length) return [];
-    const item = (x) => { const f = x.f, et = x.f.fila ? x.p.name + ' · ' + x.f.fila.label : x.p.name, gps = f.gps ? gpsTxt(f) + ' · ± ' + f.gps.prec + ' m' : 'Sin GPS';
+    const item = (x) => { const f = x.f, et = x.f.fila ? x.p.name + ' · ' + x.f.fila.label : x.p.name, gps = f.gps ? gpsTxt(f) + (f.gps.prec != null ? ' · ± ' + f.gps.prec + ' m' : '') : 'Sin GPS';
       // Etapa 12a · DEC-134: la foto con daños aceptados (Confirmados, Ajustados o Agregados) se imprime con sus polígonos.
-      const DN = window.SiriusDanos, dan = DN && d.fotos.find(y => y.p.id === x.p.id) === x ? DN.deFoto(d.rid, x.p.id, true) : [], ph = fotoPh('Foto de ejemplo · ' + x.p.name, h, x.p.group === 'Daños' ? C.badbg : '');
+      const DN = window.SiriusDanos, dan = DN && d.fotos.find(y => y.p.id === x.p.id) === x ? DN.deFoto(d.rid, x.p.id, true) : [], ph = f.url ? fotoImg(f.url, et, h) : fotoPh((f.cx ? 'Sin imagen · ' : 'Foto de ejemplo · ') + x.p.name, h, x.p.group === 'Daños' ? C.badbg : '');
       return '<div style="border:1px solid ' + C.line + ';border-radius:4px;overflow:hidden;min-width:0">' + (dan.length ? '<div data-danos="' + dan.length + '" style="position:relative">' + ph + DN.svgDanos(dan) + '</div>' : ph) + '<div style="padding:4px 6px;font-size:7.5pt;line-height:1.35;color:' + C.muted + '"><b style="display:block;color:' + C.ink + ';font-size:8pt">' + esc(x.F + ' · ' + et) + '</b>' + esc([sinPunto(f.at), gps, dispCorto(f.disp)].filter(Boolean).join(' · ')) + (f.marca === 'galeria' ? '<span style="display:block;color:' + C.warn + ';font-weight:700">Cargada desde la galería</span>' : '') + '</div></div>'; };
     const fila = (xs) => '<div style="display:grid;grid-template-columns:repeat(' + pf + ',minmax(0,1fr));gap:10px">' + xs.map(item).join('') + '</div>';
     const grupos = []; if (s.pasos) grupos.push({ g: '', xs: L }); else L.forEach(x => { const last = grupos[grupos.length - 1]; if (last && last.g === x.p.group) last.xs.push(x); else grupos.push({ g: x.p.group, xs: [x] }); });
@@ -391,7 +394,7 @@
     const campos = (s.campos || []).map(k => { const v = txtE(d, k); return v == null ? null : { l: k === 'em_serie_pin' ? 'Serie' : k === 'em_anio_fabricacion' ? 'Año' : labE(d, k).replace(/ \(h\)$/, ''), v }; }).filter(Boolean);
     const kv = campos.map(c => '<span style="white-space:nowrap"><span style="color:' + C.muted + '">' + esc(c.l) + '</span> <b style="font-weight:700">' + esc(c.v) + '</b></span>').join('');
     const ref = (s.fotosReferencia || []).map(id => { const f = d.fotos.find(x => x.p.id === id), nom = id === 'eq_frontal' ? 'Foto frente' : id === 'eq_posterior' ? 'Foto posterior' : ((f || {}).p || {}).name || id;
-      return '<div style="min-width:0">' + fotoPh(f ? nom : (s.sinFoto || 'Sin foto'), '78px') + '<div style="font-size:7pt;color:' + C.muted + ';margin-top:2px;white-space:nowrap">' + (f ? esc(f.F + ' · ' + sinPunto(f.f.at)) : esc(s.sinFoto || 'Sin foto')) + '</div></div>'; }).join('');
+      return '<div style="min-width:0">' + (f && f.f.url ? fotoImg(f.f.url, nom, '78px') : fotoPh(f ? (f.f.cx ? 'Sin imagen · ' : '') + nom : (s.sinFoto || 'Sin foto'), '78px')) + '<div style="font-size:7pt;color:' + C.muted + ';margin-top:2px;white-space:nowrap">' + (f ? esc(f.F + ' · ' + sinPunto(f.f.at)) : esc(s.sinFoto || 'Sin foto')) + '</div></div>'; }).join('');
     return '<div style="display:grid;grid-template-columns:120px minmax(0,1fr) 250px;gap:14px;align-items:center;background:' + C.soft + ';border-radius:8px;padding:12px 14px">'
       + '<div style="border:2.5px solid ' + C.ink + ';border-radius:6px;text-align:center;font-weight:800;font-size:10pt;line-height:1.2;padding:9px 6px;background:#fff;color:' + C.ink + '"><small style="display:block;font-size:6.5pt;letter-spacing:.5px;color:' + C.muted + ';margin-bottom:3px;font-weight:700">EQUIPO</small>' + esc(tipo || RAYA) + '</div>'
       + '<div style="min-width:0"><div style="font-size:13pt;font-weight:800;color:' + C.ink + '">' + esc(tit) + '</div><div style="display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:4px;font-size:9pt;color:' + C.ink + '">' + kv + '</div></div>'

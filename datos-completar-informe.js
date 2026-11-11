@@ -1,4 +1,5 @@
-// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.3 · provisional · etapa C2-5 · 09/11/2026) · DEC-180
+// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.5 · provisional · etapa C2-16 · 18/10/2026) · DEC-180
+// v1.5 (etapa C2-16): `cxFotosPrueba` (escena infcxfotos) con 6 evidencias de 30004 en la forma de la conexión.
 // v1.4 (etapa C2-9 · DEC-185): los controles de completar traen tipo, severidad y detalle; 30004 con los 9 tipos de control (uno ya «Correcto»).
 // v1.3 (etapa C2-5): `conexionPrueba` (escena infcompletarcx) con casos de la conexión que traen inspector { nombre, tipo, agencia } y vence.
 // v1.2 (etapa C2-4): el caso 20152 nace en la v2 de Vehículos (su visita termina en la app con T23).
@@ -99,6 +100,21 @@
         { id: '40105', ramo: 'Vehículos', estado: 'Informe por completar', asegurado: 'Lorena Vaca', ident: '1716677012', placa: 'PDC1190', bien: 'Mazda CX-5 2024', fecha: '2026-10-17', sucursal: 'Quito Norte', responsable: 'Luis Andrade', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', broker: 'Directo', flujoVersion: 2, inspector: { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: '' }, vence: '2026-10-20T12:00' },
       ],
     },
+    // Etapa C2-16 · escena infcxfotos: conexión simulada solo en Informe › Fotos de 30004 con 6 evidencias en la forma de SIRIUS_CONEXION.evidencias
+    // ({ id, paso, url, hora, canal, validacion, gps [lat, lng], precision, dispositivo, lecturas }): 2 sin GPS (VIN y matrícula), 1 con el control de la placa
+    // (detalle.paso = identificacion_placa_trasera) y 1 sin url (el motor: «Sin imagen»). Las imágenes son láminas de color con el nombre del paso, no fotos de ejemplo.
+    cxFotosPrueba: (() => { const img = (t, c) => 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480"><rect width="640" height="480" fill="' + c + '"/><text x="320" y="236" font-family="Arial,sans-serif" font-size="30" font-weight="700" text-anchor="middle" fill="#ffffff">' + t + '</text><text x="320" y="276" font-family="Arial,sans-serif" font-size="20" text-anchor="middle" fill="#ffffff" fill-opacity=".85">Imagen de la base</text></svg>');
+      const ok = { vertical: true, encuadre: true, luz: true, nitidez: true, reflejo: true }, ap = 'App del inspector', dsp = 'Samsung Galaxy A54 · app SIRIUS';
+      return { caso: '30004',
+        evidencias: [
+          { id: 'cxf-1', paso: 'exteriores_frontal', url: img('Frontal', '#1f5f8b'), hora: '2026-10-16T10:12', canal: ap, validacion: ok, gps: [-0.18072, -78.46781], precision: 6, dispositivo: dsp },
+          { id: 'cxf-2', paso: 'exteriores_posterior', url: img('Posterior', '#2b7a5f'), hora: '2026-10-16T10:14', canal: ap, validacion: ok, gps: [-0.18071, -78.46779], precision: 7, dispositivo: dsp },
+          { id: 'cxf-3', paso: 'identificacion_placa_trasera', url: img('Placa trasera', '#8a5a1f'), hora: '2026-10-16T10:21', canal: ap, validacion: ok, gps: [-0.18070, -78.46780], precision: 5, dispositivo: dsp, lecturas: { Placa: { valor: 'PRB2Z04', conf: 0.93 } } },
+          { id: 'cxf-4', paso: 'identificacion_sticker_vin', url: img('Sticker VIN', '#5b3f8c'), hora: '2026-10-16T10:26', canal: ap, validacion: { luz: false }, gps: null, dispositivo: dsp },
+          { id: 'cxf-5', paso: 'documentos_matricula_frontal', url: img('Matrícula frontal', '#7a2f3a'), hora: '2026-10-16T10:31', canal: ap, validacion: ok, gps: null, dispositivo: dsp },
+          { id: 'cxf-6', paso: 'motor_habitaculo_del_motor', url: '', hora: '2026-10-16T10:36', canal: ap, validacion: ok, gps: [-0.18069, -78.46782], precision: 8, dispositivo: dsp } ],
+        controles: [ { id: 'placa', tipo: 'Placa leída no coincide con la solicitud', severidad: 'Alta', estado: 'Pendiente', detalle: { paso: 'identificacion_placa_trasera', leida: 'PRB2Z04', solicitud: 'PRB2204' } } ],
+        informes: [ { plantilla: 'Vehículos livianos v1' } ] }; })(),
   };
   window.SIRIUS_COMPLETAR = C;
 
