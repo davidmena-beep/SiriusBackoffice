@@ -5,6 +5,7 @@
 // archivo de datos; SIRIUS_FORMULARIOS (Formularios) y SIRIUS_CATALOGOS (catálogos de SIRIUS_EJEMPLO) se aplican al leer la base y al publicar;
 // SIRIUS_CONTROLES se vigila como las demás claves. Evento «sirius-configuracion» { clave } cada vez que cambia la configuración aplicada.
 // 11/11/2026 · C2-16: cada evidencia trae id, estado, motivo y observación (SQL 22) para confirmar o excluir fotos desde el back-office.
+// 11/11/2026 · DEC-198: cada control trae vistoEn y vistoPor (SQL 24); la acción «verControles» { caso, comentario } los marca como vistos.
 (function () {
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
   var CLAVE = 'sb-qdciqoxselwmudlycprq-auth-token', INGRESO = 'index.html', SONDEO_MS = 20000;
@@ -129,7 +130,7 @@
   function cargarEvidencias(idPorCaso) {
     return Promise.all([
       get('evidencias?select=id,caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas,estado,motivo,observacion&order=hora').catch(function () { return get('evidencias?select=id,caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas&order=hora'); }),   // estado: SQL 22
-      get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'),
+      get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado,visto_en,visto:usuarios!controles_visto_por_fkey(nombre)&order=creado').catch(function () { return get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'); }),
       get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,criterio,decision,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
     ]).then(function (res) {
       var evs = res[0], ctr = res[1], inf = res[2], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
@@ -137,7 +138,7 @@
       return firmar(rutas).then(function (m) { Object.keys(m).forEach(function (k) { FIRMAS[k] = m[k]; }); if (refrescar) FIRMADO = Date.now();
         var E = {}, C = {}, I = {};
         evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ id: e.id, estado: e.estado || undefined, motivo: e.motivo || '', observacion: e.observacion || '', paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
-        ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado) }); });
+        ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado), vistoEn: c.visto_en ? reloj(c.visto_en) : '', vistoPor: c.visto ? c.visto.nombre : '' }); });
         inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_version && x.plantilla_version !== '1' ? x.plantilla_clave + ' v' + x.plantilla_version : undefined,  // sin versión real: el back-office muestra la vigente
  respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en), criterio: x.criterio || null, decision: x.decision || null }); });
         return { evidencias: E, controles: C, informes: I }; }); }); }
