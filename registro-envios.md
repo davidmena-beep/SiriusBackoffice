@@ -4,6 +4,445 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-13
+
+Publiqué la etapa C2-13 (Versión 156): con la conexión, Formularios muestra lo publicado en la base y la columna Presencial queda en el orden correcto.
+- **Lee lo publicado:** con `SIRIUS_CONEXION.activo` y `window.SIRIUS_FORMULARIOS`, los formularios salen de la base (copia profunda, pasada por `verNorm()`) sin la siembra de versiones; un formulario del prototipo que no venga se agrega al final. Bajo el título de la lista va «Versiones leídas de la base · última publicación: fecha · persona». Sin conexión todo sigue igual.
+- **Historial y publicación:** `pubDatos()` agrega `historial` (200 líneas), `publicadoEn` y `publicadoPor`; con `{ ok: true }`, `window.SIRIUS_FORMULARIOS` queda con lo publicado (guardar borrador, publicar, programar, descartar y retirar); con `{ ok: false }` no cambia y se revierte.
+- **Evento «sirius-configuracion»:** sin cambios sin guardar ni ventana abierta, Formularios vuelve a leer y conserva la vista, el formulario y la versión; con cambios, avisa «Hay una versión más reciente publicada en la base…» sin perder lo escrito. Se quita al salir.
+- **Escena `formbase`:** simula la base con Vehículos livianos v5 «Vigente» (motivo «Prueba de configuración viva») y la v4 «Retirada»; se limpia al cambiar de escena.
+- **Orden de Presencial:** un paso marcado entra en `ordenP` justo después del paso Presencial que lo precede en la lista (al inicio si no hay); al desmarcarlo sale; al guardar y publicar `ordenP` queda con exactamente los marcados, y el panel «Columna Presencial · N pasos» muestra ese orden. Vigentes y retiradas no cambian.
+- **Inventario:** etapa C2-13, la clave `SIRIUS_FORMULARIOS` y el evento en el contrato `SIRIUS_CONEXION`.
+
+**Verificado:** abrí desde el selector formbase, form, versionesplantilla, pasoseditar, presencial19 y confpublicar a 1280 × 720 y 1920 × 1080, sin errores ni desplazamiento horizontal; form, versionesplantilla y presencial19 se ven igual que en C2-12. En formbase, Vehículos livianos muestra la v5 «Vigente» y la v4 «Retirada», sigue así al ir a Inicio y volver, y al cambiar de escena la simulación se limpia. En pasoseditar, un paso marcado entre «Frontal» y «Posterior» entra justo después de «Frontal» (20 pasos), y al desmarcarlo sale (19). Prueba interna con conexión (copia aparte; `sirius-conexion.js` mínimo): Formularios abre con la v5; publicar la v6 con `{ ok: true }` y salir y volver muestra la v6, con `ordenP` igual a los 20 pasos marcados; con `{ ok: false }` se revierte y `window.SIRIUS_FORMULARIOS` no cambia; el evento con cambios sin guardar muestra el aviso y conserva lo escrito.
+**No verificado:** la conexión real de GitHub (lectura de la base y evento reales) y publicar contra una base real.
+**Diferencias:** en los datos del prototipo «Frontal» y «Posterior» están juntos en la lista, así que para probar el caso moví «Lateral izquierdo» entre ellos con Alt + ↑ y luego lo marqué. Con la conexión y sin los datos de ejemplo cargados, la lista sale solo de lo publicado. En form a 1920 la captura difiere de la de C2-12 en una columna de 1 px (borde de la ventana). Pediste la Versión 153, pero la herramienta numera por su cuenta: los cambios quedaron en la Versión 155 y esta corrección del registro, que ya dice la versión real, en la 156.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-12
+
+Publiqué la etapa C2-12 (Versión 152): cada versión de plantilla trae su estado, y la app usa solo la «Vigente».
+- **Estados:** cada versión guarda su estado («Borrador», «Vigente» o «Retirada», que reemplaza a «Dada de baja»), `vigenteDesde` y `motivo`, con una sola «Vigente» por plantilla. Vehículos livianos queda con la v4 «Vigente», la v5 «Borrador» y de la v1 a la v3 «Retirada»; Motos, con la v2 «Vigente». La app elige por estado, nunca por número, y `SIRIUS_FORMULARIOS` publica todas las versiones con su estado y el contrato.
+- **Edición de pasos en el borrador:** se puede cambiar el nombre, el orden, el grupo, la guía y las modalidades; el identificador no cambia.
+- **Versiones (N):** muestra el historial con estado y motivo, y las acciones «Publicar versión», «Descartar borrador» y «Retirar versión», todas con motivo. Con la conexión, guardar un borrador sale como «Borrador»; publicar, descartar y retirar se publican y se revierten si la base rechaza el cambio. Escenas nuevas: versionesplantilla y pasoseditar.
+
+**Verificado:** abrí desde el selector versionesplantilla, pasoseditar, presencial19, form y confpublicar a 1280 × 720 y 1920 × 1080, sin errores ni desplazamiento horizontal. Probé Alt + ↓, cambiar el nombre, el grupo y la guía conservando el identificador, publicar la v5 (la v4 pasa a «Retirada»), descartar con motivo obligatorio y programar y luego retirar. Con una conexión de prueba: guardar envía el borrador como «Borrador» con la vigente en la 4, publicar envía la 5 «Vigente», y descartar con `{ ok: false }` se revierte.
+**No verificado:** retirar con la conexión y una base real.
+**Diferencias:** se mantiene «Programada» mientras espera su fecha. «Retirar versión» solo se activa en versiones sin casos en curso que no sean la única vigente; con los datos actuales aparece no disponible, con su motivo.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-11
+
+Publiqué la etapa C2-11 (Versión 151): la columna Presencial de las plantillas queda con los pasos de la app del inspector, como versión nueva con el motivo «Presencial alineada con la app del inspector (etapa C2-11)».
+- **Vehículos livianos v4** (vigente desde el 18/10/2026): Presencial pasa de 39 a los 19 pasos de la app, en su orden, con su guía y su lectura. Hay dos pasos nuevos: «Número de motor» (franja, alimenta `veh_numero_motor`) y «Neumáticos» (1 a 4 fotos). Los otros 22 quedan sin marcar en Presencial y las demás modalidades no cambian. La v3 queda dada de baja y el borrador pasa a ser la v5.
+- **Motos v2:** 12 pasos; creé con su guía los 5 que faltaban (laterales, Motor, VIN grabado y Neumáticos). La v1 queda dada de baja.
+- **App:** arma el recorrido con la versión vigente y cada visita conserva la suya; los casos en curso siguen en v1 (20202). El inventario documenta la equivalencia app → plantilla (`frente` → `exteriores_frontal`…) y la escena nueva es presencial19.
+
+**Verificado:** abrí desde el selector presencial19, form, inspcaptura, inspcapturamoto, informecompleto y evunificadas a 1280 × 720 y 1920 × 1080: existen en el registro, sin errores nuevos ni desplazamiento horizontal. presencial19 muestra 19 pasos en Presencial; la app, «5/19» y «3/12» con v4 y Motos v2; 20202 sigue en v1. El historial registra «de 39 a 19» con el motivo.
+**No verificado:** la publicación en la base con la conexión (no la probé en esta etapa) y la lectura de estas versiones desde la app real.
+**Diferencias:** las versiones vienen en los datos; con la conexión llegan a la base la próxima vez que el Administrador guarde en Formularios, porque `SIRIUS_FORMULARIOS` publica todos los formularios con sus versiones. Los pasos sin guía indicada quedan «Libre». En Motos usé los nombres de la app («Frente», «Neumáticos»). Las escenas pasoguia, disenadorllenado y km abren ahora el borrador v5.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-9d
+
+Publiqué la etapa C2-9d (Versión 150): la revisión de controles en dos columnas queda más contenida y el botón final cambia.
+- **Evidencia:** la foto o el video miden el 52 % del alto visible, entre 280 y 460 px (416 px a 1280 × 800 y 460 px a 1920 × 1080), con la foto ajustada sin recortar y centrada; zoom y «Pantalla completa» siguen igual. La columna derecha no tiene desplazamiento interno y la decisión queda fija abajo.
+- **Menos saturación:** contexto y «Leído frente a Solicitud» van en una sola franja (en dos filas si no caben), separaciones de 14 px y la etiqueta de datos de la foto es de 11 px, semitransparente y se oculta al pasar el mouse.
+- **Botón final:** sin controles pendientes, «Siguiente pendiente» se reemplaza por «Continuar a la calificación ›» (en la decisión y en el pie izquierdo): en Calificación va al paso «2 · Calificación del riesgo»; en el Informe, a «Criterio y decisión». Con altas pendientes no aparece.
+- **Escenas:** calctrl, ctrllista, ctrlvideo, ctrltodos y calctrlfin actualizadas (calctrlfin muestra el botón con todo revisado).
+
+**Verificado:** abrí desde el selector calctrl, ctrllista, ctrlvideo, ctrltodos, calctrlfin e infcompletarcaso a 1280 × 800 y 1920 × 1080: existen en el registro, sin errores de la página ni desplazamiento horizontal. Medí la altura de la evidencia (416 y 460 px), el texto de la etiqueta (11 px) y que se oculta con el mouse. En ctrltodos, tras «Marcar todos» aparece el botón y lleva a «Criterio y decisión»; en calctrlfin pliega la revisión y deja visible «2 · Calificación del riesgo».
+**No verificado:** la revisión que llega por la conexión (`SiriusCxControles`, solo el código) y el aspecto en 1280 × 720.
+**Diferencias:** «Ver en el mapa» pasó de la etiqueta de la foto a la franja de contexto, porque la etiqueta se oculta con el mouse; con solo controles no altos pendientes, el pie de Calificación conserva un «Continuar a la calificación ›» secundario (regla de C2-9c); el bloque «Evidencia / Contexto» bajo la foto no cambió, así que la página sigue desplazándose.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-10
+
+Publiqué la etapa C2-10 (Versión 149) y registré DEC-187 en el inventario. Con la conexión, cada versión de configuración que guarda el Administrador se publica en la base con `accion('publicarConfiguracion', { clave, version, datos, motivo })`, con el objeto completo ya cambiado.
+- **Pantallas:** Formularios (incluye pasos de foto, campos, autoinspección y portal), Catálogos, Controles, Notificaciones, Flujo y SLA, Honorarios y Tarifas.
+- **Resultado:** con `{ ok: true }` aparece el aviso «Publicado: la app y los portales lo verán al volver a abrirse» y el historial anota «Publicada en la base» con la fecha. Con `{ ok: false }` el cambio se revierte y se muestra el mensaje. En el inventario quedó qué clave y qué parte publica cada pantalla. La escena nueva es confpublicar.
+
+**Verificado**
+- Abrí desde el selector, a 1280 y 1920 px, confpublicar, form (no existe una escena «formularios»), catalogo, catalogocontroles, notifreglas (en lugar de «notificaciones») y flujoeditor: sin errores ni desplazamiento horizontal. En demostración el texto no cambió.
+- Prueba interna con conexión (archivo temporal, ya mínimo): el color (SIRIUS_CATALOGOS_MAESTROS v2), el umbral (SIRIUS_CONTROLES v2) y el paso de foto (SIRIUS_FORMULARIOS v4) enviaron la clave, la versión, el motivo y el objeto completo. Con `{ ok: false }` los tres volvieron atrás.
+
+**No verificado:** Notificaciones, Flujo, Honorarios y Tarifas con la conexión (solo la sintaxis) y una base real.
+
+**Diferencias:** Siluetas, Modelos, Niveles, Garantías y políticas, Motores de IA, Campos y Configuración general todavía no publican. confpublicar simula la base.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-9c
+
+Publiqué la etapa C2-9c (Versión 148) y registré el ajuste en DEC-185. La revisión de controles vuelve a las dos columnas de 12d-3, con el contenido de C2-9 y C2-9b. Aplica en Calificación y en el Informe mientras se completa, con y sin conexión.
+- **Izquierda (360 px):** avance «N de M revisados · K de severidad alta pendientes», barra, conteo por severidad, filtros y la lista con el control elegido resaltado. Al pie quedan fijos «Marcar todos como conformes» y «Continuar a calificar», que se habilita cuando no quedan controles de severidad alta pendientes.
+- **Derecha:** encabezado con anterior y siguiente, franja de contexto y «Leído frente a Solicitud» con el carácter dudoso. Debajo, la evidencia en grande: foto con zoom y «Pantalla completa» al visor, video con el arco de la vuelta, o lo declarado si no hay evidencia. Abajo y fija, la decisión con comentario y «Siguiente pendiente». Atajos J/K, A y R, que no actúan mientras se escribe.
+- **Catálogo:** cada cambio guardado crea una versión nueva con motivo; la anterior queda reemplazada. En calctrlsusc, la foto de 20204-E2 ya está entre las evidencias.
+
+**Verificado**
+- Abrí desde el selector, a 1280 y 1920 px, calctrl, calctrltodo, calctrlfin, calctrlsusc, ctrllista, ctrltodos, ctrlvideo, catalogocontroles, infcompletarcaso y conexion: sin errores ni desplazamiento horizontal.
+- J, K y A funcionan; R sin comentario pide el comentario y no actúa dentro del campo. «Continuar a calificar» sigue bloqueado con altas pendientes.
+- Editar el umbral de «Foto lejos» crea la versión 2, vigente, y deja la 1 reemplazada.
+- Prueba con conexión: la individual, la masiva y la reversión con `{ ok: false }` funcionan.
+
+**No verificado:** el PDF y una base real.
+
+**Diferencias:** las decisiones no saltan solas al siguiente control (se usa «Siguiente pendiente»). La evidencia propia de la autoinspección (comparaciones, cronología, mapa) sigue debajo de la foto.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-9b
+
+Publiqué la etapa C2-9b (Versión 147) y registré DEC-188 en el inventario.
+- **Catálogo único:** Administración › Controles reúne 25 controles comunes a todas las modalidades (versión 1, vigente desde el 18/10/2026). Muestra severidad, umbral, unidad, «Aplica a» según tu tabla, ramos y activo, y editar pide motivo. Son los 21 que tenía la autoinspección más los 4 nuevos de la presencial. La configuración de la autoinspección ya solo referencia este catálogo.
+- **Video:** la fila del control muestra la miniatura con reproducción y «285° de 300° · 0:31 · 8,3 MB»; «Ver video» abre el visor en modo video. Evidencias y el panel del Informe lo muestran como una evidencia más. Con la conexión acepta `{ tipo: 'video', url, grados, duracion, tamano }`, documentado en el contrato.
+- **Lista de C2-9:** conserva la alerta con su evidencia, «Revisar todo» unificado con «Marcar todos», el bloqueo de calificar y la solo lectura del Suscriptor.
+
+**Verificado**
+- Abrí desde el selector, a 1280 y 1920 px, catalogocontroles, ctrlvideo, ctrllista, ctrltodos, calctrl, calctrltodo, calctrlfin y calctrlsusc, además de autocontroles: sin errores ni desplazamiento horizontal.
+- Los conteos por modalidad son Autoinspección 20, Presencial 21 y Virtual guiada 17. calctrltodo abre la confirmación y calctrlfin queda sin pendientes ni bloqueo. «Ir a Administración › Controles» lleva al catálogo.
+- En una prueba interna con conexión (archivo temporal, ya mínimo), un control de video muestra «240° de 300° · 0:48 · 7,2 MB» y abre el visor en modo video.
+
+**No verificado:** un video real con archivo y el PDF.
+
+**Diferencias:** «Daños detectados por el sistema» no estaba en tu tabla y lo dejé para todas las modalidades. Al editar el catálogo se registra el cambio en el historial, pero no se crea una versión nueva. En 20186 el video mide 285°, no los 240° del ejemplo.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-9
+
+Publiqué la etapa C2-9 (Versión 144) y registré DEC-185 en el inventario. Los controles se revisan en una lista compacta en Calificación (nivel 1 y Suscriptor) y en el Informe mientras se completa (Control de calidad e inspector), con y sin conexión.
+- **Resumen:** arriba se ven Alta, Media y Baja, «N pendientes de M», los filtros (Pendientes por defecto), «Expandir todo», «Contraer todo», «Marcar todos como conformes» y el aviso mientras haya controles de severidad alta pendientes. La regla de bloqueo no cambia.
+- **Fila:** muestra el punto de severidad con texto accesible, la miniatura o «Sin foto», el tipo y el detalle, y el estado con el comentario. Al desplegarla aparecen la foto con «Ver en el visor», Conforme o Requiere acción (con comentario obligatorio) y la evidencia propia de cada control de la autoinspección.
+- **Marcar todos:** pide un comentario común y, si hay controles de severidad alta, una casilla de confirmación. Deja una línea en el Historial. Con la conexión llama a `revisarControles` y con `{ ok: false }` se revierte.
+- **Escenas:** ctrllista y ctrltodos son nuevas; actualicé calctrl y las otras escenas de controles.
+
+**Verificado**
+- Abrí desde el selector, a 1280 y 1920 px, ctrllista, ctrltodos, las 10 escenas calctrl, calctrlsusc, calveh, infcompletarcaso, evunificadas y conexion: sin errores ni desplazamiento horizontal. Corregí un desbordamiento a 1920 px.
+- En calctrl: Requiere acción sin comentario se detiene; con comentario deja 13 de 14. Marcar todos exige el comentario y la casilla, deja 0 pendientes, quita el bloqueo y escribe la línea del Historial. «Ver en el visor» abre el visor.
+- Prueba interna con conexión (archivo temporal, ya mínimo): `revisarControl` y `revisarControles` envían los datos correctos. Con `{ ok: false }` ambos se revierten y muestran el mensaje. La lista también sale en el Informe por completar.
+
+**No verificado:** la revisión con una base real, el PDF y el resto de pantallas.
+
+**Diferencias:** 30004 trae ahora los 9 tipos de control, así que infcompletarcaso y evunificadas muestran la lista. Ya no hay atajos de teclado J/K/A/R. En calctrlsusc (20204-E2) la foto no está entre las evidencias y no ofrece el visor.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-8
+
+Publiqué la etapa C2-8 (Versión 140). Con la conexión, el informe del back-office ahora muestra lo guardado.
+- **Lectura:** en todas las etapas, cada campo sale de `informes[id].respuestas` por su clave de plantilla. Si no está, se usa la clave de la app: motor, km, marca, modelo y las demás de la equivalencia. El valor puede llegar como texto o como objeto, y se muestra con su origen y su confianza. Lo guardado en el back-office tiene prioridad sobre lo de la app.
+- **Guardar:** «Guardar borrador» y «Completar y enviar» envían los 96 campos con su clave, origen y confianza. Con `{ ok: true }` la pantalla vuelve a leer la conexión sin perder lo escrito.
+- **Evidencias:** la columna derecha es siempre el panel unificado, plegable y con las fotos reales. Las fotos que llegan sin archivo se marcan «Prueba».
+- **Sin la tabla:** se quitó «Informe enviado desde la app». En su lugar, el Historial muestra «Informe de campo recibido de la app» con quién y cuándo. El encabezado indica la plantilla y su versión; si la conexión no la trae, la vigente.
+
+**Verificado**
+- Prueba interna con un archivo temporal (no publicado), en un caso en calificación: motor (lectura, 93 %), km (campo), marca (solicitud), modelo (corregido en campo, junto al valor de la solicitud), valor comercial y persona que atiende (sistema) aparecen en su campo. No aparece la tabla y el panel muestra 1 foto real y 1 de prueba.
+- Guardé, recargué la página y se ve lo mismo: 10 de 67 campos · 26 obligatorios pendientes, con «Editado» en lo que cambié. sirius-conexion.js volvió a su contenido mínimo.
+- Abrí desde el selector, a 1280 y 1920 px, informecompleto, informeautomaticos, informeprecargados, infcompletarcaso, evunificadas, calveh y conexion: sin errores ni desplazamiento horizontal, y su texto no cambió.
+
+**No verificado:** «Completar y enviar» con recarga contra una base real (solo probé el guardado) y el PDF.
+
+**Diferencias:** sin conexión, la demostración mantiene su lista de pasos de foto. infcompletarcx ahora muestra el avance (4 de 67 campos) en lugar de «—».
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-7b
+
+Publiqué la etapa C2-7b (Versión 139) y amplié DEC-186 en el inventario.
+- **Diseñador:** los campos de catálogo tienen dos atributos nuevos, «Catálogo de origen» y «Depende de». Se editan en el panel del campo y entran en la comparación de versiones. Vehículos livianos v3 (vigente desde el 18/10/2026) los configura así: Marca → Marcas; Modelo → Modelos, que depende de Marca; Color → Colores, un catálogo maestro nuevo con 15 colores; Tipo de licencia → Categorías de licencia. La v2 queda dada de baja y el borrador pasa a ser la v4.
+- **Informe y app:** el campo dependiente solo ofrece las opciones de su padre y se limpia cuando el padre cambia, también al corregir la marca. Un valor que no está en el catálogo queda «Por confirmar». Quité el vínculo que estaba programado en datos-ejemplo.js; las listas no cambian.
+
+**Verificado**
+- Abrí desde el selector, a 1280 y 1920 px, disenadorllenado, inspinfoclave, catalogodependiente, informeprecargados y catalogo (Catálogos): sin errores ni desplazamiento horizontal.
+- En el informe, cambié la marca de Chevrolet a Kia: el modelo se limpió y quedaron 4 opciones. En la app, de Toyota a Hyundai: el modelo se limpió y quedaron 3. En 20152, el modelo «Rio» que viene de la solicitud queda «Por confirmar».
+
+**No verificado:** la alerta «Por confirmar» en el informe del back-office, el PDF y la conexión real.
+
+**Diferencias:** la plantilla no tiene un campo Versión; las versiones siguen dentro de Modelo. El catálogo de licencias se llama «Categorías de licencia». Cuando hay 3 modelos o menos, la app los muestra como botones.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-7
+
+Publiqué la etapa C2-7 (Versión 138) y registré DEC-186 en el inventario.
+- **Diseñador:** cada campo tiene «Cómo se llena», «Dónde se captura» y «Obligatorio para», editables y dentro de la comparación de versiones. Vehículos livianos v2 trae los 96 campos configurados; la lista está en el inventario.
+- **Informe:** los automáticos salen llenos, con origen «Sistema» y sin edición. Los precargados dicen «Solicitud», o «Corregido en campo» junto al valor de la solicitud. Las lecturas muestran su confianza y quedan «por confirmar» bajo el umbral. Los catálogos se editan con su lista.
+- **Por completar:** lo muestra toda sección con un obligatorio pendiente, incluidas Verificaciones externas y Neumáticos. El índice y la barra cuentan igual.
+- **App:** «Información clave» muestra lo que la plantilla marca en Campo. Los catálogos salen como lista, los precargados con «Confirmar» o «Corregir» y las lecturas con «Confirmar lectura» o «Corregir». Los obligatorios para terminar cuentan como pendientes.
+- **Contrato:** los casos llevan `solicitud` y `visita`.
+
+**Verificado**
+- Abrí estas escenas desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal: disenadorllenado, informeautomaticos, informeprecargados, inspinfoclave, informecompleto, infcompletarcaso, inspterminarpend, form, conexion, evunificadas y calveh. No hay escena «formularios»; revisé form.
+- Cifras: el caso 30004 pasa de 3 a 5 pendientes para enviar. inspterminarpend sigue con 3 (Motor, Kilometraje y confirmar VIN). El VIN al 84 % queda por confirmar porque el umbral es 90 %.
+
+**No verificado:** el PDF, la conexión real y el resto de pantallas.
+
+**Diferencias**
+- La v1 queda dada de baja, la v2 vigente desde 18/10/2026 y el borrador anterior pasa a v3. Los casos de ejemplo siguen mostrando «v1», pero aplican el llenado de la v2.
+- Los campos de cálculo son «Automático» con fuente «Cálculo de la plantilla». Los pasos «VIN grabado» y «Número de motor» se nombran tal como los indicaste.
+- Información clave suma accesorios y la relación con el asegurado. El PDF no cambió.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-6
+
+Publiqué la etapa C2-6 (Versión 137). Registré DEC-184 en el registro de decisiones del inventario.
+- **Una sola fuente de evidencias:** el caso tiene un único conjunto de evidencias, para Vehículos y para Ramos Generales (en RG, el paso es el grupo de insumos y la sección es el módulo). Cada evidencia lleva sección, canal, hora, dispositivo, ubicación con precisión, distancia a la dirección, validación, lecturas, estado, daños y observación. Con la conexión sale de `SIRIUS_CONEXION.evidencias`; los campos nuevos están en el contrato.
+- **Tres entradas, mismas evidencias:** el panel «Evidencias de campo» muestra miniaturas por sección y cada sección del formulario tiene «N fotos de esta sección». Informe › Fotos suma el filtro «Con control» y un punto de aviso. La pestaña Evidencias agrupa por canal, con filtro, y se retiró su visor pequeño.
+- **Un solo visor:** lo usan las tres entradas, «Ampliar foto» de los controles y «Ver foto» de la conexión. Tiene zoom de 50 % a 500 %, rueda, arrastre, «Rotar», teclado, «N de M», tira y panel con Estado, Metadatos, Ubicación con mapa, Daños y Observación. Cada cambio queda en el Historial y llama a `accion('evidencia')`; si responde `{ ok: false }`, se revierte.
+
+**Verificado**
+- Existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal:
+  - Nuevas: evunificadas, visorzoom, evrg y evidencias.
+  - Actualizadas: infcompletarcaso e infrgev.
+  - Revisadas: calveh, calctrl, infcompletarcx, conexion y vfgal.
+- 30004 tiene 39 evidencias en el panel, en Fotos («Todas (39)»), en la pestaña y en el visor («1 de 39»). La foto Frontal está a 22 m de la dirección.
+- Una foto excluida en el visor sale igual en la pestaña. En una copia aparte, con la conexión, el estado vuelve atrás con el aviso «se activa después».
+
+**No verificado**: el resto de las pantallas y la conexión real.
+
+**Diferencias**
+- La escena «evidencias» no existía; la creé.
+- La pestaña Evidencias ya no repite la galería por vehículo.
+- Las imágenes son de ejemplo.
+- En 20195 aparece además el canal «Contexto externo», que viene en los datos.
+- Con la conexión, el Control de calidad entra en Inicio y debe tocar «Informes por completar».
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-5
+
+Publiqué la etapa C2-5 (Versión 136). No cambié ninguna regla aprobada.
+- **Enlaces:** la vista previa siempre muestra el texto completo y el enlace, con «Copiar enlace». El envío del autoagendamiento pide «Canal del mensaje»: por defecto WhatsApp si hay celular y consentimiento, y sin correo no se ofrece correo. Sin ningún canal posible, se bloquea con «Falta un dato de contacto del cliente». Con la conexión, se muestra el enlace que devuelve `accion('enviarEnlace')`.
+- **Conexión:** «Informes por completar» usa `SIRIUS_CONEXION.casos` con `inspector { nombre, tipo, agencia }` y `vence`, ya documentados en el contrato. El Control de calidad ve los casos de su agencia aunque el nombre llegue con mayúsculas o con «S.A.».
+- **Administrador:** coordina y completa con las opciones del Control de calidad. En la matriz pasa a Aprobar en Liquidar honorarios y en Aprobar cambios de cuenta bancaria.
+- **App:** «Mis inspecciones» agrupa las visitas en Atrasadas, Hoy, Mañana y la fecha completa, con un mapa por grupo. «Terminar la visita» bloqueado dice cuántos pendientes hay y cuáles, con «Ir al siguiente pendiente».
+
+**Verificado**
+- Existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal:
+  - Nuevas: enlacesincorreo, infcompletarcx, inspmisinspecciones e inspterminarpend.
+  - Revisadas: enlaceagenda, enlaceagendamodalidad, infcompletar, inspterminar, insphoy y conexion.
+- infcompletarcx: Patricia ve 40101 y 40102 («usado 90 %» y «usado 42 %») y 40103 en Devueltos. No ve el caso de otra agencia ni el del independiente.
+- inspterminarpend: muestra «3 pendientes»; «Ir al siguiente pendiente» enfoca Motor y luego Kilometraje.
+- Como Administrador probé «Coordinar inspección» y confirmar, cambiar o devolver.
+
+**No verificado**: el resto de las pantallas, la conexión real, el enlace devuelto por una conexión y el dictamen final del Administrador.
+
+**Diferencias**
+- El autoagendamiento sale por defecto solo por WhatsApp (antes, WhatsApp y SMS); se puede agregar SMS.
+- El Administrador completa siempre con las opciones del Control de calidad, también en casos de inspectores internos o independientes.
+- infcompletarcx usa una conexión de prueba solo en memoria; al recargar vuelve la demostración.
+- La lista de pendientes muestra hasta 4 y luego «y N más».
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-4
+
+Publiqué la etapa C2-4 (Versión 133). En la app del inspector ya nadie determina en campo.
+- **Terminar la visita (todos):** después de fotos y documentos, «Información clave» muestra solo los campos de campo con su origen (Campo, Lectura, Solicitud), y «Tu criterio de asegurabilidad» pide comentario si es No asegurable. «Terminar la visita» se habilita sin obligatorios pendientes y pasa el caso a «Informe por completar» (T23, 24 h hábiles); sin señal, va por la cola.
+- **Internos e independientes:** eligen «Completar el informe ahora» o «Completarlo después». En la app, el informe completo tiene índice desplegable con estados, «Criterio y decisión» al final, evidencias en una hoja y barra fija; envía con T24 o T25. Ramos Generales se redacta en el back-office.
+- **Agencia:** solo termina la visita y luego ve «Lo completa el Control de calidad de Eurosurvey»; no hay determinación en la app.
+- **Visitas:** «Informes por completar» con el plazo en color y «Completar»; «Devueltos» con el motivo y «Reenviar corregido» (T27, el plazo se reinicia). La facultad sigue en «Yo».
+
+**Verificado**
+- Las nuevas inspterminar, inspterminarind, inspcompletarapp, inspdevuelto e inspporcompletar, las actualizadas inspform, inspfaltan, inspdeterminar e inspsinfacultad, y las revisadas insphoy, inspmapa, inspcamveh, inspcola, inspsync, inspcaptura, infcompletar e inspbo existen en el registro de escenas. Las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal.
+- Cálculos: 20152, terminada a las 09:10 y vista a las 10:30, muestra «usado 6 %» (80 de 1.440 min hábiles). Con 215.400 km, la regla «Kilometraje alto» lleva a calificación. Al llenar el valor sugerido, el único pendiente, 20152 pasa a Inspeccionado · Asegurable.
+
+**No verificado**: el resto de las pantallas, la conexión real y `completarInforme` desde la app con la conexión activa.
+
+**Diferencias**: la marca de información clave vive en los datos de la app, porque la plantilla no la tiene. 20152 nace en la v2 de Vehículos. inspdeterminar e inspsinfacultad ahora completan el informe en la app (Luis Andrade). «Enviada» pasa a «Terminada». La app usa su reloj (20/10) y el back-office el suyo (18/10 20:30). «Complétalo en el back-office», para agencias que lo permiten, no tiene escena propia.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-3b
+
+Publiqué la etapa C2-3b (Versión 132). Solo cambia la disposición; las reglas de C2-3 se mantienen.
+- **Completar (Vehículos):** a la izquierda está el índice de secciones, con «Criterio y decisión» al final, resaltada mientras está pendiente. Al centro van todas las secciones y, al final, «Criterio y decisión»: criterio en campo, opciones según el rol y observaciones para el calificador. A la derecha, las evidencias plegables por grupo, con documentos y controles. Abajo, una barra fija con avance, pendientes, «Ir al siguiente pendiente», «Guardar borrador» y la acción principal, que se habilita sin pendientes.
+- **Desde la bandeja:** «Completar» abre el informe en el primer pendiente, con el aviso «Te llevamos al primer pendiente».
+- **Ramos Generales:** usa la misma disposición, con módulos «Redactado» o «Por redactar», los insumos vinculados por módulo e «Insumos de campo» plegable. «Cargar insumos» llama a `accion('cargarInsumo')`.
+
+**Verificado**
+- infcompletarcaso, infcompletarcambiar, infdevuelto, infcompletarind, infcompletarrg, la nueva infprimerpendiente, y además infcompletar, informecompleto, infrgev, calveh y conexion: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal. Las cinco que revisé además no cambian frente a la Versión 131.
+- En 30004 la barra dice «3 pendientes para enviar» (2 obligatorios y la decisión) e «Ir al siguiente pendiente» lleva a Motor. En una copia aparte con la conexión, si la carga de insumos responde «se activa después», se deshace y aparece ese aviso. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: el resto de las pantallas y la conexión real con la base.
+
+**Diferencias**: la decisión ya no viene marcada; cuenta como pendiente hasta que se elige. La sección «Asegurabilidad» de la plantilla no aparece en esta disposición, porque la reemplaza «Criterio y decisión». Los insumos cargados se ven en el panel y en el Historial, pero todavía no en la galería de Fotos. El índice de Vehículos usa los íconos de estado que ya tenía, no puntos.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-3
+
+Publiqué la etapa C2-3 (Versión 131). DEC-180 quedó registrada en el registro de decisiones del inventario.
+- **Flujo:** nuevo estado «Informe por completar» entre «En curso» y la determinación o la calificación (Vehículos presencial y virtual guiada; Ramos Generales presencial). Plazo de 24 h hábiles desde el fin de la visita, alerta al 80 % y, al vencer, tarea al Coordinador en su Inicio. El motor publica la v2 de los tres flujos con T23 a T27; los casos activos siguen en la v1.
+- **Quién completa:** el inspector interno o independiente, que determina con su facultad. En las agencias completa su Control de calidad, que confirma el criterio, lo cambia (con motivo; va a calificación con los dos criterios) o lo devuelve (con motivo; al reenviar, el plazo se reinicia). «Completar y enviar» se habilita sin obligatorios pendientes, «Guardar borrador» lo deja «Por completar» y todo queda en el Historial.
+- **Rol «Control de calidad (agencia)»:** está en Roles y permisos, con Patricia Andrade (Eurosurvey) y la bandeja «Informes por completar» (tres pestañas, por plazo). La ficha de la agencia tiene «Operación» con «Sus inspectores completan su propio informe», con motivo e historial. Los inspectores ven un menú reducido: Mis casos, Informes por completar, Agenda y Honorarios.
+- **Informe y conexión:** a la derecha están el criterio en campo, las evidencias con sus controles, la decisión según el rol y el plazo; en Ramos Generales se redacta el informe RG. La conexión suma `guardarInforme`, `completarInforme`, el rol con su agencia y `criterioInspector`.
+
+**Verificado**
+- Las 8 escenas nuevas y informecompleto, calveh, calctrl, coord, flujoeditor, roles, monitor, infrgev, conexion y bandejaexp: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal.
+- Plazos calculados: 30004 lleva el 23 %, 30005 el 81 % (en alerta), 30006 el 8 % y 30007 venció hace 2 h 30 min. 30004 tiene 2 obligatorios pendientes y «Completar y enviar» queda deshabilitado con el motivo.
+- En una copia aparte con la conexión, las dos acciones salieron con su forma y, con `ok: false`, volvieron el estado, el plazo y la decisión. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: el resto de las pantallas y la conexión real con la base.
+
+**Diferencias**: no existe la inspectora independiente «Gabriela Suárez»; usé a Luis Andrade, con una facultad nueva (Asegurable y No asegurable) para que pueda determinar. Ramos Generales no tiene facultad del inspector, así que esa determinación va a calificación. Cambié los modelos de la maqueta que no están en el catálogo (por ejemplo, RAV4 por Seltos). El Monitor y la Bandeja suman los 6 casos de ejemplo nuevos.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-2
+
+Publiqué la etapa C2-2 (Versión 130). DEC-179 y DEC-182 quedaron registradas en el registro de decisiones del inventario, junto con el ajuste de DEC-178.
+- **Informe completo (DEC-179):** en Vehículos, el Informe muestra todas las secciones y campos de la plantilla, incluidos los de valoración. Cada campo dice de dónde viene («Campo», «Solicitud», «Lectura · N %» con «Por confirmar» bajo 90 %, o «Por completar»), y los obligatorios sin dato aparecen como «Obligatorio pendiente».
+- El encabezado muestra la plantilla y su versión, «N de M campos · K obligatorios pendientes», la leyenda de orígenes y el estado (Datos de campo / Por completar / Completo). Con la conexión, los valores salen de las respuestas de la app y de la solicitud. Ramos Generales sigue con InformeRG.
+- **Enlace de autoagendamiento:** el botón está disponible siempre en Presencial y Virtual guiada. El Coordinador elige la modalidad; el mensaje la menciona y el portal ofrece los horarios y la duración de esa modalidad (la videollamada dura 30 min). Con la conexión, la modalidad elegida sale en `enviarEnlace`.
+- **Recordatorios por tipo:** R13 a R15 son de autoinspección y R20 a R22 de autoagendamiento («Agenda tu inspección»). Notificaciones indica en el nombre de cada regla a qué tipo aplica.
+- **Solo presencial en Ramos Generales y Equipo y maquinaria (DEC-182):** no se ofrecen Virtual guiada ni Autoinspección, ni en Coordinación ni en el enlace, y aparece la nota pedida.
+
+**Verificado**
+- Las escenas nuevas informecompleto, enlaceagendamodalidad y recordatoriostipo, y además form, infrgev, vfsec, calveh, enlaceagenda, enlacetipos, coord, conexion, notifreglas y enlacerecordatorios: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal.
+- En informecompleto aparecen 40 de 67 campos y 2 obligatorios pendientes (motor y kilometraje). En recordatoriostipo, la tarjeta del enlace muestra R20 enviado y R22 programado.
+- En una prueba con la conexión en una copia aparte, el caso de Robo solo ofreció Presencial y el enlace salió con la modalidad elegida. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: la conexión real con la base.
+
+**Diferencias**: las escenas «formularios» e «informe» no existen; en su lugar revisé form (Formularios), vfsec (Informe de Vehículos) e infrgev (Ramos Generales, sin cambios). La plantilla no tenía «valor comercial de referencia» ni «fuente del valor»: los agregué a la sección Valores. En lugar de cambiar R13 a R15, creé R20 a R22.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-1
+
+Publiqué la etapa C2-1 (Versión 129). DEC-178 quedó registrada en el registro de decisiones del inventario.
+- **Enlace de autoagendamiento (nuevo):** botón «Enviar enlace de autoagendamiento» en Coordinación › Intentos de contacto. Solo funciona en Presencial o Virtual guiada y desde el primer intento; si no aplica, aparece deshabilitado con el motivo. Abre la vista previa con el texto de la regla nueva por WhatsApp, SMS o correo según los consentimientos, con «Copiar enlace». El cliente ve el portal del caso (estado, Agenda y Documentos) sin la captura de fotos.
+- **Enlace de autoinspección:** sale solo desde la modalidad Autoinspección y abre la autoinspección; su texto y su línea de tiempo dicen «autoinspección».
+- **Tipo de enlace:** el caso guarda el tipo de cada enlace, y la tarjeta («Estado del enlace de …»), la línea de tiempo, la cronología y el Historial lo muestran. Un enlace nuevo invalida solo el anterior del mismo tipo. Reenviar, ampliar, revocar y los recordatorios aplican a los dos.
+- **Notificaciones y conexión:** regla nueva «Enlace de autoagendamiento» con sus canales y su plantilla. `enviarEnlace` ahora lleva `tipo`.
+
+**Verificado**
+- Las escenas nuevas enlaceagenda, enlacetipos y portalporagenda, y además coord, envioenlace, enlaceciclo, portalestado, portalagenda y conexion: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal.
+- En coord, envioenlace, enlaceciclo, portalestado y portalagenda, frente a la Versión 128, solo se agregan el botón y el tipo en «Estado del enlace de autoinspección». En envioenlace (Autoinspección) el botón explica por qué no aplica.
+- En enlaceagenda, revocar el enlace dejó la tarjeta en «Revocado» con su cronología. En notifreglas aparece la regla R19.
+- En una prueba con la conexión en una copia aparte, los dos envíos salieron con su `tipo` y su enlace real. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: la conexión real con la base.
+
+**Diferencias**: pediste la regla como R16, pero R16 ya es «Enlace caducado sin completar»; la regla nueva quedó como R19. Los recordatorios del enlace de autoagendamiento usan las mismas reglas R13 a R15, así que R15 dice «Autoinspección sin completar».
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6d
+
+Publiqué la etapa P-6d (Versión 128). DEC-177 quedó registrada en el registro de decisiones del inventario, y DEC-176 aparece como reemplazada.
+- Barra de la aplicación: una sola franja de 48 px con la ruta, la campana, la etiqueta de conexión y el usuario con su rol en una línea.
+- Cabecera compacta de una línea: ← · «Caso N» · estado · SLA · ramo · asegurado · placa · responsable · ciclo en miniatura con la etapa y «N/M» · acción · ⋮ · expandir. Los textos que no caben se recortan con puntos suspensivos y el texto completo queda en title y para los lectores de pantalla.
+- La cabecera solo aparece expandida al entrar desde la Bandeja en Resumen; en las demás pestañas es compacta. El chevron (con aria-expanded) mantiene lo elegido mientras sigas en la pestaña, y la transición respeta prefers-reduced-motion.
+- Las pestañas quedan fijas al desplazarse. La altura fija sobre el contenido baja de 319–370 px a 146 px con la cabecera compacta (≈ 224 px más en calveh, coord y vfevid).
+- Revisión de controles: muestra cualquier tipo de control con su detalle legible (foto del paso, metros, «Leída PBC9999 · Solicitud PRB2204», informe frente a la solicitud, año, validación, falta de GPS y motivo). Si el control trae evidencia, «Ver foto» la abre en el visor.
+
+**Verificado**
+- cpersdet (Resumen), calctrl, calveh, coord, vfevid, conexion y bandejaexp: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px. No hay errores ni desplazamiento horizontal; con la cabecera compacta, las pestañas terminan a 146 px.
+- Prueba interna en una copia aparte, como Ejecutivo de inspecciones, Coordinador y Suscriptor: la cabecera aparece expandida en Resumen y compacta en las otras 5 pestañas. Los 9 tipos de control se leen completos y «Ver foto» abre el visor. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: prefers-reduced-motion activado (no lo probé en un navegador con esa preferencia) y la conexión real.
+
+**Diferencias**: la escena «evidencias» no existe; en su lugar revisé vfevid. La barra de 48 px cambia todas las pantallas, no solo el detalle del caso. Las escenas que abren un caso en Resumen se tratan como si se entrara desde la Bandeja.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6c2
+
+Publiqué la etapa P-6c2 (Versión 127). Con la conexión, al enviar el enlace primero se llama a `accion('enviarEnlace')`, y la vista previa se abre con la respuesta.
+- Con `{ ok: true, enlace }`, la vista previa, «Copiar enlace», la tarjeta y la línea de tiempo del enlace, la visita y la cronología del caso muestran el enlace real. Sin enlace se muestra «Enlace generado en la base (sin dirección)»; con `{ ok: false }` el caso no se marca como enviado y aparece el mensaje.
+- «Copiar enlace» está dentro de la vista previa. En demostración se sigue usando el enlace simulado clientes.asur.ec.
+
+**Verificado**
+- enlaceciclo, envioenlace y conexion están en el registro de escenas; las abrí desde el selector a 1280 y 1920 px. No hay errores y el texto es igual al de la Versión 126. En envioenlace la vista previa sigue mostrando clientes.asur.ec/a/….
+- Prueba interna en una copia aparte: la vista previa y lo copiado mostraron https://ejemplo.test/?t=ABC, también al reenviar. Probé los casos sin enlace y con `{ ok: false }`. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: la conexión real con la base.
+
+**Diferencias**: el portal del prototipo no abre el enlace real (es externo), así que «Abrir el portal del cliente» sigue usando el enlace simulado interno.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6c
+
+Publiqué la etapa P-6c (Versión 126). DEC-176 quedó registrada en el registro de decisiones del inventario, y en el contrato se agregó la forma de las acciones.
+- DEC-176: la barra del ciclo tiene un botón con chevron y `aria-expanded`. Está expandida en Resumen y se contrae al cambiar de pestaña; lo que elige el usuario se mantiene mientras siga en esa pestaña. Contraída muestra «Ciclo de inspección», la etapa actual, «Etapa N de M» y el estado del caso.
+- Calificación con la conexión: el informe de la app (cada campo con valor, origen y confianza; estado general; extras; daños; determinación) aparece en «Resumen del informe del inspector» y en «Motivo del inspector». «Evidencias del informe» cuenta las fotos y las abre en el visor.
+- Con controles de severidad alta pendientes no se puede calificar. La lista de Calificación muestra los casos de la conexión.
+- Acciones: salen con la forma exacta del punto 3. Con `{ ok: false }` se revierte el cambio y se muestra el mensaje; si la respuesta trae enlace, el aviso ofrece «Copiar enlace».
+
+**Verificado**
+- cpersdet (Resumen), calctrl, calveh, coord, bandejaexp y conexion: existen en el registro de escenas y las abrí desde el selector a 1280 y 1920 px. No hay errores ni desplazamiento horizontal, y el texto es igual al de la Versión 125 salvo la franja del ciclo.
+- Prueba interna en una copia aparte, con los tres roles: el Ejecutivo de inspecciones encontró el bloqueo, revisó el control como «Conforme» y calificó P-0002; el Suscriptor dio el dictamen de P-0003; el Coordinador registró un intento, agendó una visita presencial, envió el enlace de autoinspección y vio los controles en solo lectura.
+- En esa prueba, las cinco acciones salieron con la forma exacta, la barra se comportó según DEC-176 y, con `{ ok: false }`, la revisión y la calificación se revirtieron. `sirius-conexion.js` volvió a su contenido mínimo.
+
+**No verificado**: la conexión real con la base. «Copiar enlace» no se puede usar mientras la vista previa del mensaje sigue abierta, porque la ventana tapa el aviso.
+
+**Diferencias**: en Vehículos el Suscriptor no tiene dictamen (el flujo pasa directo a Inspeccionado), así que el dictamen se probó en P-0003 (Robo). Reagendar, cambiar el inspector, dividir, ampliar o revocar el enlace y cancelar todavía no se envían a la conexión, porque el contrato no los define.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6b
+
+Etapa P-6b publicada (Versión 125). Con la conexión activa, el caso muestra las evidencias, los controles y el informe que llegan de la base; en demostración nada visible cambia. El contrato (`evidencias`, `controles` e `informes`) quedó documentado en el inventario.
+- Evidencias: la galería sale de `evidencias[id]`, agrupada por canal y en el orden de los pasos de la plantilla presencial o de la autoinspección. Las etiquetas salen de la plantilla o, si no, de la tabla pedida.
+- Cada miniatura muestra la foto o «Imagen de prueba». El visor muestra paso, canal, hora, GPS con «Ver en el mapa», la validación y las lecturas del paso.
+- Calificación › «Revisión de controles»: cada control va con su evidencia, «Conforme» / «Requiere acción» y comentario (obligatorio si requiere acción). Guardar llama a `accion('revisarControl')`, y la llegada fuera del radio muestra la distancia y el motivo.
+- Informe: los campos se ven con su valor, origen («Foto «Frente»», «Inspector», «Solicitud») y confianza. También el estado general, los extras, los daños, las observaciones, la determinación, quién lo envió y cuándo. Sin informe, el estado vacío actual.
+
+**Verificado** (conexion, calctrl y calveh abiertas desde el selector a 1280 y 1920 px, sin errores ni desplazamiento horizontal, con el mismo texto que la Versión 124)
+- Prueba interna (copia aparte) como Ejecutivo de inspecciones y como Coordinador: 3 fotos y 2 de prueba en su orden, el visor completo, el control a 420 m con su foto y el informe completo, sin errores. El Coordinador solo puede leer los controles.
+- Al guardar sin comentario aparece el aviso; con comentario se llama a `revisarControl` y se muestra la respuesta de P-6c. `sirius-conexion.js` siguió con su contenido mínimo.
+
+**No verificado**: la conexión real con fotos de la base.
+
+**Diferencias**: las escenas «evidencias» e «informe» no existen en el registro; en su lugar revisé vfevid y doccampos, iguales a antes. Corregí un error de P-6a (versiones 123 y 124): «Conforme» y «Requiere acción» de los controles de la autoinspección no se registraban. Con la conexión, el bloque «Evidencias del informe» de la calificación todavía cuenta 0 fotos.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6a2
+
+Etapa P-6a2 publicada (Versión 124). Con la conexión activa, ninguna pantalla falla por un caso que no está en la base, y en demostración todo queda igual.
+- Cualquier apertura de un caso por número (detalle, «Garantías del caso», campana, vista rápida, Inicio, Agenda, Monitor, Calificación y Garantías) comprueba que exista. Si no existe, no abre ni navega y avisa «El caso N no está en la base de la prueba».
+- Notificaciones y garantías salen solo de la conexión; se agregaron al contrato `notificaciones` y `garantias`, ambas opcionales. Sin ellas se ve «Sin notificaciones» o «Sin garantías en seguimiento».
+- Agenda, Liquidaciones, Monitor e Inicio muestran arriba «Datos de demostración: este módulo se conecta en una etapa siguiente».
+- Si la conexión se activa después de cargar, se quitan las semillas de demostración y se cierran los paneles; esa era la causa probable del error con «Garantías del caso».
+
+**Verificado** (`conexion`, garpanel, notif, bandejaexp, monitor y calctrl abiertas desde el selector a 1280 y 1920 px: sin errores ni desplazamiento horizontal y con el mismo texto que antes, igual que gar, agendasemana, liquidaciones y la página sin escena)
+- Prueba interna con Coordinador, Administrador y Ejecutivo de inspecciones (2 casos, más notificaciones y garantías hacia 20137 y 20178): campana, Garantías y su panel, vista rápida, Agenda, Liquidaciones, Monitor, Calificación e Inicio sin ningún error; los enlaces a 20137 y 19272 mostraron el aviso.
+- Activación tardía con el panel de 20137 abierto: se cerró sin error. `sirius-conexion.js` sigue con su contenido mínimo, porque la prueba usó una copia aparte.
+
+**No verificado**: la conexión real de la copia publicada.
+
+**Diferencias**: el panel de garantías se abre desde su lista (no hay acceso desde la vista rápida de la Bandeja). Las notificaciones de la conexión sin `aud` llegan a cualquier rol.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6a
+
+Etapa P-6a publicada (Versión 123). El back-office queda listo para la prueba de concepto con base de datos. El artifact no se conecta a nada y en modo demostración se ve igual que antes.
+- `sirius-conexion.js` solo define `SIRIUS_CONEXION = { activo: false }` y se carga en el `<head>` antes de `support.js`. Está registrado en el inventario con el contrato completo.
+- Con `activo` en true, los casos, detalles, eventos y usuario salen solo de la conexión, sin los de la pantalla, `SIRIUS_EJEMPLO` ni semillas. Desaparecen el bloque «Demostración», las escenas y `?demo`.
+- El rol solo se cambia entre `usuario.roles`, «Cerrar sesión» llama a `cerrarSesion()` y la cabecera dice «Prueba conectada». Se muestra el cargador mientras `listo` no termina.
+- `suscribir` vuelve a dibujar sin perder la pestaña ni los filtros. `accion()` ya se llama al registrar un intento de contacto, enviar un enlace, agendar una visita, revisar un control y calificar.
+
+**Verificado** (`conexion` está en `KNOWN_ESC` (437) y `datos-escenas.js`; la abrí desde el selector junto con bandejaexp, coord, calctrl, monitor e inicioadm, a 1280 y 1920 px: sin errores ni desplazamiento horizontal; todas salvo `conexion` iguales al texto anterior)
+- Sin escena, la página y el menú del usuario quedan idénticos a la versión anterior.
+- Prueba interna (Coordinador y 2 casos): la Bandeja mostró solo P-0001 y P-0002, y P-0002 sin detalle abrió sus 6 pestañas sin errores. `suscribir` actualizó el Historial, y luego volví al contenido mínimo.
+
+**No verificado**: la conexión real, que solo existe en la copia publicada.
+
+**Diferencias**: con la conexión, el responsable es el que informa la base. Monitor, Liquidaciones, Garantías, la app del inspector y el portal siguen con sus datos de ejemplo (fases siguientes). Evidencias sin datos muestra su estado vacío actual.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa 15-4
 
 Etapa 15-4 publicada (Versión 122). Los honorarios dependen del tipo de inspector, la agencia tiene su tarifa a sus inspectores y hay cuentas bancarias (DEC-174). Se lee `honorarios` de `SIRIUS_APP_INSPECTOR` v1.2; lo nuevo va en `datos-tarifas-cuentas.js` y `sirius-tarifas-cuentas.js`.

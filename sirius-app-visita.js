@@ -41,7 +41,8 @@
     pon('veh_placa', v.placa || c.placa); pon('veh_marca', v.marca || m[1]); pon('veh_modelo', v.modelo || m[2]); pon('veh_anio_modelo', v.anio || m[3]); }
   // Etapa C2-11: la app arma su recorrido con la columna Presencial de la versión VIGENTE de la plantilla del ramo (SIRIUS_EJEMPLO.plantillasVigentes,
   // de datos-presencial.js: Vehículos livianos v4 con 19 pasos y Motos v2 con 12). Una visita que ya empezó conserva la versión con la que tomó la primera foto.
-  function claveVigente(tipo) { const V = EJ().plantillasVigentes || {}, n = tipo === 'moto' ? 'Motos' : 'Vehículos livianos'; return V[n] || n + ' v1'; }
+  // C2-12: la versión con estado «Vigente» (nunca un borrador ni una retirada), no la de número mayor.
+  function claveVigente(tipo) { const E = EJ(), V = E.plantillasVigentes || {}, n = tipo === 'moto' ? 'Motos' : 'Vehículos livianos'; return (E.plantillaVigente && E.plantillaVigente(n)) || V[n] || n + ' v1'; }
   function claveDe(tipo, s) { return (s && s.claves && s.claves[tipo]) || claveVigente(tipo); }
   function plantilla(tipo, s) { const P = EJ().plantillas || {}; return P[claveDe(tipo, s)] || (tipo === 'moto' ? P['Motos v1'] : P['Vehículos livianos v1']); }
   function nombrePlantilla(tipo, s) { const t = plantilla(tipo, s) || {}; return (t.nombre || '') + ' v' + (t.version || 1) + ' · Presencial'; }

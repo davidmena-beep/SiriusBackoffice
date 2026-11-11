@@ -4,7 +4,7 @@
 // Con { ok: true }: aviso «Publicado: la app y los portales lo verán al volver a abrirse» y la pantalla anota «Publicada en la base» con la fecha.
 // Con { ok: false } (o un error): se revierte el cambio (revertir) y se muestra el mensaje. Solo el Administrador publica.
 // Sin conexión (demostración) no hace nada: devuelve { ok: true, local: true } y ninguna pantalla cambia.
-// Uso: SiriusPublicar.publicar({ clave, version?, base?, datos, motivo, pantalla, revertir(), alPublicar({ version, fecha }) }) → promesa.
+// Uso: SiriusPublicar.publicar({ clave, version?, base?, datos, motivo, pantalla, aviso?, revertir(), alPublicar({ version, fecha }) }) → promesa.
 // El back-office entrega el contexto (rol, aviso, usuario y hora) en SiriusPublicar.ctx. `simular` solo lo usa la escena confpublicar.
 (function () {
   'use strict';
@@ -26,6 +26,6 @@
       if (r.ok === false) { if (o.revertir) o.revertir(); toast((r.mensaje || 'No se pudo publicar en la base') + '. Se deshizo el cambio.'); return r; }
       const fecha = ctx.ahora ? ctx.ahora() : '18/10/26 · 20:30', info = { version, fecha, motivo: carga.motivo, por: ctx.usuario ? ctx.usuario() : '', pantalla: o.pantalla || '' };
       (reg[o.clave] = reg[o.clave] || []).unshift(info); if (o.alPublicar) { try { o.alPublicar(info); } catch (e) { /* nada */ } }
-      toast('Publicado: la app y los portales lo verán al volver a abrirse'); avisar(); return Object.assign({}, r, info, { ok: true }); }); };
+      toast(o.aviso || 'Publicado: la app y los portales lo verán al volver a abrirse'); avisar(); /* C2-12: `aviso` propio (p. ej. un borrador guardado no cambia lo que usan la app ni los portales) */ return Object.assign({}, r, info, { ok: true }); }); };
   W.SiriusPublicar = S;
 })();

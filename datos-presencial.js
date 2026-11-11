@@ -9,6 +9,11 @@
 window.SIRIUS_PRESENCIAL = {
   version: 1, etapa: 'C2-11', decision: 'DEC-187', desde: '2026-10-18', mod: '2026-10-18 20:30', por: 'Andrea Salazar',
   motivo: 'Presencial alineada con la app del inspector (etapa C2-11)',
+  // Etapa C2-12: estado de las versiones anteriores que siguen en los datos (los casos en curso las conservan; la app no las usa).
+  estados: {
+    'Vehículos livianos v1': { estado: 'Retirada', vigenteDesde: '2026-08-01', retiradaEl: '2026-10-18', motivo: 'Primera versión de la plantilla' },
+    'Motos v1': { estado: 'Retirada', vigenteDesde: '2026-08-15', retiradaEl: '2026-10-18', motivo: 'Primera versión de la plantilla' },
+  },
   plantillas: {
     'Vehículos livianos': { formulario: 'f1', version: 4, base: 'Vehículos livianos v1', clave: 'Vehículos livianos v4', pasos: [
       { app: 'frente', id: 'exteriores_frontal', nombre: 'Frontal', grupo: 'Exteriores', guia: { tipo: 'silueta', vista: 'frente' }, guide: 'Silueta · frente', lee: ['Placa'] },
@@ -60,6 +65,12 @@ window.SIRIUS_PRESENCIAL = {
       s.name = x.nombre; s.guide = x.guide; s.guia = clon(x.guia); if (x.min) s.min = x.min; if (x.max) s.max = x.max; if (x.ayuda) s.ayuda = x.ayuda;
       (x.lee || []).forEach((l) => { if (s.ex.indexOf(l) < 0) s.ex.push(l); }); (x.alimenta || []).forEach((k) => { if (s.feedsX.indexOf(k) < 0) s.feedsX.push(k); }); });
     T.pasos.forEach((s) => { s.req = Object.assign({}, s.req, { P: ids.indexOf(s.id) >= 0 }); });
-    Object.assign(T, { version: D.version, estado: 'Vigente', desde: SP.desde, motivo: SP.motivo, ordenPresencial: ids.slice(), nota: 'Etapa C2-11: columna Presencial alineada con la app del inspector' });
-    E.plantillas[D.clave] = T; E.plantillasVigentes[nombre] = D.clave; });
+    Object.assign(T, { version: D.version, estado: 'Vigente', desde: SP.desde, vigenteDesde: SP.desde, motivo: SP.motivo, ordenPresencial: ids.slice(), nota: 'Etapa C2-11: columna Presencial alineada con la app del inspector' });
+    E.plantillas[D.clave] = T; });
+  // Etapa C2-12 (configuración viva, DEC-187): cada versión de plantilla trae su estado («Borrador», «Vigente» o «Retirada»), vigenteDesde y motivo;
+  // solo una «Vigente» por plantilla. La app y los portales usan solo la «Vigente» (SIRIUS_EJEMPLO.plantillaVigente); un borrador nunca se usa fuera de Formularios.
+  Object.keys(SP.estados || {}).forEach((k) => { if (E.plantillas[k]) Object.assign(E.plantillas[k], SP.estados[k]); });
+  Object.keys(E.plantillas).forEach((k) => { const T = E.plantillas[k]; if (!T.estado) T.estado = 'Vigente'; if (T.vigenteDesde == null) T.vigenteDesde = T.estado === 'Borrador' ? '' : (T.desde || ''); if (T.motivo == null) T.motivo = ''; });
+  E.plantillaVigente = (nombre) => { const ks = Object.keys(E.plantillas || {}).filter((k) => (E.plantillas[k].nombre || '') === nombre && E.plantillas[k].estado === 'Vigente'); return ks.length ? ks.sort((a, b) => (E.plantillas[b].version || 0) - (E.plantillas[a].version || 0))[0] : null; };
+  Object.keys(SP.plantillas).forEach((nombre) => { const k = E.plantillaVigente(nombre); if (k) E.plantillasVigentes[nombre] = k; });
 })();
