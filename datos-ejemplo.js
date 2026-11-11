@@ -549,7 +549,7 @@
       // Ciudades sin oficina propia: sucursal que las atiende (Administración › Catálogos).
       ciudadSucursal: [{ ciudad: 'Otavalo', prov: 'Imbabura', sucursal: 'Ibarra' }],
       motivosNoInspeccion: ['Vehículo 0 km con factura del concesionario', 'Renovación sin cambios con inspección vigente', 'Vehículo inspeccionado en otra póliza en los últimos 30 días', 'Excepción autorizada por suscripción'],
-      extras: ['Aros de aleación', 'Láminas de seguridad', 'Neblineros', 'Estribos', 'Barra antivuelco', 'Cubre balde', 'Radio con pantalla', 'Cámara de retro', 'Sensores de parqueo', 'Portaequipaje', 'Sistema de sonido'],
+      extras: ['Aros de aleación', 'Láminas de seguridad', 'Neblineros', 'Estribos', 'Barra antivuelco', 'Cubre balde', 'Radio con pantalla', 'Cámara de retro', 'Sensores de parqueo', 'Portaequipaje', 'Sistema de sonido', 'Spoiler'], // C2-14: Spoiler (escena infextras)
       coberturas: ['Todo riesgo', 'Pérdida total', 'Daños propios y RC'],
       motivosNoAsegurable: ['Daños preexistentes no reparados', 'Estado general fuera de política', 'Documentación inconsistente', 'Modificaciones no declaradas', 'Uso no permitido por la póliza'],
       piezas: ['Parachoques delantero', 'Parachoques posterior', 'Capó', 'Guardafango delantero izquierdo', 'Guardafango delantero derecho', 'Guardafango posterior izquierdo', 'Guardafango posterior derecho', 'Puerta delantera izquierda', 'Puerta delantera derecha', 'Puerta posterior izquierda', 'Puerta posterior derecha', 'Techo', 'Compuerta o maletero', 'Parabrisas', 'Faro delantero izquierdo', 'Faro delantero derecho', 'Retrovisor izquierdo', 'Retrovisor derecho'],

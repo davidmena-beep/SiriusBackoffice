@@ -4,6 +4,76 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-15
+
+Publiqué la etapa C2-15 (Versión 160): el mapa de captura y la guía de la cámara de cada paso se editan desde Formularios con la biblioteca de siluetas (DEC-190; observaciones 1 y 2).
+- **Solo en el borrador:** en Formularios › Pasos de foto, el mapa se edita solo en un borrador. En una versión vigente o retirada, puntos, orden y guías quedan de solo lectura con «Para cambiar el mapa, crea un borrador» y el botón «Editar: crea el borrador vN» (o «abre» si ya existe).
+- **Controles de arriba:** Modalidad (Presencial, Virtual guiada y Autoinspección, cada una con su número de pasos), Carrocería por grupo, «Copiar posiciones de» otra carrocería (escaladas a la caja de destino) y «Vista previa en la app».
+- **Orden por modalidad:** cada modalidad tiene su lista numerada. Se reordena arrastrando o con Alt + ↑ / ↓, y los documentos van aparte, al final. Presencial usa ordenP con la regla de C2-13. Virtual guiada y Autoinspección guardan ordenV y ordenA con la misma regla; si no existen, se crean con el orden de la lista. Reordenar en la lista de Pasos de foto cambia las tres columnas igual, solo entre pasos marcados en cada una.
+- **Posiciones:** se guardan en mapaPos[carrocería][paso], en coordenadas de la vista superior. La sugerida sale de SIRIUS_SILUETAS.mapaCaptura; si el paso tiene otro identificador en la plantilla (por ejemplo, «Lateral izquierdo» de Motos), toma la del paso equivalente y se corre 20 unidades si ese punto ya está ocupado. Los puntos numerados se arrastran o se mueven con las flechas (2 unidades), unidos por la ruta punteada. El panel del paso tiene «Volver a la sugerida» y «Quitar del dibujo». Los pasos sin posición van a «Sin ubicar»: eliges uno y haces clic en el dibujo, o usas «Ubicar al centro». Los documentos no se dibujan.
+- **Guía de la cámara:** está en el panel del mapa y en el editor del paso. Se elige «Silueta», con las vistas frente, lateral izquierdo, posterior, lateral derecho y superior en miniaturas de la carrocería, o «Marco», con placa, franja, documento, tablero, círculo y libre. Se guarda como guia y, en el formato de hoy, como el texto guide («Silueta · frente», «Franja · VIN»). La vista previa es oscura, horizontal o vertical. Las versiones sin guia la toman de guide.
+- **Biblioteca de siluetas:** «Cargar imagen o silueta» ahora es «Agregar una silueta a la biblioteca». El diálogo pide carrocería, vista, archivo SVG y motivo. Revisa que el SVG tenga un solo contorno (DEC-147) y muestra la silueta en estilo guía. Si la vista ya existe, el botón dice «Reemplazar en la biblioteca». Queda en el historial y, con la conexión, se publica SIRIUS_SILUETAS por SiriusPublicar.
+- **Vista previa en la app:** muestra un celular con el mapa y los puntos hecho / actual / pendiente, «Siguiente: N · nombre», los pasos sin punto y los documentos.
+- **Guardado:** todo queda en la versión de la plantilla y se publica en SIRIUS_FORMULARIOS (pubDatos) al guardar el borrador y al publicar.
+- **Escenas:** actualicé mapacaptura (ahora Vehículos livianos v4 vigente, de solo lectura) y mapacapturaem. Agregué mapaeditar, mapasinubicar, mapaguia (Motos v3 borrador), mapacelular y siluetanueva. KNOWN_ESC pasa a 490 nombres. En el inventario, DEC-190 quedó «Aplicada (C2-15)».
+
+**Verificado:**
+- Abrí desde el selector las 7 escenas a 1280 × 720 y 1920 × 1080, sin errores ni desplazamiento horizontal. Pasoseditar, presencial19, pasoguia, autopasosem y formbase también abren sin errores.
+- En mapaeditar, el Frente movido (160, 6 · movida) vuelve con «Volver a la sugerida» a 316, 62 · sugerida. Tres flechas ↑ llevan el Lateral izquierdo de 300, 4 a 300, −2. Arrastrar el Posterior lo deja en 42, 68 y «Volver a la sugerida» lo regresa a 4, 62. Al descartar el borrador v5 con motivo, el mapa abre la v4 de solo lectura con el Frente en 316, 62.
+- Alt + ↓ sobre Frontal en Presencial cambia ordenP: Lateral izquierdo pasa a 1 y Frontal a 2, igual en el panel «Columna Presencial». Las listas de Virtual guiada y Autoinspección no cambian.
+- En mapaguia, el VIN grabado pasado a Silueta y luego a Marco franja vuelve a «Franja · VIN». El Frente con la vista posterior da «Silueta · posterior» y vuelve a «Silueta · frente». El editor del paso muestra el mismo texto.
+- La v4 vigente es de solo lectura: arrastrar, mover con flechas y Alt + ↓ no cambian nada, y los botones de la guía y «Volver a la sugerida» tienen aria-disabled con el aviso.
+- En mapasinubicar, «Número de motor» está en «Sin ubicar» (1). Con un clic en el dibujo queda en 160, −8, y «Sin ubicar» baja a 0.
+- El SVG con 2 formas o con 2 trazos se rechaza con su mensaje. Un polígono se acepta y, con motivo de 10 caracteres o más, queda en la biblioteca.
+- Con una conexión de prueba en una copia aparte, guardar el borrador v6 y publicarlo envió SIRIUS_FORMULARIOS con mapaPos (sedán, Frente en 312, 62), ordenV (38), ordenA (15) y guia del Frente {marco: placa} con guide «Placa · frontal». Agregar una silueta envió SIRIUS_SILUETAS con su motivo. sirius-conexion.js sigue con su única línea mínima.
+
+**No verificado:** la conexión real, y que la app del inspector y el portal usen mapaPos, ordenV y ordenA.
+
+**Diferencias:**
+- La app del inspector y el portal todavía no leen mapaPos, ordenV, ordenA ni la guia nueva; siguen con su recorrido y leen guide. Por eso la vista previa lo aclara.
+- En Formularios, el editor reemplaza la vista anterior del mapa de Autoinspección («Mapa / Interior / Extras / Documentos»). Esa vista sigue en la pestaña Autoinspección.
+- Mover un punto, reordenar o cambiar una guía suma un cambio sin guardar cada vez, así que las flechas suman uno por pulsación.
+- Los pasos que no tienen sugerida en mapaCaptura toman la de su paso equivalente. Por eso en Vehículos livianos solo «Número de motor» queda sin ubicar en mapasinubicar, y en Motos todos tienen punto.
+- mapacapturaem ya abría vacía antes de esta etapa: al recargar los datos se perdía la plantilla de Equipo y maquinaria. Formularios ahora la vuelve a armar con SiriusEquipos.construir().
+- «Agregar una silueta a la biblioteca» está en el editor del paso, que solo se edita en un borrador. El ejemplo del diálogo es un lateral, por eso abre con la vista «Lateral izquierdo».
+
+---
+
+## 18/10/2026 · 20:30 — Etapa C2-14
+
+Publiqué la etapa C2-14 (Versión 159): «Informe por completar» ahora se completa en tres pasos y aplica DEC-192, DEC-193 y DEC-194.
+- **Pasos:** «1 Controles · N pendientes», «2 Informe · N pendientes» y «3 Criterio y decisión · Pendiente / Listo», con ✓ cuando un paso no tiene pendientes. La pantalla abre en el primer paso con pendientes. Si el caso no tiene controles, empieza en Informe (30006).
+- **Cabecera del caso:** en una fila muestra el vehículo y la placa, la modalidad, el plazo en color y el inspector con su agencia. Su menú ⋮ suma «Ver PDF del informe», «Descargar PDF» y «Ver evidencias de campo».
+- **Barra fija:** suma los pendientes de los tres pasos con su desglose, y «Ir al primer pendiente» cambia de paso si hace falta.
+- **Controles:** es la misma revisión en dos columnas. La foto toma el alto disponible, sin recortarse, y el botón dice «Guardar y siguiente ›»; sin pendientes, «Continuar al informe ›».
+- **Informe:** el índice muestra el estado y las fotos de cada sección, y se ve una sección a la vez con «Sección anterior» y «Sección siguiente», o todas seguidas con la casilla. A la derecha aparece «Fotos de esta sección», tomadas de los pasos de la plantilla cuya sección coincide (DEC-194).
+- **Valores, Sí/No y Extras:** Valores se muestra en dos columnas (Solicitud | Sugerido) con dos tarjetas, y los campos Sí/No son interruptores. La suma de Extras lee la columna «Valor (USD)», también con la conexión.
+- **Criterio y decisión:** a la izquierda, el criterio del inspector y «Lo que revisaste»; a la derecha, la decisión con sus mismas reglas y la tarjeta del PDF. El PDF aprobado se abre en un panel lateral con «Pantalla completa».
+- **Escenas:** actualicé infcompletarcaso, ctrllista, ctrltodos, infprimerpendiente y evunificadas, y agregué infpasoinforme, infvalores, infsino, inftestigos, infextras e infdecision. En el inventario, DEC-192, DEC-193 y DEC-194 quedaron como «Aplicadas (C2-14)».
+
+**Verificado:**
+- Abrí desde el selector las 11 escenas a 1280 × 720 y 1920 × 1080, sin errores ni desplazamiento horizontal.
+- En ctrllista a 1280 × 720 se ven sin desplazarse la foto entera (225 px), la franja y la fila de decisión, por encima de la barra.
+- Pendientes y envío iguales a C2-13 en 30004: con 5 pendientes (4 del informe y la decisión) «Completar y enviar» no está disponible; con «Devolver al inspector» y motivo se habilita y devuelve igual. Controles: 1 de 9 revisados, con 1 de severidad alta pendiente.
+- En infextras, «Spoiler · 150» da USD 150,00, USD 19.950,00 y +0,8 %; al quitarlo, USD 0,00, USD 19.800,00 y 0,0 %. El valor asegurado de extras no cambia.
+- Un interruptor guarda «Sí» o «No», y cambia también con su etiqueta y con Espacio. Marcado obligatorio solo en la prueba, uno sin responder sube Informe de 4 a 5 pendientes.
+- El menú ⋮ y la tarjeta abren el mismo documento (6 páginas), y en svpdq el PDF tiene el mismo contenido que en C2-13. Informecompleto, calctrl, svpdq e infcompletarrg no cambiaron.
+- Con una conexión de prueba en una copia aparte, revisarControl, revisarControles, guardarInforme y completarInforme salen con las mismas claves y valores que en C2-13. sirius-conexion.js sigue con su contenido mínimo.
+
+**No verificado:** la descarga real del PDF (en la prueba el generador no se carga, sale su aviso) y la conexión real.
+
+**Diferencias:**
+- Las pestañas del caso (Resumen, Informe…) siguen arriba. En esta pantalla la cabecera oculta el ciclo y el botón «Completar el informe».
+- Los controles pendientes cuentan en la barra pero, como antes, no bloquean el envío.
+- Antes el PDF solo se abría con el informe enviado; ahora el Informe de inspección también se abre mientras se completa.
+- Agregué «Spoiler» al catálogo de extras.
+- «Ir al primer pendiente» enfoca el campo pendiente (Número de motor); en C2-13 caía en Placa.
+- La imagen de ejemplo ya no se recorta tampoco en el visor.
+- Ramos Generales no cambia.
+- La herramienta dejó los cambios en la Versión 158, y la 159 solo corrige este registro con el número real.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-13
 
 Publiqué la etapa C2-13 (Versión 156): con la conexión, Formularios muestra lo publicado en la base y la columna Presencial queda en el orden correcto.

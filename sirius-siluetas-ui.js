@@ -4,6 +4,8 @@
 //     nombre (editable con motivo, al historial) y vista previa del mapa de captura.
 //   SiriusMapaCaptura · Formularios › Pasos de foto › «Mapa de captura»: ícono superior con los puntos de los pasos exigidos y
 //     opcionales por modalidad, los documentos aparte y el orden sugerido (solo vista y orden en esta etapa).
+//   Etapa C2-15 · DEC-190: SiriusMapaCaptura con editor (prop editor): orden por modalidad (ordenP, ordenV, ordenA), posición por carrocería
+//     (mapaPos), «Sin ubicar», copiar posiciones, guía de cada paso desde la biblioteca y vista previa en la app; SiriusSiluetaNueva agrega una silueta.
 //   SiriusGuiaPaso · Formularios › paso de foto › propiedad «Guía» (silueta o marco, vista, orientación, ayuda, zona objetivo,
 //     validaciones activas y cuáles bloquean el disparador) con su vista previa sobre un fondo de cámara.
 (function () {
@@ -68,7 +70,7 @@
         q.maq || p.formulario === 'moto' ? null : bloque('Extras', Mo.extras.map(x => 'Extra: ' + x.nombre + (x.detalle.length ? ' · ' + x.detalle.join(', ') : '')), 'Ningún extra del catálogo aplica a esta carrocería.', 'ext'),
         bloque('Documentos (al final, en vertical)', Mo.docs.map(x => x.nombre), 'Sin documentos.', 'doc'))); }
 
-  function SiriusMapaCaptura(p) { const B = S(); const maq = p.formulario === 'em', moto = p.formulario === 'moto'; const opts = carrocerias().filter(c => (c.grupo === 'Maquinaria') === maq && (moto ? c.id === 'moto' : maq || c.id !== 'moto')).map(c => [c.id, c.nombre]);
+  function SiriusMapaCaptura(p) { if (p.editor) return h(MapaEditor, p); /* C2-15 · DEC-190: mapa editable */ const B = S(); const maq = p.formulario === 'em', moto = p.formulario === 'moto'; const opts = carrocerias().filter(c => (c.grupo === 'Maquinaria') === maq && (moto ? c.id === 'moto' : maq || c.id !== 'moto')).map(c => [c.id, c.nombre]);
     const AU = window.SiriusAuto, conAuto = !!AU && (p.pasos || []).some(x => x.auto || x.autoDes);
     const s0 = R().useState(p.tipo || (maq ? 'cargadora' : moto ? 'moto' : 'sedan')), tipo = s0[0], setTipo = s0[1], s1 = R().useState(p.modalidad || (conAuto ? 'A' : 'P')), M = s1[0], setM = s1[1];
     if (!B) return h('p', null, 'Biblioteca de siluetas no disponible.');
@@ -96,7 +98,7 @@
   function claveTexto(g) { if (g.tipo === 'marco') return 'marco:' + (g.marco || 'libre'); const v = /^lateral/.test(g.vista || '') ? 'lateral' : g.vista; return 'silueta:' + v; }
   function validacionesPorDefecto(g) { const V = CAP().validaciones || [], base = ['encuadre', 'orientacion', 'luz', 'nitidez'], extra = g.tipo === 'marco' && ['placa', 'documento', 'franja', 'tablero'].includes(g.marco) ? ['reflejo', 'lectura'] : [];
     return { activas: V.map(v => v.id).filter(id => base.includes(id) || extra.includes(id)), bloquean: base.slice() }; }
-  function completar(g0, paso, grupo, maq) { const g = Object.assign({}, guiaPorDefecto(paso, grupo, maq), g0 || {}); const vd = validacionesPorDefecto(g);
+  function completar(g0, paso, grupo, maq, guide) { g0 = normGuia(g0); const g = Object.assign({}, guiaPorDefecto(paso, grupo, maq), !g0 || !g0.tipo ? guiaDeTexto(guide) || {} : {}, g0 || {}); const vd = validacionesPorDefecto(g); /* C2-15: sin guia, la toma del texto guide */
     if (!g.activas) g.activas = vd.activas; if (!g.bloquean) g.bloquean = vd.bloquean.filter(x => g.activas.includes(x)); if (g.texto == null) g.texto = (CAP().textosPorGuia || {})[claveTexto(g)] || ''; if (g.zona == null) g.zona = g.tipo === 'marco' && g.marco === 'placa' ? 'Placa aquí' : ''; return g; }
   // Marcos de la guía (sin silueta): formas en línea punteada blanca, en un lienzo 320 × 200.
   function marcoSvg(m, zona) { const D = 'fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="8 5"', F = 'font-family="Mulish, Arial, sans-serif" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle"';
@@ -131,7 +133,7 @@
       h('span', { style: { fontSize: 13, color: 'var(--text-body)', textAlign: 'center' } }, h('b', null, 'Texto de ayuda: '), g.texto || 'Sin texto de ayuda'),
       h('span', { style: { fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' } }, (vert ? 'Vertical' : 'Horizontal') + ' · ' + (g.tipo === 'silueta' ? 'silueta ' + nombreCarr(p.silueta).toLowerCase() + ' · ' + ((VISTAS.find(x => x[0] === g.vista) || [0, g.vista])[1] || '').toLowerCase() : 'marco ' + (g.marco || 'libre')) + ' · ' + disp + ' · ' + (bloq ? 'el disparador espera las validaciones que bloquean' : 'disparador habilitado'))); }
 
-  function SiriusGuiaPaso(p) { const maq = p.formulario === 'em', g = completar(p.guia, p.paso, p.grupo, maq), ro = !!p.ro, why = ro ? (p.roWhy || 'Solo lectura') : '', pre = 'gp-' + String(p.paso || 'x').replace(/[^a-z0-9_]/gi, '');
+  function SiriusGuiaPaso(p) { const maq = p.formulario === 'em', g = completar(p.guia, p.paso, p.grupo, maq, p.guide), ro = !!p.ro, why = ro ? (p.roWhy || 'Solo lectura') : '', pre = 'gp-' + String(p.paso || 'x').replace(/[^a-z0-9_]/gi, '');
     const s0 = R().useState(maq ? 'cargadora' : p.formulario === 'moto' ? 'moto' : 'sedan'), sil = s0[0], setSil = s0[1], s1 = R().useState([]), simula = s1[0], setSimula = s1[1];
     const set = (patch) => { if (ro || !p.onChange) return; const n = Object.assign({}, g, patch); if (patch.tipo || patch.vista || patch.marco) { const t0 = (CAP().textosPorGuia || {})[claveTexto(g)] || ''; if (!g.texto || g.texto === t0) n.texto = (CAP().textosPorGuia || {})[claveTexto(n)] || ''; }
       if (patch.activas) n.bloquean = (g.bloquean || []).filter(x => patch.activas.includes(x)); p.onChange(n); };
@@ -142,9 +144,9 @@
         h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, 'Cómo encuadra la cámara este paso. El dibujo sale de la biblioteca de siluetas (estilo «guía»). ' + (ro ? why + '.' : 'El cambio queda en el borrador del formulario.')), ro && p.onEditar && p.editarTxt ? h('div', null, h('button', { type: 'button', onClick: p.onEditar, style: { marginTop: 6, height: 34, padding: '0 14px', border: '1.5px solid var(--color-brand)', borderRadius: 'var(--radius-sm)', background: '#FFFFFF', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, color: 'var(--color-brand)' } }, p.editarTxt)) : null),
       h('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(220px,0.9fr)', gap: 18, alignItems: 'start' } },
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 } },
+          h('div', { role: 'group', 'aria-label': 'Guía de la cámara', style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('span', { style: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Guía de la cámara'), /* C2-15: silueta (vistas de la biblioteca) o marco */
+            h(GuiaSelector, { guia: g, tipo: sil, dis: why || false, onChange: (o) => set({ tipo: o.tipo, vista: o.vista, marco: o.marco, orientacion: o.orientacion }), pre }), p.guide ? h('span', { 'data-guia-guide': p.paso, style: { fontSize: 12, color: 'var(--text-muted)' } }, 'Texto para la app: «' + p.guide + '»') : null),
           h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12 } },
-            lab('Tipo de guía', pre + '-tipo', sel(pre + '-tipo', g.tipo, [['silueta', 'Silueta'], ['marco', 'Marco']], (v) => set(v === 'silueta' ? { tipo: v, vista: g.vista || 'frente' } : { tipo: v, marco: g.marco || 'libre' }), why)),
-            g.tipo === 'silueta' ? lab('Vista', pre + '-vista', sel(pre + '-vista', g.vista || 'frente', VISTAS, (v) => set({ vista: v }), why)) : lab('Marco', pre + '-marco', sel(pre + '-marco', g.marco || 'libre', MARCOS().map(m => [m, m.charAt(0).toUpperCase() + m.slice(1)]), (v) => set({ marco: v }), why)),
             lab('Orientación', pre + '-ori', sel(pre + '-ori', g.orientacion || 'vertical', [['vertical', 'Vertical'], ['horizontal', 'Horizontal']], (v) => set({ orientacion: v }), why))),
           lab('Texto de ayuda', pre + '-txt', h('textarea', { id: pre + '-txt', rows: 2, value: g.texto || '', readOnly: ro, 'aria-disabled': ro ? 'true' : undefined, title: why || undefined, onChange: (e) => set({ texto: e.target.value }), style: { width: '100%', padding: '6px 8px', border: '1.5px solid var(--border-default)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-brand)', fontSize: 14, lineHeight: 1.45, resize: 'vertical', boxSizing: 'border-box' } })),
           h('span', { style: { fontSize: 12, color: 'var(--text-muted)', marginTop: -6 } }, 'Por defecto: el texto de la guía «' + claveTexto(g) + '» (SIRIUS_CAPTURA.textosPorGuia).'),
@@ -159,6 +161,217 @@
           h(VistaPrevia, { guia: g, silueta: sil, simula }),
           h('fieldset', { style: { margin: 0, padding: 0, border: 'none', display: 'flex', flexWrap: 'wrap', gap: '4px 12px' } }, h('legend', { style: { padding: 0, marginBottom: 4, fontSize: 12, fontWeight: 700, color: 'var(--text-strong)' } }, 'Simular una falla en la vista previa'),
             V.filter(v => (g.activas || []).includes(v.id)).map(v => chk(pre + '-sim-' + v.id, v.nombre, simula.includes(v.id), (on) => setSimula(on ? simula.concat(v.id) : simula.filter(x => x !== v.id)), false)))))); }
+
+  // ---------- Etapa C2-15 · DEC-190 (observaciones 1 y 2): mapa de captura editable y guía de la cámara desde la biblioteca ----------
+  // El mapa se edita solo en un borrador. La versión guarda: ordenP (Presencial, reglas de C2-13), ordenV y ordenA (Virtual guiada y Autoinspección,
+  // misma regla), mapaPos = { [carroceria]: { [idPaso]: [x, y] | null } } en coordenadas del viewBox de la vista superior (null: «Quitar del dibujo»;
+  // sin clave: la sugerida de SIRIUS_SILUETAS.mapaCaptura) y, en cada paso, guia = { tipo: 'silueta', vista } | { tipo: 'marco', marco } más el texto
+  // guide con el formato de hoy («Silueta · frente», «Franja · VIN»). Los documentos van aparte, al final, y no van en el dibujo.
+  const MODS3 = [['P', 'Presencial'], ['V', 'Virtual guiada'], ['A', 'Autoinspección']];
+  const VISTAS_G = [['frente', 'Frente'], ['lateral_izq', 'Lateral izquierdo'], ['posterior', 'Posterior'], ['lateral_der', 'Lateral derecho'], ['superior', 'Superior']];
+  const MARCOS_G = [['placa', 'Placa'], ['franja', 'Franja'], ['documento', 'Documento'], ['tablero', 'Tablero'], ['circulo', 'Círculo'], ['libre', 'Libre']];
+  const PREF_G = { placa: 'Placa', franja: 'Franja', documento: 'Documento', tablero: 'Tablero', circulo: 'Círculo', libre: 'Libre' };
+  const RO_MAPA = 'Para cambiar el mapa, crea un borrador';
+  const esDoc = (s) => !!s && (s.group === 'Documentos' || /^documentos_|^eq_doc/.test(String(s.id || '')));
+  // Guía desde el texto guide de hoy (versiones sin guia): «Silueta · frente», «Franja · VIN», «Documento · …», «Libre · …».
+  function guiaDeTexto(t) { const m = /^\s*([^·]+?)\s*·\s*(.*)$/.exec(String(t || '')); if (!m) return null; const k = m[1].trim().toLowerCase(), d = m[2].trim().toLowerCase();
+    if (k === 'silueta') return { tipo: 'silueta', vista: /izq/.test(d) ? 'lateral_izq' : /der/.test(d) ? 'lateral_der' : /poster|atr/.test(d) ? 'posterior' : /super/.test(d) ? 'superior' : 'frente', orientacion: 'horizontal' };
+    const mk = { placa: 'placa', franja: 'franja', documento: 'documento', tarjeta: 'documento', tablero: 'tablero', 'círculo': 'circulo', circulo: 'circulo', libre: 'libre' }[k];
+    return mk ? { tipo: 'marco', marco: mk, orientacion: mk === 'documento' ? 'vertical' : 'horizontal' } : null; }
+  // Normaliza las guías antiguas de la app ({ tipo: 'franja' | 'tarjeta' | 'libre' }) a silueta o marco.
+  function normGuia(g) { if (!g || g.tipo === 'silueta' || g.tipo === 'marco') return g; const mk = { franja: 'franja', tarjeta: 'documento', documento: 'documento', libre: 'libre', placa: 'placa', tablero: 'tablero', circulo: 'circulo' }[g.tipo];
+    return mk ? Object.assign({}, g, { tipo: 'marco', marco: mk, orientacion: g.orientacion || (mk === 'documento' ? 'vertical' : 'horizontal') }) : g; }
+  // Texto guide con el formato de hoy a partir de la guía; el detalle del marco se conserva si ya lo tenía.
+  function textoDeGuia(g, guideAnt, nombre) { if (!g) return guideAnt || ''; if (g.tipo === 'silueta') return 'Silueta · ' + ((VISTAS_G.find(x => x[0] === g.vista) || [0, g.vista || 'frente'])[1] || '').toLowerCase();
+    const m = /^\s*([^·]+?)\s*·\s*(.*)$/.exec(String(guideAnt || '')), detAnt = m && m[1].trim().toLowerCase() !== 'silueta' ? m[2].trim() : '';
+    const dato = /\bVIN\b|chasis/i.test(nombre || '') ? 'VIN' : /placa/i.test(nombre || '') ? 'placa' : '', det = detAnt || dato || (nombre ? (/^[A-ZÁÉÍÓÚÑ]{2,}/.test(nombre) ? nombre : nombre.charAt(0).toLowerCase() + nombre.slice(1)) : ''); // el dato que se lee (VIN, placa) o el nombre del paso
+    return (PREF_G[g.marco || 'libre'] || 'Libre') + (det ? ' · ' + det : ''); }
+  // Orden de una modalidad (regla de C2-13): los marcados en la columna, en el orden guardado; uno marcado que no está entra justo después del
+  // marcado que lo precede en la lista de pasos (al inicio si no hay ninguno antes); uno desmarcado sale.
+  function ordenModo(steps, O, M) { const mar = (s) => !!(s.req && s.req[M]), L = []; (O || []).forEach(id => { if (L.indexOf(id) < 0 && steps.some(s => s.id === id && mar(s))) L.push(id); });
+    steps.forEach((s, i) => { if (!mar(s) || L.indexOf(s.id) >= 0) return; let at = 0; for (let j = i - 1; j >= 0; j--) { if (mar(steps[j])) { const k = L.indexOf(steps[j].id); if (k >= 0) { at = k + 1; break; } } } L.splice(at, 0, s.id); });
+    return L; }
+  // Posición sugerida: la de SIRIUS_SILUETAS.mapaCaptura[carrocería] para el mismo paso; si el paso de la plantilla tiene otro id (p. ej. «Lateral izquierdo»
+  // o «Kilometraje» en Motos), toma la del paso equivalente (ALIAS_SUG) y, si ese punto ya está ocupado, se corre 20 unidades para no taparlo.
+  const ALIAS_SUG = [[/lateral_izq/, ['exteriores_lateral_izquierdo_de_ade']], [/lateral_der/, ['exteriores_lateral_derecho_de_ade']], [/vin|chasis/, ['identificacion_chasis_en_relieve', 'identificacion_sticker_vin']],
+    [/motor/, ['motor_habitaculo_del_motor']], [/kilometraje|odometro/, ['interiores_kilometraje', 'interiores_tablero_de_instrumento']], [/tablero|radio|aire/, ['interiores_tablero_de_instrumento']],
+    [/neumatic|llanta/, ['llantas_delantera_derecha', 'llantas_trasera_derecha']], [/emergencia|repuesto|cajuela|balde/, ['interiores_cajuela_o_balde']], [/asiento/, ['interiores_asientos_delanteros']], [/placa_?tras|posterior/, ['identificacion_placa_trasera', 'exteriores_posterior']], [/placa|frontal/, ['identificacion_placa_delantera', 'exteriores_frontal']]];
+  function sugeridas(tipo, ids) { const MC = (S() || {}).mapaCaptura || {}, L = esMaq(tipo) ? (MC.maquinaria || []) : (MC[tipo] || MC.sedan || []), o = {}; L.forEach(x => { o[x.paso] = x.pos; });
+    if (!ids) return o; const out = {}, usados = [], vb = vbSup(tipo), libre = (q) => { let p0 = q.slice(), k = 0; while (usados.some(u => Math.abs(u[0] - p0[0]) < 18 && Math.abs(u[1] - p0[1]) < 18) && k < 12) { k++; p0 = [Math.max(4, Math.min(vb[2] - 4, q[0] + (k % 2 ? 1 : -1) * 20 * Math.ceil(k / 2))), q[1]]; } usados.push(p0); return p0; };
+    ids.forEach(id => { if (o[id]) { out[id] = o[id]; usados.push(o[id]); } });
+    ids.forEach(id => { if (out[id]) return; const al = ALIAS_SUG.find(a => a[0].test(id)), base = al && al[1].map(k => o[k]).find(Boolean); if (base) out[id] = libre(base); }); return out; }
+  function posDe(mapaPos, tipo, id, ids) { const g = (mapaPos || {})[tipo] || {}; if (Object.prototype.hasOwnProperty.call(g, id)) return g[id] || null; return sugeridas(tipo, ids)[id] || null; }
+  function vbSup(tipo) { const B = S(); return B && B.geometria[tipo] ? B.geometria[tipo].superior.vb : [0, 0, 320, 124]; }
+  // «Copiar posiciones de <otra carrocería>»: las de origen (guardadas o sugeridas), escaladas a la caja de la vista superior de destino.
+  function copiarPos(mapaPos, de, a, ids) { const v0 = vbSup(de), v1 = vbSup(a), kx = v1[2] / v0[2], ky = v1[3] / v0[3], out = {};
+    ids.forEach(id => { const p0 = posDe(mapaPos, de, id, ids); out[id] = p0 ? [Math.round(p0[0] * kx), Math.round(p0[1] * ky)] : null; }); return out; }
+  const btnS = (txt, on, o) => { o = o || {}; return h('button', Object.assign({ type: 'button', onClick: (e) => { if (o.dis) { e.preventDefault(); return; } on && on(e); }, 'aria-disabled': o.dis ? 'true' : undefined, title: o.dis ? (typeof o.dis === 'string' ? o.dis : undefined) : o.title }, o.attrs || {}, { style: Object.assign({ height: 34, padding: '0 12px', border: '1.5px solid ' + (o.prim ? 'var(--color-brand)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)', background: o.prim ? 'var(--color-brand)' : '#FFFFFF', color: o.prim ? '#FFFFFF' : o.dis ? 'var(--text-muted)' : 'var(--text-strong)', cursor: o.dis ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', opacity: o.dis ? .7 : 1 }, o.st || {}) }), txt); };
+
+  // Selector de la guía de la cámara: «Silueta» (vistas de la biblioteca, miniaturas de la carrocería) o «Marco» (marcos de mapaCaptura.marcos).
+  function GuiaSelector(p) { const B = S(), g = normGuia(p.guia) || { tipo: 'marco', marco: 'libre' }, dis = p.dis, pre = p.pre || 'gs', tipo = p.tipo && B && B.geometria[p.tipo] ? p.tipo : 'sedan';
+    const set = (n) => { if (dis || !p.onChange) return; const o = Object.assign({}, g, n); o.orientacion = o.tipo === 'marco' && o.marco === 'documento' ? 'vertical' : 'horizontal'; if (o.tipo === 'silueta') { delete o.marco; o.vista = o.vista || 'frente'; } else { delete o.vista; o.marco = o.marco || 'libre'; } p.onChange(o); };
+    const mini = (k, l, on, svg, onClick) => h('button', { key: k, type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', 'aria-disabled': dis ? 'true' : undefined, title: dis ? (typeof dis === 'string' ? dis : undefined) : l, 'data-guia-op': k, onClick: () => { if (!dis) onClick(); },
+      style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 4, border: '2px solid ' + (on ? 'var(--color-brand)' : 'var(--border-subtle)'), borderRadius: 8, background: on ? 'var(--color-brand-wash)' : '#FFFFFF', cursor: dis ? 'not-allowed' : 'pointer', minWidth: 0 } },
+      h('span', { style: { display: 'block', width: '100%', aspectRatio: '16 / 10', borderRadius: 6, background: '#1b232d', padding: 4, boxSizing: 'border-box' } }, svgHtml(svg.replace('<svg ', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block" '), { width: '100%', height: '100%' })),
+      h('span', { style: { fontSize: 11.5, fontWeight: 700, color: 'var(--text-strong)', textAlign: 'center', lineHeight: 1.2 } }, l));
+    const grid = (kids, lbl) => h('div', { role: 'radiogroup', 'aria-label': lbl, style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(78px, 1fr))', gap: 6 } }, kids);
+    return h('div', { 'data-guia-selector': g.tipo, style: { display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 } },
+      h('div', { role: 'radiogroup', 'aria-label': 'Tipo de guía', style: { display: 'inline-flex', gap: 4, padding: 3, borderRadius: 10, background: 'var(--surface-subtle, #f3f5f8)', alignSelf: 'flex-start' } },
+        [['silueta', 'Silueta'], ['marco', 'Marco']].map(([k, l]) => h('button', { key: k, type: 'button', role: 'radio', 'aria-checked': g.tipo === k ? 'true' : 'false', 'aria-disabled': dis ? 'true' : undefined, title: dis ? (typeof dis === 'string' ? dis : undefined) : undefined, 'data-guia-tipo': k, onClick: () => set(k === 'silueta' ? { tipo: k, vista: g.vista || 'frente' } : { tipo: k, marco: g.marco || 'libre' }),
+          style: { height: 30, padding: '0 14px', border: 'none', borderRadius: 8, background: g.tipo === k ? '#FFFFFF' : 'transparent', boxShadow: g.tipo === k ? '0 1px 3px rgba(0,0,0,.12)' : 'none', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', cursor: dis ? 'not-allowed' : 'pointer' } }, l))),
+      g.tipo === 'silueta' ? grid(VISTAS_G.map(([k, l]) => mini(k, l, g.vista === k, B ? B.svg(tipo, k, 'guia', { etiqueta: l }) : '', () => set({ vista: k }))), 'Vista de la silueta · ' + nombreCarr(tipo))
+        : grid(MARCOS_G.map(([k, l]) => mini(k, l, g.marco === k, marcoSvg(k, ''), () => set({ marco: k }))), 'Marco'),
+      h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, g.tipo === 'silueta' ? 'La silueta cambia sola según la carrocería del caso. Miniaturas de ' + nombreCarr(tipo).toLowerCase() + '.' : ((((S() || {}).mapaCaptura || {}).marcos || {})[g.marco] || ''))); }
+
+  // Vista previa oscura con el contorno en estilo guía (DEC-147) y la orientación.
+  function PreviaGuia(p) { const maq = esMaq(p.tipo), g = completar(normGuia(p.guia), p.paso, p.grupo, maq, p.guide);
+    return h('div', { 'data-guia-previa': g.tipo, style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h(VistaPrevia, { guia: g, silueta: p.tipo, simula: [] })); }
+
+  // Panel derecho del mapa: el paso elegido, su posición y su guía.
+  function PanelPaso(q) { const s = q.paso, ro = q.ro, pos = q.pos, sug = q.sug;
+    if (!s) return h('div', { style: { fontSize: 13, color: 'var(--text-muted)' } }, 'Elige un paso en la lista o en el dibujo.');
+    return h('div', { 'data-mapa-panel': s.id, style: { display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 } },
+      h('div', null, h('h3', { style: { margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, (q.n ? q.n + '. ' : '') + s.name), h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, q.doc ? 'Documento: va al final, en vertical; no va en el dibujo.' : pos ? 'Posición ' + pos[0] + ', ' + pos[1] + (q.esSug ? ' · sugerida' : ' · movida') : 'Sin ubicar: en la app queda en su lista, sin punto.')),
+      q.doc ? null : h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
+        btnS('Volver a la sugerida', q.onSugerida, { dis: ro ? RO_MAPA : !sug ? 'Este paso no tiene posición sugerida en la biblioteca' : q.esSug ? 'Ya está en la posición sugerida' : false, attrs: { 'data-mapa-sugerida': '1' } }),
+        btnS('Quitar del dibujo', q.onQuitar, { dis: ro ? RO_MAPA : !pos ? 'El paso ya está sin ubicar' : false, attrs: { 'data-mapa-quitar': '1' } })),
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' } },
+        h('span', { style: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Guía de la cámara'), h('span', { 'data-mapa-guide': s.id, style: { fontSize: 12, color: 'var(--text-muted)' } }, 'Texto para la app: «' + (s.guide || '—') + '»'),
+        h(GuiaSelector, { guia: normGuia(s.guia) || guiaDeTexto(s.guide) || completar(null, s.id, s.group, esMaq(q.tipo)), tipo: q.tipo, dis: ro ? RO_MAPA : false, onChange: q.onGuia, pre: 'mg-' + s.id }),
+        h(PreviaGuia, { guia: normGuia(s.guia) || guiaDeTexto(s.guide), tipo: q.tipo, paso: s.id, grupo: s.group, guide: s.guide }))); }
+
+  // Vista previa en la app: el celular con el mapa de la modalidad y la carrocería, los puntos en sus estados y lo que va sin punto.
+  function Celular(q) { const E = (((S() || {}).mapaCaptura || {}).estados) || {}, en = q.puntos, sig = en[1] || en[0];
+    const pts = en.map((x, i) => ({ paso: x.id, pos: x.pos, n: x.n, estado: i === 0 ? 'hecho' : i === 1 ? 'actual' : 'pendiente' }));
+    return h('div', { 'data-mapa-celular': q.M, style: { display: 'flex', flexWrap: 'wrap', gap: 18, alignItems: 'flex-start' } },
+      h('div', { role: 'img', 'aria-label': 'Vista previa en la app: ' + q.modTxt + ' · ' + nombreCarr(q.tipo), style: { width: 300, flex: '0 0 auto', padding: '14px 10px 18px', borderRadius: 32, background: '#0d141c', boxSizing: 'border-box' } },
+        h('div', { style: { borderRadius: 22, background: '#FFFFFF', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 520 } },
+          h('div', { style: { padding: '12px 14px 8px', background: '#0B2E59', color: '#FFFFFF' } }, h('div', { style: { fontSize: 11, opacity: .8 } }, q.modTxt + ' · ' + nombreCarr(q.tipo)), h('div', { style: { fontSize: 15, fontWeight: 800 } }, 'Recorrido de fotos')),
+          h('div', { style: { padding: 10 } }, svgHtml(ancho(mapaSvg(q.tipo, pts, { aria: 'Mapa en la app' })), {})),
+          sig ? h('div', { 'data-cel-siguiente': '1', style: { margin: '0 10px', padding: '8px 10px', borderRadius: 10, background: 'var(--color-brand-wash, #e6f6fd)', fontSize: 13, fontWeight: 700, color: '#0B2E59' } }, 'Siguiente: ' + sig.n + ' · ' + sig.name) : null,
+          h('div', { style: { padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: '#334e70' } },
+            q.sinPunto.length ? h('div', null, h('b', null, 'Sin punto en el mapa'), h('ul', { style: { margin: '4px 0 0', paddingLeft: 16 } }, q.sinPunto.map(x => h('li', { key: x.id }, x.n + '. ' + x.name)))) : null,
+            q.docs.length ? h('div', null, h('b', null, 'Documentos (al final, en vertical)'), h('ul', { style: { margin: '4px 0 0', paddingLeft: 16 } }, q.docs.map(x => h('li', { key: x.id }, x.name)))) : null))),
+      h('div', { style: { flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--text-body)', minWidth: 0 } }, h(Leyenda),
+        h('span', null, 'En la vista previa el primer paso aparece hecho, el segundo como actual y el resto pendientes; colores y formas de SIRIUS_SILUETAS.mapaCaptura.estados.'),
+        h('span', { style: { color: 'var(--text-muted)' } }, 'Es una vista previa: la app y el portal siguen usando su recorrido hasta que lean el mapa de la plantilla.'))); }
+
+  function MapaEditor(p) { const B = S(), maq = p.formulario === 'em', moto = p.formulario === 'moto', pre = p.pre || 'fmm', E0 = p.escena || {}, ro = !!p.ro;
+    const opts = carrocerias().filter(c => (c.grupo === 'Maquinaria') === maq && (moto ? c.id === 'moto' : maq || c.id !== 'moto')).map(c => [c.id, c.nombre]);
+    const s0 = R().useState(E0.tipo || (maq ? 'cargadora' : moto ? 'moto' : 'sedan')), tipo0 = s0[0], setTipo = s0[1], s1 = R().useState(E0.mod || 'P'), M = s1[0], setM = s1[1];
+    const s2 = R().useState(E0.sel || null), selId = s2[0], setSel = s2[1], s3 = R().useState(E0.armar ? E0.sel : null), armado = s3[0], setArmado = s3[1], s4 = R().useState(!!E0.celular), cel = s4[0], setCel = s4[1];
+    const s5 = R().useState(null), arr = s5[0], setArr = s5[1], s6 = R().useState(null), tmp = s6[0], setTmp = s6[1], s7 = R().useState(''), copiaDe = s7[0], setCopiaDe = s7[1], s8 = R().useState(''), live = s8[0], setLive = s8[1];
+    const svgRef = R().useRef(null), drag = R().useRef(null);
+    if (!B) return h('p', null, 'Biblioteca de siluetas no disponible.');
+    const tipo = B.geometria[tipo0] ? tipo0 : opts[0][0], steps = p.pasos || [], mapaPos = p.mapaPos || {}, ordenes = p.ordenes || {};
+    const O = ordenModo(steps, ordenes[M], M), byId = {}; steps.forEach(s => { byId[s.id] = s; });
+    const fotos = O.map(id => byId[id]).filter(s => s && !esDoc(s)), docs = O.map(id => byId[id]).filter(s => s && esDoc(s));
+    const idsF = steps.filter(s => !esDoc(s)).map(s => s.id), SG = sugeridas(tipo, idsF); /* sugeridas de todos los pasos con foto: iguales en las tres modalidades */
+    const lista = fotos.map((s, i) => { const pz = tmp && tmp.id === s.id ? tmp.pos : posDe(mapaPos, tipo, s.id, idsF), g = ((mapaPos[tipo] || {})); return { id: s.id, name: s.name, n: i + 1, pos: pz, esSug: !Object.prototype.hasOwnProperty.call(g, s.id), s }; });
+    const enDib = lista.filter(x => x.pos), sinUbicar = lista.filter(x => !x.pos), elegido = lista.find(x => x.id === selId) || (docs.find(d => d.id === selId) ? { id: selId, s: byId[selId], doc: true } : null);
+    const MODTXT = (MODS3.find(x => x[0] === M) || [0, ''])[1], cuenta = (m) => steps.filter(s => s.req && s.req[m]).length;
+    const why = ro ? RO_MAPA : false;
+    const cambiar = (patch, txt) => { if (ro || !p.onCambio) return; p.onCambio(patch, txt); setLive(txt || ''); };
+    const ponPos = (id, pos, txt) => { const g = Object.assign({}, mapaPos[tipo] || {}); if (pos === undefined) delete g[id]; else g[id] = pos; cambiar({ mapaPos: Object.assign({}, mapaPos, { [tipo]: g }) }, txt); };
+    const reordenar = (id, d) => { const i = fotos.findIndex(s => s.id === id), j = i + d; if (i < 0 || j < 0 || j >= fotos.length) return; const a = O.indexOf(fotos[i].id), b = O.indexOf(fotos[j].id), L = O.slice(); L[a] = fotos[j].id; L[b] = fotos[i].id;
+      cambiar({ ['orden' + M]: L }, fotos[i].name + ' pasa a la posición ' + (j + 1) + ' de ' + fotos.length + ' en ' + MODTXT); setTimeout(() => { const el = document.querySelector('[data-mapa-orden="' + id + '"]'); if (el) el.focus(); }, 40); };
+    const mover = (desde, hasta) => { const i = fotos.findIndex(s => s.id === desde), j = fotos.findIndex(s => s.id === hasta); if (i < 0 || j < 0 || i === j) return; const F = fotos.map(s => s.id); F.splice(j, 0, F.splice(i, 1)[0]); const slots = O.map((id, k) => byId[id] && !esDoc(byId[id]) ? k : -1).filter(k => k >= 0), L = O.slice(); slots.forEach((k, t) => { L[k] = F[t]; });
+      cambiar({ ['orden' + M]: L }, byId[desde].name + ' pasa a la posición ' + (j + 1) + ' de ' + fotos.length + ' en ' + MODTXT); };
+    // Coordenadas del puntero en el viewBox de la vista superior (el lienzo suma 26 por lado).
+    const vb = B.geometria[tipo].superior.vb, MG = 26, W = vb[2] + 2 * MG, H = vb[3] + 2 * MG;
+    const aPos = (e) => { const sv = svgRef.current; if (!sv || !sv.getScreenCTM) return null; const pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(sv.getScreenCTM().inverse()); return [Math.round(Math.max(-MG + 6, Math.min(vb[2] + MG - 6, q.x - MG))), Math.round(Math.max(-MG + 6, Math.min(vb[3] + MG - 6, q.y - MG)))]; };
+    const onDown = (e, x) => { setSel(x.id); if (ro) return; e.preventDefault(); drag.current = { id: x.id, mov: false }; try { svgRef.current.setPointerCapture(e.pointerId); } catch (er) {} };
+    const onMove = (e) => { const d = drag.current; if (!d) return; const q = aPos(e); if (!q) return; d.mov = true; setTmp({ id: d.id, pos: q }); };
+    const onUp = (e) => { const d = drag.current; drag.current = null; if (d && d.mov) { const q = aPos(e) || (tmp && tmp.pos); setTmp(null); if (q) ponPos(d.id, q, byId[d.id].name + ' movido a ' + q[0] + ', ' + q[1]); return; }
+      if (!d && armado && !ro) { const q = aPos(e); if (q) { ponPos(armado, q, byId[armado].name + ' ubicado en ' + q[0] + ', ' + q[1]); setSel(armado); setArmado(null); } } };
+    const onKey = (e, x) => { const k = e.key, dd = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[k]; if (!dd || ro) return; e.preventDefault(); const p0 = (tmp && tmp.id === x.id ? tmp.pos : x.pos) || [vb[2] / 2, vb[3] / 2]; setTmp({ id: x.id, pos: [p0[0] + dd[0], p0[1] + dd[1]] }); };
+    const onKeyUp = (e, x) => { if (!/^Arrow/.test(e.key) || ro || !tmp || tmp.id !== x.id) return; const q = tmp.pos; setTmp(null); ponPos(x.id, q, x.name + ' movido a ' + q[0] + ', ' + q[1]); };
+    // Dibujo: la vista superior (estilo ícono), el recorrido punteado en orden y los puntos numerados.
+    const base = B.svg(tipo, 'superior', 'icono', { etiqueta: 'Vista superior' }).replace(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" /, '<svg x="' + MG + '" y="' + MG + '" width="' + vb[2] + '" height="' + vb[3] + '" ');
+    const ruta = enDib.map(x => (x.pos[0] + MG) + ',' + (x.pos[1] + MG)).join(' ');
+    const dibujo = h('svg', { ref: svgRef, viewBox: '0 0 ' + W + ' ' + H, role: 'group', 'aria-label': 'Mapa de captura de ' + nombreCarr(tipo) + ' en ' + MODTXT + ': ' + enDib.length + ' puntos' + (armado ? ' · haz clic donde va ' + byId[armado].name : ''), 'data-mapa-dibujo': tipo,
+        onPointerMove: onMove, onPointerUp: onUp, style: { width: '100%', height: 'auto', display: 'block', cursor: armado ? 'crosshair' : 'default', touchAction: 'none', userSelect: 'none' } },
+      h('rect', { x: 0, y: 0, width: W, height: H, rx: 10, fill: armado ? '#EAF6FD' : '#F4F7FA' }), h('g', { dangerouslySetInnerHTML: { __html: base }, style: { pointerEvents: 'none' } }),
+      enDib.length > 1 ? h('polyline', { points: ruta, fill: 'none', stroke: '#0B5CAD', strokeWidth: 1.4, strokeDasharray: '4 3', opacity: .7, style: { pointerEvents: 'none' } }) : null,
+      enDib.map(x => { const on = x.id === selId, cx = x.pos[0] + MG, cy = x.pos[1] + MG;
+        return h('g', { key: x.id, 'data-mapa-punto': x.id, tabIndex: 0, role: 'button', 'aria-label': x.n + '. ' + x.name + ' · posición ' + x.pos[0] + ', ' + x.pos[1] + (ro ? '' : ' · flechas para moverlo'), 'aria-pressed': on ? 'true' : 'false', 'aria-disabled': ro ? 'true' : undefined,
+          onPointerDown: (e) => onDown(e, x), onKeyDown: (e) => onKey(e, x), onKeyUp: (e) => onKeyUp(e, x), onFocus: () => setSel(x.id), style: { cursor: ro ? 'pointer' : 'grab', outline: 'none' } },
+          on ? h('circle', { cx, cy, r: 14, fill: 'rgba(11,92,173,0.22)' }) : null, h('circle', { cx, cy, r: 9.5, fill: on ? '#0B5CAD' : '#FFFFFF', stroke: '#0B5CAD', strokeWidth: 2, strokeDasharray: x.esSug ? undefined : '3 2' }),
+          h('text', { x: cx, y: cy + 3.6, fontSize: 10, fontWeight: 800, textAnchor: 'middle', fill: on ? '#FFFFFF' : '#0B2E59', fontFamily: 'Mulish, Arial, sans-serif', style: { pointerEvents: 'none' } }, String(x.n))); }));
+    const itemLista = (x) => { const on = x.id === selId, g = normGuia(x.s.guia) || guiaDeTexto(x.s.guide);
+      return h('li', { key: x.id, draggable: !ro, onDragStart: (e) => { setArr(x.id); try { e.dataTransfer.setData('text/plain', x.id); } catch (er) {} }, onDragOver: (e) => { if (arr) e.preventDefault(); }, onDrop: (e) => { e.preventDefault(); if (arr) mover(arr, x.id); setArr(null); }, onDragEnd: () => setArr(null) },
+        h('button', { type: 'button', 'data-mapa-orden': x.id, 'aria-pressed': on ? 'true' : 'false', 'aria-label': x.n + '. ' + x.name + (x.pos ? '' : ' · sin ubicar') + (ro ? '' : ' · Alt + flechas para reordenar'), onClick: () => setSel(x.id),
+          onKeyDown: (e) => { if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); if (!ro) reordenar(x.id, e.key === 'ArrowUp' ? -1 : 1); } },
+          style: { width: '100%', display: 'grid', gridTemplateColumns: '24px minmax(0,1fr)', gap: '0 8px', alignItems: 'start', padding: '6px 8px', border: 'none', borderRadius: 'var(--radius-sm)', background: on ? 'var(--color-brand-wash)' : arr === x.id ? '#f3f5f8' : 'transparent', cursor: ro ? 'pointer' : 'grab', textAlign: 'left', fontFamily: 'var(--font-brand)' } },
+          h('b', { style: { fontSize: 13, color: x.pos ? 'var(--color-brand)' : 'var(--text-muted)', paddingTop: 1 } }, x.n + '.'), h('span', { style: { display: 'flex', flexDirection: 'column', minWidth: 0 } }, h('span', { style: { fontSize: 13.5, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.3 } }, x.name), h('span', { style: { fontSize: 11.5, color: 'var(--text-muted)' } }, (x.s.guide || (g ? g.tipo : '')) + (x.pos ? '' : ' · sin ubicar'))))); };
+    const X = elegido, panel = X ? h(PanelPaso, { paso: X.s, n: X.n, doc: !!X.doc, pos: X.pos, esSug: X.esSug, sug: SG[X.id] || null, tipo, ro,
+      onSugerida: () => ponPos(X.id, undefined, X.s.name + ': vuelve a la posición sugerida'), onQuitar: () => ponPos(X.id, null, X.s.name + ' quitado del dibujo: queda sin ubicar'),
+      onGuia: (g) => { if (!ro && p.onGuia) { p.onGuia(X.id, g); setLive('Guía de ' + X.s.name + ': ' + textoDeGuia(g, X.s.guide, X.s.name)); } } }) : h(PanelPaso, {});
+    const sel_ = sel;
+    return h('section', { id: p.id || undefined, 'aria-labelledby': pre + '-t', 'data-mapa-editor': ro ? 'lectura' : 'borrador', style: { display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: '#FFFFFF', minWidth: 0 } },
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px 16px' } },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 320px', minWidth: 0 } }, h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 } }, h('h2', { id: pre + '-t', tabIndex: -1, style: { margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-strong)' } }, p.titulo || 'Mapa de captura'),
+            p.cambios ? h('span', { 'data-mapa-cambios': String(p.cambios), role: 'status', style: { padding: '2px 9px', borderRadius: 999, background: 'var(--alert-warning-bg, #FDF3DC)', color: '#8A5A00', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' } }, p.cambios === 1 ? '1 cambio sin guardar' : p.cambios + ' cambios sin guardar') : null),
+          h('p', { style: { margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--text-muted)' } }, 'Orden del recorrido por modalidad y posición de cada paso por carrocería (compartida entre modalidades). Arrastra los puntos o muévelos con las flechas; reordena la lista arrastrando o con Alt + ↑ / ↓. Los documentos van aparte, al final.'))),
+      ro ? h('div', { role: 'note', 'data-mapa-ro': '1', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 12px', padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle, #f3f5f8)', fontSize: 13.5, color: 'var(--text-body)' } }, h('b', null, RO_MAPA), h('span', null, '· ' + (p.roWhy || 'esta versión no se edita.')), p.onEditar && p.editarTxt ? btnS(p.editarTxt, p.onEditar, { prim: true }) : null) : null,
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 } },
+        lab('Modalidad', pre + '-mod', sel_(pre + '-mod', M, MODS3.map(([k, l]) => [k, l + ' · ' + cuenta(k) + (cuenta(k) === 1 ? ' paso' : ' pasos')]), (v) => { setM(v); setArmado(null); }), { width: 230 }),
+        lab(maq ? 'Silueta del tipo de equipo' : 'Carrocería', pre + '-car', sel_(pre + '-car', tipo, opts, (v) => { setTipo(v); setArmado(null); }), { width: 190 }),
+        opts.length > 1 ? h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: 6 } }, lab('Copiar posiciones de', pre + '-cop', sel_(pre + '-cop', copiaDe, [['', 'Elige una carrocería']].concat(opts.filter(o => o[0] !== tipo)), setCopiaDe, why), { width: 190 }),
+          btnS('Copiar', () => { if (!copiaDe) return; const ids = steps.filter(s => !esDoc(s)).map(s => s.id), out = copiarPos(mapaPos, copiaDe, tipo, ids); cambiar({ mapaPos: Object.assign({}, mapaPos, { [tipo]: out }) }, 'Posiciones de ' + nombreCarr(copiaDe) + ' copiadas a ' + nombreCarr(tipo) + ', escaladas a su caja'); }, { dis: why || (!copiaDe ? 'Elige la carrocería de origen' : false), attrs: { 'data-mapa-copiar': '1' } })) : null,
+        h('span', { style: { flex: '1 1 auto' } }), btnS(cel ? 'Volver al editor' : 'Vista previa en la app', () => setCel(!cel), { attrs: { 'data-mapa-celular-btn': '1', 'aria-pressed': cel ? 'true' : 'false' } })),
+      h('span', { 'aria-live': 'polite', style: { position: 'absolute', left: -9999 } }, live),
+      cel ? h(Celular, { M, modTxt: MODTXT, tipo, puntos: enDib, sinPunto: sinUbicar, docs }) :
+      h('div', { 'data-mapa-cuerpo': '1', style: { display: 'grid', gridTemplateColumns: 'minmax(190px, 240px) minmax(0, 1.4fr) minmax(250px, 1fr)', gap: 16, alignItems: 'start' } },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 } }, h('h3', { style: { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, 'Orden del recorrido · ' + MODTXT),
+          h('ol', { 'aria-label': 'Orden del recorrido en ' + MODTXT, style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 520, overflowY: 'auto' } }, lista.map(itemLista)),
+          docs.length ? h('div', { 'data-mapa-docs': '1', style: { paddingTop: 8, borderTop: '1px solid var(--border-subtle)' } }, h('h4', { style: { margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Documentos (al final, en vertical)'),
+            h('ul', { style: { listStyle: 'none', margin: 0, padding: 0 } }, docs.map(d => h('li', { key: d.id }, h('button', { type: 'button', onClick: () => setSel(d.id), 'aria-pressed': selId === d.id ? 'true' : 'false', style: { width: '100%', padding: '4px 8px', border: 'none', borderRadius: 6, background: selId === d.id ? 'var(--color-brand-wash)' : 'transparent', textAlign: 'left', fontFamily: 'var(--font-brand)', fontSize: 13, color: 'var(--text-body)', cursor: 'pointer' } }, d.name))))) : null),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 } }, dibujo,
+          armado ? h('div', { role: 'status', 'data-mapa-armado': armado, style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--color-brand-wash)', fontSize: 13, color: 'var(--text-strong)' } }, h('span', null, 'Haz clic en el dibujo donde va «' + byId[armado].name + '».'),
+            btnS('Ubicar al centro', () => { ponPos(armado, [Math.round(vb[2] / 2), Math.round(vb[3] / 2)], byId[armado].name + ' ubicado al centro'); setSel(armado); setArmado(null); }), btnS('Cancelar', () => setArmado(null))) : null,
+          h('div', { 'data-mapa-sinubicar': String(sinUbicar.length), style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('h3', { style: { margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, 'Sin ubicar · ' + sinUbicar.length),
+            sinUbicar.length ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, sinUbicar.map(x => btnS(x.n + '. ' + x.name, () => { setSel(x.id); if (!ro) setArmado(armado === x.id ? null : x.id); }, { dis: false, attrs: { 'data-mapa-ubicar': x.id, 'aria-pressed': armado === x.id ? 'true' : 'false', title: ro ? RO_MAPA : 'Elige el paso y haz clic en el dibujo donde va' }, st: armado === x.id ? { borderColor: 'var(--color-brand)', background: 'var(--color-brand-wash)' } : {} })))
+              : h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, 'Todos los pasos de foto tienen su punto.'),
+            h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, 'Un paso sin posición se permite: en la app queda en su lista, sin punto. ' + enDib.length + ' de ' + lista.length + ' pasos en el dibujo · ' + docs.length + ' documentos aparte.'))),
+        h('div', { style: { minWidth: 0 } }, panel))); }
+
+  // ---------- «Agregar una silueta a la biblioteca» (antes «Cargar silueta», sin acción) · DEC-133 y DEC-147 ----------
+  // Un SVG con un solo contorno (un único path o polígono, con un solo trazo cerrado) se agrega a la biblioteca única para la carrocería y la vista.
+  function validarSvg(txt) { let doc; try { doc = new DOMParser().parseFromString(String(txt || ''), 'image/svg+xml'); } catch (e) { return { ok: false, msg: 'El archivo no es un SVG válido.' }; }
+    const root = doc && doc.documentElement; if (!root || root.nodeName.toLowerCase() !== 'svg' || doc.getElementsByTagName('parsererror').length) return { ok: false, msg: 'El archivo no es un SVG válido.' };
+    const formas = Array.from(root.querySelectorAll('path, polygon, polyline, rect, circle, ellipse, line'));
+    if (formas.length !== 1) return { ok: false, msg: 'El SVG tiene ' + formas.length + (formas.length === 1 ? ' forma' : ' formas') + ': debe tener un solo contorno exterior (DEC-147).' };
+    const f = formas[0], tag = f.nodeName.toLowerCase(); let d = '';
+    if (tag === 'path') { d = f.getAttribute('d') || ''; const sub = (d.match(/[Mm]/g) || []).length; if (sub !== 1) return { ok: false, msg: 'El contorno tiene ' + sub + ' trazos: debe ser un solo trazo cerrado (DEC-147).' }; }
+    else if (tag === 'polygon') { const pts = (f.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number); if (pts.length < 6) return { ok: false, msg: 'El polígono no tiene puntos suficientes.' }; d = 'M' + pts.reduce((a, n, i) => a + (i % 2 ? ',' + n : (i ? ' L' : '') + n), '') + ' Z'; }
+    else return { ok: false, msg: 'El contorno debe ser un path o un polígono cerrado (DEC-147).' };
+    const vb = (root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number); if (vb.length !== 4 || vb.some(isNaN)) return { ok: false, msg: 'El SVG necesita viewBox para escalarse.' };
+    return { ok: true, vb, d, msg: 'Un solo contorno · viewBox ' + vb.join(' ') }; }
+  const VISTA_GEO = { frente: 'frente', posterior: 'posterior', superior: 'superior', lateral_izq: 'lateral', lateral_der: 'lateral' };
+  // Agrega (o reemplaza) la vista de la carrocería en SIRIUS_SILUETAS; devuelve la función que deshace el cambio.
+  function agregarSilueta(o) { const B = S(), g = VISTA_GEO[o.vista] || o.vista, prev = B.geometria[o.carroceria] ? B.geometria[o.carroceria][g] : undefined, nAnt = (B.agregadas || []).length;
+    B.geometria[o.carroceria] = B.geometria[o.carroceria] || {}; B.geometria[o.carroceria][g] = { vb: o.vb, capas: [['body', o.d]], contorno: o.d, cajaContorno: o.vb };
+    B.agregadas = (B.agregadas || []).concat([{ carroceria: o.carroceria, vista: o.vista, archivo: o.archivo || '', por: o.por || '', fecha: o.fecha || '', motivo: o.motivo || '' }]);
+    return () => { if (prev === undefined) delete B.geometria[o.carroceria][g]; else B.geometria[o.carroceria][g] = prev; B.agregadas = (B.agregadas || []).slice(0, nAnt); }; }
+  const SVG_EJEMPLO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 124"><path d="M10,104 L8,84 C8,70 16,62 30,60 L70,56 C86,40 104,30 126,28 L196,28 C214,30 228,40 240,52 L296,62 C308,66 314,74 314,86 L314,104 Z"/></svg>';
+  function SiriusSiluetaNueva(p) { const M0 = W => W.SiriusModal, Mo = M0(window), B = S(), maq = p.formulario === 'em', B0 = NS().Button;
+    const opts = carrocerias().filter(c => (c.grupo === 'Maquinaria') === maq).map(c => [c.id, c.nombre]);
+    const s = R().useState({ car: (opts[0] || ['sedan'])[0], vista: p.ejemplo ? 'lateral_izq' : 'frente', txt: p.ejemplo ? SVG_EJEMPLO : '', archivo: p.ejemplo ? 'silueta-ejemplo.svg' : '', mot: '', tried: false, msg: '' }), st = s[0], set = (o) => s[1](Object.assign({}, st, o));
+    if (!p.open || !Mo) return null; const val = st.txt ? validarSvg(st.txt) : null, motOk = String(st.mot).trim().length >= 10, existe = B && B.geometria[st.car] && B.geometria[st.car][VISTA_GEO[st.vista]];
+    const leer = (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => set({ txt: String(r.result || ''), archivo: f.name, tried: false }); r.readAsText(f); };
+    const guardar = () => { if (!val || !val.ok || !motOk) { set({ tried: true }); return; } p.onAgregar && p.onAgregar({ carroceria: st.car, vista: st.vista, vb: val.vb, d: val.d, archivo: st.archivo, motivo: String(st.mot).trim(), reemplaza: !!existe }); };
+    const fld = (id, l, kid, ayuda, err) => h('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('label', { htmlFor: id, style: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, l), kid, err ? h('span', { role: 'alert', style: { fontSize: 12, color: 'var(--color-danger)' } }, err) : ayuda ? h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, ayuda) : null);
+    const pie = h(R().Fragment, null, B0 ? h(B0, { variant: 'ghost', size: 'md', onClick: p.onClose }, 'Cancelar') : null, B0 ? h(B0, { variant: 'primary', size: 'md', onClick: guardar, 'data-sil-agregar': '1' }, existe ? 'Reemplazar en la biblioteca' : 'Agregar a la biblioteca') : null);
+    return h(Mo, { open: true, onClose: p.onClose, size: 'md', align: 'left', title: 'Agregar una silueta a la biblioteca', description: 'La biblioteca es única (DEC-133): la silueta queda disponible en las guías de la cámara, el mapa de captura y el PDF. El SVG debe tener un solo contorno exterior (DEC-147).', footer: pie },
+      h('div', { 'data-silueta-nueva': '1', style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 } }, fld('sil-car', 'Carrocería', sel('sil-car', st.car, opts, (v) => set({ car: v }))), fld('sil-vista', 'Vista', sel('sil-vista', st.vista, VISTAS_G, (v) => set({ vista: v })))),
+        fld('sil-arch', 'Archivo SVG', h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 } }, h('input', { id: 'sil-arch', type: 'file', accept: '.svg,image/svg+xml', onChange: leer, style: { fontFamily: 'var(--font-brand)', fontSize: 13, maxWidth: '100%' } }), btnS('Usar el SVG de ejemplo', () => set({ txt: SVG_EJEMPLO, archivo: 'silueta-ejemplo.svg', vista: 'lateral_izq', tried: false }) /* el ejemplo es un lateral */)),
+          st.archivo ? st.archivo + (val ? (val.ok ? ' · ' + val.msg : '') : '') : 'Sin archivo', st.tried && !st.txt ? 'Elige un archivo SVG.' : val && !val.ok ? val.msg : ''),
+        val && val.ok ? h('div', { style: { display: 'flex', gap: 12, alignItems: 'center' } }, h('span', { style: { width: 180, aspectRatio: '16 / 10', borderRadius: 8, background: '#1b232d', padding: 6, boxSizing: 'border-box', display: 'block' } }, svgHtml('<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + val.vb.join(' ') + '" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><path d="' + val.d + '" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="8 5"/></svg>', { width: '100%', height: '100%' })),
+          h('span', { style: { fontSize: 12.5, color: 'var(--text-body)' } }, 'Vista previa del contorno en estilo guía.' + (existe ? ' Reemplaza la vista actual de ' + nombreCarr(st.car).toLowerCase() + '.' : ''))) : null,
+        fld('sil-mot', 'Motivo (obligatorio)', h('textarea', { id: 'sil-mot', rows: 2, value: st.mot, onChange: (e) => set({ mot: e.target.value }), 'aria-invalid': st.tried && !motOk ? 'true' : 'false', style: { width: '100%', boxSizing: 'border-box', padding: '6px 8px', border: '1.5px solid ' + (st.tried && !motOk ? 'var(--color-danger)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-brand)', fontSize: 14, resize: 'vertical' } }),
+          p.conexion ? 'Con la conexión se publica como SIRIUS_SILUETAS (solo el Administrador, con motivo).' : 'Queda en el historial; con la conexión se publica como SIRIUS_SILUETAS.', st.tried && !motOk ? 'Escribe el motivo (al menos 10 caracteres).' : ''))); }
 
   // ---------- Catálogos maestros › Siluetas y zonas ----------
   const ZHIST = [];
@@ -216,5 +429,6 @@
     return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 } }, tabs, h('div', { id: 'sil-panel', role: 'tabpanel', 'aria-labelledby': 'sil-tab-' + tab, style: { minWidth: 0 } }, cuerpo)); }
 
   Object.assign(window, { SiriusSiluetasCatalogo, SiriusMapaCaptura, SiriusGuiaPaso });
-  window.SiriusSiluetasUI = { mapaSvg, pasosMapa, completar, claveTexto, marcoSvg, VistaPrevia };   // etapa 12d-1c: VistaPrevia para el panel del espacio de trabajo
+  window.SiriusSiluetasUI = { mapaSvg, pasosMapa, completar, claveTexto, marcoSvg, VistaPrevia, guiaDeTexto, normGuia, textoDeGuia, ordenModo, posDe, copiarPos, validarSvg, agregarSilueta, esDoc }; // C2-15: utilidades del mapa editable y la guía
+  window.SiriusSiluetaNueva = SiriusSiluetaNueva;   // etapa 12d-1c: VistaPrevia para el panel del espacio de trabajo
 })();
