@@ -81,9 +81,9 @@ class Component extends DCLogic {
   JSZIP = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   state = (() => {
     const e = this.props.escena || '', st = { pv: false, open: false, veh: '', doc: '', idx: 0, tab: '', tip: '', pg: null, dl: null, sel: 0 };
-    const pre = { svpdq: 'informe', svresumen: 'resumen', svflota: 'ambos', svsinveredicto: 'informe', dp1veh: 'informe', dp1diag: 'informe', dp1sinhall: 'informe', dp1aps: 'resumen', empdf: 'informe', empdfaps: 'resumen', empdftarjetas: 'informe', empdfdiag: 'informe', empdfdiag3: 'informe' }[e];
+    const pre = { svpdq: 'informe', svresumen: 'resumen', svflota: 'ambos', svsinveredicto: 'informe', dp1veh: 'informe', dp1diag: 'informe', dp1sinhall: 'informe', dp1aps: 'resumen', empdf: 'informe', empdfaps: 'resumen', empdftarjetas: 'informe', empdfdiag: 'informe', empdfdiag3: 'informe', calpdfcx: 'ambos' }[e];
     // svflota: panel desplegado con «Todos los vehículos» y Ambos; las demás abren además la vista previa superpuesta.
-    if (pre) { st.open = true; st.doc = pre; if (e === 'svflota') st.veh = 'todos'; else st.pv = true; if (/^dp1(veh|diag|aps)$/.test(e)) st.veh = '20196-V1'; if (/^empdf/.test(e)) st.veh = e === 'empdfdiag3' ? '20204-E3' : '20204-E1'; }
+    if (pre) { st.open = true; st.doc = pre; if (e === 'svflota') st.veh = 'todos'; else if (e !== 'calpdfcx') st.pv = true; /* C2-18: calpdfcx deja el panel abierto, sin la vista previa */ if (/^dp1(veh|diag|aps)$/.test(e)) st.veh = '20196-V1'; if (/^empdf/.test(e)) st.veh = e === 'empdfdiag3' ? '20204-E3' : '20204-E1'; }
     return st;
   })();
   G() { return window.SiriusSalidaVeh || null; }

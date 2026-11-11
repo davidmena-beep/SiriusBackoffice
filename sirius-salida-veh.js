@@ -88,7 +88,7 @@
 
   // ---------- Resultado (veredicto, origen, reglas, emisión) ----------
   function resultado(ctx) {
-    const v = ctx.v, ov = ctx.ov || {}, er = Object.assign({}, v.estadoRiesgo || {}, ov), cal = v.calificacion || null;
+    const v = ctx.v, ov = ctx.ov || {}, er = Object.assign({}, ov.cx ? {} : v.estadoRiesgo || {}, ov), cal = ov.cx ? null : v.calificacion || null; /* C2-18: con la conexión (ov.cx) el resultado sale del estado y el veredicto de la base, no del caso de ejemplo */
     const abierto = ov.estado && !FINAL.includes(ov.estado) && !ov.aseg; if (abierto) { er.aseg = ''; er.emi = null; }
     const veredicto = er.aseg || (!abierto && cal ? cal.aseg : '') || '';
     const cobertura = veredicto === 'Asegurable' ? (er.cobertura || (cal && cal.cobertura) || ctx.val.veh_cobertura || '') : '';
