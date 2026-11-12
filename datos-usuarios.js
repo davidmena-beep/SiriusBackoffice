@@ -72,7 +72,7 @@
       ['Agenda', 'Ver agenda', 'V', 'V', 'E', 'P', 'V', 'V', '', '', ''],
       ['Informe', 'Registrar informe', 'E', '', '', 'P', 'P', '', '', '', ''],
       ['Informe', 'Determinar asegurabilidad desde el informe', '', '', '', 'P', '', '', '', '', ''],
-      ['Informe', 'Completar el informe', 'E', '', '', 'P', '', '', '', '', 'P'], // etapa C2-3 · DEC-180
+      ['Informe', 'Completar el informe', 'E', '', '', 'P', 'P', '', '', '', 'P'], // etapa C2-3 · DEC-180 · P-6e-2 · DEC-207: el Ejecutivo de inspecciones completa (y califica) los de autoinspección con responsable Interno
       ['Informe', 'Devolver el informe al inspector', 'E', '', '', '', '', '', '', '', 'P'],
       ['Informe', 'Ver evidencias de campo', 'V', 'V', 'V', 'P', 'V', 'V', '', '', 'P'],
       ['Informe', 'Ver los controles y confirmar que se vieron', 'E', '', '', 'P', '', '', '', '', 'P'], // etapa C2-19 · DEC-198: «Ya los vi»; no cambia el estado de los controles
@@ -110,7 +110,7 @@
       'Ver agenda': ['VPE', 'Editar: mover visitas en la agenda'],
       'Registrar informe': ['PE', 'Lo propio: los informes de sus visitas'],
       'Determinar asegurabilidad desde el informe': ['P', 'Solo con la facultad de la ficha del inspector'],
-      'Completar el informe': ['PE', 'Lo propio: el inspector, los de sus visitas si le toca completarlos; Control de calidad, los de los inspectores de su agencia'],
+      'Completar el informe': ['PE', 'Lo propio: el inspector, los de sus visitas si le toca completarlos; Control de calidad, los de los inspectores de su agencia; el Ejecutivo de inspecciones, los de autoinspección con responsable Interno (completa y califica en un paso)'],
       'Devolver el informe al inspector': ['PE', 'Lo propio: los informes de los inspectores de su agencia · con motivo'],
       'Ver evidencias de campo': ['VP', 'Lo propio: las de sus casos o las de los inspectores de su agencia'],
       'Ver los controles y confirmar que se vieron': ['PE', 'Quien completa el informe ve los controles con su evidencia y confirma «Ya los vi»; no los marca Conforme ni Requiere acción'],

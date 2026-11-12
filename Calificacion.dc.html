@@ -381,6 +381,7 @@ class Component extends DCLogic {
   icons = {
     foto: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
     doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h6',
+    video: 'M23 7l-7 5 7 5V7z M3 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
   };
   seq = 0;
   state = this.initial();
@@ -686,11 +687,11 @@ class Component extends DCLogic {
       onCancel: () => p.onCancel && p.onCancel(),
       stickyTop: p.stickyTop || '24px',
       asideMaxH: 'calc(100vh - ' + (parseInt(p.stickyTop || '24', 10) + 24) + 'px)',
-      evidCount: evid.filter(e => e.tipo === 'foto').length + ' fotos · ' + evid.filter(e => e.tipo === 'doc').length + ' documentos',
+      evidCount: evid.filter(e => e.tipo === 'foto').length + ' fotos · ' + evid.filter(e => e.tipo === 'doc').length + ' documentos' + (evid.some(e => e.tipo === 'video') ? ' · ' + evid.filter(e => e.tipo === 'video').length + (evid.filter(e => e.tipo === 'video').length === 1 ? ' video' : ' videos') : ''), // P-6e-2: la autoinspección trae también un video de 360°
       // Etapa P-6c · con la conexión, las evidencias traen la foto (src), «Imagen de prueba» y sus datos (meta); en demostración no cambian.
-      evid: evid.map((e, i) => ({ titulo: e.titulo, kind: e.prueba ? 'Imagen de prueba' : e.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[e.tipo], hasImg: !!e.src, noImg: !e.src, src: e.src || '', cuando: e.cuando || (e.fecha + ' · ' + e.hora), gps: e.gps || '', hasGps: !!e.gps, aria: 'Ampliar ' + (e.tipo === 'doc' ? 'documento ' : 'foto ') + e.titulo, open: () => this.setState({ viewer: i }) })),
+      evid: evid.map((e, i) => ({ titulo: e.titulo, kind: e.prueba ? 'Imagen de prueba' : e.tipo === 'doc' ? 'Documento' : e.tipo === 'video' ? 'Video' : 'Foto', icon: this.icons[e.tipo] || this.icons.foto, hasImg: !!e.src, noImg: !e.src, src: e.src || '', cuando: e.cuando || (e.fecha + ' · ' + e.hora), gps: e.gps || '', hasGps: !!e.gps, aria: 'Ampliar ' + (e.tipo === 'doc' ? 'documento ' : e.tipo === 'video' ? 'video ' : 'foto ') + e.titulo, open: () => this.setState({ viewer: i }) })),
       viewerOpen: !!ve,
-      vw: ve ? { meta: ve.meta || this.evMeta(ve),  titulo: ve.titulo, kind: ve.prueba ? 'Imagen de prueba' : ve.tipo === 'doc' ? 'Documento' : 'Foto', icon: this.icons[ve.tipo], hasImg: !!ve.src, noImg: !ve.src, src: ve.src || '', alt: 'Foto · ' + ve.titulo, hasMapa: !!ve.mapa, mapa: ve.mapa || '', fecha: ve.fecha, hora: ve.hora, gps: ve.gps || 'Sin GPS', pos: (vi + 1) + ' de ' + evid.length } : { meta: [], titulo: '', kind: '', icon: '', hasImg: false, noImg: true, src: '', alt: '', hasMapa: false, mapa: '', fecha: '', hora: '', gps: '', pos: '' },
+      vw: ve ? { meta: ve.meta || this.evMeta(ve),  titulo: ve.titulo, kind: ve.prueba ? 'Imagen de prueba' : ve.tipo === 'doc' ? 'Documento' : ve.tipo === 'video' ? 'Video' : 'Foto', icon: this.icons[ve.tipo] || this.icons.foto, hasImg: !!ve.src, noImg: !ve.src, src: ve.src || '', alt: 'Foto · ' + ve.titulo, hasMapa: !!ve.mapa, mapa: ve.mapa || '', fecha: ve.fecha, hora: ve.hora, gps: ve.gps || 'Sin GPS', pos: (vi + 1) + ' de ' + evid.length } : { meta: [], titulo: '', kind: '', icon: '', hasImg: false, noImg: true, src: '', alt: '', hasMapa: false, mapa: '', fecha: '', hora: '', gps: '', pos: '' },
       closeViewer: () => this.setState({ viewer: null }),
       viewerFooter: React.createElement(React.Fragment, null,
         btn('secondary', 'Anterior', () => this.setState({ viewer: (vi - 1 + evid.length) % evid.length })),

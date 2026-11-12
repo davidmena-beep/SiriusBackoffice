@@ -55,9 +55,9 @@ window.SIRIUS_HONORARIOS = {
   // Reemplazan valores del general por partes; lo que no definen, sale del general. Con vigencia y versión.
   tarifarios: [
     { id: 'TAR-GEN-2025', nombre: 'Tarifario general RTG 2025', aplicaA: 'Todos', vigencia: ['2025-01-01', '2026-12-31'], version: 1, estado: 'Vigente', origen: 'Tarifario_Inspecciones_RTG_2025.xlsx', liquida: { momento: 'alEnviarInforme', quien: 'Inspector' } },
-    { id: 'TAR-EUR-2026', nombre: 'Contrato Eurosurvey 2026', aplicaA: { agencia: 'eurosurvey' }, vigencia: ['2026-01-01', '2026-12-31'], version: 2, estado: 'Vigente', cambios: { redaccion: 14, vehiculosPresencial: 16.5 }, validacionAgencia: true, liquida: { momento: 'posterior', quien: 'Finanzas de agencia', nota: 'El inspector envía el informe sin honorario; Carla Ponce los liquida después en lote' } },
+    { id: 'TAR-EUR-2026', nombre: 'Contrato Eurosurvey 2026', aplicaA: { agencia: 'eurosurvey' }, vigencia: ['2026-01-01', '2026-12-31'], version: 2, estado: 'Vigente', cambios: { redaccion: 14, vehiculosPresencial: 16.5, completado: 12 }, validacionAgencia: true, liquida: { momento: 'posterior', quien: 'Finanzas de agencia', nota: 'El inspector envía el informe sin honorario; Carla Ponce los liquida después en lote' } },
     { id: 'TAR-AND-2026', nombre: 'Contrato Inspecciones Andinas 2026', aplicaA: { agencia: 'andinas' }, vigencia: ['2026-01-01', '2026-12-31'], version: 1, estado: 'Vigente', cambios: {}, validacionAgencia: false, liquida: { momento: 'alEnviarInforme', quien: 'Inspector' } },
-    { id: 'TAR-LAN-2026', nombre: 'Luis Andrade (externo)', aplicaA: { inspector: 'Luis Andrade' }, vigencia: ['2026-01-01', '2026-12-31'], version: 1, estado: 'Vigente', cambios: { nivelMaximo: 'basico' }, nota: 'Solo puede facturar como Inspector Riesgos Básicos' },
+    { id: 'TAR-LAN-2026', nombre: 'Luis Andrade (externo)', aplicaA: { inspector: 'Luis Andrade' }, vigencia: ['2026-01-01', '2026-12-31'], version: 1, estado: 'Vigente', cambios: { nivelMaximo: 'basico', completado: 8 }, nota: 'Solo puede facturar como Inspector Riesgos Básicos' },
   ],
   // ---------- Quién y cuándo liquida (DEC-138, ampliada) ----------
   // Se define en cada tarifario (agencia o inspector); lo que no define, sale del general.

@@ -83,7 +83,9 @@
       if (inf.subasta) { prop = inf.subasta.valor; final = inf.subasta.valor; }
       var dif = c.total ? H.r2((prop - c.total) / c.total * 100) : 0;
       return Object.assign({}, inf, { calculo: c, estado: est, calculado: c.total, propuesta: prop, valor: final, difPct: dif, revisar: Math.abs(dif) > 20 || !!(c.tiempos && c.tiempos.revisar), motivo: s.motivo || '', despues: s.despues || null, liquidado: s.liquidado || null, historial: (s.historial || []).concat(inf.historialBase || []), devolucion: s.devolucion || null }); });
-    return out.concat(H.extra.map(function (x) { return Object.assign({}, x); })); };
+    return out.concat(H.extra.map(function (x) { var s = H.st[x.id]; if (!s || x.subasta) return Object.assign({}, x); /* P-6e-2: los honorarios de «Completado de informe» siguen el mismo flujo (aprobar, ajustar, devolver) */
+      var prop = s.propuesta != null ? s.propuesta : x.propuesta, fin = s.final != null ? s.final : (s.ajusteAgencia != null ? s.ajusteAgencia : prop);
+      return Object.assign({}, x, { estado: s.estado || x.estado, propuesta: prop, valor: fin, motivo: s.motivo || x.motivo, despues: s.despues || x.despues || null, liquidado: s.liquidado || x.liquidado || null, devolucion: s.devolucion || x.devolucion || null, historial: (s.historial || []).concat(x.historial || []) }); })); };
   H.hon = function (id) { return H.lista().find(function (x) { return x.id === id; }) || null; };
   function st(id) { return H.st[id] || (H.st[id] = { historial: [] }); }
   function hist(id, que, motivo, por) { st(id).historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: que, motivo: motivo || '' }); }
@@ -114,6 +116,19 @@
     if (rolBase === 'Ejecutivo de inspecciones') { var f = SU && SU.facHonorarios ? SU.facHonorarios(usuario) : { activa: false, tope: null };
       return f.activa ? { texto: f.tope == null ? 'Tu ficha tiene la facultad activa, sin tope' : 'Tu ficha tiene la facultad activa, hasta ' + H.usd(f.tope) + ' por honorario', tope: f.tope, activa: true } : null; }
     return null; };
+  // ---------- Etapa P-6e-2 · DEC-207: honorario «Completado de informe» (tarifa propia de la agencia o del inspector independiente) ----------
+  // La tarifa vive en el mapa de su tarifario (clave «completado»); se publica con el resto en SIRIUS_HONORARIOS.completadoInforme = [{ tipo, nombre, monto }].
+  H.tarifaCompletado = function (tipo, quien) { var t = H.tars.find(function (x) { return x.estado === 'Vigente' && x.aplicaA && (tipo === 'agencia' ? x.aplicaA.agencia === quien : x.aplicaA.inspector === quien); }); return t && t.mapa.completado != null ? t.mapa.completado : null; };
+  H.tarifarioCompletado = function (tipo, quien) { return H.tars.find(function (x) { return x.estado === 'Vigente' && x.aplicaA && (tipo === 'agencia' ? x.aplicaA.agencia === quien : x.aplicaA.inspector === quien); }) || null; };
+  H.completadoLista = function (tars) { var U = window.SIRIUS_USUARIOS || {}, out = []; (tars || H.tars).forEach(function (t) { if (t.estado !== 'Vigente' || !t.aplicaA || t.aplicaA === 'Todos' || t.mapa.completado == null) return;
+      if (t.aplicaA.agencia) { var a = (U.agencias || []).find(function (x) { return x.id === t.aplicaA.agencia; }); out.push({ tipo: 'agencia', nombre: a ? a.nombre : t.aplicaA.agencia, monto: t.mapa.completado }); } else if (t.aplicaA.inspector) out.push({ tipo: 'independiente', nombre: t.aplicaA.inspector, monto: t.mapa.completado }); }); return out; };
+  H.agregarCompletado = function (o) { var id = 'HON-COM-' + o.caso; if (H.extra.some(function (x) { return x.id === id; })) return id;
+    var E = window.SIRIUS_EJEMPLO || {}, tar = H.tarifarioCompletado(o.tipo, o.tipo === 'agencia' ? o.agencia : o.nombre), monto = tar && tar.mapa.completado != null ? tar.mapa.completado : null, ag = o.tipo === 'agencia' ? o.agencia : null, ahora = H.ahoraIso(), U = window.SIRIUS_USUARIOS || {}, an = ag ? ((U.agencias || []).find(function (x) { return x.id === ag; }) || {}).nombre || ag : o.nombre;
+    var x = { id: id, caso: o.caso, visita: null, inspector: o.tipo === 'independiente' ? o.nombre : '', agencia: ag, proveedor: { nombre: an, agencia: ag }, grupo: o.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales', ramo: o.ramo, sucursal: o.sucursal, ciudad: o.sucursal, fecha: ahora, modalidad: 'Autoinspección', riesgos: [{ id: o.caso + '-R1', label: o.ramo }], desc: 'Completado de informe · autoinspección', concepto: 'Completado de informe', estadoCaso: o.estadoCaso,
+      estado: 'Por aprobar', calculado: monto || 0, propuesta: monto || 0, valor: monto || 0, difPct: 0, revisar: false, motivo: '', devolucion: null,
+      calculo: { modelo: 'completado', tarifario: tar ? tar.id : 'Sin tarifa propia', lineas: [{ id: 'comp', concepto: 'Completado de informe', cantidad: 1, unidad: 'informe', unit: monto, valor: monto, origen: tar ? 'Tarifa propia «Completado de informe» de ' + tar.nombre + ' (' + tar.id + ')' : 'Sin tarifa propia: defínela en Honorarios › Tarifarios' }], total: monto || 0, porDefinir: monto == null ? ['Completado de informe'] : [], tiempos: null, validacionAgencia: false, liquida: { momento: 'alEnviarInforme', quien: 'Inspector', nota: '' } },
+      historial: [{ fecha: ahora, por: o.por || an, que: 'Informe completado en el back-office: honorario «Completado de informe» por ' + H.usd(monto), motivo: '' }] };
+    H.extra.push(x); avisar(); return id; };
   // ---------- Tarifarios: guardar con motivo e impacto en los honorarios abiertos ----------
   var CERR = ['Aprobado', 'Facturado', 'Pagado', 'Acordado en subasta'];
   H.impacto = function (id, mapa) { var tars = clon(H.tars), t = tars.find(function (x) { return x.id === id; }); t.mapa = mapa; var a = 0, b = 0, filas = [];
@@ -121,7 +136,7 @@
     return { antes: H.r2(a), despues: H.r2(b), dif: H.r2(b - a), filas: filas }; };
   H.guardarTarifario = function (id, mapa, motivo, por, cambios) { var t = H.tarifario(id), snap = JSON.parse(JSON.stringify({ mapa: t.mapa, version: t.version, historial: t.historial })), imp = H.impacto(id, mapa); t.mapa = mapa; t.version += 1; t.historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: 'Versión ' + t.version + ': ' + cambios.join('; '), motivo: motivo, impacto: imp.dif }); avisar();
     /* Etapa C2-10 · DEC-187: con la conexión, la versión del tarifario se publica en la base (SIRIUS_HONORARIOS con todos los tarifarios); con { ok: false } se revierte */
-    var SP = window.SiriusPublicar; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_HONORARIOS', version: t.version, datos: Object.assign({}, window.SIRIUS_HONORARIOS || {}, { tarifarios: H.tars }), motivo: motivo, pantalla: 'Honorarios › ' + (t.nombre || id),
+    var SP = window.SiriusPublicar; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_HONORARIOS', version: t.version, datos: Object.assign({}, window.SIRIUS_HONORARIOS || {}, { tarifarios: H.tars, completadoInforme: H.completadoLista() }), motivo: motivo, pantalla: 'Honorarios › ' + (t.nombre || id),
       revertir: function () { t.mapa = snap.mapa; t.version = snap.version; t.historial = snap.historial; avisar(); }, alPublicar: function (i) { t.historial.unshift({ fecha: H.ahoraIso(), por: por || H.ctx.usuario(), que: 'Publicada en la base: versión ' + t.version, motivo: motivo }); avisar(); } });
     return imp; };
   window.SiriusHonorarios = H;

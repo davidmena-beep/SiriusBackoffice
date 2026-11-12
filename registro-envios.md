@@ -4,6 +4,37 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-2
+
+Publiqué la etapa P-6e-2 (Versión 184; la primera publicación quedó como Versión 183 con este número mal escrito y la republiqué con el número corregido): cuando no hay inspector en sitio, quién completa el informe ahora lo decide una configuración (DEC-207), con su tarifa de completado y los casos de autoinspección armados con los datos de la base.
+
+**Qué cambió**
+- **Administración › Flujo y SLA › «Completado del informe»:** reglas en orden (ramo, modalidad, sucursal, suma asegurada hasta → Interno, Agencia con su selector o Inspector independiente con el suyo, más el plazo en horas hábiles). Gana la primera que coincide y la última es el destino por defecto, Interno, fijo. Tiene el panel «Probar con un caso», «Así se ve en el caso» y se publica con motivo como `SIRIUS_COMPLETADO` = { version, reglas, porDefecto }.
+- **Tarifa «Completado de informe»:** cada agencia y cada inspector independiente la tiene en su tarifario (Liquidaciones › Tarifarios), se publica en `SIRIUS_HONORARIOS.completadoInforme` y Liquidaciones muestra el honorario con el concepto «Completado de informe». Sin tarifa propia queda «por definir»; el Interno no cobra.
+- **En el caso:** el Resumen y el encabezado del informe dicen «Responsable del completado: … · por <regla>», y el Coordinador y el Administrador tienen «Reasignar…» mientras no se haya enviado, con destino, agencia o inspector y un motivo obligatorio que queda en el Historial.
+- **Interno:** el paso 3 es «Criterio y calificación» con «Completar y calificar»: queda calificado en un solo paso y el caso pasa directo a Inspeccionado, sin «Pendiente calificación» y sin honorario. **Agencia e Independiente** completan como hasta ahora y el caso pasa a «Pendiente calificación» con su honorario.
+- **Bandeja «Informes por completar»:** cada persona ve lo que le toca según el responsable, con la modalidad y el responsable en la columna «Inspector · Responsable».
+- **Autoinspección con la conexión:** el caso toma estado y subestado de la base («Informe por completar · Autoinspección recibida»), la visita se ve «Realizada» en la modalidad Autoinspección con «Recibida dd/mm/aa · hh:mm», y las evidencias (fotos, documentos y el video de 360°) quedan en el canal «Autoinspección», en la pestaña Evidencias y en el panel «Evidencias de campo». Calificación cuenta «5 fotos · 2 documentos · 1 video» y el Historial dice «Informe de autoinspección recibido» desde el Portal del cliente.
+- **Escenas nuevas (7):** `complreglas`, `complprobar`, `compltarifa`, `autorecibida`, `autointerno`, `autotercero` y `reasignar`.
+
+**Verificado**
+- Las 7 escenas nuevas más `infcompletarcaso`, `calctrl` y `cxlimpio` abren desde el selector a 1280×720 y 1920×1080 sin errores y sin scroll horizontal. Corregí un desborde horizontal de `autointerno` (el tooltip oculto de «Ver PDF» deshabilitado salía del ancho; ahora esa tarjeta se apila) y el catálogo de sucursales de las reglas, que salía vacío.
+- Interno completa y califica en un paso: el caso queda Inspeccionado · Asegurable, sin «Pendiente calificación». Agencia completa y el caso pasa a calificación con el honorario HON-COM-30010 de USD 12,00 «Por aprobar». «Reasignar…» cambia el responsable y muestra el honorario (USD 8,00 con Luis Andrade).
+- Los cinco momentos del caso de autoinspección (enlace enviado, en curso, recibida, completado, calificado) se ven bien en Coordinación, Calificación e Historial; cuando el estado cambia en la sesión, el subestado de la base se borra.
+- Prueba interna con conexión en una copia separada (`sirius-conexion.js` publicado sigue con su única línea mínima): `completarInforme` con `decision: determinar` y `criterio: Asegurable` (Interno), `completarInforme` de Agencia con revert y mensaje con `{ ok: false }`, `reasignarCompletado` con revert con `{ ok: false }`, y `publicarConfiguracion` de `SIRIUS_COMPLETADO` (versión 2, motivo y plazo de 36 h) y de `SIRIUS_HONORARIOS` (versión 3, `completadoInforme` con Eurosurvey USD 15,00 y Luis Andrade USD 8,00).
+
+**No verificado**
+- Completar como Inspector independiente con la conexión: comparte el código de Agencia, pero no lo recorrí de punta a punta.
+- El cálculo del honorario y del plazo en la base real: aquí se calcula con los datos simulados y el reloj del prototipo.
+- Con la conexión, `estadoCaso` del honorario queda con el estado anterior al envío («Informe por completar»); lo recalcula la base.
+
+**Diferencias**
+- En la escena `autotercero` el caso no trae controles pendientes, así que no aparece el paso «Controles» con «Ya los vi»; ese paso sigue como en DEC-198.
+- La etiqueta del video 360° se ve encimada con su duración en el visor de evidencias; es del componente existente y no lo toqué.
+- El módulo Flujo sigue con el aviso «Datos de demostración» con la conexión, como en etapas anteriores.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-1c
 
 Publiqué la etapa P-6e-1c (Versión 180; la primera publicación quedó como Versión 179 con este número mal escrito y la republiqué con el número corregido): en Formularios, el Administrador puede eliminar una versión Retirada de una plantilla cuando ningún informe la usa (DEC-208). Es una excepción acotada a «inactivar en lugar de eliminar», porque esa versión no tiene usos. Todo lo demás de Formularios se ve igual.
