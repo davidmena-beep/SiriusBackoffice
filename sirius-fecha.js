@@ -14,7 +14,7 @@
   // Acepta AAAA-MM-DD[THH:MM], DD/MM/AA[AA][ · HH:MM] y HH:MM. Devuelve partes o null si no está completo.
   function parse(s) { s = String(s || '').trim(); if (!s) return null; var m;
     if ((m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/.exec(s))) return { y: +m[1], m: +m[2], d: +m[3], h: m[4] != null ? +m[4] : null, mi: m[5] != null ? +m[5] : null };
-    if ((m = /^(\d{2})\/(\d{2})\/(\d{2}|\d{4})(?:\s*·\s*(\d{2}):(\d{2}))?$/.exec(s))) return { y: y4(+m[3]), m: +m[2], d: +m[1], h: m[4] != null ? +m[4] : null, mi: m[5] != null ? +m[5] : null };
+    if ((m = /^(\d{2})\/(\d{2})\/(\d{4}|\d{2})(?:\s*·\s*(\d{2}):(\d{2}))?$/.exec(s))) return { y: y4(+m[3]), m: +m[2], d: +m[1], h: m[4] != null ? +m[4] : null, mi: m[5] != null ? +m[5] : null };
     if ((m = /^(\d{2}):(\d{2})$/.exec(s))) return { y: null, m: null, d: null, h: +m[1], mi: +m[2] };
     return null; }
   function key(p, modo) { return modo === 'hora' ? (p.h * 60 + p.mi) : ((p.y * 100 + p.m) * 100 + p.d) * 10000 + (modo === 'fecha' ? 0 : (p.h || 0) * 100 + (p.mi || 0)); }

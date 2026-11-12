@@ -4,6 +4,41 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-22
+
+Publiqué la etapa C2-22 (Versión 171). El Historial de un caso conectado ya sale en orden cronológico real. La causa era que `cxTs` leía «11/11/2026 · 18:00» como 11/11/2020 a medianoche; ahora lee el año completo y la hora. Además, el Historial del caso tiene un botón para cambiar el orden. Registré la regla como DEC-201, porque el pedido no trae número.
+
+**Qué cambió**
+- **Lectura de fechas:** en `cxTs` el año de cuatro dígitos se prueba antes que el de dos, y la hora se lee después del año con espacios normales o duros. Corregí el mismo defecto donde aparecía: `infHours` (horas entre la inspección y la carga del Informe), la hora de «Cargar fotos» desde el back-office, la fecha corta de las fotos (`evVals`), la fecha de la determinación al migrar un flujo (`flujoMigrar`), la fecha de la visita de un caso de ejemplo (`visitsFor`) y la fecha y hora de cada foto en `sirius-fotos-veh.js`. En `sirius-fecha.js` solo cambié el orden de las alternativas; el campo ya funcionaba porque su patrón termina en `$`.
+- **Botón de orden del Historial:** a la derecha del título, un botón de texto pequeño, sin fondo ni borde, del color de enlace. Dice «↓ Más recientes primero» y, al tocarlo, «↑ Más antiguos primero»; la lista se invierte al instante. Lleva `aria-pressed` («true» con los más antiguos primero) y un `aria-label` que dice el orden actual. Cada vez que se abre un caso arranca en descendente; la preferencia vive solo en el estado de la sesión, sin almacenamiento del navegador. Funciona igual con y sin conexión.
+- **Resumen › Actividad reciente:** sin botón; siempre muestra las tres más recientes, con la misma lectura de fechas.
+- **Escenas:** `cxlimpio` ahora trae «Solicitud registrada» del 08/11/2026 19:15 y tres eventos con el año escrito con cuatro dígitos («11/11/2026 · 18:12», «11/11/2026 · 18:00» y «10/11/2026 · 05:53»). Escena nueva `historden`: abre el Historial de cxlimpio con «↑ Más antiguos primero».
+- **Inventario:** etapa C2-22, DEC-201, filas y tamaños al día; `KNOWN_ESC` pasa a 500.
+
+**Verificado**
+- **Selector:** cxlimpio, historden y calveh (un caso de ejemplo sin conexión) abren a 1280 × 720 y a 1920 × 1080 sin errores ni desplazamiento horizontal. También abrí calcxcalif, infcompletarcaso y evunificadas.
+- **cxlimpio:** el Historial (10 filas) empieza en «11/11/2026 · 18:12» y termina en «Solicitud registrada 08/11/26 · 19:15 · BPM de Emisión». Los eventos del mismo día quedan por hora: 18:12 antes que 18:00 el 11/11, y 05:57 antes que 05:53 el 10/11. En historden el orden es el inverso.
+- **Actividad reciente en cxlimpio:** 11/11/2026 · 18:12, 11/11/2026 · 18:00 y 10/11/26 · 19:30, sin botón y sin cambios al invertir el Historial.
+- **Botón:** el texto, `aria-pressed` y `aria-label` cambian y vuelven al pulsar de nuevo; el orden se mantiene al pasar a otra pestaña del mismo caso y vuelve a «Más recientes primero» al cerrar y reabrir el caso. No se usa localStorage ni sessionStorage. Con el caso de ejemplo sin conexión el botón también invierte la lista.
+- **Sin conexión:** 20 escenas (inicio, calveh, calrg, bandejaexp, coordvis, evunificadas, infcompletarcaso, calcxcalif, infcxfotos, calpdfcx, calctrlsusc, evidencias, catalogos, motoresvl, g1cal, riesgos, veh, gsolicitar2, informeautomaticos y flujos) tienen el mismo texto y los mismos píxeles que en la C2-21. El recorrido de pestañas de cxlimpio a ambos tamaños no muestra «16/10/26», «Santiago Ortiz» ni «vlocal».
+- **Prueba interna con conexión** (copia aparte en `cxtest/c222`, no publicada): eventos reales con «dd/mm/aaaa · hh:mm» con espacios normales y duros, «dd/mm/aa», ISO y uno sin hora, más fotos con el año de cuatro dígitos. El orden es correcto en ambos sentidos a ambos tamaños, la Actividad son las tres más recientes y Informe › Inspección muestra la primera foto («10/11/2026 · 06:02»). Después, `sirius-conexion.js` quedó idéntico a su contenido mínimo.
+
+**No verificado**
+- La conexión real con la base y el formato exacto de la hora que enviará: probé ISO, «dd/mm/aa» y «dd/mm/aaaa» con espacios normales y duros.
+- El botón con un lector de pantalla: comprobé los atributos, no la lectura.
+
+**Diferencias**
+- **Eventos con el mismo minuto:** quedan en el orden en que llegan («Visita terminada» e «Informe de campo recibido de la app» a las 18:10 del 10/11); al invertir, se invierten también entre sí. Un evento con fecha y sin hora cuenta como las 00:00.
+- **Formato visible:** las horas ISO se muestran con año de dos dígitos y las escritas como texto se muestran como llegan, con cuatro. Por eso cxlimpio mezcla «11/11/2026 · 18:12» con «10/11/26 · 19:30»; no reformateé para no cambiar el texto de los eventos.
+- **Sin conexión:** el botón invierte la lista tal como viene; no reordené por fecha, para que los casos de ejemplo sigan igual.
+- **Reinicio del orden:** el framework no entrega el estado anterior a `componentDidUpdate`, así que guardo el caso anterior para volver a descendente al abrir otro. Por lo mismo, el enfoque automático del botón de cierre de la vista rápida, que usa ese estado anterior, no se ejecuta; lo vi en el código y no lo toqué.
+- **Datos de cxlimpio:** «Solicitud registrada» pasó del 09/11/2026 23:40 al 08/11/2026 19:15, como pide el pedido; los textos de los tres eventos nuevos son inventados («Comentario del ejecutivo», «Comentario del coordinador» e «Inspector en camino»).
+- **Estilo:** el botón usa 13 px y el subrayado de los demás botones de texto del sistema; la etapa no trae medidas.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** cxlimpio, historden, calveh, calcxcalif, infcompletarcaso, evunificadas.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-21
 
 Publiqué la etapa C2-21 (Versión 170). Con la conexión, un caso de la base ya no se arma con la ficha del caso de ejemplo que tiene el mismo número (30004). Cada dato sale de la base y, si no viene, se ve «—» o «Sin dato». Sin conexión todo sigue igual. El pedido no trae número de decisión, así que la registré como DEC-200.

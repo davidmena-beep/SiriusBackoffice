@@ -27,7 +27,7 @@
   // Cumplimiento por modalidad: pasos exigidos con sus fotos válidas.
   function cumplimiento(lista, ps, M) { const req = ps.filter(s => necesita(s, M) > 0), falta = req.filter(s => lista.filter(x => x.s.id === s.id && cuenta(x)).length < necesita(s, M)); return { req: req.length, ok: req.length - falta.length, falta: falta.map(s => s.name) }; }
   function textoCumpl(c, modTxt) { if (!c.req) return 'Sin fotos exigidas en ' + modTxt; const f = c.falta, ft = f.length > 3 ? f.slice(0, 3).join(', ') + ' y ' + (f.length - 3) + ' más' : f.join(', '); return c.ok + ' de ' + c.req + (f.length ? ' · falta ' + ft : ' · completo'); }
-  function fecha(at) { const m = /^(\d\d\/\d\d\/\d\d) · (\d\d:\d\d)/.exec(at || ''); return m ? { d: m[1], h: m[2] } : { d: at || '', h: '' }; }
+  function fecha(at) { const m = /^(\d\d\/\d\d\/(?:\d{4}|\d\d))(?!\d)[\s\u00A0]*·[\s\u00A0]*(\d\d:\d\d)/.exec(at || ''); return m ? { d: m[1], h: m[2] } : { d: at || '', h: '' }; }
   function gps(f) { return f.gps ? f.gps.lat.toFixed(5) + ', ' + f.gps.lng.toFixed(5) + (f.gps.prec != null ? ' · ± ' + f.gps.prec + ' m' : '') + (f.marca === 'gpssim' ? ' · simulado (sin permiso de ubicación)' : '') : 'Sin GPS'; }
   // Paso y, en Extras y Daños (rep), la fila de la grilla a la que se vincula la foto.
   function etiqueta(x) { return x.f.fila ? x.s.name + ' · ' + x.f.fila.label : x.s.name; }
