@@ -4,6 +4,43 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-23
+
+Publiqué la etapa C2-23 (Versión 172): las mejoras de diseño D-1 a D-4, solo de presentación. No cambié funciones, reglas, atajos, textos de los eventos ni acciones de la conexión. La registré como mejora de diseño con el número DEC-202, porque el pedido no trae número.
+
+**Qué cambió**
+- **D-1 · Marco de la evidencia** (la pieza compartida de la revisión de controles, en «Informe por completar › Controles» y en Calificación): el fondo del marco y las franjas a los lados de la foto son un solo neutro, #F1F4F8. El marco lleva borde de 1 px con `--border-subtle` y radio de 12 px. La barra de zoom es una píldora blanca con la sombra suave del sistema (`--shadow-sm`) y botones sin relleno con texto oscuro; el foco visible no cambia. El rótulo de la foto es un chip blanco al 90 % con texto oscuro. El fondo oscuro queda solo en «Pantalla completa» del visor único.
+- **D-2 · Fecha única:** el Historial y la Actividad reciente muestran todas las fechas como «dd/mm/aa · hh:mm» con espacios duros, vengan en ISO, como «dd/mm/aaaa · hh:mm» o ya en ese formato. Cambia solo cómo se muestran: el texto de los eventos y el orden son los mismos.
+- **D-3 · Foco de la vista rápida:** al abrirla, el foco pasa al botón de cierre solo en ese momento. Guardo el valor anterior de `quickOpen`, el mismo recurso de la C2-22.
+- **D-4 · Botón del menú lateral:** el contenedor del menú pasa a `z-index` 100 (sobre la cabecera y el panel principal, debajo de los paneles y los modales), así que todo el círculo queda visible y responde al clic. El cursor es de mano en todo el círculo, que mide 32 × 32 px. Posición e ícono son los mismos.
+- **Escenas:** `ctrllista`, `calctrl`, `cxlimpio` e `historden` actualizadas. Escena nueva `disenod1`: la revisión de controles del caso 30004 en Control de calidad y, debajo, en Calificación, con la misma pieza.
+- **Inventario:** etapa C2-23 como mejora de diseño (D-1 a D-4), DEC-202; `KNOWN_ESC` pasa a 501.
+
+**Verificado**
+- **Selector a 1280 × 720 y 1920 × 1080:** disenod1, ctrllista, calctrl, cxlimpio, historden y bandejaexp (con el menú lateral) abren sin errores ni desplazamiento horizontal.
+- **D-1:** en las tres escenas con marco, el fondo mide rgb(241, 244, 248), el borde 1 px con el color de `--border-subtle` y el radio 12 px. La barra de zoom es blanca, redonda y con sombra, y el rótulo es blanco al 90 % con texto oscuro. La altura del marco es la misma que antes (255 y 460 px en ctrllista; 241 y 460 en calctrl) y la fila de decisión sigue visible a 1280 × 720. «Pantalla completa» abre el visor único oscuro (rgb(11, 26, 46)), también desde disenod1.
+- **D-2:** en cxlimpio e historden las 10 fechas del Historial salen «dd/mm/aa · hh:mm» con espacios duros, en los dos sentidos. «11/11/2026 · 18:12» se ve «11/11/26 · 18:12». El orden y el botón de la C2-22 funcionan igual.
+- **D-3:** al abrir la vista rápida el foco queda en «Cerrar vista rápida», y ya no vuelve a él cuando después se pasa a otro botón y el estado se actualiza.
+- **D-4:** con el menú cerrado y abierto, seis puntos del círculo (centro, los cuatro lados y el borde derecho) responden al clic, y un clic en la mitad derecha lo abre y lo cierra. El botón mide 32 × 32 px con cursor de mano.
+- **Sin cambios de texto:** 20 escenas tienen el mismo texto que en la C2-22. En píxeles solo difiere el recuadro del botón del menú (116 a 132 por 56 a 93 px), que ahora se ve entero.
+- **Prueba interna con conexión** (copia aparte, no publicada): eventos con «dd/mm/aaaa · hh:mm» con espacios normales y duros, «dd/mm/aa», ISO y uno sin hora. Todas las fechas salen «dd/mm/aa · hh:mm» y el orden es correcto en ambos sentidos a ambos tamaños; la Actividad son las tres más recientes. Después, `sirius-conexion.js` quedó idéntico a su contenido mínimo.
+
+**No verificado**
+- Los atajos y el foco del marco con un lector de pantalla o con una tablet táctil: medí tamaños y puntos, no probé la mano ni el toque.
+- La disposición del marco con una foto real y de proporción muy distinta: probé la imagen de ejemplo y las fotos de cxlimpio.
+
+**Diferencias**
+- **D-3, corrección a la C2-22:** el pedido dice que el foco no pasaba al abrir. Medí antes de cambiar: sí pasaba, porque sin estado anterior la condición siempre era verdadera. El defecto real era que el foco se volvía a forzar en cada actualización mientras la vista estaba abierta, aunque la persona ya estuviera en otro botón. Ahora ocurre solo al abrir. En mi respuesta de la C2-22 dije que no se ejecutaba; eso estaba mal. El menú de acciones del caso tiene la misma condición (foco al primer ítem en cada actualización); no lo toqué porque no estaba en el pedido y no lo medí en pantalla.
+- **D-1, la foto:** el borde de 1 px es parte del marco con la misma altura total, así que la foto queda 2 px más baja (193 a 191 px a 1280 × 720; 398 a 396 px a 1920 × 1080). El dibujo de ejemplo conserva su propio fondo, un poco más oscuro que #F1F4F8, y se ve como una lámina sobre el marco; las fotos reales usan las franjas #F1F4F8. Para eso `sirius-evidencias.js` recibe un tercer parámetro opcional de fondo en la imagen en grande; el visor único no lo usa.
+- **D-1, video y control sin foto:** como el marco ahora es claro, el anillo de la vuelta del video, su botón de reproducir y el aviso «Este control no tiene foto» pasan de blanco a texto oscuro para poder leerse.
+- **D-1, escena disenod1:** muestra las dos revisiones una tras otra, no lado a lado, porque cada una necesita dos columnas y a 1280 px no caben juntas. Usa los controles reales del caso 30004; decidir ahí no guarda nada y avisa «Demostración del diseño D-1».
+- **D-2:** la fecha de Informe › Inspección sigue como llega (por ejemplo «10/11/2026 · 06:02»), porque el pedido limita el formato único al Historial y a la Actividad reciente.
+- **D-4:** el botón es del componente del menú lateral del sistema de diseño; no lo modifiqué, lo corregí desde el Back-office con el `z-index` del contenedor y una regla de cursor.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** disenod1, ctrllista, calctrl, cxlimpio, historden, bandejaexp.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-22
 
 Publiqué la etapa C2-22 (Versión 171). El Historial de un caso conectado ya sale en orden cronológico real. La causa era que `cxTs` leía «11/11/2026 · 18:00» como 11/11/2020 a medianoche; ahora lee el año completo y la hora. Además, el Historial del caso tiene un botón para cambiar el orden. Registré la regla como DEC-201, porque el pedido no trae número.
