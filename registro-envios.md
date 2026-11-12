@@ -4,6 +4,52 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-1c
+
+Publiqué la etapa P-6e-1c (Versión 180; la primera publicación quedó como Versión 179 con este número mal escrito y la republiqué con el número corregido): en Formularios, el Administrador puede eliminar una versión Retirada de una plantilla cuando ningún informe la usa (DEC-208). Es una excepción acotada a «inactivar en lugar de eliminar», porque esa versión no tiene usos. Todo lo demás de Formularios se ve igual.
+
+**Qué cambió**
+- **Acción «Eliminar versión»:** en Formularios › plantilla › Versiones, cada versión que no es borrador muestra el botón secundario «Eliminar versión». Se habilita solo en una Retirada sin informes vinculados y si la persona es Administrador. En las demás queda deshabilitada y el motivo se lee en una línea: «Solo el Administrador puede eliminar», «Es la única versión de la plantilla», «Está vigente», «Está programada» o «Tiene N informes vinculados». Los borradores se siguen descartando como hoy.
+- **Informes vinculados:** con la conexión se cuentan los de `SIRIUS_CONEXION.informes` cuya plantillaClave y plantillaVersion coinciden con la plantilla y la versión. Un informe con la versión vacía (la app envió «local») no cuenta para ninguna versión con número. Sin conexión se cuentan los informes del prototipo que usan esa plantilla y versión.
+- **Confirmación:** un diálogo con el nombre y el número de la versión, cuántos informes se revisaron (0 vinculados a esa versión) y un motivo obligatorio. Al confirmar, la versión sale de la plantilla y el historial queda con «Eliminó la vN (sin informes vinculados)», el motivo, la persona y la fecha.
+- **Numeración:** el número eliminado no se reutiliza. La plantilla guarda el número más alto que tuvo (`ultima`) y la siguiente versión nueva sigue desde ahí.
+- **Con la conexión:** se publica `SIRIUS_FORMULARIOS` sin esa versión, con SiriusPublicar y el motivo (acción `eliminarVersion` en `cambio`). Si la base responde `{ ok: false }`, la versión vuelve y se muestra el mensaje.
+- **Una sola versión:** la única versión de una plantilla no se puede eliminar.
+- **Escenas nuevas:** `versioneliminar` (Vehículos livianos con v3 y v2 Retiradas sin informes, v1 Retirada con 1.284 informes y v4 Vigente) y `versioneliminarok` (después de eliminar la v2, con el historial abierto en esa línea).
+- **Inventario:** registré la etapa P-6e-1c y DEC-208, `eliminarVersion` y `ultima` en el contrato de SIRIUS_FORMULARIOS, y KNOWN_ESC en 509.
+
+**Verificado**
+- **Selector a 1280 × 720 y 1920 × 1080:** `versioneliminar`, `versioneliminarok`, `versionesplantilla` y `formmodalidades` abren sin errores, sin texto roto y sin desplazamiento horizontal.
+- **Lista de versiones (`versioneliminar`):** v3 y v2 con «Eliminar versión» habilitado; v1 con «Tiene 1.284 informes vinculados»; v4 con «Está vigente»; v5 Borrador con «Descartar borrador».
+- **Diálogo:** muestra «Eliminar la versión 3 de Vehículos livianos», los informes revisados y los vinculados; sin motivo el campo marca error y la versión sigue; con motivo, la versión sale, el historial queda con la línea y `ultima` guarda 5.
+- **Numeración:** probé una versión Programada v6 retirada y eliminada (la más alta, sin informes); la versión nueva que se creó después fue la v7, no la 6 ni la 5.
+- **Rol:** como el Coordinador no entra a Formularios (la pantalla lo lleva al Inicio), forcé el rol en el componente. Con un rol que no es Administrador, el botón queda deshabilitado en v4, v2 y v1 con «Solo el Administrador puede eliminar».
+- **Prueba interna con conexión** (copia aparte, archivo temporal, sin publicar; a ambos tamaños), con informes de Vehículos livianos v3, de Motos v1 y uno con la versión vacía:
+  - La v3 queda con «Tiene 1 informe vinculado» y la v2 y la v1 se pueden eliminar, aunque el prototipo tenga 1.284 en la v1.
+  - Eliminar la v2 publicó `SIRIUS_FORMULARIOS` (versión 2, motivo escrito, `eliminarVersion`) sin la v2 y con `ultima` 5.
+  - Con `{ ok: false }`, al eliminar la v1 se mostró «La base rechazó el cambio. Se deshizo el cambio.» y la v1 volvió.
+  - Después, `sirius-conexion.js` quedó idéntico a su contenido mínimo.
+- **Sin cambios donde no debía:** `form`, `formmodalidades`, `formcriteriosA`, `vlhist`, `em`, `rg`, `doccatalogo`, `docusoplantilla`, `mapaeditar` y `coordmodalidades` tienen el mismo texto y los mismos píxeles que en la etapa anterior. `versionesplantilla` cambia por diseño: aparece «Eliminar versión» y el texto de la nota.
+
+**No verificado**
+- La conexión real con la base: la prueba usó un archivo temporal que acepta o rechaza la publicación.
+- Que la base real acepte `eliminarVersion` y quite la versión, y que la app y los portales no la sigan usando.
+- Un Coordinador real frente a la pantalla de Formularios: no se abre para ese rol; el rol se probó forzándolo en el componente.
+
+**Diferencias**
+- **Orden de los motivos:** cuando hay varios, se muestra primero el del rol, luego «única versión», «Está vigente» o «Está programada» y al final los informes vinculados.
+- **«Está programada»:** lo agregué a los motivos que pediste, porque una versión programada tampoco se puede eliminar.
+- **Botón junto a «Retirar versión»:** en las Retiradas el botón «Retirar versión» sigue deshabilitado como antes y «Eliminar versión» va a su lado; lo dejé así para no cambiar el resto de la lista.
+- **Informes sin conexión:** uso el mayor entre el conteo del prototipo de la versión y los vehículos o equipos de ejemplo que la usan, para no contar dos veces. Con la conexión, el conteo del prototipo no se usa.
+- **Informes revisados:** son los de la plantilla (con la conexión, los de esa plantilla en `SIRIUS_CONEXION.informes`; sin ella, la suma de la plantilla). Los vinculados son los de esa versión.
+- **Historial:** la línea sale como «Eliminó la vN (sin informes vinculados)» y, como en las demás acciones, aparece después de los cambios de las versiones. En `versioneliminarok` la escena deja la línea a la vista.
+- **Nota de la lista de versiones:** cambié el texto («Las versiones con informes no se eliminan, solo se retiran; una versión retirada sin informes vinculados la elimina el Administrador»), porque el anterior decía que nunca se eliminaban.
+- **Casos en curso:** no es una de las tres condiciones de DEC-208, así que no la agregué. Una Retirada puede tener casos en curso que conservan su versión (en el prototipo, la v1 de Vehículos livianos muestra 23), y esos casos podrían crear informes con ella después. En el prototipo la v1 igual queda bloqueada por sus informes; conviene decidir si los casos en curso también deben impedir eliminar.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** versioneliminar, versioneliminarok, versionesplantilla, formmodalidades.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-1b
 
 Publiqué la etapa P-6e-1b (Versión 176; la primera publicación quedó como Versión 175 con este número mal escrito y la republiqué con el número corregido): con la conexión, Coordinación ya no adivina la plantilla del caso por el ramo; la toma de los datos que entrega la base (formularios, carrocerias, anios y sumaAsegurada del caso) y evalúa con ellos los criterios de la autoinspección. Solo cambió la fuente: las reglas de DEC-204 y DEC-206, las pantallas y los casos de ejemplo sin conexión se ven igual que en P-6e-1.
