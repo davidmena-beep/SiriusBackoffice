@@ -4,6 +4,46 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-1b
+
+Publiqué la etapa P-6e-1b (Versión 176; la primera publicación quedó como Versión 175 con este número mal escrito y la republiqué con el número corregido): con la conexión, Coordinación ya no adivina la plantilla del caso por el ramo; la toma de los datos que entrega la base (formularios, carrocerias, anios y sumaAsegurada del caso) y evalúa con ellos los criterios de la autoinspección. Solo cambió la fuente: las reglas de DEC-204 y DEC-206, las pantallas y los casos de ejemplo sin conexión se ven igual que en P-6e-1.
+
+**Qué cambió**
+- **Plantilla del caso:** con la conexión, si el caso trae `formularios` con un valor, se usa el del primer riesgo sin el sufijo de versión («Motos v3» pasa a «Motos»). Si no, sigue la regla anterior (vehículos o equipos de ejemplo y luego el ramo). Una moto ya recibe las modalidades de Motos y no las de Vehículos livianos.
+- **Criterios de la autoinspección:** con la conexión, la suma asegurada, el año y la carrocería salen de `sumaAsegurada`, `anios` y `carrocerias` del caso, y la sucursal de los datos del caso. Con varios riesgos se evalúa cada uno y el motivo nombra la placa o la descripción, por ejemplo «El vehículo es anterior a 2012 (BBB2222)». Un dato que falta no bloquea.
+- **Una sola función para todo:** `plantillaDeCaso` es la única que decide la plantilla de un caso. Coordinación, la recomendación de modalidad y el enlace de autoagendamiento reciben su resultado; revisé el código y no hay otro lugar que derive la plantilla de un caso. La vista previa de documentos trabaja por plantilla, no por caso.
+- **Escena nueva `coordcxmoto`:** simula la conexión solo en Coordinación con un caso de Vehículos cuyo riesgo trae formularios [«Motos»] y carrocerias [«moto»]. Se ofrecen Presencial, Virtual guiada y Autoinspección, y Documental aparece deshabilitada con «Documental no activa en la plantilla Motos». La simulación se limpia al cambiar de escena.
+- **Inventario:** registré la etapa P-6e-1b, KNOWN_ESC 507 y las claves `formularios`, `carrocerias`, `anios` y `sumaAsegurada` del caso en el contrato de SIRIUS_CONEXION.
+
+**Verificado**
+- **Selector a 1280 × 720 y 1920 × 1080:** `coordcxmoto`, `coordmodalidades` y `formmodalidades` abren sin errores, sin texto roto y sin desplazamiento horizontal. En `coordcxmoto` Presencial, Virtual guiada y Autoinspección se ofrecen y Documental sale deshabilitada con el motivo pedido.
+- **Sin conexión igual que en P-6e-1:** `coordmodalidades` tiene el mismo texto y los mismos píxeles que en la copia de P-6e-1, igual que `formmodalidades`, `formcriteriosA`, `coordvis`, `doccatalogo`, `docusoplantilla`, `form`, `versionesplantilla`, `mapaeditar`, `coordenlace` y `envioenlace`.
+- **Prueba interna con conexión** (copia aparte, archivo temporal, sin publicar; a ambos tamaños en la pantalla de Coordinación del caso):
+  - Un caso con formularios [«Equipo y maquinaria v2»] ofrece solo Presencial; las otras tres modalidades salen deshabilitadas con «… no activa en la plantilla Equipo y maquinaria».
+  - Un caso con [«Vehículos livianos v4»] y sumaAsegurada 42.000 queda sin autoinspección con «La suma asegurada supera USD 30.000» (criterios con suma máxima de 30.000).
+  - Un caso con formularios [«Motos v3»] ofrece Autoinspección y no Documental.
+  - Un caso con dos riesgos (uno de 2008, con anio mínimo 2012) queda sin autoinspección con «El vehículo es anterior a 2012 (BBB2222)». Otro con carrocería «furgoneta» fuera de los criterios dice «La carrocería furgoneta no está en los criterios (DDD4444)». Otro con sucursal Loja dice «La sucursal Loja no está en los criterios».
+  - Un caso sin los datos del riesgo no se bloquea y usa la plantilla del ramo.
+  - Después, `sirius-conexion.js` quedó idéntico a su contenido mínimo.
+- **Registro de escenas:** `coordcxmoto` está en el registro y en KNOWN_ESC, que ahora tiene 507 nombres.
+
+**No verificado**
+- La conexión real con la base: la prueba usó un archivo temporal con los campos del contrato, no la conexión de GitHub.
+- Que la conexión real entregue los campos con exactamente estos nombres y formas (`carrocerias` como id de silueta, `anios` y `placas` por riesgo, `sumaAsegurada` como número o lista).
+
+**Diferencias**
+- **Motivo con el nombre de la plantilla:** cuando la plantilla sale de los datos del caso, el motivo la nombra («Documental no activa en la plantilla Motos»). Cuando sale de los casos de ejemplo se queda como en P-6e-1, para que `coordmodalidades` no cambie.
+- **`sumaAsegurada` único con varios riesgos:** si llega como un número del caso y hay varios riesgos, se evalúa una sola vez para el caso, sin placa en el motivo. Si llega como lista, cada riesgo usa la suya.
+- **Carrocerías:** la base manda el id de la silueta (`sedan`, `camioneta`, `moto`) y los criterios usan nombres («Sedán», «Camioneta doble cabina»). Comparo el id con el nombre, con los tipos que incluye la silueta y con el prefijo (`camioneta` cumple «Camioneta doble cabina»). Una carrocería que no está en el catálogo se compara por su texto.
+- **Primer valor:** si el primer elemento de `formularios` viene vacío, se usa el primero que traiga valor.
+- **Datos que no son del riesgo:** con la conexión, si el caso no trae `sumaAsegurada`, `anios` ni `carrocerias`, la suma y el año siguen saliendo del caso y del texto de `bien`, como en P-6e-1.
+- **`coordcxmoto`:** el caso de la escena es el 20186 de ejemplo con los datos de la conexión puestos encima (placa IMB4417, año 2021, suma USD 8.500), porque un caso nuevo de la base no existe en los datos del prototipo. El caso simulado conserva su historial y datos de contacto.
+- **Escena `coordmodalidades`:** el bloque de su segunda instancia ahora se muestra con una condición (`cmBOn`) para compartir la página con `coordcxmoto`; no cambia nada de lo que se ve.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** coordcxmoto, coordmodalidades, formmodalidades.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-1
 
 Publiqué la etapa P-6e-1 (Versión 173) con dos de las tres piezas de configuración de P-6e: las modalidades por plantilla (DEC-204, que reemplaza DEC-182) con sus criterios para ofrecer la autoinspección (DEC-206), y el catálogo de documentos del cliente con su uso en cada plantilla (DEC-203). Todo se configura en Formularios, se publica con motivo y queda en las versiones (Borrador, Vigente, Retirada). Coordinación ya no usa una regla fija: ofrece lo que diga la plantilla vigente. Sin conexión, los casos de ejemplo siguen funcionando.

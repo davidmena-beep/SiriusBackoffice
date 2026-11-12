@@ -7,7 +7,7 @@
 //   cada versión de plantilla guarda documentos = { idDoc: { uso: 'requerido' | 'otro' | 'no', portales: { agendamiento, autoinspeccion } } }.
 //   Un documento en Borrador en el catálogo no se puede usar hasta publicarlo.
 // Datos iniciales y de las escenas: datos-modalidades.js (SIRIUS_MODALIDADES, SIRIUS_DOCUMENTOS_CLIENTE).
-// · window.SiriusModalidades: lógica (inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, ofrecer, motivoA, catalogo, pasosDoc).
+// · window.SiriusModalidades: lógica (inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, plantillaInfo, datosCaso, ofrecer, motivoA, catalogo, pasosDoc; P-6e-1b: con la conexión la plantilla y los criterios salen de los datos del caso).
 // · Componentes: SiriusModTabla (lista de Formularios), SiriusCuandoSeOfrece (plantilla › Autoinspección), SiriusDocUso (Autoinspección › Documentos y extras)
 //   y SiriusDocCatalogo (Portal del cliente › Documentos).
 (function () {
@@ -43,34 +43,56 @@
     if (S) { if (S.modalidades) base.modalidades = Object.assign({}, base.modalidades, S.modalidades); if (S.criteriosA) base.criteriosA = Object.assign(sinC(), base.criteriosA, S.criteriosA); origen = 'escena'; }
     return Object.assign(base, { nombre, n, origen }); }
   function publicarLocal(nombre, n, cfg) { local[nombre] = { n, cfg: clone(cfg) }; avisar(); }
-  function plantillaDeCaso(c) { const E = W.SIRIUS_EJEMPLO || {}, sinV = (s) => String(s || '').replace(/\s+v\d+$/, ''); if (!c) return '';
+  // Etapa P-6e-1b · DEC-204 y DEC-206: con la conexión (o la simulación de una escena) la plantilla y los criterios salen de los datos del caso
+  // (formularios[], carrocerias[], anios[], sumaAsegurada y sucursal); sin conexión, igual que en P-6e-1.
+  const conCx = () => { const X = W.SIRIUS_CONEXION; return !!((X && X.activo === true) || (W.__sirModSim && W.__sirModSim.conexion)); };
+  const lista = (v) => v == null || v === '' ? [] : Array.isArray(v) ? v : [v];
+  const sinV = (s) => String(s || '').replace(/\s+v\d+$/, '').trim();
+  // Plantilla del caso y de dónde sale: 'caso' (formularios[] del primer riesgo, con la conexión), 'ejemplo' (vehículos o equipos de ejemplo) o 'ramo'.
+  function plantillaInfo(c) { const E = W.SIRIUS_EJEMPLO || {}; if (!c) return { nombre: '', fuente: 'ramo' };
+    if (conCx()) { const f = lista(c.formularios).map(sinV).filter(Boolean)[0]; if (f) return { nombre: f, fuente: 'caso' }; }
     const vs = (E.vehiculos || []).filter((v) => v.caso === c.id), eq = (E.equipos || []).filter((q) => q.caso === c.id);
-    if (vs[0] && vs[0].formulario) return sinV(vs[0].formulario); if (eq[0]) return sinV(eq[0].formulario) || 'Equipo y maquinaria';
-    if (c.ramo === 'Vehículos' || c.tipoRiesgo === 'Vehículos') return 'Vehículos livianos';
-    const RG = Object.values(E.plantillasRG || {})[0]; return (RG && RG.nombre) || 'Ubicación – Ramos Generales'; }
-  function datosCaso(c) { const E = W.SIRIUS_EJEMPLO || {}, vs = (E.vehiculos || []).filter((v) => v.caso === c.id);
+    if (vs[0] && vs[0].formulario) return { nombre: sinV(vs[0].formulario), fuente: 'ejemplo' }; if (eq[0]) return { nombre: sinV(eq[0].formulario) || 'Equipo y maquinaria', fuente: 'ejemplo' };
+    if (c.ramo === 'Vehículos' || c.tipoRiesgo === 'Vehículos') return { nombre: 'Vehículos livianos', fuente: 'ramo' };
+    const RG = Object.values(E.plantillasRG || {})[0]; return { nombre: (RG && RG.nombre) || 'Ubicación – Ramos Generales', fuente: 'ramo' }; }
+  function plantillaDeCaso(c) { return plantillaInfo(c).nombre; }
+  // Riesgos del caso con la conexión: uno por posición de formularios[], carrocerias[], anios[] y placas[] (sumaAsegurada puede ser un número del caso o una lista por riesgo).
+  function riesgosCx(c) { const sa = c.sumaAsegurada, F = lista(c.formularios), C = lista(c.carrocerias), A = lista(c.anios), PL = lista(c.placas), RS = Array.isArray(c.riesgos) ? c.riesgos : [], SAL = Array.isArray(sa) ? sa : null;
+    const n = Math.max(F.length, C.length, A.length, PL.length, SAL ? SAL.length : 0, 1), ok = (x) => x != null && x !== '' && isFinite(Number(x)), out = [];
+    for (let i = 0; i < n; i++) { const r = RS[i] || {}, suma = SAL ? SAL[i] : (n === 1 ? sa : null);
+      out.push({ suma: ok(suma) ? Number(suma) : null, anio: ok(A[i]) ? Number(A[i]) : null, carroceria: C[i] || '', etiqueta: PL[i] || r.label || r.detalle || (i === 0 && n === 1 ? c.placa || '' : ''), deCaso: true }); }
+    if (!SAL && n > 1 && ok(sa)) out.push({ suma: Number(sa), anio: null, carroceria: '', etiqueta: '', deCaso: true });
+    return out; }
+  function datosCaso(c) { const E = W.SIRIUS_EJEMPLO || {};
+    if (conCx() && (c.sumaAsegurada != null || lista(c.anios).length || lista(c.carrocerias).length)) return { vehiculos: riesgosCx(c), sucursal: c.sucursal || '' }; // con la conexión: los datos del caso
+    const vs = (E.vehiculos || []).filter((v) => v.caso === c.id);
     const L = vs.length ? vs.map((v) => ({ suma: v.aseg != null ? Number(v.aseg) : null, anio: v.anio != null ? Number(v.anio) : null, carroceria: v.carroceria || '', etiqueta: v.placa || v.riesgo || '' }))
       : [{ suma: c.suma != null ? Number(c.suma) : null, anio: (/,\s*(\d{4})\b/.exec(String(c.bien || '')) || [])[1] ? Number(/,\s*(\d{4})\b/.exec(String(c.bien))[1]) : null, carroceria: c.carroceria || '', etiqueta: c.placa || '' }];
     return { vehiculos: L, sucursal: c.sucursal || '' }; }
+  // La carrocería que llega de la base es el id de la silueta («moto», «sedan»); los criterios usan nombres («Sedán», «Camioneta doble cabina»).
+  function carrInfo(raw) { const S = W.SIRIUS_SILUETAS, k = norm(raw), cat = S && (S.carrocerias || []).find((x) => norm(x.id) === k || norm(x.nombre) === k || (x.incluye || []).some((i) => norm(String(i).replace(/\s*\(.*\)\s*$/, '')) === k));
+    if (!cat) return { nombre: String(raw), cand: [k], id: k };
+    return { nombre: cat.nombre, id: norm(cat.id), cand: [norm(cat.id), norm(cat.nombre)].concat((cat.incluye || []).map((i) => norm(String(i).replace(/\s*\(.*\)\s*$/, '')))) }; }
+  const carrOk = (crit, raw, deCaso) => { if (!deCaso) return norm(crit) === norm(raw); const i = carrInfo(raw), z = norm(crit); return i.cand.indexOf(z) >= 0 || z.indexOf(i.id + ' ') === 0; };
   // DEC-206: primer criterio que el caso no cumple ('' si los cumple o si los criterios no están activos). Un dato que no llegó no bloquea.
   function motivoA(cr, d) { if (!cr || !cr.activo) return ''; const L = d.vehiculos || [], varios = L.length > 1, de = (v) => varios && v.etiqueta ? ' (' + v.etiqueta + ')' : '';
     for (const v of L) { if (cr.sumaMax != null && cr.sumaMax !== '' && v.suma != null && v.suma > Number(cr.sumaMax)) return 'La suma asegurada supera USD ' + num(cr.sumaMax) + de(v);
       if (cr.anioMin != null && cr.anioMin !== '' && v.anio != null && v.anio < Number(cr.anioMin)) return 'El vehículo es anterior a ' + cr.anioMin + de(v);
-      if ((cr.carrocerias || []).length && v.carroceria && !cr.carrocerias.some((x) => norm(x) === norm(v.carroceria))) return 'La carrocería ' + v.carroceria + ' no está en los criterios' + de(v); }
+      if ((cr.carrocerias || []).length && v.carroceria && !cr.carrocerias.some((x) => carrOk(x, v.carroceria, v.deCaso))) return 'La carrocería ' + (v.deCaso ? carrInfo(v.carroceria).nombre : v.carroceria) + ' no está en los criterios' + de(v); }
     if ((cr.sucursales || []).length && d.sucursal && !cr.sucursales.some((x) => norm(x) === norm(d.sucursal))) return 'La sucursal ' + d.sucursal + ' no está en los criterios';
     return ''; }
   // Coordinación: qué modalidades se ofrecen al caso según la plantilla vigente de su ramo y los criterios de la autoinspección.
-  function ofrecer(c) { const nombre = plantillaDeCaso(c), cfg = vigente(nombre), items = {};
-    M.forEach((k) => { const on = !!cfg.modalidades[k]; let motivo = on ? '' : NOM[k] + ' no activa en la plantilla'; if (on && k === 'A') motivo = motivoA(cfg.criteriosA, datosCaso(c)); items[NOM[k]] = { ok: !motivo, motivo }; });
+  function ofrecer(c) { const pi = plantillaInfo(c), nombre = pi.nombre, cfg = vigente(nombre), items = {};
+    M.forEach((k) => { const on = !!cfg.modalidades[k]; let motivo = on ? '' : NOM[k] + ' no activa en la plantilla' + (pi.fuente === 'caso' ? ' ' + nombre : ''); if (on && k === 'A') motivo = motivoA(cfg.criteriosA, datosCaso(c)); items[NOM[k]] = { ok: !motivo, motivo }; });
     items['No requiere inspección'] = { ok: true, motivo: '' };
-    return { plantilla: nombre, version: cfg.n, origen: cfg.origen, criterios: !!(cfg.criteriosA && cfg.criteriosA.activo), items }; }
+    return { plantilla: nombre, fuente: pi.fuente, version: cfg.n, origen: cfg.origen, criterios: !!(cfg.criteriosA && cfg.criteriosA.activo), items }; }
   // Catálogo publicado (el que usan las plantillas y los portales).
   function catalogo() { const C = W.SIRIUS_DOCUMENTOS_CLIENTE || { version: 0, documentos: [] }; return C; }
   // Pasos de la plantilla que pueden recibir las fotos de un documento (grupos Documentos y Extras de las plantillas por pasos).
   function pasosDoc() { const E = W.SIRIUS_EJEMPLO || {}, T = E.plantillas || {}, out = [], ya = {};
     Object.keys(T).forEach((k) => (T[k].pasos || []).forEach((s) => { if (ya[s.id] || !/^(Documentos|Extras)$/.test(s.group)) return; ya[s.id] = 1; out.push({ id: s.id, label: k.replace(/\s+v\d+$/, '') + ' · ' + s.name }); }));
     return out; }
-  W.SiriusModalidades = { M, NOM, DE, USOS, inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, datosCaso, motivoA, ofrecer, catalogo, pasosDoc, suscribir, avisar, num };
+  W.SiriusModalidades = { M, NOM, DE, USOS, inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, plantillaInfo, datosCaso, motivoA, ofrecer, catalogo, pasosDoc, suscribir, avisar, num };
 
   // ---------- Piezas ----------
   const T = { strong: 'var(--text-strong)', body: 'var(--text-body)', muted: 'var(--text-muted)', borde: 'var(--border-subtle)', link: 'var(--text-link, #0B5CAD)', brand: 'var(--color-brand)' };

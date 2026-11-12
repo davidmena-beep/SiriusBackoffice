@@ -1,5 +1,5 @@
 // SIRIUS · Modalidades por plantilla, criterios para ofrecer la autoinspección y catálogo de documentos del cliente
-// (v1.0 · etapa P-6e-1 · DEC-203, DEC-204 y DEC-206). Solo datos: la lógica y las pantallas están en sirius-modalidades.js.
+// (v1.1 · etapas P-6e-1 y P-6e-1b · DEC-203, DEC-204 y DEC-206). Solo datos: la lógica y las pantallas están en sirius-modalidades.js.
 //
 // · SIRIUS_MODALIDADES.porPlantilla[nombre de la plantilla]: valores iniciales de cada versión cuando todavía no los tiene guardados.
 //   modalidades = { P, V, A, D } (Presencial, Virtual guiada, Autoinspección, Documental; al menos una activa) · DEC-204 (reemplaza DEC-182).
@@ -12,7 +12,7 @@
   const uso = (u, p) => ({ uso: u, portales: Object.assign({}, p || (u === 'no' ? NINGUNO : AMBOS)) });
   const sinCriterios = () => ({ activo: false, sumaMax: null, anioMin: null, carrocerias: [], sucursales: [] });
   window.SIRIUS_MODALIDADES = {
-    version: '1.0', etapa: 'P-6e-1',
+    version: '1.1', etapa: 'P-6e-1b',
     nombres: { P: 'Presencial', V: 'Virtual guiada', A: 'Autoinspección', D: 'Documental' },
     // Igual que hoy con DEC-182: Vehículos livianos y Pesados con las cuatro; Motos sin Documental; Equipo y maquinaria y Ramos Generales solo Presencial.
     porPlantilla: {
@@ -36,7 +36,9 @@
       // formcriteriosA: el borrador de Vehículos livianos con los criterios activos.
       formcriteriosA: { plantilla: 'Vehículos livianos', criteriosA: { activo: true, sumaMax: 40000, anioMin: 2012, carrocerias: ['Sedán', 'Hatchback', 'SUV'], sucursales: [] } },
       // coordmodalidades: la versión vigente de Vehículos livianos con criterios (suma asegurada hasta USD 25.000); 20186 (USD 27.800) y 20190 (Robo).
-      coordmodalidades: { casos: ['20186', '20190'], vigentes: { 'Vehículos livianos': { criteriosA: { activo: true, sumaMax: 25000, anioMin: null, carrocerias: [], sucursales: [] } } } }
+      coordmodalidades: { casos: ['20186', '20190'], vigentes: { 'Vehículos livianos': { criteriosA: { activo: true, sumaMax: 25000, anioMin: null, carrocerias: [], sucursales: [] } } } },
+      // coordcxmoto (P-6e-1b): un caso de Vehículos con los datos que entrega la conexión; el riesgo trae formularios ['Motos'] y carrocerias ['moto'].
+      coordcxmoto: { caso: '20186', datos: { placa: 'IMB4417', bien: 'IMB4417', placas: ['IMB4417'], formularios: ['Motos'], carrocerias: ['moto'], anios: [2021], sumaAsegurada: 8500 } }
     }
   };
   window.SIRIUS_DOCUMENTOS_CLIENTE = {
