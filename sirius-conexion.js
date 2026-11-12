@@ -6,6 +6,7 @@
 // SIRIUS_CONTROLES se vigila como las demás claves. Evento «sirius-configuracion» { clave } cada vez que cambia la configuración aplicada.
 // 11/11/2026 · C2-16: cada evidencia trae id, estado, motivo y observación (SQL 22) para confirmar o excluir fotos desde el back-office.
 // 11/11/2026 · DEC-198: cada control trae vistoEn y vistoPor (SQL 24); la acción «verControles» { caso, comentario } los marca como vistos.
+// 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 12/11/2026 · SIRIUS_CONEXION.calificaciones[caso] = [{ riesgo, nivel, veredicto, cobertura, resultado, observacion, por, rol, hora }] (de la más antigua a la más reciente).
 (function () {
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
@@ -101,7 +102,7 @@
         placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || (k.visitas && k.visitas[0] && k.visitas[0].inspector && k.visitas[0].inspector.nombre) || '';
     var x = base ? JSON.parse(JSON.stringify(base)) : {};
     x.id = id; x.ramo = k.ramo; x.estado = k.estado; x.asegurado = a.nombre || x.asegurado || ''; x.ident = a.identificacion || x.ident || '';
-    x.orden = d.orden || x.orden || ''; x.fecha = x.fecha || fechaIso(k.creado); x.responsable = resp || x.responsable || '';
+    x.orden = d.orden || x.orden || ''; x.fecha = (k.creado ? fechaIso(k.creado) : '') || x.fecha; x.registrado = isoLocal(k.creado);   // C2-21: la fecha del caso sale de la base, no de la ficha de ejemplo x.responsable = resp || x.responsable || '';
     x.comercial = d.comercial || x.comercial || ''; x.backoffice = d.backoffice || x.backoffice || ''; x.broker = d.broker || x.broker || 'Directo'; x.sucursal = d.sucursal || x.sucursal || '';
     x.origen = k.origen || x.origen || 'Manual'; x.contacto = c.nombre || x.contacto || ''; x.tel = c.celular || x.tel || ''; x.correo = c.correo || x.correo || '';
     x.nota = d.nota || k.subestado || x.nota || '';
@@ -112,7 +113,7 @@
     // C2-7 · solicitud (precargados) y visita (automáticos del informe)
     var dd0 = r0.datos || {}; x.solicitud = { marca: dd0.marca || '', modelo: dd0.modelo || '', anio: dd0.anio ? String(dd0.anio) : '', placa: dd0.placa || '' };
     var vv = (k.visitas || []).slice().sort(function (a, b) { return String(b.creado || '').localeCompare(String(a.creado || '')); })[0];
-    if (vv) x.visita = { inicio: isoLocal(vv.inicio), llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
+    if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
       if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), detalle: r.descripcion || '', estado: k.estado, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
     var ints = (evs || []).filter(function (e) { return e.accion === 'Intento de contacto'; }).map(function (e) { var p = (e.detalle || '').split(' · '); return { by: (e.actor && e.actor.nombre) || '', fecha: new Date(e.hora).toISOString().slice(0, 16), medio: p[0] || '', resultado: p[1] || '', obs: p.slice(2).join(' · ') }; });
@@ -145,7 +146,7 @@
             observacion: q.observacion || '', por: q.usuario ? q.usuario.nombre : '', rol: q.usuario ? q.usuario.rol : '', hora: reloj(q.fecha) }); });
         evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ id: e.id, estado: e.estado || undefined, motivo: e.motivo || '', observacion: e.observacion || '', paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
         ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado), vistoEn: c.visto_en ? reloj(c.visto_en) : '', vistoPor: c.visto ? c.visto.nombre : '', vistoRol: c.visto ? c.visto.rol : '' }); });
-        inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_version && x.plantilla_version !== '1' ? x.plantilla_clave + ' v' + x.plantilla_version : undefined,  // sin versión real: el back-office muestra la vigente
+        inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: /^\d+(\.\d+)?$/.test(String(x.plantilla_version || '')) && x.plantilla_version !== '1' ? x.plantilla_clave + ' v' + x.plantilla_version : undefined, plantillaClave: x.plantilla_clave || '', plantillaVersion: /^\d+(\.\d+)?$/.test(String(x.plantilla_version || '')) ? String(x.plantilla_version) : '',  // sin versión real: el back-office muestra la vigente
  respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en), criterio: x.criterio || null, decision: x.decision || null }); });
         return { evidencias: E, controles: C, informes: I, calificaciones: Q }; }); }); }
   var oyentes = [], huella = '';
@@ -168,7 +169,7 @@
 
   function cargarCasos() {
     return Promise.all([
-      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,llegada,modalidad,direccion,creado,inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero'),
+      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero'),
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora')
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};

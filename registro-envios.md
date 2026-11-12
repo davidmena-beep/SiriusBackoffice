@@ -4,6 +4,56 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-21
+
+Publiqué la etapa C2-21 (Versión 170). Con la conexión, un caso de la base ya no se arma con la ficha del caso de ejemplo que tiene el mismo número (30004). Cada dato sale de la base y, si no viene, se ve «—» o «Sin dato». Sin conexión todo sigue igual. El pedido no trae número de decisión, así que la registré como DEC-200.
+
+**Qué cambió**
+- **Historial:** queda en orden de lo más reciente a lo más antiguo, por fecha y hora completas. Incluye en ese orden «Informe de campo recibido de la app» con su hora real. «Solicitud registrada» usa `registrado` y el origen del caso (por ejemplo «BPM de Emisión»), nunca una persona. Resumen › Actividad reciente muestra las tres acciones más recientes. Las horas ISO se ven «dd/mm/aa · hh:mm» y ya no se cortan.
+- **Resumen › Inspección:** «Realizada» es el fin de la visita (o la llegada); el inspector y la modalidad vienen de la visita de la base; sin visita realizada dice «—».
+- **Coordinación › Visitas del caso:** la visita es la de la base, con su estado. «Fecha y hora» dice «Cita 11/11/26 · 10:30 · Llegada 10/11/26 · 05:57 · Fin 10/11/26 · 18:10». Si la base no trae visita, no se arma ninguna.
+- **Informe › encabezado:** Visita (modalidad y fecha real), Inspección (primera foto del caso o llegada), Carga (`enviadoEn`), Registrado por (`enviadoPor`). Los campos «Fecha y hora de inspección» y «Fecha y hora de carga» del formulario usan los mismos datos. La etiqueta de estado es la del informe en la base («Completo» se ve «Enviado»).
+- **Plantilla y versión:** se muestra `plantillaClave` con `plantillaVersion`. Con la versión vacía dice «Vehículos livianos · Presencial · versión de la app sin número» y los pasos se toman de la vigente de Formularios (SIRIUS_FORMULARIOS si la base la publicó). «(vigente)» aparece solo cuando la versión del informe es la vigente. Las fotos se agrupan por las secciones de esa plantilla y «Otras fotos» queda para pasos que no están en ella.
+- **Documentos:** una sola regla para Informe, Calificación y Evidencias: son documentos las fotos de pasos del grupo Documentos de la plantilla, de cualquier canal.
+- **Datos adicionales:** con la conexión ya no aparecen los valores de ejemplo; se leen de `campos` del caso y de cada riesgo.
+- **Escena nueva `cxlimpio`:** simula la conexión completa con el caso 30004 Inspeccionado (creado el 09/11/2026 23:40, cita el 11/11/2026 10:30, llegada el 10/11/2026 05:57, fin el 10/11/2026 18:10, informe sin número de versión enviado el 10/11/2026 18:10 y eventos desordenados). El selector sigue disponible; al cambiar de escena la página se recarga y la simulación desaparece.
+- **Inventario:** registré la etapa C2-21, la regla «con la conexión, ningún dato del caso de ejemplo» (DEC-200), las claves nuevas del contrato (`registrado`, `visita.fin`, `visita.agendadoEn`, `visita.origen`, `visita.estado`, `informes[].plantillaClave` y `plantillaVersion`) y KNOWN_ESC en 499.
+
+**Verificado**
+- **Selector:** abrí cxlimpio, calcxcalif, infcompletarcaso y evunificadas a 1280 × 720 y 1920 × 1080, sin errores ni desplazamiento horizontal.
+- **cxlimpio:** recorrí Resumen, Coordinación, Informe, Evidencias, Calificación e Historial en ambos tamaños. Ninguna pestaña muestra «16/10/26», «Santiago Ortiz», «vlocal», «Mauricio Endara» ni «Patricia Andrade». El Historial (7 filas) está en orden descendente y la Actividad reciente son sus tres primeras filas. «Solicitud registrada» aparece el 09/11/26 · 23:40 con «BPM de Emisión». Informe y Calificación cuentan 3 documentos (21 fotos · 3 documentos).
+- **Limpieza:** desde cxlimpio el selector abre otra escena (calcxcalif e infcompletarcaso), la conexión vuelve a estar inactiva y se ven los datos de ejemplo.
+- **Sin conexión:** 20 escenas (calcxcalif, infcompletarcaso, evunificadas, calctrl, calctrlcalificado, calpdfcx, infcxfotos, coord, svresumen, calveh, calrg, inicio, ctrlvistos, calvistos, evidencias, veh, infcompletarcx, visorzoom, formbase y bandejaexp) tienen el mismo texto que en la C2-20. En calctrl, calpdfcx y evidencias los píxeles a veces varían entre cargas, también en la copia de la C2-20.
+- **Prueba interna con conexión** (copia aparte, con los datos del caso 30004):
+  - Se cumple todo lo anterior a 1280 y 1920.
+  - Con SIRIUS_FORMULARIOS (v6 vigente, con pasos distintos de los del ejemplo), las fotos se agrupan por esa plantilla; solo un paso desconocido queda en «Otras fotos». Los dos contadores dan 3 documentos, uno de ellos del portal del cliente.
+  - La versión vacía dice «versión de la app sin número», la 6 dice «v6 (vigente)» y la 5 dice «v5» sin vigente.
+  - La prueba de la C2-20 sigue dando lo mismo.
+- **Cierre:** `sirius-conexion.js` quedó idéntico a su contenido mínimo (comparado byte a byte).
+
+**No verificado**
+- La conexión real con la base: las pruebas usan datos que armé con la forma del pedido. No conozco las claves exactas de pasos ni de `plantillaClave` que envía la app real.
+- El contenido del PDF de un caso de la base: el panel «Informe en PDF» todavía usa la plantilla del vehículo de ejemplo para dibujar el documento, y no lo revisé.
+- Lo que se registra en la sesión con la conexión (por ejemplo, una acción nueva) lleva la hora del reloj del prototipo; no comprobé dónde queda en el orden del Historial.
+
+**Diferencias** (de dónde sale cada dato con la conexión)
+- **Resumen › Objeto a asegurar:** la placa, la marca, el modelo y el año salen de `solicitud`, y la cobertura del caso. El casco y los extras son los montos asegurados que trae el informe de la base (`veh_valor_asegurado_casco` y `veh_valor_asegurado_extras`) y el total es su suma. Sin esos montos no se muestran valores. No apliqué ninguna regla de reemplazo por el valor sugerido.
+- **Coordinación › Recomendación del sistema:** no sale de la ficha del ejemplo. Es la regla fija del prototipo (vehículo sin alertas → Virtual guiada, 82/100) salvo que la base envíe `detalles[id].rec`. La dejé y queda anotada.
+- **Datos de póliza:**
+  - Broker, Origen, Orden de emisión y Sucursal salen del caso de la base.
+  - Correo APS dice «—» si no llega.
+  - Línea de negocio y Tipo de solicitud son los valores por defecto («Vehículos» y «Emisión nueva»).
+- **Datos adicionales:** antes mostraban los valores de ejemplo de Administración › Campos si el número coincidía. Ahora salen de `campos` del caso y de cada riesgo, una clave opcional que agregué al contrato porque el pedido no nombraba ninguna. Sin ella dicen «Sin dato».
+- **Agencia de inspección:** sale de `inspector.agencia` del caso o del directorio de inspectores del prototipo, no de la ficha del ejemplo; con un inspector que no está en ese directorio dice «—».
+- **cxlimpio:** como simula la conexión completa, la aplicación entra en modo conectado con un solo caso y la etiqueta «Prueba conectada», y el panel de demostración sigue visible.
+- **Orden de la visita:** en los datos de la escena la cita (11/11) es posterior a la llegada y al fin (10/11); se muestra tal cual llega.
+- **Versión vigente sin Formularios publicado:** con la conexión, si la base no publica SIRIUS_FORMULARIOS, la vigente es la del prototipo (v4). Por eso un informe que no trae ningún dato de plantilla ahora dice «v4 (vigente)», antes «v3 (vigente)», que salía de otro archivo.
+- **Fechas de la C2-20:** las fechas con hora del bloque «Tu calificación» y del pie de la C2-20 ahora usan espacios duros; se ven igual pero no se cortan.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** cxlimpio, calcxcalif, infcompletarcaso, evunificadas.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-20
 
 Publiqué la etapa C2-20 (Versión 169; la herramienta asignó primero la 168, que tenía el mismo contenido pero con otro número en este registro, y la volví a publicar con el número corregido). Con la conexión, «Tu calificación» y todo lo que muestra el veredicto o quién calificó ahora salen de `SIRIUS_CONEXION.calificaciones[idCaso]`, no del dato de reserva (Verónica Lema · 15/10/26 · 16:40). Sin conexión todo sigue igual. Como el pedido no trae número de decisión, lo registré como DEC-199, a continuación de DEC-198.

@@ -1,4 +1,5 @@
-// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.7 · provisional · etapa C2-20 · 12/11/2026) · DEC-180
+// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.8 · provisional · etapa C2-21 · 12/11/2026) · DEC-180
+// v1.8 (etapa C2-21 · DEC-200): `cxLimpio` (escena cxlimpio): la conexión completa simulada con el caso 30004 Inspeccionado (registrado, visita con cita, llegada y fin, informe sin número de versión, evidencias, eventos desordenados y su calificación).
 // v1.7 (etapa C2-20 · DEC-199): `cxCalifPrueba` (escena calcxcalif) con dos calificaciones de 30004 en la forma de SIRIUS_CONEXION.calificaciones (nivel 0 y nivel 1).
 // v1.6 (etapa C2-19 · DEC-198): 30006 trae dos controles (llegada fuera del radio y foto sin ubicación) para el paso Controles del inspector independiente.
 // v1.5 (etapa C2-16): `cxFotosPrueba` (escena infcxfotos) con 6 evidencias de 30004 en la forma de la conexión.
@@ -127,6 +128,33 @@
     cxCalifPrueba: { caso: '30004', calificaciones: [
       { riesgo: '30004-V1', nivel: 0, veredicto: 'Asegurable', cobertura: '', resultado: 'Aprobado', observacion: '', por: 'Patricia Andrade', rol: 'Control de calidad (agencia)', hora: '2026-10-18T19:52' },
       { riesgo: '30004-V1', nivel: 1, veredicto: 'Asegurable', cobertura: 'Todo riesgo', resultado: 'Aprobado', observacion: 'Asegurable según el informe y los controles revisados; sin observaciones adicionales.', por: 'Verónica Lema', rol: 'Ejecutivo de inspecciones', hora: '2026-10-18T20:24' } ] },
+    // Etapa C2-21 · escena cxlimpio: la conexión completa simulada (forma de SIRIUS_CONEXION, sin funciones) con un solo caso, 30004 Inspeccionado, armado solo con datos «de la base»:
+    // creado el 09/11/2026 23:40 desde el BPM de Emisión; visita con cita el 11/11/2026 10:30, llegada el 10/11/2026 05:57 y fin el 10/11/2026 18:10; informe «Completo» enviado el
+    // 10/11/2026 18:10 con plantillaVersion vacía (la app envió «local»); 24 fotos de la app (3 de documentos y 1 de un paso que no está en la plantilla) y eventos desordenados.
+    // Ninguna persona ni fecha es del caso de ejemplo 30004. Todas las horas son de Ecuador.
+    cxLimpio: (() => { const img = (t, c) => 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480"><rect width="640" height="480" fill="' + c + '"/><text x="320" y="248" font-family="Arial,sans-serif" font-size="30" font-weight="700" text-anchor="middle" fill="#ffffff">' + t + '</text></svg>');
+      const ap = 'App del inspector', dsp = 'Xiaomi Redmi Note 13 · app SIRIUS', ok = { vertical: true, encuadre: true, luz: true, nitidez: true, reflejo: true }, col = ['#1f5f8b', '#2b7a5f', '#8a5a1f', '#5b3f8c', '#7a2f3a', '#356b72'];
+      const P = [['exteriores_frontal', 'Frontal'], ['exteriores_posterior', 'Posterior'], ['exteriores_parabrisas', 'Parabrisas'], ['exteriores_lateral_derecho_de_ade', 'Lateral derecho'], ['exteriores_lateral_izquierdo_de_ade', 'Lateral izquierdo'], ['motor_habitaculo_del_motor', 'Motor'],
+        ['identificacion_placa_delantera', 'Placa delantera'], ['identificacion_placa_trasera', 'Placa trasera'], ['identificacion_chasis_en_relieve', 'Chasis'], ['identificacion_sticker_vin', 'Sticker VIN'], ['documentos_matricula_frontal', 'Matrícula frontal'], ['documentos_matricula_posterior', 'Matrícula posterior'],
+        ['documentos_cedula_frontal', 'Cédula frontal'], ['interiores_puerta_del_conductor', 'Puerta del conductor'], ['interiores_tablero_de_instrumento', 'Tablero'], ['interiores_kilometraje', 'Kilometraje'], ['interiores_asientos_delanteros', 'Asientos delanteros'], ['interiores_asientos_posteriores', 'Asientos posteriores'],
+        ['interiores_cajuela_o_balde', 'Cajuela'], ['llantas_delantera_derecha', 'Llanta delantera derecha'], ['llantas_delantera_izquierda', 'Llanta delantera izquierda'], ['llantas_trasera_derecha', 'Llanta trasera derecha'], ['llantas_trasera_izquierda', 'Llanta trasera izquierda'], ['adicional_rayon_guardafango', 'Rayón en el guardafango']];
+      const two = (n) => (n < 10 ? '0' : '') + n, gps = [-0.20412, -78.49186];
+      const evidencias = P.map((x, i) => ({ id: 'cxl-' + two(i + 1), paso: x[0], url: img(x[1], col[i % col.length]), hora: '10/11/26 · ' + two(6 + Math.floor((2 + i * 2) / 60)) + ':' + two((2 + i * 2) % 60), canal: ap, validacion: ok, gps: [gps[0] + i * 0.00001, gps[1]], precision: 5, dispositivo: dsp }));
+      const caso = { id: '30004', orden: 'EMI-2026-118450', origen: 'BPM de Emisión', ramo: 'Vehículos', broker: 'Asesores Andinos', asegurado: 'Andrés Cevallos Rivas', ident: '1718820436', placa: 'PRB2204', bien: 'Placa PRB2204, 2024', fecha: '2026-11-09', registrado: '2026-11-09T23:40',
+        sucursal: 'Quito Norte', backoffice: 'Daniela Ruiz', estado: 'Inspeccionado', responsable: 'Daniela Ruiz', comercial: 'Carolina Vega', flujoVersion: 2, aseg: 'Asegurable', cobertura: 'Todo riesgo', solicitud: { marca: 'Chevrolet', modelo: 'Onix', anio: 2024, placa: 'PRB2204' },
+        campos: { canal_venta: 'Bróker' }, contacto: { nombre: 'Andrés Cevallos', cel: '0987702215' }, dir: 'Av. Amazonas N34-120 y Atahualpa, Quito', gps: gps,
+        visita: { estado: 'Realizada', inicio: '2026-11-11T10:30', llegada: '2026-11-10T05:57', fin: '2026-11-10T18:10', agendadoEn: '2026-11-10T00:15', origen: 'Coordinador', modalidad: 'Presencial', quienRecibe: 'Andrés Cevallos', inspector: 'Jorge Benítez' },
+        criterioInspector: { valor: 'Asegurable', comentario: 'Vehículo en buen estado; sin daños relevantes.', por: 'Jorge Benítez', hora: '10/11/26 · 18:08' } };
+      const informes = [{ riesgo: '30004-V1', plantilla: 'Vehículos livianos · Presencial vlocal', plantillaClave: 'Vehículos livianos · Presencial', plantillaVersion: '', estado: 'Completo', enviadoEn: '2026-11-10T18:10', enviadoPor: 'Jorge Benítez', determinacion: 'Asegurable',
+        respuestas: { veh_valor_asegurado_casco: { valor: '18500', org: 'solicitud' }, veh_valor_asegurado_extras: { valor: '650', org: 'solicitud' }, placa: { valor: 'PRB2204', org: 'foto:identificacion_placa_trasera', conf: 0.97 }, anio: { valor: '2024', org: 'inspector' }, color: { valor: 'Blanco', org: 'inspector' }, km: { valor: '15230', org: 'foto:interiores_kilometraje', conf: 0.91 }, pintura: 'Bueno', carroceria: 'Bueno', llantas: 'Bueno', obs: 'Vehículo en buen estado; rayón leve en el guardafango delantero derecho.' } }];
+      const eventos = [
+        { hora: '2026-11-10T18:12', accion: 'Determinación del inspector', detalle: 'Asegurable', actor: 'Jorge Benítez', rol: 'Inspector' },
+        { hora: '2026-11-10T00:15', accion: 'Visita agendada', detalle: '11/11/26 · 10:30 · Presencial · Jorge Benítez', actor: 'Carolina Vega', rol: 'Coordinador de inspecciones' },
+        { hora: '2026-11-10T19:30', accion: 'Calificación', detalle: 'Asegurable · Todo riesgo', actor: 'Daniela Ruiz', rol: 'Ejecutivo de inspecciones' },
+        { hora: '2026-11-10T05:57', accion: 'Llegada del inspector', detalle: 'A 40 m de la dirección', actor: 'Jorge Benítez', rol: 'Inspector' },
+        { hora: '2026-11-10T18:10', accion: 'Visita terminada', detalle: '', actor: 'Jorge Benítez', rol: 'Inspector' } ];
+      return { usuario: { nombre: 'Daniela Ruiz', email: 'daniela.ruiz@asur.ec', rol: 'Ejecutivo de inspecciones', roles: ['Ejecutivo de inspecciones'] }, casos: [caso], detalles: {}, eventos: { '30004': eventos }, evidencias: { '30004': evidencias }, controles: { '30004': [] }, informes: { '30004': informes },
+        calificaciones: { '30004': [{ riesgo: '30004-V1', nivel: 1, veredicto: 'Asegurable', cobertura: 'Todo riesgo', resultado: 'Aprobado', observacion: 'Asegurable según el informe.', por: 'Daniela Ruiz', rol: 'Ejecutivo de inspecciones', hora: '2026-11-10T19:30' }] } }; })(),
   };
   window.SIRIUS_COMPLETAR = C;
 
