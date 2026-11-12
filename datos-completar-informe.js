@@ -1,4 +1,5 @@
-// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.6 · provisional · etapa C2-19 · 11/11/2026) · DEC-180
+// SIRIUS · Completar el informe y Control de calidad de la agencia (v1.7 · provisional · etapa C2-20 · 12/11/2026) · DEC-180
+// v1.7 (etapa C2-20 · DEC-199): `cxCalifPrueba` (escena calcxcalif) con dos calificaciones de 30004 en la forma de SIRIUS_CONEXION.calificaciones (nivel 0 y nivel 1).
 // v1.6 (etapa C2-19 · DEC-198): 30006 trae dos controles (llegada fuera del radio y foto sin ubicación) para el paso Controles del inspector independiente.
 // v1.5 (etapa C2-16): `cxFotosPrueba` (escena infcxfotos) con 6 evidencias de 30004 en la forma de la conexión.
 // v1.4 (etapa C2-9 · DEC-185): los controles de completar traen tipo, severidad y detalle; 30004 con los 9 tipos de control (uno ya «Correcto»).
@@ -120,6 +121,12 @@
           { id: 'cxf-6', paso: 'motor_habitaculo_del_motor', url: '', hora: '2026-10-16T10:36', canal: ap, validacion: ok, gps: [-0.18069, -78.46782], precision: 8, dispositivo: dsp } ],
         controles: [ { id: 'placa', tipo: 'Placa leída no coincide con la solicitud', severidad: 'Alta', estado: 'Pendiente', detalle: { paso: 'identificacion_placa_trasera', leida: 'PRB2Z04', solicitud: 'PRB2204' } } ],
         informes: [ { plantilla: 'Vehículos livianos v1' } ] }; })(),
+    // Etapa C2-20 · escena calcxcalif: conexión simulada solo en la pestaña Calificación de 30004, con lo que registra la base en SIRIUS_CONEXION.calificaciones[idCaso]
+    // ([{ riesgo, nivel, veredicto, cobertura, resultado, observacion, por, rol, hora }], de la más antigua a la más reciente). Nivel 0 = determinada al completar el informe,
+    // 1 = Ejecutivo de inspecciones, 2 = Suscriptor. Aquí: nivel 0 de Patricia Andrade y nivel 1 de Verónica Lema, que es la que muestra el bloque «Tu calificación».
+    cxCalifPrueba: { caso: '30004', calificaciones: [
+      { riesgo: '30004-V1', nivel: 0, veredicto: 'Asegurable', cobertura: '', resultado: 'Aprobado', observacion: '', por: 'Patricia Andrade', rol: 'Control de calidad (agencia)', hora: '2026-10-18T19:52' },
+      { riesgo: '30004-V1', nivel: 1, veredicto: 'Asegurable', cobertura: 'Todo riesgo', resultado: 'Aprobado', observacion: 'Asegurable según el informe y los controles revisados; sin observaciones adicionales.', por: 'Verónica Lema', rol: 'Ejecutivo de inspecciones', hora: '2026-10-18T20:24' } ] },
   };
   window.SIRIUS_COMPLETAR = C;
 

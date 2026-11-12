@@ -6,6 +6,7 @@
 // SIRIUS_CONTROLES se vigila como las demás claves. Evento «sirius-configuracion» { clave } cada vez que cambia la configuración aplicada.
 // 11/11/2026 · C2-16: cada evidencia trae id, estado, motivo y observación (SQL 22) para confirmar o excluir fotos desde el back-office.
 // 11/11/2026 · DEC-198: cada control trae vistoEn y vistoPor (SQL 24); la acción «verControles» { caso, comentario } los marca como vistos.
+// 12/11/2026 · SIRIUS_CONEXION.calificaciones[caso] = [{ riesgo, nivel, veredicto, cobertura, resultado, observacion, por, rol, hora }] (de la más antigua a la más reciente).
 (function () {
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
   var CLAVE = 'sb-qdciqoxselwmudlycprq-auth-token', INGRESO = 'index.html', SONDEO_MS = 20000;
@@ -131,19 +132,24 @@
     return Promise.all([
       get('evidencias?select=id,caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas,estado,motivo,observacion&order=hora').catch(function () { return get('evidencias?select=id,caso_id,paso,canal,ruta,hora,lat,lng,validacion,lecturas&order=hora'); }),   // estado: SQL 22
       get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado,visto_en,visto:usuarios!controles_visto_por_fkey(nombre,rol)&order=creado').catch(function () { return get('controles?select=id,caso_id,tipo,severidad,detalle,estado,comentario,creado&order=creado'); }),
-      get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,criterio,decision,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)')
+      get('informes?select=riesgo_id,plantilla_clave,plantilla_version,respuestas,estado,determinacion,motivo,enviado_en,criterio,decision,riesgo:riesgos(caso_id,descripcion),enviado:usuarios!informes_enviado_por_fkey(nombre)'),
+      get('calificaciones?select=nivel,resultado,observacion,fecha,riesgo:riesgos(caso_id,descripcion),usuario:usuarios(nombre,rol)&order=fecha').catch(function () { return []; })
     ]).then(function (res) {
-      var evs = res[0], ctr = res[1], inf = res[2], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
+      var evs = res[0], ctr = res[1], inf = res[2], cal = res[3] || [], rutas = evs.map(function (e) { return e.ruta; }).filter(function (r) { return !FIRMAS[r]; });
       var refrescar = Date.now() - FIRMADO > 45 * 60000; if (refrescar) { FIRMAS = {}; rutas = evs.map(function (e) { return e.ruta; }); }
       return firmar(rutas).then(function (m) { Object.keys(m).forEach(function (k) { FIRMAS[k] = m[k]; }); if (refrescar) FIRMADO = Date.now();
-        var E = {}, C = {}, I = {};
+        var E = {}, C = {}, I = {}, Q = {};
+        // Calificaciones registradas en la base (nivel 0 = al completar el informe dentro de la facultad; 1 = Ejecutivo; 2 = Suscriptor).
+        cal.forEach(function (q) { var id = q.riesgo && idPorCaso[q.riesgo.caso_id]; if (!id) return; var r = String(q.resultado || ''), i = r.indexOf(' · ');
+          (Q[id] = Q[id] || []).push({ riesgo: q.riesgo.descripcion, nivel: q.nivel, veredicto: i < 0 ? r : r.slice(0, i), cobertura: i < 0 ? '' : r.slice(i + 3), resultado: r,
+            observacion: q.observacion || '', por: q.usuario ? q.usuario.nombre : '', rol: q.usuario ? q.usuario.rol : '', hora: reloj(q.fecha) }); });
         evs.forEach(function (e) { var id = idPorCaso[e.caso_id]; if (!id) return; (E[id] = E[id] || []).push({ id: e.id, estado: e.estado || undefined, motivo: e.motivo || '', observacion: e.observacion || '', paso: e.paso, url: FIRMAS[e.ruta] || null, prueba: !FIRMAS[e.ruta], hora: reloj(e.hora), canal: e.canal, validacion: e.validacion || '', gps: e.lat != null ? [e.lat, e.lng] : null, lecturas: e.lecturas || {} }); });
         ctr.forEach(function (c) { var id = idPorCaso[c.caso_id]; if (!id) return; (C[id] = C[id] || []).push({ id: c.id, tipo: c.tipo, severidad: c.severidad, detalle: c.detalle || {}, estado: c.estado, comentario: c.comentario || '', hora: reloj(c.creado), vistoEn: c.visto_en ? reloj(c.visto_en) : '', vistoPor: c.visto ? c.visto.nombre : '', vistoRol: c.visto ? c.visto.rol : '' }); });
         inf.forEach(function (x) { var id = x.riesgo && idPorCaso[x.riesgo.caso_id]; if (!id) return; (I[id] = I[id] || []).push({ riesgo: x.riesgo.descripcion, plantilla: x.plantilla_version && x.plantilla_version !== '1' ? x.plantilla_clave + ' v' + x.plantilla_version : undefined,  // sin versión real: el back-office muestra la vigente
  respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en), criterio: x.criterio || null, decision: x.decision || null }); });
-        return { evidencias: E, controles: C, informes: I }; }); }); }
+        return { evidencias: E, controles: C, informes: I, calificaciones: Q }; }); }); }
   var oyentes = [], huella = '';
-  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {},
+  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
@@ -171,11 +177,11 @@
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });
       var E = window.SIRIUS_EJEMPLO, det = {}, idPorCaso = {}; if (E && E.detallesCasos) nuevo.casos.forEach(function (c) { if (E.detallesCasos[c.id]) det[c.id] = E.detallesCasos[c.id]; });
       casos.forEach(function (k) { idPorCaso[k.id] = String(k.numero); });
-      return cargarEvidencias(idPorCaso).catch(function (e) { console.warn('[SIRIUS] evidencias:', e.message); return { evidencias: CX.evidencias, controles: CX.controles, informes: CX.informes }; }).then(function (ev) {
-        nuevo.evidencias = ev.evidencias; nuevo.controles = ev.controles; nuevo.informes = ev.informes;
+      return cargarEvidencias(idPorCaso).catch(function (e) { console.warn('[SIRIUS] evidencias:', e.message); return { evidencias: CX.evidencias, controles: CX.controles, informes: CX.informes, calificaciones: CX.calificaciones }; }).then(function (ev) {
+        nuevo.evidencias = ev.evidencias; nuevo.controles = ev.controles; nuevo.informes = ev.informes; nuevo.calificaciones = ev.calificaciones || {};
         nuevo.casos.forEach(function (c) { var inf = (ev.informes[c.id] || []).filter(function (x) { return x.criterio; }).slice(-1)[0]; if (inf) c.criterioInspector = { valor: inf.criterio.valor, comentario: inf.criterio.comentario || '', por: inf.criterio.por || '', hora: reloj(inf.criterio.hora) }; });
-        var h = JSON.stringify([nuevo.casos, nuevo.eventos, Object.keys(ev.evidencias).map(function (k) { return k + ev.evidencias[k].length; }), ev.controles, ev.informes]);
-        if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; CX.evidencias = ev.evidencias; CX.controles = ev.controles; CX.informes = ev.informes; return true; });
+        var h = JSON.stringify([nuevo.casos, nuevo.eventos, Object.keys(ev.evidencias).map(function (k) { return k + ev.evidencias[k].length; }), ev.controles, ev.informes, ev.calificaciones]);
+        if (h === huella) return false; huella = h; CX.casos = nuevo.casos; CX.eventos = nuevo.eventos; CX.detalles = det; CX.evidencias = ev.evidencias; CX.controles = ev.controles; CX.informes = ev.informes; CX.calificaciones = ev.calificaciones || {}; return true; });
     });
   }
 

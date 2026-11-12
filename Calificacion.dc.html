@@ -528,13 +528,18 @@ class Component extends DCLogic {
       const ref = this.viewBlock(p.prefill || {}, gm ? 'gar1' : 'n1');
       return { viewBlocks: [Object.assign(fin, { kicker: 'Vigente', bg: '#FFFFFF' }), Object.assign(ref, { kicker: 'Referencia', title: gm ? 'Calificación de inspección de garantías' : 'Calificación de inspección', sections: [], bg: 'var(--surface-subtle)' })] };
     }
-    return { viewBlocks: [Object.assign(this.viewBlock(p.prefill || {}, p.mode || 'n1'), { kicker: '', bg: '#FFFFFF', canEdit: !!p.canEdit })] };
+    return { viewBlocks: [Object.assign(this.viewBlock(p.prefill || {}, p.mode || 'n1'), { kicker: (p.prefill || {}).cx ? (p.prefill || {}).etiqueta || '' : '', bg: '#FFFFFF', canEdit: !!p.canEdit })] }; // C2-20: con la conexión, la etiqueta del nivel (Determinada al completar el informe, Calificación del Ejecutivo o del Suscriptor)
   }
   viewBlock(v, mode) {
     const p = this.props;
     const tone = { 'Aprobado': 'success', 'No aprobado': 'danger', 'Cumplido': 'success', 'Pendiente': 'warning', 'Vencido': 'danger' };
     if (mode === 'veh') {
       const ok = v.veredicto === 'si';
+      if (v.cx) { // C2-20 · lo que registró la base: veredicto, cobertura si la trae, quién (con su rol), fecha y hora, y la observación
+        const rest = ok ? v.cobertura : v.motivo;
+        return { title: 'Tu calificación', estado: ok ? 'Asegurable' : 'No asegurable', tone: ok ? 'success' : 'danger', sections: [], canEdit: false,
+          fields: (rest ? [{ label: ok ? 'Cobertura' : 'Motivo de rechazo', value: rest, span: 'auto', ws: 'normal' }] : []).concat([{ label: 'Usuario', value: (v.user || '—') + (v.rol ? ' · ' + v.rol : ''), span: 'auto', ws: 'normal' }, { label: 'Fecha', value: v.fecha || '—', span: 'auto', ws: 'nowrap' }, { label: 'Observación general', value: v.obs || 'Sin observación', span: '1 / -1', ws: 'normal' }]) };
+      }
       return { title: 'Tu calificación', estado: ok ? 'Es asegurable' : 'No asegurable', tone: ok ? 'success' : 'danger', sections: [], canEdit: false,
         fields: [{ label: ok ? 'Cobertura' : 'Motivo de rechazo', value: ok ? v.cobertura : v.motivo, span: 'auto', ws: 'normal' }, { label: 'Usuario', value: v.user, span: 'auto', ws: 'normal' }, { label: 'Fecha', value: v.fecha, span: 'auto', ws: 'nowrap' }, { label: 'Observación general', value: v.obs, span: '1 / -1', ws: 'normal' }] };
     }

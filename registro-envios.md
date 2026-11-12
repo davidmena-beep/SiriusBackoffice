@@ -4,6 +4,44 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa C2-20
+
+Publiqué la etapa C2-20 (Versión 169; la herramienta asignó primero la 168, que tenía el mismo contenido pero con otro número en este registro, y la volví a publicar con el número corregido). Con la conexión, «Tu calificación» y todo lo que muestra el veredicto o quién calificó ahora salen de `SIRIUS_CONEXION.calificaciones[idCaso]`, no del dato de reserva (Verónica Lema · 15/10/26 · 16:40). Sin conexión todo sigue igual. Como el pedido no trae número de decisión, lo registré como DEC-199, a continuación de DEC-198.
+
+**Qué cambió**
+- **«Tu calificación»:** muestra la calificación más reciente del caso (la de nivel más alto si hay varias en el mismo riesgo): «Asegurable» o «No asegurable», cobertura (o motivo de rechazo) solo si la trae, observación, quién la registró con su rol y la fecha y hora. La etiqueta dice «Determinada al completar el informe» (nivel 0), «Calificación del Ejecutivo» (nivel 1) o «Calificación del Suscriptor» (nivel 2).
+- **Sin calificaciones en la base:** el bloque no muestra datos de ejemplo. Dice «Este caso no tiene una calificación registrada» o, si la persona puede calificar (Pendiente calificación), muestra el formulario como hoy.
+- **Pie de la revisión de controles:** «Calificación registrada el <fecha> por <persona>» usa la misma fuente que el bloque (primero la calificación de la sesión, después la de la base), así que ambos coinciden. Sin calificación y con el caso ya inspeccionado dice «Este caso no tiene una calificación registrada» (antes decía «pendiente»).
+- **Otros lugares con la conexión:** el Resumen (calificación de inspección con nivel 0 o 1, de suscripción con nivel 2; sin calificación queda «Pendiente»), el encabezado del caso (veredicto, cobertura, quién y cuándo, completando solo lo que el caso no trae), cada riesgo de un caso con varios y el PDF disponible («Calificado por … el …»). El Historial solo lee los eventos de la base y no usaba el dato de reserva.
+- **Escena nueva `calcxcalif`:** 30004 Inspeccionado como Ejecutivo de inspecciones, con la conexión simulada solo en la pestaña Calificación (nivel 0 «Asegurable» de Patricia Andrade y nivel 1 «Asegurable · Todo riesgo» de Verónica Lema, con observación). La simulación se limpia al cambiar de escena.
+- **Inventario:** etapa C2-20, DEC-199, la clave `calificaciones` en el contrato de `SIRIUS_CONEXION` y KNOWN_ESC en 498.
+
+**Verificado**
+- **Selector:** abrí desde el selector, a 1280 × 720 y 1920 × 1080, calcxcalif, calctrl, calctrlcalificado y calpdfcx: sin errores de la aplicación ni desplazamiento horizontal.
+- **calcxcalif:** el bloque dice «Calificación del Ejecutivo», «Asegurable», Cobertura «Todo riesgo», «Verónica Lema · Ejecutivo de inspecciones» y «18/10/26 · 20:24»; el pie dice «Calificación registrada el 18/10/26 · 20:24 por Verónica Lema», la misma persona y la misma fecha.
+- **Sin conexión:** calctrlcalificado, calctrl, calpdfcx, calctrlbloqueo, calctrltodo, svresumen, calvistos, ctrltodos, calveh y calrg tienen el mismo texto que en la C2-19; en calctrlcalificado los píxeles a veces varían entre cargas, también en la copia de la C2-19 (animación), y el texto es igual.
+- **Limpieza:** al pasar de calcxcalif a calpdfcx desde la aplicación, la simulación desaparece y el bloque vuelve a los datos de ejemplo.
+- **Prueba interna con conexión (copia aparte):** con dos calificaciones muestra la de nivel 1; con tres, la del Suscriptor (nivel 2); sin calificaciones muestra «Este caso no tiene una calificación registrada», sin dato de reserva, tanto en el bloque como en el Resumen («Pendiente», «Aún no se califica») y en el PDF (sin «Calificado por»). Con el caso en Pendiente calificación y sin calificaciones aparece el formulario. El encabezado toma el veredicto de la base, y un caso con dos riesgos muestra quién calificó cada uno (Patricia Andrade y Verónica Lema) y «1 de 2 asegurables».
+- **PDF:** con la conexión, el origen del veredicto sale «Calificado por Verónica Lema el 18/10/26 · 20:24».
+- **sirius-conexion.js** quedó idéntico a su contenido mínimo (comparado byte a byte).
+
+**No verificado**
+- La conexión real con la base: las pruebas usan datos que armé yo en una copia aparte, con la forma que describe el pedido.
+- Casos de Ramos Generales y de equipos con la conexión: tienen sus propios paneles de calificación y no los cambié.
+- En la primera corrida de las escenas aparecieron errores de red al cargar recursos externos del entorno de pruebas; no vienen de la aplicación y no se repitieron al filtrar la red.
+
+**Diferencias**
+- Con la conexión el chip del bloque dice «Asegurable» o «No asegurable», como pide el pedido; sin conexión sigue diciendo «Es asegurable».
+- calpdfcx sigue mostrando la calificación de ejemplo en el bloque, porque esa escena simula la conexión solo en el panel «Informe en PDF»; no es un caso que venga de la base.
+- Si la base trae un caso sin `aseg`, el encabezado usa el veredicto de la calificación más reciente; si el caso ya lo trae, se respeta el del caso. `califUser` y `califFecha` siempre se toman de la calificación.
+- En calcxcalif la lista de controles todavía dice «Calificar está bloqueado» porque 30004 tiene un control de severidad alta pendiente; es el comportamiento de la C2-19 y no lo cambié (calpdfcx dice lo mismo).
+- Un veredicto distinto de «Asegurable» o «No asegurable» se ignora.
+- Los riesgos de un caso con varios se buscan por id, etiqueta, placa o id de ejemplo; si ninguna calificación coincide, el riesgo queda como llega de la base.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** calcxcalif, calctrl, calctrlcalificado, calpdfcx.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-19
 
 Publiqué la etapa C2-19 (Versión 166). Con DEC-198, que reemplaza la parte de DEC-185 que permitía a Control de calidad marcar controles, los controles los revisa solo el calificador (Ejecutivo de inspecciones y Administrador). Control de calidad y el inspector independiente los ven con su evidencia y confirman «Ya los vi»; el Suscriptor solo los consulta.
