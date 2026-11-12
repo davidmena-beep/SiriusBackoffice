@@ -251,9 +251,9 @@
         h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, propios.filter(x => x.total).map(x => h('span', { key: x.pid, style: { fontSize: 12, padding: '4px 8px', borderRadius: 999, background: 'var(--surface-subtle)', color: 'var(--text-body)' } }, (C.NOMBRES[x.pid] || x.pid) + ' · ' + (a.compania ? x.total + ' bloques' : x.propios + ' propios, ' + (x.total - x.propios) + ' heredados')))))); }
 
   // Portal del cliente (pantalla de Formularios): encabezado, «Simular portal» y pestañas.
-  function SiriusPortalCliente(p) { const st = C.useCfg(), TABS = ['Apariencias', 'Flujo', 'Controles', 'Video'], s0 = R().useState(Math.max(0, TABS.indexOf(p.tab || 'Apariencias'))), tab = s0[0], setTab = s0[1];
+  function SiriusPortalCliente(p) { const st = C.useCfg(), TABS = ['Apariencias', 'Flujo', 'Controles', 'Video', 'Documentos'], s0 = R().useState(Math.max(0, TABS.indexOf(p.tab || 'Apariencias'))), tab = s0[0], setTab = s0[1];
     const onConf = (nv, hh) => C.set(n => { n.flujo.conf = nv; }, hh ? { area: TABS[tab], what: hh.what, motivo: hh.motivo } : null);
-    const cuerpo = tab === 0 ? h(Apariencias, { preset: p.preset, editar: p.editar, modal: p.preset === 'eliminar' ? { kind: 'elim', id: 'eurosurvey' } : null })
+    const cuerpo = TABS[tab] === 'Documentos' ? (window.SiriusDocCatalogo ? h(window.SiriusDocCatalogo, { usuario: p.usuario, preset: p.preset }) : h('p', null, 'Cargando el catálogo de documentos…')) /* P-6e-1 · DEC-203 */ : tab === 0 ? h(Apariencias, { preset: p.preset, editar: p.editar, modal: p.preset === 'eliminar' ? { kind: 'elim', id: 'eurosurvey' } : null })
       : window.SiriusAutoConfig ? h(window.SiriusAutoConfig, { conf: st.flujo.conf, soloTab: TABS[tab], usuario: p.usuario, onCambio: onConf }) : null;
     const hist = st.log.filter(l => l.area === TABS[tab] && tab > 0);
     return h('section', { id: 'pc-portal', 'aria-labelledby': 'pc-t', style: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 } },

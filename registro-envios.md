@@ -4,6 +4,69 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-1
+
+Publiqué la etapa P-6e-1 (Versión 173) con dos de las tres piezas de configuración de P-6e: las modalidades por plantilla (DEC-204, que reemplaza DEC-182) con sus criterios para ofrecer la autoinspección (DEC-206), y el catálogo de documentos del cliente con su uso en cada plantilla (DEC-203). Todo se configura en Formularios, se publica con motivo y queda en las versiones (Borrador, Vigente, Retirada). Coordinación ya no usa una regla fija: ofrece lo que diga la plantilla vigente. Sin conexión, los casos de ejemplo siguen funcionando.
+
+**Qué cambió**
+- **Modalidades por plantilla (DEC-204):** la lista de Formularios tiene una tabla «Modalidades por plantilla» con un interruptor por modalidad.
+  - Debajo de cada interruptor dice el número de pasos de esa columna o, si está apagada, «en diseño · N pasos» o «sin diseñar».
+  - En Ubicación – Ramos Generales dice «por módulos» o «se diseña, no se ofrece».
+  - Cambiar un interruptor crea o edita el borrador. La fila muestra el cambio («Documental desactivada · sin publicar») y «Revisar y publicar el borrador», que abre la publicación con motivo.
+  - La única modalidad activa no se puede apagar. Apagar una modalidad no borra sus pasos.
+  - Valores iniciales: Vehículos livianos con las cuatro; Motos con Presencial, Virtual guiada y Autoinspección; Equipo y maquinaria y Ramos Generales solo con Presencial.
+- **Criterios para la autoinspección (DEC-206):** en la plantilla › Autoinspección hay un bloque «Cuándo se ofrece» con el interruptor «Aplicar criterios adicionales». Al activarlo se definen suma asegurada máxima, año mínimo, carrocerías y sucursales, todos opcionales, y se guardan como `criteriosA` en la versión.
+- **Coordinación según la plantilla:** ofrece una modalidad solo si está activa en la plantilla vigente del ramo y, para la autoinspección, si el caso cumple los criterios. Las demás se ven deshabilitadas con el motivo en una línea («Autoinspección no activa en la plantilla», «La suma asegurada supera USD 25.000»). Una nota dice de qué plantilla salen.
+- **Catálogo de documentos del cliente (DEC-203):** nueva pestaña Formularios › Portal del cliente › Documentos, global para los dos portales.
+  - A la izquierda está el catálogo; al centro, el editor (nombre, ícono, captura, mínimo y máximo, paso de la plantilla de cada foto o cara, lecturas y estado).
+  - A la derecha, la vista previa del celular con los requeridos y «+ Agregar otro documento», por plantilla y por portal.
+  - «Publicar catálogo» pide motivo y publica `SIRIUS_DOCUMENTOS_CLIENTE` con su propia clave.
+  - Valores iniciales: Matrícula y Licencia (frente y reverso, con lecturas), Cédula (frente y reverso), Contrato de compraventa (de 1 a 15 fotos), Factura de un extra (1 foto por extra declarado) y Ficha técnica del equipo en Borrador.
+- **Uso en cada plantilla:** en Autoinspección › Documentos y extras, una tabla con cada documento del catálogo, su uso (Requerido, Otro documento o No se usa) y los portales donde aplica (Agendamiento, Autoinspección). Se guarda como `documentos` en la versión. Un documento en Borrador se ve y no se puede usar.
+- **Publicación:** `SIRIUS_FORMULARIOS` lleva `modalidades`, `criteriosA` y `documentos` en cada versión.
+- **Escenas nuevas:** formmodalidades, formcriteriosA, coordmodalidades, doccatalogo y docusoplantilla.
+- **Archivos nuevos:** `datos-modalidades.js` (datos iniciales y de escenas) y `sirius-modalidades.js` (lógica y pantallas). Inventario al día; `KNOWN_ESC` pasa a 506.
+
+**Verificado**
+- **Selector a 1280 × 720 y 1920 × 1080:** las cinco escenas nuevas, form, versionesplantilla, mapaeditar y coordvis abren sin errores ni desplazamiento horizontal.
+- **Modalidades:**
+  - Apagar Documental en Pesados creó el borrador v3 y siguió mostrando sus 9 pasos («en diseño · 9 pasos»); las versiones 1 y 2 conservan sus pasos.
+  - En Equipo y maquinaria, Presencial (la única activa) está bloqueada con «Debe quedar al menos una modalidad activa» y el clic no la apaga. En Motos, al dejar solo la autoinspección, esta quedó bloqueada.
+  - Publicar sin motivo marca el error; con motivo, la v3 de Pesados quedó Vigente y Coordinación la toma.
+- **Coordinación:**
+  - En coordmodalidades, 20186 tiene la autoinspección deshabilitada con «La suma asegurada supera USD 25.000» y un clic no la elige. 20190 (Robo) tiene Virtual guiada, Autoinspección y Documental deshabilitadas con «… no activa en la plantilla».
+  - Sin criterios activos, 20186 y 20152 ofrecen todas las modalidades, incluida la autoinspección.
+- **Criterios:** en formcriteriosA, cambiar la suma a 35.000 la guarda en `criteriosA` del borrador v5 con su línea en el registro de la versión.
+- **Catálogo:** doccatalogo abre con el contrato elegido y visible en la vista previa. Publicar sin motivo marca el error; con motivo (contrato hasta 20 fotos, Ficha técnica Vigente) el catálogo pasó a la versión 2.
+- **Uso de documentos:** al cambiar la cédula a Requerido, el cambio quedó en el borrador v5; la vigente v4 sigue con «Otro documento».
+- **Sin conexión:** 12 escenas sin relación con esta etapa tienen el mismo texto y los mismos píxeles que en la C2-23. form, autotallerdocs y portalcliente cambian por las piezas nuevas. enlaceagenda cambia su enlace en cada carga, también en la C2-23.
+- **Prueba interna con conexión** (copia aparte, no publicada; a 1280 × 720 y a 1920 × 1080):
+  - Publicar el borrador de Pesados envió `publicarConfiguracion` con `SIRIUS_FORMULARIOS`: 5 plantillas y en cada versión `modalidades`, `criteriosA` y `documentos`. Coordinación pasó a leer esa versión de la base.
+  - Publicar el catálogo envió `SIRIUS_DOCUMENTOS_CLIENTE` versión 2 con el motivo.
+  - Después, `sirius-conexion.js` quedó idéntico a su contenido mínimo.
+
+**No verificado**
+- La conexión real con la base.
+- Que la app del inspector y los portales del cliente lean estas claves. El simulador del portal todavía muestra sus documentos de ejemplo y no lee `SIRIUS_DOCUMENTOS_CLIENTE` ni el uso por plantilla.
+- La tercera pieza de P-6e (completado del informe), que va en otra etapa.
+
+**Diferencias**
+- **Documental en Ramos Generales y Equipo y maquinaria:** con DEC-182 se ofrecía; con «solo Presencial» ya no. Se recupera activándola en la plantilla. «No requiere inspección» no es una modalidad de la plantilla y se ofrece siempre.
+- **Valores que el pedido no definía:** Pesados queda con las cuatro modalidades (como hoy). Motos: matrícula y licencia requeridas, cédula y contrato como «Otro documento», factura de extras no se usa (no tiene extras). Pesados usa los mismos documentos que Vehículos livianos. Equipo y maquinaria y Ramos Generales no usan documentos del catálogo.
+- **Criterios sin dato:** si el caso no trae suma, año, carrocería o sucursal, ese criterio no lo bloquea (20152 no tiene vehículo cargado). Con varios vehículos, el motivo nombra la placa.
+- **Plantilla del caso:** sale del formulario del primer vehículo o equipo; sin él, Vehículos livianos para Vehículos y Ubicación – Ramos Generales para los demás ramos.
+- **Sin conexión:** publicar una plantilla cambia lo que ve Coordinación solo en la sesión. Con la conexión, Coordinación lee `SIRIUS_FORMULARIOS`.
+- **coordmodalidades:** simula la vigente de Vehículos livianos con suma máxima de USD 25.000, porque el único caso de Vehículos por coordinar con suma es de USD 27.800. Muestra los dos casos uno tras otro en una página de escena. El ejemplo de USD 40.000 está en formcriteriosA, en el borrador.
+- **Catálogo:** agregué `porExtra` para «1 foto por extra declarado», porque `captura` solo admite frente y reverso o varias fotos. Las fotos de la factura van al paso `extras_extras` y la ficha técnica a `eq_doc_ficha`. El borrador v5 de Vehículos livianos quitó el paso del contrato; el catálogo lo sigue usando porque está en la vigente v4.
+- **Documentos y extras:** la tabla nueva convive con la lista anterior de pasos de documentos activos y desactivados de la autoinspección. Las dos siguen en la pestaña.
+- **Enlace de autoagendamiento:** ofrece solo Presencial y Virtual guiada si están activas; si ninguna lo está, queda Presencial.
+- **Corrección de la C2-23:** la escena disenod1 mostraba debajo «Aún no hay nada por aquí»; ya no.
+- **Números de decisión:** usé DEC-203, DEC-204 y DEC-206 como pide el pedido; DEC-205 queda sin usar.
+
+**Escenas abiertas desde el selector (1280 × 720 y 1920 × 1080):** formmodalidades, formcriteriosA, coordmodalidades, doccatalogo, docusoplantilla, form, versionesplantilla, mapaeditar, coordvis.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa C2-23
 
 Publiqué la etapa C2-23 (Versión 172): las mejoras de diseño D-1 a D-4, solo de presentación. No cambié funciones, reglas, atajos, textos de los eventos ni acciones de la conexión. La registré como mejora de diseño con el número DEC-202, porque el pedido no trae número.
