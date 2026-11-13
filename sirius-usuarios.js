@@ -218,13 +218,21 @@
     if (a.activa === n.activa && a.tope === n.tope) return false; var imp = SU.impactoFacHon(nombre, n.activa, n.tope); SU.facHon[nombre] = n;
     log(por, nombre, 'Facultad para aprobar honorarios: ' + fm(a) + ' → ' + fm(n), motivo, { impacto: imp.texto }); avisar(); return true; };
   // ---------- Facultades del inspector (solo lectura; se configuran en Niveles de calificación) ----------
+  // P-6f-0 · DEC-216: la facultad de Vehículos publicada en la base (window.SIRIUS_FACULTADES { version, veh: { fac, tope, mue, exc } }) manda sobre la de ejemplo.
+  SU.facVeh = function () { var SF = window.SIRIUS_FACULTADES, E = window.SIRIUS_EJEMPLO || {}; return (SF && SF.veh) || (E.facultades || {}).veh || null; };
+  // Tope de suma asegurada efectivo: el del nivel más específico que lo define (cadena de excepciones de más a menos específica) o el global; sin ninguno, null (sin límite).
+  SU.topeDe = function (cadena, Fv) { var def = function (e) { return !!e && e.tope != null && e.tope !== ''; }, src = (cadena || []).find(def);
+    var lbl = function (e) { return e.level === 'tipo' ? 'del tipo de inspector ' + e.name.toLowerCase() : e.level === 'agencia' ? 'de la agencia ' + e.name : 'del inspector ' + e.name; };
+    return src ? { tope: Number(src.tope), desde: 'Viene ' + lbl(src) } : def(Fv) ? { tope: Number(Fv.tope), desde: 'Viene del valor global' } : { tope: null, desde: '' }; };
+  SU.fmtTope = function (n) { var C = window.SIRIUS_COMPANIA; return n == null ? 'Sin tope' : C && C.formatoMonto ? C.formatoMonto(Number(n), { decimales: Number(n) % 1 ? 2 : 0 }) : 'USD ' + n; };
   SU.facultadDe = function (nombre) {
-    var E = window.SIRIUS_EJEMPLO; if (!E) return null; var ins = (E.inspectores || []).find(function (i) { return i.n === nombre; }), Fv = (E.facultades || {}).veh; if (!ins || !Fv) return null;
+    var E = window.SIRIUS_EJEMPLO; if (!E) return null; var ins = (E.inspectores || []).find(function (i) { return i.n === nombre; }), Fv = SU.facVeh(); if (!ins || !Fv) return null;
     var hoy = SU.ahora().slice(0, 10), ex = (Fv.exc || []).filter(function (e) { return e.desde <= hoy && (!e.hasta || e.hasta >= hoy); });
     var own = ex.find(function (e) { return e.level === 'insp' && e.name === ins.n; }), ag = ins.ag && ex.find(function (e) { return e.level === 'agencia' && e.name === ins.ag; }), tp = ex.find(function (e) { return e.level === 'tipo' && e.name === ins.tipo; }), src = own || ag || tp;
     var lbl = function (e) { return e.level === 'tipo' ? 'Tipo de inspector ' + e.name.toLowerCase() : e.level === 'agencia' ? 'Agencia ' + e.name : 'Inspector ' + e.name; };
     var fac = src ? src.fac : Fv.fac, mueOwn = own && own.mue !== '' && own.mue != null;
-    return { ambito: 'Vehículos', fac: fac, desde: own ? 'asignada al inspector' : src ? 'heredada de ' + lbl(src) : 'heredada del valor global', mue: fac === 'Sin facultad' ? 'No aplica' : (mueOwn ? own.mue : Fv.mue) + ' %' + (mueOwn ? ' · del inspector' : ' · global'), hasta: src && src.hasta ? src.hasta : '' };
+    var tp0 = SU.topeDe([own, ag, tp], Fv);
+    return { ambito: 'Vehículos', fac: fac, desde: own ? 'asignada al inspector' : src ? 'heredada de ' + lbl(src) : 'heredada del valor global', mue: fac === 'Sin facultad' ? 'No aplica' : (mueOwn ? own.mue : Fv.mue) + ' %' + (mueOwn ? ' · del inspector' : ' · global'), hasta: src && src.hasta ? src.hasta : '', tope: tp0.tope, topeDesde: tp0.desde };
   };
   // ---------- Agencias ----------
   SU.agenciaDeInspector = function (nombreAg) { nombreAg = String(nombreAg || '').toLowerCase(); return SU.agencias().find(function (a) { var n = a.nombre.toLowerCase(); return n === nombreAg || n.indexOf(nombreAg) === 0; }) || null; };

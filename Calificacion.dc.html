@@ -87,8 +87,8 @@
 </section>
 </sc-if>
 <sc-if value="{{ isVeh }}" hint-placeholder-val="{{ false }}">
-<section aria-label="Motivo del inspector" style="display:flex;flex-direction:column;gap:6px;padding:20px 24px;border-radius:var(--radius-md);background:var(--surface-subtle)">
-<span style="font-size:13px;color:var(--text-muted)">Motivo del inspector</span>
+<section aria-label="{{ motivoTitulo }}" data-cal-motivo style="display:flex;flex-direction:column;gap:6px;padding:20px 24px;border-radius:var(--radius-md);background:var(--surface-subtle)">
+<span style="font-size:13px;color:var(--text-muted)">{{ motivoTitulo }}</span>
 <p style="margin:0;font-size:16px;font-weight:600;line-height:1.45;color:var(--text-strong)">{{ motivoInspector }}</p>
 </section>
 </sc-if>
@@ -639,7 +639,7 @@ class Component extends DCLogic {
       plazoObsErrShow: show('pobs'), plazoObsInvalid: show('pobs') ? 'true' : undefined, plazoObsBorder: border('pobs'),
       hasRef: isGar, refGroups: isGar ? [['Documentos', (p.prefill && p.prefill.items && p.prefill.items.documentos) || [], true], ['Preexistencias', (p.prefill && p.prefill.items && p.prefill.items.preexistencias) || [], false]].map(([title, arr, est]) => ({ title, empty: !arr.length, items: arr.map(x => ({ desc: x.desc, hasEstado: est, estado: x.estado || 'Pendiente', tone: { Pendiente: 'warning', Cumplido: 'success', Vencido: 'danger' }[x.estado || 'Pendiente'] })) })) : [],
       n1: p.prefill && isGar ? (() => { const g = (p.prefill.items && p.prefill.items.garantias) || []; const n = g.filter(x => x.estado === 'Cumplido').length; return { estado: n + ' de ' + g.length + ' cumplidas', tone: n === g.length ? 'success' : 'warning', obs: p.prefill.obs, user: p.prefill.user, fecha: p.prefill.fecha }; })() : p.prefill ? { estado: p.prefill.estado, tone: p.prefill.estado === 'Aprobado' ? 'success' : 'danger', obs: p.prefill.obs, user: p.prefill.user, fecha: p.prefill.fecha } : { estado: '', tone: 'neutral', obs: '', user: '', fecha: '' },
-      motivoInspector: p.motivoInspector || '—',
+      motivoInspector: p.motivoInspector || '—', motivoTitulo: p.motivoTitulo || 'Motivo del inspector', /* P-6f-0 · DEC-215: «Motivo del envío» cuando quien completa lo envió a calificación */
       estadoOpts: [
         opt('Aprobado', 'Aprobado', 'El riesgo es asegurable, con o sin seguimientos', s.estado, () => this.setState({ estado: 'Aprobado' })),
         opt('No aprobado', 'No aprobado', 'El riesgo no cumple las políticas de suscripción', s.estado, () => this.setState({ estado: 'No aprobado' })),

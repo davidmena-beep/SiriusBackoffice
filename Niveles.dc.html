@@ -59,6 +59,7 @@
 <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 24px">
 <dl style="margin:0;display:flex;flex-wrap:wrap;gap:12px 40px">
 <div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Facultad efectiva de {{ ci.name }}</dt><dd style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ ci.fac }}</dd></div>
+<div data-ci-tope style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Tope de suma asegurada</dt><dd style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ ci.tope }}</dd><dd style="margin:0;font-size:12px;color:var(--text-body)">{{ ci.topeFrom }}</dd></div>
 <div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Muestreo de control</dt><dd style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">{{ ci.mue }}</dd><dd style="margin:0;font-size:12px;color:var(--text-body)">{{ ci.mueFrom }}</dd></div>
 <div style="display:flex;flex-direction:column;gap:2px"><dt style="font-size:13px;color:var(--text-muted)">Tipo de inspector</dt><dd style="margin:0;font-size:15px;line-height:1.6;color:var(--text-strong)">{{ ci.who }}</dd></div>
 </dl>
@@ -79,6 +80,7 @@
 <dl style="margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 20px;font-size:14px">
 <dt style="color:var(--text-muted)">Facultad</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ g.fac }}</dd>
 <dt style="color:var(--text-muted)">Muestreo de control</dt><dd style="margin:0;font-weight:700;color:var(--text-strong)">{{ g.mue }}</dd>
+<dt style="color:var(--text-muted)">Tope de suma asegurada</dt><dd data-fac-tope-global style="margin:0;font-weight:700;color:var(--text-strong);white-space:nowrap">{{ g.tope }}</dd>
 <dt style="color:var(--text-muted)">Última modificación</dt><dd style="margin:0;color:var(--text-body)">{{ g.mod }}</dd>
 </dl>
 <p style="margin:0;font-size:13px;line-height:1.45;color:var(--text-muted)">Muestreo: porcentaje de riesgos determinados por el inspector que pasan a revisión posterior del Ejecutivo de inspecciones. No bloquea el envío al BPM. Provisional.</p>
@@ -179,6 +181,7 @@
 <sc-if value="{{ p.isGlobal }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-gfac" style="font-size:13px;font-weight:700;color:var(--text-strong)">Facultad global</label><select aria-describedby="p-gfac-help" id="p-gfac" key="{{ p.k }}gf" defaultValue="{{ p.fac }}" onChange="{{ p.onFac }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ facOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select><ul id="p-gfac-help" style="list-style:none;margin:2px 0 0;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><li style="font-size:13px;line-height:1.45;color:var(--text-body)"><strong style="color:var(--text-strong)">{{ l.t }}:</strong> {{ l.d }}</li></sc-for></ul></div>
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-gmue" style="font-size:13px;font-weight:700;color:var(--text-strong)">Muestreo de control (%)</label><input id="p-gmue" type="number" min="0" max="100" value="{{ p.mue }}" onChange="{{ p.onMue }}" style="width:140px;height:44px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><span style="font-size:12px;color:var(--text-muted)">Entre 0 y 100. Se aplica a los inspectores sin muestreo propio.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-gtope" style="font-size:13px;font-weight:700;color:var(--text-strong)">Tope de suma asegurada (USD)</label><x-import component-from-global-scope="SiriusMonto" id="p-gtope" aria-label="Tope de suma asegurada (USD)" value="{{ p.topeNum }}" on-change="{{ p.onTope }}" ancho="{{ 200 }}" alto="{{ 44 }}" placeholder="Sin tope" hint-size="200px,44px"></x-import><span style="font-size:12px;color:var(--text-muted)">Opcional. Sin tope, la facultad no tiene límite por monto.</span></div>
 <span style="font-size:13px;line-height:1.45;color:var(--text-body)">{{ p.impact }}</span>
 </sc-if>
 
@@ -187,6 +190,7 @@
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-name" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ p.nameLbl }} <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><select aria-describedby="nv-ro-niv" id="p-name" key="{{ p.k }}{{ p.level }}" defaultValue="{{ p.name }}" onChange="{{ p.onName }}" disabled="{{ p.editing }}" aria-invalid="{{ p.nameInvalid }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ p.nameBorder }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><option value="">Selecciona</option><sc-for list="{{ p.names }}" as="n" hint-placeholder-count="3"><option value="{{ n.v }}">{{ n.l }}</option></sc-for></select><sc-if value="{{ p.hasNameErr }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ p.nameErr }}</span></sc-if></div>
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-efac" style="font-size:13px;font-weight:700;color:var(--text-strong)">Facultad</label><select id="p-efac" aria-describedby="p-efac-help" key="{{ p.k }}ef" defaultValue="{{ p.fac }}" onChange="{{ p.onFac }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ facOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select><ul id="p-efac-help" style="list-style:none;margin:2px 0 0;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-radius:var(--radius-sm);background:var(--surface-subtle)"><sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><li style="font-size:13px;line-height:1.45;color:var(--text-body)"><strong style="color:var(--text-strong)">{{ l.t }}:</strong> {{ l.d }}</li></sc-for></ul></div>
 <sc-if value="{{ p.isInsp }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><label for="p-emue" style="font-size:13px;font-weight:700;color:var(--text-strong)">Muestreo de control propio (%)</label><input id="p-emue" type="number" min="0" max="100" value="{{ p.mue }}" onChange="{{ p.onMue }}" placeholder="{{ p.muePh }}" style="width:140px;height:44px;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><span style="font-size:12px;color:var(--text-muted)">Vacío: usa el muestreo global.</span></div></sc-if>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="p-etope" style="font-size:13px;font-weight:700;color:var(--text-strong)">Tope de suma asegurada (USD)</label><x-import component-from-global-scope="SiriusMonto" id="p-etope" aria-label="Tope de suma asegurada (USD)" value="{{ p.topeNum }}" on-change="{{ p.onTope }}" ancho="{{ 200 }}" alto="{{ 44 }}" placeholder="Sin tope" hint-size="200px,44px"></x-import><span style="font-size:12px;color:var(--text-muted)">Opcional. Sin tope, la facultad no tiene límite por monto; si un nivel más específico define su tope, manda ese.</span></div>
 <div style="display:flex;flex-wrap:wrap;gap:12px 16px">
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-desde" style="font-size:13px;font-weight:700;color:var(--text-strong)">Vigente desde <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><x-import component-from-global-scope="SiriusFecha" id="p-desde" value="{{ p.desde }}" on-change="{{ p.onDesde }}" modo="fecha" formato="iso" width="190px" req="{{ true }}" hint-size="190px,44px"></x-import></div>
 <div style="display:flex;flex-direction:column;gap:6px"><label for="p-hasta" style="font-size:13px;font-weight:700;color:var(--text-strong)">Hasta (opcional)</label><x-import component-from-global-scope="SiriusFecha" id="p-hasta" value="{{ p.hasta }}" on-change="{{ p.onHasta }}" modo="fecha" formato="iso" width="190px" min="{{ p.desde }}" min-label="«Vigente desde»" invalid="{{ p.hastaInvalid }}" hint-size="190px,44px"></x-import></div>
@@ -352,13 +356,15 @@ class Component extends DCLogic {
       { when: '2026-10-01T09:05', by: 'Andrea Salazar', tab: 'Facultad del inspector', what: 'Agregó las excepciones de Tipo de inspector Interno y Agencia Eurosurvey', detail: '', motivo: 'Arranque de la determinación del inspector en Vehículos.' },
       { when: '2026-09-15T16:40', by: 'Andrea Salazar', tab: 'Niveles por ramo', what: 'Cargó la configuración inicial de niveles de calificación', detail: 'Vehículos y 3 ramos de Ramos Generales', motivo: 'Configuración inicial.' },
     ];
-    const tab = this.props.escena === 'fac' ? 1 : ['reg', 'sim'].includes(this.props.escena) ? 2 : 0;
-    return { tab, niv, fac, hist, rules: this.seedRules(), sim: this.props.escena === 'sim' ? { mode: 'caso', caso: '20196', riesgo: 'PBA4521', ver: 'Asegurable', manual: null } : null, scope: 'veh', nivTipo: 'all', q: '', panel: null, draft: {}, err: {}, modal: null, motivo: '', motErr: false, snack: '', consult: this.props.escena === 'fac' ? 'Paola Vinueza' : null, consultQ: this.props.escena === 'fac' ? 'Paola Vinueza' : '', compTip: null };
+    const tab = this.props.escena === 'fac' || this.props.escena === 'elestope' ? 1 : /* P-6f-0 · nivelestope: Facultad del inspector con el tope de Eurosurvey */ ['reg', 'sim'].includes(this.props.escena) ? 2 : 0;
+    return { tab, niv, fac, hist, rules: this.seedRules(), sim: this.props.escena === 'sim' ? { mode: 'caso', caso: '20196', riesgo: 'PBA4521', ver: 'Asegurable', manual: null } : null, scope: 'veh', nivTipo: 'all', q: '', panel: null, draft: {}, err: {}, modal: null, motivo: '', motErr: false, snack: '', consult: this.props.escena === 'fac' ? 'Paola Vinueza' : this.props.escena === 'elestope' ? 'Diana Cárdenas' : null, consultQ: this.props.escena === 'fac' ? 'Paola Vinueza' : this.props.escena === 'elestope' ? 'Diana Cárdenas' : '', compTip: null };
   })();
   componentDidMount() { if (!window.SIRIUS_EJEMPLO) { this._dataPoll = setInterval(() => { if (window.SIRIUS_EJEMPLO) { clearInterval(this._dataPoll); this._sample = null; if (!this.state.rules.length) this.setState(s => { const fac = this.seedFac(); Object.keys(fac).forEach(k => { fac[k].mod = fac[k].mod || s.fac.veh.mod; }); return { rules: this.seedRules(), fac }; }); const iv = this.VARS.find(x => x.k === 'inspector'); if (iv) iv.opts = this.INSP.map(i => i.n); this.forceUpdate(); } }, 100); } }
   componentWillUnmount() { clearInterval(this._dataPoll); }
   seedRules() { const D = window.SIRIUS_EJEMPLO; return D && D.reglas ? JSON.parse(JSON.stringify(D.reglas)) : []; }
-  seedFac() { const D = window.SIRIUS_EJEMPLO, F = D && D.facultades; return F ? JSON.parse(JSON.stringify(F)) : { veh: { fac: 'Sin facultad', mue: 10, exc: [] } }; }
+  seedFac() { const D = window.SIRIUS_EJEMPLO, F = D && D.facultades, SF = window.SIRIUS_FACULTADES, base = F ? JSON.parse(JSON.stringify(F)) : { veh: { fac: 'Sin facultad', mue: 10, exc: [] } }; if (SF && SF.veh) base.veh = Object.assign({}, base.veh, JSON.parse(JSON.stringify(SF.veh))); return base; } // P-6f-0 · DEC-216: lo publicado en la base (SIRIUS_FACULTADES) manda
+  usd(n) { return n == null || n === '' || isNaN(Number(n)) ? 'Sin tope' : 'Hasta ' + (window.SIRIUS_COMPANIA && SIRIUS_COMPANIA.formatoMonto ? SIRIUS_COMPANIA.formatoMonto(Number(n), { decimales: Number(n) % 1 ? 2 : 0 }) : 'USD ' + this.num(Number(n))); }
+  topeTxt(t) { return t == null || t === '' ? '' : ' · tope ' + (window.SIRIUS_COMPANIA && SIRIUS_COMPANIA.formatoMonto ? SIRIUS_COMPANIA.formatoMonto(Number(t), { decimales: Number(t) % 1 ? 2 : 0 }) : 'USD ' + t); }
   match(parts) { const q = (this.state.q || '').trim().toLowerCase(); return !q || parts.filter(Boolean).join(' ').toLowerCase().includes(q); }
   slug(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_'); }
   user() { return this.props.userName || 'Andrea Salazar'; }
@@ -378,7 +384,10 @@ class Component extends DCLogic {
     const from = own ? 'asignada al inspector' : src ? 'heredada de ' + this.excLabel(src) : 'heredada del valor global';
     const mueOwn = own && own.mue !== '' && own.mue != null;
     const mue = fac === 'Sin facultad' ? 'No aplica' : (mueOwn ? own.mue : F.mue) + ' %' + (mueOwn ? ' · del inspector' : ' · global');
-    return { fac, from, mue };
+    // P-6f-0 · DEC-216: tope de suma asegurada del nivel más específico que lo define (inspector → agencia → tipo → global); sin ninguno, sin límite por monto.
+    const def = (e) => e && e.tope != null && e.tope !== '', tsrc = [own, ag, tp].find(def), tope = tsrc ? Number(tsrc.tope) : def(F) ? Number(F.tope) : null;
+    const topeFrom = tsrc ? (tsrc.level === 'insp' ? 'Viene del inspector (excepción propia)' : tsrc.level === 'agencia' ? 'Viene de la agencia ' + tsrc.name : 'Viene del tipo de inspector ' + tsrc.name.toLowerCase()) : def(F) ? 'Viene del valor global' : 'Ningún nivel define un tope';
+    return { fac, from, mue, tope, topeFrom };
   }
   scopes() { return this.state.niv.filter(r => r.det).map(r => ({ v: r.id, l: r.id === 'veh' ? 'Vehículos' : r.ramo })); }
   F() { const st = this.state; return st.fac[st.scope] || st.fac.veh; }
@@ -415,24 +424,29 @@ class Component extends DCLogic {
       this.setState({ niv, fac, hist: this.log('Niveles por ramo', 'Editó ' + old.ramo, ch.join(' · '), motivo), panel: null, scope: !d.det && st.scope === d.id ? 'veh' : st.scope });
       this.toast(old.ramo + ' actualizado');
     } else if (st.panel === 'global') {
-      const F = this.F(), mue = Math.max(0, Math.min(100, Number(d.mue) || 0));
-      const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { fac: d.fac, mue, mod }) });
-      this.setState({ fac, hist: this.log('Facultad del inspector', 'Editó el valor global', d.fac + ' · muestreo ' + mue + ' %', motivo), panel: null });
-      this.toast('Valor global actualizado');
+      const F = this.F(), mue = Math.max(0, Math.min(100, Number(d.mue) || 0)), tope = d.tope == null || d.tope === '' ? null : Number(d.tope);
+      const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { fac: d.fac, mue, tope, mod }) });
+      this.setState({ fac, hist: this.log('Facultad del inspector', 'Editó el valor global', d.fac + ' · muestreo ' + mue + ' %' + (tope != null ? this.topeTxt(tope) : ' · sin tope'), motivo), panel: null });
+      if (!this.pubActivo()) this.toast('Valor global actualizado'); this.pubFac(st, fac, motivo, 'Editó el valor global');
     } else if (st.panel === 'exc') {
-      const F = this.F(), e = { id: d.id || 'e' + Date.now().toString(36), level: d.level, name: d.name, fac: d.fac, mue: d.level === 'insp' && d.mue !== '' ? Math.max(0, Math.min(100, Number(d.mue))) : '', desde: d.desde, hasta: d.hasta, by: this.user() };
+      const F = this.F(), e = { id: d.id || 'e' + Date.now().toString(36), level: d.level, name: d.name, fac: d.fac, tope: d.tope == null || d.tope === '' ? null : Number(d.tope), mue: d.level === 'insp' && d.mue !== '' ? Math.max(0, Math.min(100, Number(d.mue))) : '', desde: d.desde, hasta: d.hasta, by: this.user() };
       const exc = d.id ? F.exc.map(x => x.id === d.id ? e : x) : F.exc.concat(e);
       const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { exc }) });
-      this.setState({ fac, hist: this.log('Facultad del inspector', (d.id ? 'Editó' : 'Agregó') + ' la excepción de ' + this.excLabel(e), e.fac + (e.mue !== '' ? ' · muestreo ' + e.mue + ' %' : '') + ' · desde ' + this.fmt(e.desde) + (e.hasta ? ' hasta ' + this.fmt(e.hasta) : ''), motivo), panel: null });
-      this.toast('Excepción ' + (d.id ? 'actualizada' : 'agregada'));
+      this.pubFac(st, fac, motivo, (d.id ? 'Editó' : 'Agregó') + ' la excepción de ' + this.excLabel(e)); this.setState({ fac, hist: this.log('Facultad del inspector', (d.id ? 'Editó' : 'Agregó') + ' la excepción de ' + this.excLabel(e), e.fac + (e.tope != null ? this.topeTxt(e.tope) : ' · sin tope') + (e.mue !== '' ? ' · muestreo ' + e.mue + ' %' : '') + ' · desde ' + this.fmt(e.desde) + (e.hasta ? ' hasta ' + this.fmt(e.hasta) : ''), motivo), panel: null });
+      if (!this.pubActivo()) this.toast('Excepción ' + (d.id ? 'actualizada' : 'agregada'));
     }
   }
+  // P-6f-0 · DEC-216: con la conexión, la facultad de Vehículos se publica como SIRIUS_FACULTADES { version, veh: { fac, tope, mue, exc } } con SiriusPublicar; con { ok: false } vuelve atrás.
+  pubActivo() { const SP = window.SiriusPublicar; return !!(SP && SP.activo && SP.activo()); } // con la conexión el aviso es el de la publicación (o el del rechazo)
+  pubFac(antes, fac, motivo, que) { const SP = window.SiriusPublicar; if (!SP || !SP.activo || !SP.activo() || !fac.veh) return; const prev = window.SIRIUS_FACULTADES, ver = SP.versionDe ? SP.versionDe('SIRIUS_FACULTADES', (prev && prev.version) || 1) : ((prev && prev.version) || 1) + 1, v = fac.veh;
+    const datos = { version: ver, veh: { fac: v.fac, tope: v.tope == null || v.tope === '' ? null : Number(v.tope), mue: v.mue, exc: (v.exc || []).map(e => ({ id: e.id, level: e.level, name: e.name, fac: e.fac, tope: e.tope == null || e.tope === '' ? null : Number(e.tope), mue: e.mue, desde: e.desde, hasta: e.hasta || '', by: e.by })) } };
+    SP.publicar({ clave: 'SIRIUS_FACULTADES', version: ver, datos, motivo, pantalla: 'Niveles de calificación › Facultad del inspector · ' + que, revertir: () => { this.setState({ fac: antes.fac, hist: antes.hist }); }, alPublicar: () => { window.SIRIUS_FACULTADES = JSON.parse(JSON.stringify(datos)); } }); }
   delExc() {
     const st = this.state, m = st.modal, F = this.F(), e = F.exc.find(x => x.id === m.id);
     if (!st.motivo.trim()) { this.setState({ motErr: true }); return; }
     const fac = Object.assign({}, st.fac, { [st.scope]: Object.assign({}, F, { exc: F.exc.filter(x => x.id !== m.id) }) });
-    this.setState({ fac, modal: null, hist: this.log('Facultad del inspector', 'Eliminó la excepción de ' + this.excLabel(e), '', st.motivo.trim()), motivo: '' });
-    this.toast('Excepción eliminada');
+    this.pubFac(st, fac, st.motivo.trim(), 'Eliminó la excepción de ' + this.excLabel(e)); this.setState({ fac, modal: null, hist: this.log('Facultad del inspector', 'Eliminó la excepción de ' + this.excLabel(e), '', st.motivo.trim()), motivo: '' });
+    if (!this.pubActivo()) this.toast('Excepción eliminada');
   }
   VARS = [
     { k: 'sucursal', pl: 'la sucursal', l: 'Sucursal', g: 'Del caso', t: 'list', opts: ((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato'] },
@@ -663,6 +677,7 @@ class Component extends DCLogic {
     if (!insp) { if (hits.length) { result = 'Pasa a calificación por: ' + hits.map(e => e.r.name).join(', '); sub = hits.map(e => 'Motivo del envío: ' + e.r.motivo).join(' '); } else { result = 'Pasa a calificación: no hay inspector que pueda determinar'; } tone = 'warning'; }
     else if (eff.fac === 'Sin facultad') { result = 'Pasa a calificación: el inspector no tiene facultad para determinar'; tone = 'warning'; }
     else if (s.ver === 'No asegurable' && eff.fac === 'Determinar solo Asegurable') { result = 'Pasa a calificación con la recomendación del inspector'; sub = 'Su facultad solo le permite determinar Asegurable.'; tone = 'warning'; }
+    else if (eff.tope != null && Number(base.aseg) > eff.tope) { result = 'Pasa a calificación: la suma asegurada supera el tope de su facultad'; sub = 'Suma asegurada ' + this.usd(base.aseg).replace('Hasta ', '') + ' · tope ' + this.usd(eff.tope).replace('Hasta ', '') + ' (' + eff.topeFrom.charAt(0).toLowerCase() + eff.topeFrom.slice(1) + ').'; tone = 'warning'; } // P-6f-0 · DEC-216
     else if (hits.length) { result = 'Pasa a calificación por: ' + hits.map(e => e.r.name).join(', '); sub = hits.map(e => 'Motivo del envío: ' + e.r.motivo).join(' '); tone = 'warning'; }
     else { result = 'Puede determinarlo el inspector'; sub = 'Ninguna regla se cumple y su facultad permite el veredicto ' + s.ver + '.'; tone = 'success'; }
     const order = { hit: 0, ok: 1, nav: 2, na: 3, off: 4 };
@@ -734,20 +749,21 @@ class Component extends DCLogic {
       onAplica: (e) => this.setState(st.tab === 0 ? { nivTipo: e.target.value } : { scope: e.target.value }),
       aplicaNote: st.tab === 0 ? '' : scopes.length < 2 ? 'Para configurar un ramo de Ramos Generales, activa su determinación del inspector en Niveles por ramo.' : '',
       scopeNote: scopes.length < 2 ? 'Para configurar un ramo de Ramos Generales, activa su determinación del inspector en Niveles por ramo.' : 'Cada ramo con determinación activa tiene su propia facultad y sus propias reglas.',
-      g: { fac: F.fac, mue: F.mue + ' %', mod: this.fmt(F.mod.d) + ' · ' + F.mod.by },
-      openGlobal: () => this.openPanel('global', { fac: F.fac, mue: String(F.mue) }),
-      openNewExc: () => this.openPanel('exc', { level: 'insp', name: '', fac: this.FAC[1], mue: '', desde: this.today(), hasta: '' }),
+      g: { fac: F.fac, mue: F.mue + ' %', tope: this.usd(F.tope).replace('Hasta ', ''), mod: this.fmt(F.mod.d) + ' · ' + F.mod.by },
+      openGlobal: () => this.openPanel('global', { fac: F.fac, mue: String(F.mue), tope: F.tope == null ? '' : F.tope }),
+      openNewExc: () => this.openPanel('exc', { level: 'insp', name: '', fac: this.FAC[1], tope: '', mue: '', desde: this.today(), hasta: '' }),
       excCols: [
         { key: 'nivel', label: 'Nivel', sortable: true, width: 120, sticky: true },
-        { key: 'nombre', label: 'Nombre', type: 'link', linkAction: 'edit', linkWrap: true, sortable: true, minWidth: 150, flex: true },
-        { key: 'fac', label: 'Facultad', sortable: true, minWidth: 215, flex: true },
+        { key: 'nombre', label: 'Nombre', type: 'link', linkAction: 'edit', linkWrap: true, sortable: true, minWidth: 130, flex: true },
+        { key: 'fac', label: 'Facultad', sortable: true, minWidth: 190, flex: true },
+        { key: 'tope', label: 'Tope', sortable: true, width: 110 },
         { key: 'mue', label: 'Muestreo', sortable: true, width: 90 },
-        { key: 'vig', label: 'Vigencia', sortable: true, width: 170 },
-        { key: 'by', label: 'Asignado por', sortable: true, width: 130 },
+        { key: 'vig', label: 'Vigencia', sortable: true, width: 150 },
+        { key: 'by', label: 'Asignado por', sortable: true, width: 120 },
         { key: 'est', label: 'Estado', type: 'badge', sortable: true, width: 110 },
       ],
       excRows: F.exc.map(e => { const t = this.today(), on = this.active(e), est = on ? 'Vigente' : e.desde > t ? 'Programada' : 'Vencida';
-        return { id: e.id, ariaName: this.excLabel(e), nivel: { label: this.LVL[e.level], sort: ['tipo', 'agencia', 'insp'].indexOf(e.level) }, nombre: { label: e.name, sort: e.name }, fac: e.fac, mue: e.mue !== '' ? e.mue + ' %' : '—', vig: { label: e.hasta ? this.fmt(e.desde) + ' – ' + this.fmt(e.hasta) : 'Desde ' + this.fmt(e.desde), sort: e.desde }, by: e.by, est: { label: est, tone: on ? 'success' : est === 'Programada' ? 'warning' : 'neutral', sort: est } }; }).filter(r => this.match([r.nivel.label, r.nombre.label, r.fac, r.by])),
+        return { id: e.id, ariaName: this.excLabel(e), nivel: { label: this.LVL[e.level], sort: ['tipo', 'agencia', 'insp'].indexOf(e.level) }, nombre: { label: e.name, sort: e.name }, fac: e.fac, tope: { label: e.tope == null || e.tope === '' ? 'Sin tope' : this.usd(e.tope).replace('Hasta ', ''), sort: e.tope == null || e.tope === '' ? 1e15 : Number(e.tope) }, mue: e.mue !== '' ? e.mue + ' %' : '—', vig: { label: e.hasta ? this.fmt(e.desde) + ' – ' + this.fmt(e.hasta) : 'Desde ' + this.fmt(e.desde), sort: e.desde }, by: e.by, est: { label: est, tone: on ? 'success' : est === 'Programada' ? 'warning' : 'neutral', sort: est } }; }).filter(r => this.match([r.nivel.label, r.nombre.label, r.fac, r.by])),
       excActions: [{ id: 'edit', label: 'Editar', icon: 'edit' }, { id: 'del', label: 'Eliminar', path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', menu: true, danger: true }],
       onExcAction: (a, row) => { const e = F.exc.find(x => x.id === row.id); if (a === 'del') this.setState({ modal: { id: e.id }, motivo: '', motErr: false }); else this.openPanel('exc', Object.assign({}, e, { mue: e.mue === '' ? '' : String(e.mue) })); },
       insCols: [
@@ -771,10 +787,10 @@ class Component extends DCLogic {
         if (!i) return base;
         const ex = F.exc.filter(e => this.active(e)), own = ex.find(e => e.level === 'insp' && e.name === i.n), ag = i.ag && ex.find(e => e.level === 'agencia' && e.name === i.ag), tp = ex.find(e => e.level === 'tipo' && e.name === i.tipo);
         const win = own ? 'insp' : ag ? 'ag' : tp ? 'tipo' : 'g', no = 'Sin definir';
-        const lv = [['g', 'Global', F.fac], ['tipo', 'Tipo: ' + i.tipo.toLowerCase(), tp ? tp.fac : no]].concat(i.ag ? [['ag', 'Agencia: ' + i.ag, ag ? ag.fac : no]] : [], [['insp', 'Inspector: ' + i.n, own ? own.fac : no]]);
+        const tt = (e) => e ? e.fac + this.topeTxt(e.tope) : no, lv = [['g', 'Global', F.fac + this.topeTxt(F.tope)], ['tipo', 'Tipo: ' + i.tipo.toLowerCase(), tt(tp)]].concat(i.ag ? [['ag', 'Agencia: ' + i.ag, tt(ag)]] : [], [['insp', 'Inspector: ' + i.n, tt(own)]]); /* P-6f-0 · DEC-216: el tope de cada nivel en la cadena */
         const eff = this.effective(i, F);
         const ownMue = own && own.mue !== '' && own.mue != null;
-        return Object.assign(base, { name: i.n, fac: eff.fac, mue: eff.fac === 'Sin facultad' ? 'No aplica' : (ownMue ? own.mue : F.mue) + ' %', mueFrom: eff.fac === 'Sin facultad' ? 'No determina riesgos: no hay muestreo' : ownMue ? 'Viene del inspector (excepción propia)' : 'Viene del valor global', who: i.tipo + (i.ag ? ' · ' + i.ag : ''), edit: () => v.onInsAction('exc', { id: i.n }),
+        return Object.assign(base, { name: i.n, fac: eff.fac, tope: eff.tope == null ? 'Sin tope' : this.usd(eff.tope), topeFrom: eff.topeFrom, mue: eff.fac === 'Sin facultad' ? 'No aplica' : (ownMue ? own.mue : F.mue) + ' %', mueFrom: eff.fac === 'Sin facultad' ? 'No determina riesgos: no hay muestreo' : ownMue ? 'Viene del inspector (excepción propia)' : 'Viene del valor global', who: i.tipo + (i.ag ? ' · ' + i.ag : ''), edit: () => v.onInsAction('exc', { id: i.n }),
           chain: lv.map(([k, l, sub], idx) => { const on = k === win; const und = sub === no; return { sep: idx > 0, l, sub: on ? sub + ' · manda' : sub, cur: on ? 'true' : undefined, bg: on ? 'var(--color-brand-wash)' : und ? 'var(--surface-subtle)' : '#FFFFFF', border: on ? 'var(--color-brand)' : 'var(--border-subtle)', bstyle: und ? 'dashed' : 'solid', fw: on ? 700 : 500, lColor: und ? 'var(--text-muted)' : 'var(--text-strong)', subColor: on ? 'var(--text-strong)' : 'var(--text-muted)', sfs: und ? 'italic' : 'normal' }; }) }); })(),
       hist: st.hist.map(h => ({ when: this.fmtT(h.when), by: h.by, tab: h.tab, what: h.what, detail: h.detail, hasDetail: !!h.detail, motivo: h.motivo })),
       closePanel: () => this.closePanel(), onPanelKey: (e) => { if (e.key === 'Escape') this.closePanel(); },
@@ -792,7 +808,7 @@ class Component extends DCLogic {
       onN1: (e) => this.setD({ n1: e.target.value, n2: d.n2 === e.target.value ? '—' : d.n2 }), onN2: (e) => this.setD({ n2: e.target.value }), onCond: (e) => this.setD({ cond: e.target.value }), toggleDet: () => this.setD({ det: !d.det }), isVeh: d.id === 'veh', toggleOtro: () => this.setD({ otroCal: !d.otroCal }), otroAria: d.otroCal ? 'true' : 'false', otroBg: d.otroCal ? 'var(--color-brand)' : 'var(--neutral-300)', otroLeft: d.otroCal ? '22px' : '2px', otroTxt: d.otroCal ? 'Activo' : 'Apagado', otroImp: this.otroImpact(), detAria: d.det ? 'true' : 'false', detBg: d.det ? 'var(--color-brand)' : 'var(--neutral-300)', detLeft: d.det ? '22px' : '2px', detTxt: d.det ? 'Activa' : 'Apagada',
       detNote: d.det ? (d.id === 'veh' ? 'El inspector determina según su facultad y las reglas de envío a calificación.' : 'Se usarán las pestañas Facultad del inspector y Reglas de envío a calificación, filtradas por ' + d.ramo + '.') : 'Todos los riesgos de este ramo pasan a calificación.' });
     if (kind === 'global') { const affected = this.INSP.filter(i => this.effective(i, Object.assign({}, F, { fac: d.fac })).from === 'heredada del valor global').map(i => i.n);
-      Object.assign(p, { eyebrow: 'Facultad del inspector · ' + scopeName, title: 'Editar valor global', fac: d.fac, mue: d.mue, onFac: (e) => this.setD({ fac: e.target.value }), onMue: (e) => this.setD({ mue: e.target.value }),
+      Object.assign(p, { eyebrow: 'Facultad del inspector · ' + scopeName, title: 'Editar valor global', fac: d.fac, mue: d.mue, topeNum: d.tope === '' || d.tope == null ? null : Number(d.tope), onTope: (n) => this.setD({ tope: n == null ? '' : n }), onFac: (e) => this.setD({ fac: e.target.value }), onMue: (e) => this.setD({ mue: e.target.value }),
         impact: affected.length ? 'Lo heredan ' + affected.length + (affected.length === 1 ? ' inspector: ' : ' inspectores: ') + affected.join(', ') + '.' : 'Ningún inspector hereda hoy el valor global.' }); }
     if (kind === 'exc') {
       const names = d.level === 'tipo' ? this.TIPOS.map(n => ({ v: n, l: n })) : d.level === 'agencia' ? this.AGENCIAS.map(n => ({ v: n, l: n })) : this.INSP.map(i => ({ v: i.n, l: i.n + ' · ' + i.tipo.toLowerCase() + (i.ag ? ' · ' + i.ag : '') }));
@@ -802,7 +818,7 @@ class Component extends DCLogic {
         levels: Object.keys(this.LVL).map(k => ({ l: this.LVL[k], pressed: d.level === k ? 'true' : 'false', bg: d.level === k ? 'var(--color-brand)' : '#FFFFFF', fg: d.level === k ? '#FFFFFF' : 'var(--text-strong)', pick: () => this.setD({ level: k, name: '', mue: '' }) })),
         nameLbl: d.level === 'tipo' ? 'Tipo de inspector' : d.level === 'agencia' ? 'Agencia' : 'Inspector', names, name: d.name, onName: (e) => this.setD({ name: e.target.value }),
         hasNameErr: !!err.name, nameErr: err.name || '', nameInvalid: err.name ? 'true' : 'false', nameBorder: err.name ? 'var(--color-danger)' : 'var(--input-outlined-border)',
-        fac: d.fac, onFac: (e) => this.setD({ fac: e.target.value }), isInsp: d.level === 'insp', mue: d.mue, onMue: (e) => this.setD({ mue: e.target.value }), muePh: 'Global: ' + F.mue + ' %',
+        fac: d.fac, onFac: (e) => this.setD({ fac: e.target.value }), topeNum: d.tope === '' || d.tope == null ? null : Number(d.tope), onTope: (n) => this.setD({ tope: n == null ? '' : n }), isInsp: d.level === 'insp', mue: d.mue, onMue: (e) => this.setD({ mue: e.target.value }), muePh: 'Global: ' + F.mue + ' %',
         desde: d.desde, hasta: d.hasta, onDesde: (e) => this.setD({ desde: e.target.value }), onHasta: (e) => this.setD({ hasta: e.target.value }),
         hasHastaErr: !!err.hasta, hastaInvalid: err.hasta ? 'true' : 'false', hastaBorder: err.hasta ? 'var(--color-danger)' : 'var(--input-outlined-border)',
         impact: !d.name ? 'Selecciona a quién aplica para ver los inspectores afectados.' : insp ? 'Tiene prioridad sobre la agencia, el tipo de inspector y el valor global. Hoy su facultad efectiva es: ' + this.effective(insp, F).fac + ' · ' + this.effective(insp, F).from + '.' : affected.length ? 'Aplica a ' + affected.map(i => i.n).join(', ') + ', salvo quienes tengan una excepción más específica.' : 'Hoy ningún inspector registrado pertenece a este grupo.' });

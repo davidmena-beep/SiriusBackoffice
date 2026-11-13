@@ -404,7 +404,7 @@
       fila('Zonas', pf.zonas.join(', ') || '—', link('Editar', () => setEd({ campo: 'zonas', sel: pf.zonas.slice(), opts: ZONAS }), 'ez', { id: 'app-zonas' }), 'z', pendTxt('zonas')),
       fila('Horario disponible', jor + ' · bloqueos en la Agenda', null, 'hr'),
       fila('Modalidades', pf.modalidades.join(' · ') || '—', link('Editar', () => setEd({ campo: 'modalidades', sel: pf.modalidades.slice(), opts: MODS }), 'em', { id: 'app-mods' }), 'md', pendTxt('modalidades')),
-      fila('Tu facultad', (() => { const SUx = SU(), f = SUx && SUx.facultadDe ? SUx.facultadDe(n) : null; return f ? f.fac + ' (Vehículos · ' + f.desde + ')' : 'Sin facultad'; })() + (tipoDe(n) === 'Agencia' ? ' · se aplica cuando el Control de calidad de tu agencia confirma tu criterio' : ' · la usas al completar el informe'), null, 'fac'), // etapa C2-4
+      fila('Tu facultad', (() => { const SUx = SU(), f = SUx && SUx.facultadDe ? SUx.facultadDe(n) : null; return f ? f.fac + (f.tope != null && SUx.fmtTope ? ' · hasta ' + SUx.fmtTope(f.tope) : '') + ' (Vehículos · ' + f.desde + ')' : 'Sin facultad'; })() /* P-6f-0 · DEC-216 */ + (tipoDe(n) === 'Agencia' ? ' · se aplica cuando el Control de calidad de tu agencia confirma tu criterio' : ' · la usas al completar el informe'), null, 'fac'), // etapa C2-4
       honYo(n),
       card([h('b', { key: 'b' }, 'Mi calificación'), P('Devoluciones este mes: ' + cal.devoluciones + ' · llegadas a tiempo: ' + (cal.llegadas ? cal.aTiempo + ' de ' + cal.llegadas : 'sin llegadas registradas') + ' · nota de los clientes: se mide desde la etapa 15-2', { fontSize: 13 }, 'p')], 'cal'),
       link('Cerrar sesión en este celular', salir, 'out', { id: 'app-salir' }),

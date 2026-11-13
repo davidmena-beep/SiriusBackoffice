@@ -4,6 +4,108 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0
+
+Publiqué la etapa P-6f-0 (Versión 189). Incluye:
+
+- el avance del informe por campos aplicables (DEC-218);
+- «Objeto a asegurar» armado desde la solicitud (DEC-219);
+- «Enviar a calificación» para quien completa sin inspector en sitio (DEC-215);
+- la facultad con tope de suma asegurada (DEC-216).
+
+DEC-217 queda reservada.
+
+**Qué cambió**
+- **Avance (DEC-218):**
+  - **Qué cuenta:** solo los campos aplicables, es decir, los visibles en la modalidad del caso. No cuentan los de Cálculo ni los «No aplica»; estos se siguen mostrando.
+  - **Texto:** «1 obligatorio pendiente · 13 de 32 campos aplicables» y «Sin obligatorios pendientes · …».
+  - **Dónde se ve:**
+    - En la cabecera de la pestaña Informe.
+    - En la barra fija, después del desglose. Ejemplo: «6 pendientes (ver los controles · 4 obligatorios del informe · la decisión) · 4 obligatorios pendientes · 39 de 66 campos aplicables».
+    - En la bandeja «Informes por completar».
+    - En el Historial: «Borrador del informe guardado · 1 obligatorio pendiente · 13 de 32 campos aplicables · sigue «Por completar»».
+  - **Tooltip:** «Campos aplicables: los de la plantilla para esta modalidad, sin los que no aplican ni los calculados».
+  - La barra de porcentaje usa llenos sobre aplicables. Ramos Generales no cambia.
+- **Objeto a asegurar (DEC-219):** con conexión, Resumen arma la tarjeta con `casos[].riesgosBase`. Sin `riesgosBase`, queda como antes, y ningún dato sale del caso de ejemplo.
+  - **Vehículo:**
+    - Siempre muestra Placa, Marca, Modelo, Año, VIN y Número de motor, con «—» si faltan.
+    - El resto aparece solo si viene. La carrocería se muestra con su nombre de SIRIUS_SILUETAS.
+    - Valores: Casco, Extras y Valor total asegurado.
+  - **Equipo:** muestra Suma asegurada.
+  - **Ubicación del bien:** muestra Edificio, Contenidos y Total.
+  - **Flota:** cada riesgo aparece como «Vehículo N · estado», en el mismo orden. Abajo va el total de cada vehículo (casco más extras) y el «Total del caso».
+  - **Informe › Valores:** si la respuesta no trae el casco o los extras, los toma de `riesgosBase` con origen «Solicitud».
+- **Enviar a calificación (DEC-215):**
+  - Es la tercera opción, después de No asegurable, con la descripción pedida.
+  - La observación es obligatoria (mínimo 10 caracteres). El resultado dice «El caso pasa a calificación por tu decisión.».
+  - Envía `completarInforme { caso, respuestas, decision: 'determinar', criterio: 'Enviar a calificación', motivo }`.
+  - El Historial registra «Completó el informe · Enviado a calificación por decisión de Patricia Andrade · <observación>».
+  - La calificación muestra la observación como «Motivo del envío». El interno no cambia.
+- **Facultad con tope (DEC-216):**
+  - **Niveles:**
+    - Campo «Tope de suma asegurada (USD)», con SiriusMonto y la ayuda pedida, en el valor global y en las excepciones.
+    - Columna «Tope» en la tabla de excepciones: Eurosurvey USD 40.000; las demás, «Sin tope».
+    - «Consultar inspector» muestra el tope efectivo y su origen, por ejemplo «Viene de la agencia Eurosurvey». La cadena de herencia muestra el tope de cada nivel.
+    - Cada cambio pide motivo y queda en el Historial de cambios.
+  - **Publicación con conexión:** cada cambio se publica como `SIRIUS_FACULTADES`. Con `{ ok: false }`, se deshace.
+  - **Lectura:** `window.SIRIUS_FACULTADES` manda en:
+    - SiriusUsuarios.facultadDe;
+    - SiriusCompletar.facultad y facultadResp;
+    - Niveles y «Probar reglas»;
+    - el informe;
+    - la ficha del usuario;
+    - la app del inspector.
+  - **Suma asegurada del caso:** la mayor de sus riesgos.
+  - **Textos:**
+    - «Facultad de Eurosurvey: Determinar solo Asegurable · hasta USD 40.000 · este caso queda Inspeccionado como Asegurable.»
+    - «… · la suma asegurada (USD 42.000,00) supera el tope: pasa a calificación.»
+    - Sin tope, no se menciona el monto.
+
+**Verificado**
+- **Selector a 1280×720 y 1920×1080:** abrí las 9 escenas nuevas más infcompletarcaso, autodecision, autonoaplica, valorestotal, cxnumerocruce y niv. Ninguna mostró errores ni scroll horizontal.
+- **Conteos DEC-218,** hechos recorriendo cada sección del informe y contando los campos:
+  - **50009** (Motos · Autoinspección, avanceaplicables): 36 visibles − 3 «No aplica» − 1 Cálculo = 32 aplicables. Hay 13 llenos y 1 obligatorio pendiente (el kilometraje).
+  - **30004** (Vehículos livianos · Presencial, infcompletarcaso): 72 visibles − 0 «No aplica» − 6 Cálculo = 66 aplicables. Hay 39 llenos (35 campos de texto o lista y 4 Sí/No respondidos) y 4 obligatorios pendientes.
+  - Las dos cifras coinciden con lo que muestra la pantalla.
+- **Sin conexión:** comparé contra la versión anterior inicio, veh, n1, usuarioficha, infbandeja, infcompletarcaso, calcxcalif y cxnumerocruce. Solo cambian el texto del avance y el tope (en la ficha, «Tope de suma asegurada · Sin tope»).
+- **Prueba interna con conexión** (copia aparte):
+  - **`riesgosBase`:** las cuatro formas se ven en Resumen, y Valores toma 18.500 y 650 de `riesgosBase`.
+  - **`completarInforme` con «Enviar a calificación»:** con `{ ok: true }` el caso pasa a calificación. Con `{ ok: false }` vuelve a «Informe por completar» con el mensaje.
+  - **`publicarConfiguracion`:** se probó editando la excepción de Eurosurvey a 45.000. Con `{ ok: false }` vuelve a 40.000 con «Se deshizo el cambio».
+  - **`SIRIUS_FACULTADES` con tope 35.000:** manda en Niveles y en el informe; la moto de 38.900 pasa a calificación.
+  - **Calificación:** muestra «Motivo del envío».
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: contrato, DEC-215, DEC-216, DEC-218, DEC-219 y KNOWN_ESC 535.
+
+**No verificado**
+- La tabla de inspectores de Niveles («Facultad efectiva por inspector») no tiene columna de tope; el tope se ve en «Consultar inspector».
+- La app del inspector solo muestra el tope en «Tu facultad»; su decisión en la visita no se probó con una suma sobre el tope.
+
+**Diferencias**
+- En la bandeja, el avance va en dos líneas por el ancho de la columna: «13 de 32 campos aplicables» y debajo «1 obligatorio pendiente».
+- Ajusté anchos de la tabla de excepciones para que entre la columna «Tope» a 1280.
+- Con conexión, Niveles no muestra «Excepción actualizada» antes de saber la respuesta. Solo aparece el aviso de la publicación o el del rechazo.
+- autoenviarcalif abre con la observación escrita. Con `?cxobs=0` se ve sin observación y con la validación.
+- En la flota, el estado de cada vehículo es el del caso, porque `riesgosBase` no trae estado por riesgo.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| avanceaplicables | Avance por campos aplicables |
+| resumenvehsol | Vehículo con todos los datos de la solicitud |
+| resumenflota | Flota de tres vehículos |
+| resumenequipo | Equipo móvil |
+| resumenubicacion | Ubicación del bien |
+| autoenviarcalif | Envío a calificación con observación (sin ella con `?cxobs=0`) |
+| facultadtope | Moto de 38.900 dentro del tope de 40.000 |
+| facultadtopefuera | Moto de 42.000 sobre el tope de 40.000 |
+| nivelestope | Tope en Niveles de calificación |
+
+También abrí infcompletarcaso, autodecision, autonoaplica, valorestotal, cxnumerocruce y niv.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-4
 
 Publiqué la etapa P-6e-4 (Versión 188): el informe de autoinspección arma las fotos por sección con la plantilla publicada, muestra el video, no exige campos que no aplican, calcula el total de la solicitud y la decisión sigue DEC-211. El login usa el diseño «Dividido».

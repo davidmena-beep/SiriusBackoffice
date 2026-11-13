@@ -10,6 +10,8 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 13/11/2026 · P-6f-0 · DEC-216: SIRIUS_FACULTADES (Niveles de calificación › Facultad del inspector, con tope en USD) se vigila sin archivo de datos y
+// window.SIRIUS_FACULTADES toma la versión vigente de la base (SQL 35); al publicar desde Niveles se aplica en la sesión.
 // 12/11/2026 · SIRIUS_CONEXION.calificaciones[caso] = [{ riesgo, nivel, veredicto, cobertura, resultado, observacion, por, rol, hora }] (de la más antigua a la más reciente).
 (function () {
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
@@ -35,6 +37,9 @@
    'SIRIUS_EQUIPOS','SIRIUS_SALIDA_RG','SIRIUS_SALIDA_VEH','SIRIUS_DOCUMENTOS_PDF','SIRIUS_INFORME_VEH','SIRIUS_CAMPOS','SIRIUS_USUARIOS','SIRIUS_NOTIFICACIONES','SIRIUS_CONFLICTOS',
    'SIRIUS_INICIO','SIRIUS_AGENDA','SIRIUS_LIQUIDACIONES','SIRIUS_HONORARIOS','SIRIUS_TARIFAS_CUENTAS','SIRIUS_MATRIZ_GARANTIAS','SIRIUS_DATOS_IA','SIRIUS_SILUETAS','SIRIUS_CAPTURA',
    'SIRIUS_AUTOINSPECCION','SIRIUS_PORTAL_CLIENTE','SIRIUS_APP_INSPECTOR','SIRIUS_CONTROLES','SIRIUS_DOCUMENTOS_CLIENTE','SIRIUS_COMPLETADO'].forEach(vigilar);   // P-6e-1: catálogo de documentos del cliente (DEC-203)
+  // P-6f-0 · DEC-216: la facultad publicada en Niveles de calificación (SIRIUS_FACULTADES) no tiene archivo de datos propio: se registra sin archivo
+  // para que, al leer la base y al publicar, window.SIRIUS_FACULTADES tome lo vigente (si la base no la tiene, queda indefinida y manda el ejemplo).
+  vigilar('SIRIUS_FACULTADES'); if (!Object.prototype.hasOwnProperty.call(ARCH, 'SIRIUS_FACULTADES')) ARCH.SIRIUS_FACULTADES = undefined;
   // (SIRIUS_EJEMPLO y SIRIUS_MONITOR_EJEMPLO no se reemplazan: son datos de demostración; los casos salen de la base.
   //  Excepción: sus partes que publica Administración —plantillas (SIRIUS_FORMULARIOS) y catálogos (SIRIUS_CATALOGOS)— se aplican abajo.)
 
