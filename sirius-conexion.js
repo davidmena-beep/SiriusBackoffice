@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 13/11/2026 · P-6f-0: SIRIUS_CATALOGOS se aplica en la forma del archivo de datos (listas de texto; noaseg, noinsp y verif con su clave del archivo).
 // 13/11/2026 · P-6f-0: los riesgos de cada caso llegan en orden fijo (creación y descripción).
 // 13/11/2026 · P-6f-0 · DEC-216: SIRIUS_FACULTADES (Niveles de calificación › Facultad del inspector, con tope en USD) se vigila sin archivo de datos y
 // window.SIRIUS_FACULTADES toma la versión vigente de la base (SQL 35); al publicar desde Niveles se aplica en la sesión.
@@ -74,8 +75,19 @@
     Object.keys(nombres).forEach(function (n) { var k = E.plantillaVigente(n); if (k) E.plantillasVigentes[n] = k; else delete E.plantillasVigentes[n]; });
     return true; }
   // SIRIUS_CATALOGOS → SIRIUS_EJEMPLO.catalogos (Catálogos › Sucursales, Coberturas, Piezas, Tipos de daño…).
+  // P-6f-0: Catálogos publica cada catálogo como registros ({ nombre, … }) y con el id de su pantalla (noaseg, noinsp, verif); las pantallas leen
+  // listas de texto con el nombre del archivo de datos (motivosNoAsegurable, motivosNoInspeccion, verificacion). Se aplica en la forma del archivo:
+  // si el catálogo del prototipo es una lista de texto, los registros se convierten a su nombre (así «Sucursal» no muestra «[object Object]»).
+  var ALIAS_CAT = { noaseg: 'motivosNoAsegurable', noinsp: 'motivosNoInspeccion', verif: 'verificacion' };
+  function textoDe(x) { return x && typeof x === 'object' ? String(x.nombre != null ? x.nombre : x.descripcion != null ? x.descripcion : x.codigo != null ? x.codigo : '') : x == null ? '' : String(x); }
   function aplicarCatalogos(C) { var E = window.SIRIUS_EJEMPLO; if (!C || typeof C !== 'object') return true; if (!E) return false;
-    E.catalogos = E.catalogos || {}; Object.keys(C).forEach(function (k) { E.catalogos[k] = clon(C[k]); }); return true; }
+    E.catalogos = E.catalogos || {}; var orig = E.__catalogosForma || (E.__catalogosForma = {});
+    Object.keys(E.catalogos).forEach(function (k) { if (!(k in orig)) { var v = E.catalogos[k]; orig[k] = Array.isArray(v) && v.length && typeof v[0] === 'string' ? 'texto' : 'otro'; } });
+    var claves = Object.keys(C).filter(function (k) { return !ALIAS_CAT[k]; }).concat(Object.keys(C).filter(function (k) { return ALIAS_CAT[k]; }));   // lo publicado con el id de la pantalla manda sobre la clave del archivo
+    claves.forEach(function (k) { var dest = ALIAS_CAT[k] || k, v = clon(C[k]);
+      if (orig[dest] === 'texto' && Array.isArray(v)) v = v.map(textoDe).filter(function (t) { return t !== ''; });
+      E.catalogos[dest] = v; });
+    return true; }
   var ESPECIALES = { SIRIUS_FORMULARIOS: aplicarFormularios, SIRIUS_CATALOGOS: aplicarCatalogos };
   function aplicarEspeciales(soloClave) { var pend = [];
     Object.keys(ESPECIALES).forEach(function (c) { if (soloClave && c !== soloClave) return; var d = CONFIG && CONFIG[c]; if (!d) return;
