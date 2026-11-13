@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 13/11/2026 · P-6f-0: cada caso trae tipoRiesgo según su grupo de ramo (Vehículos o Ramos Generales).
 // 13/11/2026 · P-6f-0: SIRIUS_CATALOGOS se aplica en la forma del archivo de datos (listas de texto; noaseg, noinsp y verif con su clave del archivo).
 // 13/11/2026 · P-6f-0: los riesgos de cada caso llegan en orden fijo (creación y descripción).
 // 13/11/2026 · P-6f-0 · DEC-216: SIRIUS_FACULTADES (Niveles de calificación › Facultad del inspector, con tope en USD) se vigila sin archivo de datos y
@@ -125,6 +126,7 @@
     x.id = id; x.ramo = k.ramo; x.estado = k.estado; x.asegurado = a.nombre || x.asegurado || ''; x.ident = a.identificacion || x.ident || '';
     x.orden = d.orden || x.orden || ''; x.fecha = (k.creado ? fechaIso(k.creado) : '') || x.fecha; x.registrado = isoLocal(k.creado); x.responsable = resp || x.responsable || '';   // C2-21: la fecha del caso sale de la base (corregido 12/11: este comentario tapaba la asignación del responsable)
     x.comercial = d.comercial || x.comercial || ''; x.backoffice = d.backoffice || x.backoffice || ''; x.broker = d.broker || x.broker || 'Directo'; x.sucursal = d.sucursal || x.sucursal || '';
+    x.tipoRiesgo = k.grupo_ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales';   // P-6f-0: la bandeja rotula «3 vehículos» (no «3 ramos») y muestra «PRB1212 +2»
     x.origen = k.origen || x.origen || 'Manual'; x.contacto = c.nombre || x.contacto || ''; x.tel = c.celular || x.tel || ''; x.correo = c.correo || x.correo || '';
     x.nota = d.nota || k.subestado || x.nota || '';
     // P-6e · plantilla de cada riesgo (riesgos.datos.formulario, SQL 29) y su carrocería: Coordinación ofrece las modalidades de esa plantilla.

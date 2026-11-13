@@ -6,6 +6,7 @@
 //    extras: [texto], cobertura, valorExtras }; suma = casco.
 //  · Equipo móvil: datos { tipoEquipo, marca, modelo, anio, serie, h (horómetro, horas), ubicacion }; suma = suma asegurada.
 //  · Ubicación: datos { tipoRiesgo, direccion, ciudad, giro, construccion, pisos, areaM2, anioConstruccion, coberturas: [texto], valorEdificio, valorContenidos }; suma = total.
+// P-6f-0a: cilindraje = datos.cc o datos.cilindraje (la base lo guarda como «cilindraje»). Escena resumenflotabase: flota como la del 50012 de la base.
 // Se suma a SIRIUS_CX_AUTO (datos-cx-autoinspeccion.js): mismas escenas simuladas (cxSimBoot) que se limpian al cambiar de escena. Ningún dato sale de un caso de ejemplo (DEC-200).
 (function () {
   const A = window.SIRIUS_CX_AUTO; if (!A) return;
@@ -18,6 +19,11 @@
       veh({ placa: 'PDT1180', marca: 'Chevrolet', modelo: 'D-Max', anio: 2023, vin: 'MPATFS86JPT004512', motor: '4JJ1-990142', version: 'Hi Ride 3.0 4x4', color: 'Blanco', carroceria: 'camioneta', clase: 'Camioneta', uso: 'Comercial', cc: 2999, pasajeros: 5, paisOrigen: 'Tailandia', extras: ['Barra antivuelco'], valorExtras: 900, suma: 27800 }),
       veh({ placa: 'PDT1181', marca: 'Chevrolet', modelo: 'D-Max', anio: 2023, vin: 'MPATFS86JPT004533', motor: '4JJ1-990187', version: 'Hi Ride 3.0 4x4', color: 'Blanco', carroceria: 'camioneta', clase: 'Camioneta', uso: 'Comercial', valorExtras: 900, suma: 27800 }),
       veh({ placa: 'PDT2290', marca: 'Kia', modelo: 'Soluto', anio: 2024, vin: '', motor: '', suma: 14900 })],
+    // P-6f-0a · DEC-219: flota como la del caso 50012 de la base (casos[].riesgos + riesgosBase): Kia Rio PRB1212 USD 15.000; Suzuki GN125 PR121A USD 2.400 (con «cilindraje», no «cc»); Toyota Hilux PRB1213 USD 32.000 con extras de USD 1.200. Total del caso USD 50.600.
+    resumenflotabase: [
+      veh({ placa: 'PRB1212', marca: 'Kia', modelo: 'Rio', anio: 2022, vin: 'KNADN512BN6418830', motor: 'G4LC-NW418830', carroceria: 'sedan', uso: 'Particular', suma: 15000 }),
+      veh({ placa: 'PR121A', marca: 'Suzuki', modelo: 'GN125', anio: 2023, vin: 'LC6PCJK14P0301127', motor: 'F408-0301127', carroceria: 'moto', uso: 'Particular', cilindraje: 125, suma: 2400 }),
+      veh({ placa: 'PRB1213', marca: 'Toyota', modelo: 'Hilux', anio: 2022, vin: 'MR0FB8CD8N0817716', motor: '2GD-FTV-817716', carroceria: 'camioneta', uso: 'Comercial', extras: ['Barra antivuelco', 'Estribos'], valorExtras: 1200, suma: 32000 })],
     // Equipo móvil (montacargas) con su suma asegurada.
     resumenequipo: [{ descripcion: 'Montacargas Toyota 8FGCU25 · serie 8FGCU25-71844', composicion: 'Equipo móvil', suma: 31500, datos: { tipoEquipo: 'Montacargas', marca: 'Toyota', modelo: '8FGCU25', anio: 2021, serie: '8FGCU25-71844', h: 4320, ubicacion: 'Bodega Carcelén, Quito' } }],
     // Ubicación (local comercial) con edificio y contenidos.
@@ -33,13 +39,14 @@
     avanceaplicables: ['50009', 'agencia', 'cc', 'moto'],
     resumenvehsol: ['50007', 'interno', 'ejecutivo', 'resumenvehsol'],
     resumenflota: ['50021', 'interno', 'ejecutivo', 'resumenflota'],
+    resumenflotabase: ['50012', 'interno', 'ejecutivo', 'resumenflotabase'],
     resumenequipo: ['50031', 'interno', 'ejecutivo', 'resumenequipo'],
     resumenubicacion: ['50041', 'interno', 'ejecutivo', 'resumenubicacion'],
     autoenviarcalif: ['50009', 'agencia', 'cc', 'moto'],
     facultadtope: ['50009', 'agencia', 'cc', 'facultadtope'],
     facultadtopefuera: ['50009', 'agencia', 'cc', 'facultadtopefuera'],
   };
-  const PER = { '50021': ['Transportes Cañar Cía. Ltda.', '0190381127001', 'Flota PDT1180, PDT1181 y PDT2290', 'PDT1180'], '50031': ['Logística Norte Andina S.A.', '1792233814001', 'Montacargas Toyota 8FGCU25, 2021', ''], '50041': ['Comercial Austro Hogar S.A.', '0190445519001', 'Local comercial · Av. Remigio Crespo 4-21, Cuenca', ''] };
+  const PER = { '50012': ['Transportes del Austro Cía. Ltda.', '0190512346001', 'Flota PRB1212, PR121A y PRB1213', 'PRB1212'], '50021': ['Transportes Cañar Cía. Ltda.', '0190381127001', 'Flota PDT1180, PDT1181 y PDT2290', 'PDT1180'], '50031': ['Logística Norte Andina S.A.', '1792233814001', 'Montacargas Toyota 8FGCU25, 2021', ''], '50041': ['Comercial Austro Hogar S.A.', '0190445519001', 'Local comercial · Av. Remigio Crespo 4-21, Cuenca', ''] };
   const base = A.cxSim.bind(A);
   Object.keys(ESC).forEach((k) => { A.cxEscenas[k] = ESC[k].slice(0, 3); });
   A.cxSim = function (escena) { const e = ESC[escena]; if (!e) return base(escena);
@@ -48,6 +55,8 @@
     if (PER[id]) { const p = PER[id];
       Object.assign(c, { id: id, orden: 'EMI-2026-1190' + id.slice(-2), asegurado: p[0], ident: p[1], bien: p[2], placa: p[3], solicitud: { formularios: [rb[0].composicion === 'Vehículo' ? 'Vehículos livianos' : rb[0].composicion] }, sucursal: id === '50041' ? 'Cuenca' : 'Quito Norte' });
       if (rb[0].composicion !== 'Vehículo') Object.assign(c, { ramo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria', tipoRiesgo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria' }); }
+    // P-6f-0a: la lista de riesgos de la bandeja («3 vehículos», «PRB1212 +2») sale de casos[].riesgos, como en la base.
+    if (escena === 'resumenflotabase') { c.tipoRiesgo = 'Vehículos'; c.riesgos = rb.map((r, i) => ({ id: id + '-V' + (i + 1), label: r.datos.placa, nowrap: true, detalle: r.datos.marca + ', ' + r.datos.modelo + ', ' + r.datos.anio, cobertura: 'Todo riesgo', total: r.suma + (r.datos.valorExtras || 0), estado: c.estado })); }
     const inf = (X.informes[id] || [])[0];
     if (inf && escena === 'resumenvehsol') { delete inf.respuestas.veh_valor_asegurado_casco; delete inf.respuestas.veh_valor_asegurado_extras; }
     if (inf && /^facultadtope/.test(escena)) { const d = rb[0].datos; c.solicitud = { marca: d.marca, modelo: d.modelo, anio: d.anio, placa: d.placa }; c.bien = 'Placa ' + d.placa + ', ' + d.anio; Object.assign(inf.respuestas, { veh_marca: { valor: d.marca, org: 'solicitud' }, veh_modelo: { valor: d.modelo, org: 'solicitud' } }); }

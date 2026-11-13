@@ -15,7 +15,7 @@
   function catVals(id) { var E = window.SIRIUS_EJEMPLO || {}, K = E.catalogos || {}, Q = window.SIRIUS_EQUIPOS || {};
     var m = { piezas: K.piezas, danos: K.danos, gravedad: K.gravedad, extras: K.extras, coberturas: K.coberturas, verif: K.verificacion, sucursales: K.sucursales,
       eqtipos: [].concat.apply([], (Q.categorias || []).map(function (c) { return c.tipos; })), eqmarcas: (Q.marcasModelos || []).map(function (x) { return x.marca; }) };
-    return (m[id] || []).slice(); }
+    return (m[id] || []).map(function (x) { return typeof x === 'string' ? x : (x && (x.nombre || x.n)) || ''; }).filter(Boolean); }
   function catNombre(id) { var c = CATS.find(function (x) { return x[0] === id; }); return c ? c[1] : ''; }
   var C0 = function (o) { return Object.assign({ l: '', k: '', t: 'Texto', req: false, opts: [], cat: '', min: '', max: '', dec: '', fmt: '', lmax: '', def: '', fila: false }, o || {}); };
   // Tipos reales de las grillas existentes (las columnas se guardan como texto en la plantilla).

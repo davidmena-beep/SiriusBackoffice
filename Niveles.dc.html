@@ -441,6 +441,8 @@ class Component extends DCLogic {
   pubFac(antes, fac, motivo, que) { const SP = window.SiriusPublicar; if (!SP || !SP.activo || !SP.activo() || !fac.veh) return; const prev = window.SIRIUS_FACULTADES, ver = SP.versionDe ? SP.versionDe('SIRIUS_FACULTADES', (prev && prev.version) || 1) : ((prev && prev.version) || 1) + 1, v = fac.veh;
     const datos = { version: ver, veh: { fac: v.fac, tope: v.tope == null || v.tope === '' ? null : Number(v.tope), mue: v.mue, exc: (v.exc || []).map(e => ({ id: e.id, level: e.level, name: e.name, fac: e.fac, tope: e.tope == null || e.tope === '' ? null : Number(e.tope), mue: e.mue, desde: e.desde, hasta: e.hasta || '', by: e.by })) } };
     SP.publicar({ clave: 'SIRIUS_FACULTADES', version: ver, datos, motivo, pantalla: 'Niveles de calificación › Facultad del inspector · ' + que, revertir: () => { this.setState({ fac: antes.fac, hist: antes.hist }); }, alPublicar: () => { window.SIRIUS_FACULTADES = JSON.parse(JSON.stringify(datos)); } }); }
+  // P-6f-0a · DEC-187: Sucursales se lee como texto o como { nombre }; si no hay lista, las de siempre.
+  sucTxt() { const L = (((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || []).map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean); return L.length ? L : ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato']; }
   delExc() {
     const st = this.state, m = st.modal, F = this.F(), e = F.exc.find(x => x.id === m.id);
     if (!st.motivo.trim()) { this.setState({ motErr: true }); return; }
@@ -449,7 +451,7 @@ class Component extends DCLogic {
     if (!this.pubActivo()) this.toast('Excepción eliminada');
   }
   VARS = [
-    { k: 'sucursal', pl: 'la sucursal', l: 'Sucursal', g: 'Del caso', t: 'list', opts: ((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato'] },
+    { k: 'sucursal', pl: 'la sucursal', l: 'Sucursal', g: 'Del caso', t: 'list', opts: this.sucTxt() },
     { k: 'broker', pl: 'el broker', l: 'Broker', g: 'Del caso', t: 'list', opts: ['Broker Pacífico', 'Austro Brokers', 'Tecniseguros', 'Directo'] },
     { k: 'modalidad', pl: 'la modalidad', l: 'Modalidad', g: 'Del caso', t: 'list', opts: ['Presencial', 'Virtual guiada', 'Autoinspección', 'Documental'] },
     { k: 'agencia', pl: 'la agencia de inspección', l: 'Agencia de inspección', g: 'Del caso', t: 'list', opts: ['Eurosurvey', 'Inspecciones Andinas', 'Peritajes del Pacífico'] },

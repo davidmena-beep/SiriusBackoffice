@@ -4,6 +4,58 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0a
+
+Publiqué la etapa P-6f-0a (Versión 192). Corrige tres cosas de la etapa anterior: los catálogos publicados en la forma del archivo (DEC-187), el cilindraje del Resumen (DEC-219) y la barra fija sin pendientes repetidos (DEC-218).
+
+La primera publicación quedó como Versión 191 con el registro diciendo 190; la Versión 192 solo corrige el número en el registro y no cambia nada más.
+
+**Qué cambió**
+- **Catálogos publicados (DEC-187):**
+  - Sucursales, Coberturas, Piezas, Tipos de daño, Gravedad, Motivos de No asegurable, Motivos de no inspección y Resultados de verificación se publican como lista de texto, solo con los vigentes y en el orden de la pantalla.
+  - Cada uno usa su clave del archivo: noaseg → `motivosNoAsegurable`, noinsp → `motivosNoInspeccion`, verif → `verificacion`.
+  - `ciudadSucursal` y `actividadesExcluidas` no cambian.
+  - Al guardar, con o sin conexión, `SIRIUS_EJEMPLO.catalogos` se actualiza en memoria con esa misma forma. Con `{ ok: false }` se deshace. Al cambiar de escena vuelve a lo del archivo.
+  - Lectura defensiva: cada elemento se acepta como texto o como `{ nombre }` en Nueva solicitud, Flujo y SLA, Niveles, Agenda, Monitor, Coordinación (motivos de no inspección), el informe, la app de la visita, la grilla, las listas de Formularios y los PDF (piezas).
+- **Cilindraje (DEC-219):** «Objeto a asegurar» lee `datos.cc` o, si no viene, `datos.cilindraje`, con el mismo formato («125 cc»).
+- **Barra fija (DEC-218):** después del desglose queda solo «39 de 66 campos aplicables». Ahora dice «6 pendientes (ver los controles · 4 obligatorios del informe · la decisión) · 39 de 66 campos aplicables». La cabecera de la pestaña Informe y la bandeja no cambian.
+
+**Verificado**
+- **Selector a 1280×720 y 1920×1080:** abrí catalogosforma, resumenflotabase, infcompletarcaso, resumenflota y catalogos. Ninguna mostró errores, «[object Object]» ni scroll horizontal. También niv, flujoresp, monitor y catalogoveh, por ser pantallas que leen catálogos.
+- **catalogosforma:** Sucursales muestra «Latacunga» (Creada en SIRIUS, Vigente). Al abrir Nueva solicitud, la lista de Sucursal es Quito Norte, Quito Sur, Guayaquil, Cuenca, Manta, Ambato, Ibarra y Latacunga, todas como texto.
+- **resumenflotabase:**
+  - En la bandeja, el caso 50012 muestra «3 vehículos» y «PRB1212 +2».
+  - En el Resumen, «Objeto a asegurar» trae «Vehículo 1 · …» a «Vehículo 3 · …». La Suzuki GN125 muestra «125 cc», leído de `datos.cilindraje`.
+  - Los totales por vehículo son 15.000, 2.400 y 33.200 (32.000 + 1.200 de extras). El «Total del caso» es USD 50.600,00.
+- **Barra fija en infcompletarcaso:** muestra «6 pendientes (ver los controles · 4 obligatorios del informe · la decisión) · 39 de 66 campos aplicables».
+- **Publicación con una conexión temporal** (copia aparte):
+  - Con `{ ok: true }`, Sucursales y Motivos de No asegurable publican `publicarConfiguracion` con la clave `SIRIUS_CATALOGOS` y listas de texto.
+  - Sucursales publica «Quito Norte … Ibarra, Latacunga» y Motivos de No asegurable termina en «Chasis con corrosión estructural». No aparecen claves `noaseg`, `noinsp` ni `verif`.
+  - Con `{ ok: false }`, el registro y la memoria vuelven a como estaban («Se deshizo el cambio»).
+- **Lectura defensiva:** con los catálogos de la sesión convertidos a `{ nombre }`, Nueva solicitud, Agenda (`SiriusUsuarios.sucursales`), la grilla y las listas de Formularios siguen mostrando el texto.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: 580 escenas en datos-escenas y KNOWN_ESC 537.
+
+**No verificado**
+- Lectura defensiva en Niveles, Flujo y SLA, Monitor, Coordinación, la app de la visita y los PDF: solo se comprobó que sus escenas abren sin error. No las probé con catálogos en forma de registros.
+- Que la base real acepte `SIRIUS_CATALOGOS` con listas de texto: se probó contra una conexión temporal.
+
+**Diferencias**
+- En la escena resumenflotabase, el estado de cada vehículo es el del caso, porque `riesgosBase` no trae estado por riesgo.
+- Los catálogos de texto guardados vuelven a los del archivo al cambiar de escena (no antes). Si el catálogo se reabre en la misma sesión, los registros Inactivos no se ven, porque en memoria solo quedan los vigentes.
+- Quedan sin cambiar los catálogos que son registros: `ciudad` y `prov` se siguen publicando con el id de la pantalla (no con `ciudadSucursal` ni `provinciaRegion`), igual que Ramos y Líneas de negocio. Los dejé como pediste; conviene revisarlos en otra etapa.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| catalogosforma | Catálogos › Sucursales con «Latacunga» guardada; Nueva solicitud la muestra como texto |
+| resumenflotabase | Caso de tres vehículos como el 50012: «3 vehículos», «PRB1212 +2» y Total del caso USD 50.600 |
+
+También abrí infcompletarcaso, resumenflota y catalogos.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0
 
 Publiqué la etapa P-6f-0 (Versión 189). Incluye:

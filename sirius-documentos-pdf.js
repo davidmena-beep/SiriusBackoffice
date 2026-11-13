@@ -217,7 +217,7 @@
   // frente y posterior centrados (frente: la izquierda del vehículo queda a la derecha del lector; posterior, al revés).
   function mapaPiezas(m) { const y0 = 60 - m.W / 2, y1 = 60 + m.W / 2, p = m.pos, t = m.top, ys = m.ys, yr = m.yr, F = m.F, R = m.R, out = {};
     const ladoDe = (sd) => sd === 'izq' ? { lat: 'li', y: y0 + 10, yEsp: y0 - 3, yFaro: y0 + 20, fx: 1, px: -1 } : { lat: 'ld', y: y1 - 10, yEsp: y1 + 3, yFaro: y1 - 20, fx: -1, px: 1 };
-    const PZ = (E().catalogos || {}).piezas || [];
+    const PZ = ((E().catalogos || {}).piezas || []).map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean);
     PZ.forEach(n => { const s = /izquierd/.test(n) ? ladoDe('izq') : /derech/.test(n) ? ladoDe('der') : null, v = [];
       if (/^Parachoques delantero/.test(n)) v.push(['fr', 0, 98], ['su', F - 4, 60]);
       else if (/^Parachoques posterior/.test(n)) v.push(['po', 0, 98], ['su', R + 4, 60]);

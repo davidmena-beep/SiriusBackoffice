@@ -806,7 +806,7 @@ class Component extends DCLogic {
         this.F('aps', 'Correo electrónico APS', 'input', { type: 'email', inputMode: 'email', help: 'Se precarga con el broker; puedes editarlo.' }),
         this.F('orden', 'Número de orden de emisión (opcional)', 'inputbtn', { upper: true, ph: 'Ej. EMI-408400', help: s.bpmSt === 'found' ? '' : 'Si lo dejas vacío, el caso queda “Sin orden de emisión”.', btnLabel: s.bpmSt === 'loading' ? 'Consultando…' : 'Consultar en BPM', btnDisabled: !d.orden.trim() || s.bpmSt === 'loading', btnWhy: s.bpmSt === 'loading' ? 'Consultando en BPM…' : !d.orden.trim() ? 'Escribe el número de orden para consultar' : '', onBtn: () => this.lookupBPM(), after: () => this.setState({ bpmSt: 'idle' }), span: '1 / span 2' }),
         this.F('tipo', 'Tipo de solicitud', 'select', { options: this.tipos, req: true }),
-        this.F('sucursal', 'Sucursal', 'select', { options: ((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || [], req: true }),
+        this.F('sucursal', 'Sucursal', 'select', { options: (((window.SIRIUS_EJEMPLO || {}).catalogos || {}).sucursales || []).map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean), req: true }),
       ].concat(
         [this.F('tipoRiesgo', 'Tipo de riesgo', 'radio', { req: true, options: ['Vehículos', 'Ramos Generales'], span: '1 / span 2', after: () => this.patchD(x => { x.vehForm = null; x.vehEditId = null; }) })],
         [this.F('lineaVeh', 'Línea de negocio', 'select', { req: true, options: this.lineas, help: 'Una sola por caso, para todos sus ramos o vehículos.' })]) }];

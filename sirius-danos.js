@@ -32,7 +32,7 @@
   function zonas(tipo) { const S = SIL(); return S && S.zonas ? (S.zonas[tipo] || []) : []; }
   function zonaDe(tipo, pieza) { const L = zonas(tipo), n = norm(pieza); if (!n) return null; const z = L.find(x => x.id === pieza || norm(x.nombre) === n); if (z) return z.id; const al = (ALIAS[n] || []).find(id => L.some(x => x.id === id)); return al || null; }
   // Nombre que se muestra: el de la pieza del catálogo de Vehículos si existe (con su género), si no el de la zona.
-  function nombrePieza(tipo, zonaId) { const z = zonas(tipo).find(x => x.id === zonaId); if (!z) return zonaId || ''; const cat = ((EJ().catalogos || {}).piezas || []).find(p => norm(p) === norm(z.nombre)); return cat || z.nombre; }
+  function nombrePieza(tipo, zonaId) { const z = zonas(tipo).find(x => x.id === zonaId); if (!z) return zonaId || ''; const cat = ((EJ().catalogos || {}).piezas || []).map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').find(p => norm(p) === norm(z.nombre)); return cat || z.nombre; }
 
   // ---------- Estado de la sesión ----------
   const ST = { r: {}, subs: [], edit: null, seq: 0 };

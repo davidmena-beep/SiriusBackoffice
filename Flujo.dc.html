@@ -221,7 +221,7 @@ class Component extends DCLogic {
   now() { const d = this.E().ahora ? this.E().ahora() : new Date(2026, 9, 18, 20, 30); return d.getFullYear() + '-' + this.p2(d.getMonth() + 1) + '-' + this.p2(d.getDate()) + ' ' + this.p2(d.getHours()) + ':' + this.p2(d.getMinutes()); }
   fmt(iso) { const [y, m, d] = String(iso).slice(0, 10).split('-'); return d + '/' + m + '/' + y.slice(2); }
   fmtT(s) { return this.fmt(s) + ' · ' + s.slice(11, 16); }
-  sucursales() { const c = (this.E().catalogos || {}).sucursales; return c ? c.slice() : []; }
+  sucursales() { const c = (this.E().catalogos || {}).sucursales; return c ? c.map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean) : []; }
   casos() { return this.props.casos || []; }
   toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); }
   sl(c) { try { return this.F().calcular(c); } catch (er) { return null; } }

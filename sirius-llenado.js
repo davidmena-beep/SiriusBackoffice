@@ -33,7 +33,7 @@
       case 'licencias': return (CM().licencias || []).map((l) => l.codigo);
       case 'wmi': return (CM().wmi || []).map((x) => x.wmi);
       case 'provincias': return Object.keys(K().provinciaRegion || {});
-      default: { const A = { coberturas: 'coberturas', extras: 'extras', piezas: 'piezas', danos: 'danos', gravedad: 'gravedad', noaseg: 'motivosNoAsegurable', verif: 'verificacion', sucursales: 'sucursales' }[id]; return A && Array.isArray(K()[A]) ? K()[A].slice() : []; } } }
+      default: { const A = { coberturas: 'coberturas', extras: 'extras', piezas: 'piezas', danos: 'danos', gravedad: 'gravedad', noaseg: 'motivosNoAsegurable', verif: 'verificacion', sucursales: 'sucursales' }[id]; return A && Array.isArray(K()[A]) ? K()[A].map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean) : []; } } }
   // Opciones de un campo según sus atributos: catálogo de origen y, si depende de otro campo, el valor de ese campo (valores: { clave: valor }).
   // Sin valor en el padre, o con un padre fuera del catálogo, ofrece la lista completa (mismo comportamiento que el ajuste VL-F1).
   function opcionesCampo(fd, valores) { const c = fd && (fd.llenado || de(fd.k)); if (!c || !c.catalogo) return ((fd && fd.opts) || []).slice();
