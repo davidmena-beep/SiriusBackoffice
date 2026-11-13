@@ -311,9 +311,9 @@ class Component extends DCLogic {
   // El tipo de inspector sale de datos-ejemplo.js cuando está cargado.
   get INS() { const D = window.SIRIUS_EJEMPLO; return !D || !D.inspectores ? this.INS0 : this.INS0.map(i => { const d = D.inspectores.find(x => x.n === i.n); return d ? Object.assign({}, i, { tipo: d.tipo }) : i; }); }
   INS0 = [
-    { n: 'Marco Tapia', tipo: 'Interno', zona: 'Quito norte', agenda: { '2026-10-16': [['08:00', '09:00'], ['10:30', '11:30'], ['15:00', '16:00']], '2026-10-17': [['09:00', '10:00'], ['14:00', '15:00']] } },
-    { n: 'Cristian Vaca', tipo: 'Interno', zona: 'Quito sur y valles', agenda: { '2026-10-16': [['09:00', '10:00'], ['11:00', '12:00']], '2026-10-17': [['10:00', '11:00']] } },
-    { n: 'Diego Salinas', tipo: 'Externo', zona: 'Quito norte', agenda: { '2026-10-17': [['16:00', '17:00']] } },
+    { n: 'Marco Tapia', tipo: 'Interno', zona: 'Quito', agenda: { '2026-10-16': [['08:00', '09:00'], ['10:30', '11:30'], ['15:00', '16:00']], '2026-10-17': [['09:00', '10:00'], ['14:00', '15:00']] } },
+    { n: 'Cristian Vaca', tipo: 'Interno', zona: 'Quito y valles', agenda: { '2026-10-16': [['09:00', '10:00'], ['11:00', '12:00']], '2026-10-17': [['10:00', '11:00']] } },
+    { n: 'Diego Salinas', tipo: 'Externo', zona: 'Quito', agenda: { '2026-10-17': [['16:00', '17:00']] } },
     { n: 'Inspecciones Andinas', tipo: 'Agencia', zona: 'Pichincha', agenda: { '2026-10-16': [['08:00', '09:00'], ['09:00', '10:00'], ['11:00', '12:00'], ['14:00', '15:00'], ['16:00', '17:00']], '2026-10-17': [['08:00', '09:00'], ['12:00', '13:00'], ['15:00', '16:00']] } },
     { n: 'Luis Andrade', tipo: 'Externo', zona: 'Manta y Portoviejo', agenda: { '2026-10-17': [['10:00', '11:00']] } },
     { n: 'Patricia Rosero', tipo: 'Externo · especialista en equipo electrónico', zona: 'Manabí y Guayas', agenda: { '2026-10-17': [['15:00', '16:00']] } },

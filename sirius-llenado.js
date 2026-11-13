@@ -32,7 +32,7 @@
       case 'colores': return (CM().colores || []).slice();
       case 'licencias': return (CM().licencias || []).map((l) => l.codigo);
       case 'wmi': return (CM().wmi || []).map((x) => x.wmi);
-      case 'provincias': return Object.keys(K().provinciaRegion || {});
+      case 'provincias': return Object.keys((((c) => { const m = c.provinciaRegion; if (m && !Array.isArray(m)) return m; const o = {}; (Array.isArray(m) ? m : (c.prov || [])).forEach(r => { if (r && r.provincia) o[r.provincia] = r.region; }); return o; }))(K()));
       default: { const A = { coberturas: 'coberturas', extras: 'extras', piezas: 'piezas', danos: 'danos', gravedad: 'gravedad', noaseg: 'motivosNoAsegurable', verif: 'verificacion', sucursales: 'sucursales' }[id]; return A && Array.isArray(K()[A]) ? K()[A].map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean) : []; } } }
   // Opciones de un campo según sus atributos: catálogo de origen y, si depende de otro campo, el valor de ese campo (valores: { clave: valor }).
   // Sin valor en el padre, o con un padre fuera del catálogo, ofrece la lista completa (mismo comportamiento que el ajuste VL-F1).

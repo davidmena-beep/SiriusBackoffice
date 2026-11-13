@@ -29,7 +29,7 @@
     },
     // Opciones del bloque «Cuándo se ofrece» (DEC-206).
     carrocerias: ['Sedán', 'Hatchback', 'SUV', 'Camioneta cabina simple', 'Camioneta doble cabina', 'Furgoneta', 'Moto'],
-    sucursales: ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato', 'Ibarra'],
+    sucursales: ['Quito', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato', 'Ibarra'],
     escenas: {
       // formmodalidades: el borrador de Motos activa Documental (sin publicar).
       formmodalidades: { plantilla: 'Motos', modalidad: 'D', valor: true },

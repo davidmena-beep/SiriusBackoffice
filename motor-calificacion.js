@@ -30,7 +30,7 @@ window.SIRIUS_MOTOR = {
   anioActual() { const E = window.SIRIUS_EJEMPLO || {}; return (E.ahora ? E.ahora() : new Date()).getFullYear(); },
   hoyISO() { const E = window.SIRIUS_EJEMPLO || {}, d = E.ahora ? E.ahora() : new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
   // Valores calculados: región desde la provincia y edad desde el año de construcción (si el informe no los trae).
-  derivados(v) { const E = window.SIRIUS_EJEMPLO || {}, o = Object.assign({}, v || {}), P = (E.catalogos || {}).provinciaRegion || {}, one = (k) => this.arr(o[k])[0];
+  derivados(v) { const E = window.SIRIUS_EJEMPLO || {}, o = Object.assign({}, v || {}), P = ((c) => { const m = c.provinciaRegion; if (m && !Array.isArray(m)) return m; const o = {}; (Array.isArray(m) ? m : (c.prov || [])).forEach(r => { if (r && r.provincia) o[r.provincia] = r.region; }); return o; })(E.catalogos || {}), one = (k) => this.arr(o[k])[0];
     if (one('rg_ubi_region') === undefined && P[one('rg_ubi_provincia')]) o.rg_ubi_region = P[one('rg_ubi_provincia')];
     // Extintores requeridos (campo calculado): área construida ÷ cobertura según rg_ocu_riesgo_nfpa (Ligero 278,7 · Ordinario 139,4 · Extra 92,9 m²), redondeado hacia arriba. Sin tipo de riesgo se usa Ligero, como dice la fórmula del campo.
     if (one('rg_pci_ext_requeridos') === undefined) { const ar = this.arr(o.rg_con_area).map(Number).filter(x => x > 0), cob = { Ligero: 278.7, Ordinario: 139.4, Extra: 92.9 }[one('rg_ocu_riesgo_nfpa')] || 278.7; if (ar.length) o.rg_pci_ext_requeridos = Math.ceil(ar.reduce((s, x) => s + x, 0) / cob - 1e-9); }

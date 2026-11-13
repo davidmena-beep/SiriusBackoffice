@@ -53,7 +53,7 @@
     const X = base(escena); if (!X) return null; const c = X.casos[0], id = e[0], rb = JSON.parse(JSON.stringify(R[e[3]] || []));
     c.riesgosBase = rb; c.cobertura = 'Todo riesgo';
     if (PER[id]) { const p = PER[id];
-      Object.assign(c, { id: id, orden: 'EMI-2026-1190' + id.slice(-2), asegurado: p[0], ident: p[1], bien: p[2], placa: p[3], solicitud: { formularios: [rb[0].composicion === 'Vehículo' ? 'Vehículos livianos' : rb[0].composicion] }, sucursal: id === '50041' ? 'Cuenca' : 'Quito Norte' });
+      Object.assign(c, { id: id, orden: 'EMI-2026-1190' + id.slice(-2), asegurado: p[0], ident: p[1], bien: p[2], placa: p[3], solicitud: { formularios: [rb[0].composicion === 'Vehículo' ? 'Vehículos livianos' : rb[0].composicion] }, sucursal: id === '50041' ? 'Cuenca' : 'Quito' });
       if (rb[0].composicion !== 'Vehículo') Object.assign(c, { ramo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria', tipoRiesgo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria' }); }
     // P-6f-0a: la lista de riesgos de la bandeja («3 vehículos», «PRB1212 +2») sale de casos[].riesgos, como en la base.
     if (escena === 'resumenflotabase') { c.tipoRiesgo = 'Vehículos'; c.riesgos = rb.map((r, i) => ({ id: id + '-V' + (i + 1), label: r.datos.placa, nowrap: true, detalle: r.datos.marca + ', ' + r.datos.modelo + ', ' + r.datos.anio, cobertura: 'Todo riesgo', total: r.suma + (r.datos.valorExtras || 0), estado: c.estado })); }

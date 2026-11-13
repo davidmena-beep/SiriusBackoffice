@@ -73,7 +73,7 @@
       { grupo: 'Caso', clave: 'caso.estado', etiqueta: 'Estado del caso', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'Emitida' },
       { grupo: 'Caso', clave: 'caso.ramo', etiqueta: 'Ramo', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'Equipo electrónico' },
       { grupo: 'Caso', clave: 'caso.tipo', etiqueta: 'Tipo de caso', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'Ramos Generales' },
-      { grupo: 'Caso', clave: 'caso.sucursal', etiqueta: 'Sucursal', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'Quito Norte' },
+      { grupo: 'Caso', clave: 'caso.sucursal', etiqueta: 'Sucursal', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'Quito' },
       { grupo: 'Caso', clave: 'caso.origen', etiqueta: 'Origen del caso', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: 'BPM de Emisión' },
       { grupo: 'Caso', clave: 'caso.fechaSolicitud', etiqueta: 'Fecha de solicitud', origen: 'Caso', clasificacion: 'General', disponible: true, ejemplo: '25/08/2026' },
       { grupo: 'Caso', clave: 'caso.enlace', etiqueta: 'Enlace al caso en SIRIUS', origen: 'Calculada', clasificacion: 'General', disponible: true, ejemplo: 'https://sirius…/casos/20178' },

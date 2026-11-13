@@ -92,7 +92,7 @@ class Component extends DCLogic {
   // ---------- Escenas ----------
   seedEscena() {
     const e = this.props.escena || '', SU = this.SU(); if (!SU || this._seeded) return; this._seeded = true;
-    if (e === 'usuarioinvitar') this.abrir({ k: 'invitar', d: { nombre: 'Camila Reyes', correo: 'camila.reyes@asur.ec', celular: '0996654123', tipo: 'Interno', agencia: '', roles: ['Ejecutivo comercial'], suc: 'Elegir', sucSel: ['Quito Norte'], gru: 'Todos', gruSel: [] }, err: {}, tried: false });
+    if (e === 'usuarioinvitar') this.abrir({ k: 'invitar', d: { nombre: 'Camila Reyes', correo: 'camila.reyes@asur.ec', celular: '0996654123', tipo: 'Interno', agencia: '', roles: ['Ejecutivo comercial'], suc: 'Elegir', sucSel: ['Quito'], gru: 'Todos', gruSel: [] }, err: {}, tried: false });
     if (e === 'usuarioficha') this.abrir({ k: 'ficha', n: 'Marco Tapia' });
     // Etapa 15-4 · DEC-174: ficha de Eurosurvey (tarifas a sus inspectores y cuenta) y la cuenta de Luis Andrade vista por un Coordinador.
     const ir = (sel) => setTimeout(() => { const el = document.querySelector(sel); if (el) el.scrollIntoView({ block: 'start' }); }, 700);

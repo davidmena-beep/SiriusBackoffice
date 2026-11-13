@@ -134,7 +134,7 @@ window.SIRIUS_EQUIPOS = {
 
   // ---------- Caso de ejemplo 20204 (datos ficticios) ----------
   ejemplo: {
-    caso: '20204', asegurado: 'Constructora Amazonía Sacha S.A.', ruc: '2290456712001', sucursal: 'Quito Norte', ciudad: 'El Coca (Orellana)',
+    caso: '20204', asegurado: 'Constructora Amazonía Sacha S.A.', ruc: '2290456712001', sucursal: 'Quito', ciudad: 'El Coca (Orellana)',
     direccion: 'Vía Coca–Lago Agrio km 4, patio de maquinaria', contacto: { nombre: 'Gabriela Andrade Toapanta', cargo: 'Jefa de equipos', celular: '0987114502', correo: 'equipos@amazoniasacha.ec' },
     broker: 'Asesores Andinos', comercial: 'Santiago Ortiz', backoffice: 'Verónica Lema', estado: 'Pendiente calificación', origen: 'BPM de Emisión',
     visita: { fecha: '2026-10-14', franja: ['09:30', '12:00'], modalidad: 'Presencial', inspector: 'Diana Cárdenas', agencia: 'eurosurvey', nota: 'Fuera de su ciudad base: movilización «Por definir»' },

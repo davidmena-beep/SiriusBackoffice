@@ -46,7 +46,7 @@
   SU.titularDe = function (rol) { var u = SU.usuarios().find(function (x) { return x.estado === 'Activo' && x.roles.indexOf(rol) >= 0; }) || SU.usuarios().find(function (x) { return x.roles.indexOf(rol) >= 0; }); return u ? u.nombre : null; };
   SU.contarEstados = function () { var c = { total: 0 }; SU.usuarios().forEach(function (u) { var e = SU.estadoEf(u); c[e] = (c[e] || 0) + 1; c.total++; }); return c; };
   SU.alcanceTxt = function (a) { a = a || {}; var s = a.sucursales === 'Todas' || !a.sucursales ? 'Todas las sucursales' : a.sucursales.join(', '), g = a.grupos === 'Todos' || !a.grupos ? 'Todos los grupos' : a.grupos.join(', '); return s + ' · ' + g; };
-  SU.sucursales = function () { var E = window.SIRIUS_EJEMPLO; var L = ((E && E.catalogos && E.catalogos.sucursales) || []).map(function (x) { return typeof x === 'string' ? x : (x && (x.nombre || x.n)) || ''; }).filter(Boolean); return L.length ? L : ['Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Manta', 'Ambato', 'Ibarra']; };
+  SU.sucursales = function () { var E = window.SIRIUS_EJEMPLO; var L = ((E && E.catalogos && E.catalogos.sucursales) || []).map(function (x) { return typeof x === 'string' ? x : (x && (x.nombre || x.n)) || ''; }).filter(Boolean); return L.length ? L : ['Quito', 'Loja', 'Cuenca', 'Machala', 'Santo Domingo', 'Riobamba', 'Ambato', 'Ibarra', 'Manta', 'El Coca', 'Guayaquil']; };
   SU.grupos = function () { return ['Vehículos', 'Ramos Generales']; };
   // ---------- Matriz de permisos ----------
   SU.LETRAS = { C: 'Crear', V: 'Ver', E: 'Editar', A: 'Aprobar o decidir', P: 'Solo lo propio o asignado' };

@@ -9,7 +9,7 @@ window.SIRIUS_MONITOR_EJEMPLO = {
   diasHistoria: 75,
   // Desde esta fecha Verónica Lema cubre además la coordinación de Manta y dedica menos horas a calificar (tendencia de SIRIUS_MONITOR.generador).
   inicioTendencia: '2026-10-08',
-  sucursales: { 'Quito Norte': 0.27, 'Guayaquil': 0.24, 'Quito Sur': 0.11, 'Cuenca': 0.11, 'Manta': 0.11, 'Ambato': 0.08, 'Ibarra': 0.08 },
+  sucursales: { 'Quito': 0.27, 'Guayaquil': 0.24, 'Santo Domingo': 0.11, 'Cuenca': 0.11, 'Manta': 0.11, 'Ambato': 0.08, 'Ibarra': 0.08 },
   ejecutivos: { 'Verónica Lema': 0.76, 'Daniela Ruiz': 0.24 },
   // dedicacion: fracción de la jornada hábil (8 h) que la persona dedica a los casos de su rol.
   personas: {

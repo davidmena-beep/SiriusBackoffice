@@ -11,7 +11,7 @@
   const U = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Coordinador de inspecciones', roles: ['Coordinador de inspecciones', 'Administrador'] };
   // Caso de la base: ninguna persona, placa ni fecha es de un caso de ejemplo con el mismo número.
   const caso = (id, extra) => Object.assign({ id: id, orden: 'EMI-2026-118' + id.slice(-3), origen: 'BPM de Emisión', ramo: 'Vehículos', broker: 'Seguros Pacífico Brokers', asegurado: 'Mónica Villacís Paz', ident: '1714409821', placa: 'PDQ4072', bien: 'Placa PDQ4072, 2022',
-    fecha: '2026-10-17', registrado: '2026-10-17T16:05', sucursal: 'Quito Norte', backoffice: 'Andrea Salazar', estado: 'En coordinación', responsable: 'Andrea Salazar', comercial: 'Carolina Vega', flujoVersion: 2,
+    fecha: '2026-10-17', registrado: '2026-10-17T16:05', sucursal: 'Quito', backoffice: 'Andrea Salazar', estado: 'En coordinación', responsable: 'Andrea Salazar', comercial: 'Carolina Vega', flujoVersion: 2,
     solicitud: { marca: 'Toyota', modelo: 'Corolla Cross', anio: 2022, placa: 'PDQ4072', carroceria: 'SUV', sumaAsegurada: 24500, formularios: ['Vehículos livianos'] },
     contacto: { nombre: 'Mónica Villacís', cel: '0998815530', correo: 'monica.villacis@correo.ec' }, consentimiento: { whatsapp: true, sms: true, correo: true }, dir: 'Av. 6 de Diciembre N33-42 y Bossano, Quito' }, extra || {});
   const url = (tipo, tk) => 'https://clientes.asur.ec/' + (tipo === 'Autoinspección' ? 'autoinspeccion' : 'agendar') + '?token=' + tk;

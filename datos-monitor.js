@@ -60,7 +60,7 @@ window.SIRIUS_MONITOR = {
       ['Pendiente calificación', 6.9, 0.9, 14.6], ['Devuelto al inspector', 4, 1, 11], ['Pendiente calificación de suscripción', 5, 1.5, 15],
     ],
     tendencia: 'Desde el 08/10, «Pendiente calificación» recibe 2,1 casos por día más de los que salen y Verónica Lema concentra 11 de 14 casos en espera; el tiempo de ciclo sube de 1,8 a 2,4 días (mediana).',
-    retrabajo: { devolucion: 0.21, motivoPrincipal: 'Fotos ilegibles del tablero', concentracion: 'Presencial · Quito Norte' },
+    retrabajo: { devolucion: 0.21, motivoPrincipal: 'Fotos ilegibles del tablero', concentracion: 'Presencial · Quito' },
     lotes: 'El 38 % de los informes se envía después de las 16:00 y espera al día siguiente',
   },
   esperado: {

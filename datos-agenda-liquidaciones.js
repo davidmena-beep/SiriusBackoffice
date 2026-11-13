@@ -16,17 +16,17 @@ window.SIRIUS_AGENDA = {
   vistas: ['Día', 'Semana', 'Lista'], vistaInicial: { Coordinador: 'Semana', Inspector: 'Día' },
   franjaMinima: 30, // minutos
   disponibilidad: [
-    { inspector: 'Marco Tapia', credencial: 'AS-INS-0142', ciudadBase: 'Quito', base: [-0.1807, -78.4678], dias: [1, 2, 3, 4, 5], jornada: ['08:00', '17:00'], zonas: ['Quito Norte', 'Quito Sur'], capacidadDia: 6, modalidades: ['Presencial', 'Virtual guiada'] },
-    { inspector: 'Cristian Vaca', credencial: 'AS-INS-0157', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5, 6], jornada: ['08:00', '17:00'], zonas: ['Quito Norte', 'Manta'], capacidadDia: 5, modalidades: ['Presencial', 'Virtual guiada'] },
+    { inspector: 'Marco Tapia', credencial: 'AS-INS-0142', ciudadBase: 'Quito', base: [-0.1807, -78.4678], dias: [1, 2, 3, 4, 5], jornada: ['08:00', '17:00'], zonas: ['Quito'], capacidadDia: 6, modalidades: ['Presencial', 'Virtual guiada'] },
+    { inspector: 'Cristian Vaca', credencial: 'AS-INS-0157', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5, 6], jornada: ['08:00', '17:00'], zonas: ['Quito', 'Manta'], capacidadDia: 5, modalidades: ['Presencial', 'Virtual guiada'] },
     { inspector: 'Paola Vinueza', credencial: 'AS-INS-0163', ciudadBase: 'Guayaquil', dias: [1, 2, 3, 4, 5], jornada: ['08:30', '17:30'], zonas: ['Guayaquil'], capacidadDia: 6, modalidades: ['Presencial', 'Virtual guiada'] },
-    { inspector: 'Luis Andrade', credencial: 'EXT-INS-0031', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5, 6], jornada: ['09:00', '18:00'], zonas: ['Quito Norte', 'Ambato'], capacidadDia: 4, modalidades: ['Presencial'] },
-    { inspector: 'Diana Cárdenas', credencial: 'EUR-INS-0012', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5], jornada: ['08:00', '16:00'], zonas: ['Quito Norte', 'Guayaquil'], capacidadDia: 5, modalidades: ['Presencial', 'Virtual guiada'] },
+    { inspector: 'Luis Andrade', credencial: 'EXT-INS-0031', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5, 6], jornada: ['09:00', '18:00'], zonas: ['Quito', 'Ambato'], capacidadDia: 4, modalidades: ['Presencial'] },
+    { inspector: 'Diana Cárdenas', credencial: 'EUR-INS-0012', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5], jornada: ['08:00', '16:00'], zonas: ['Quito', 'Guayaquil'], capacidadDia: 5, modalidades: ['Presencial', 'Virtual guiada'] },
     { inspector: 'Jorge Pazmiño', credencial: 'AND-INS-0008', ciudadBase: 'Ambato', dias: [1, 2, 3, 4, 5], jornada: ['08:00', '17:00'], zonas: ['Ambato', 'Cuenca'], capacidadDia: 5, modalidades: ['Presencial'] },
   ],
   bloqueos: [
     { inspector: 'Paola Vinueza', desde: '2026-10-26', hasta: '2026-10-30', motivo: 'Vacaciones' },
     { inspector: 'Marco Tapia', desde: '2026-10-21T13:00', hasta: '2026-10-21T17:00', motivo: 'Capacitación' },
-    // Etapa 14b: mañana del martes 20/10 sin agenda fija en Quito Norte (sus horarios se ofrecen a la red · escena portalhoras).
+    // Etapa 14b: mañana del martes 20/10 sin agenda fija en Quito (sus horarios se ofrecen a la red · escena portalhoras).
     { inspector: 'Marco Tapia', desde: '2026-10-20T08:00', hasta: '2026-10-20T12:30', motivo: 'Peritaje en el juzgado de tránsito' },
     { inspector: 'Cristian Vaca', desde: '2026-10-20T08:00', hasta: '2026-10-20T12:30', motivo: 'Capacitación' },
     { inspector: 'Diana Cárdenas', desde: '2026-10-20T08:00', hasta: '2026-10-20T12:30', motivo: 'Capacitación de la agencia' },
@@ -34,9 +34,9 @@ window.SIRIUS_AGENDA = {
   // Etapa 14b · DEC-172: la agenda fija son los inspectores internos y de agencia de «disponibilidad» (los externos no confirman al instante);
   // la red recibe la oferta de los demás horarios y el primero que acepta queda asignado. activo: false = no recibe ofertas.
   red: [
-    { inspector: 'Luis Andrade', organizacion: 'Independiente', tipo: 'Externo', credencial: 'EXT-INS-0031', base: [-0.2101, -78.4904], zonas: ['Quito Norte', 'Ambato'], grupos: ['Vehículos', 'Ramos Generales'], modalidades: ['Presencial'], activo: true },
-    { inspector: 'Mauricio Endara', organizacion: 'Eurosurvey', agencia: 'eurosurvey', tipo: 'Agencia', credencial: 'EUR-INS-0044', base: [-0.1406, -78.4757], zonas: ['Quito Norte', 'Quito Sur'], grupos: ['Vehículos', 'Ramos Generales'], modalidades: ['Presencial', 'Virtual guiada'], activo: true },
-    { inspector: 'Sofía Arteaga', organizacion: 'Inspecciones Andinas Cía. Ltda.', agencia: 'andinas', tipo: 'Agencia', credencial: 'AND-INS-0015', base: [-0.1950, -78.4890], zonas: ['Quito Norte', 'Ambato', 'Cuenca'], grupos: ['Vehículos', 'Ramos Generales', 'Equipo y maquinaria'], modalidades: ['Presencial'], activo: true },
+    { inspector: 'Luis Andrade', organizacion: 'Independiente', tipo: 'Externo', credencial: 'EXT-INS-0031', base: [-0.2101, -78.4904], zonas: ['Quito', 'Ambato'], grupos: ['Vehículos', 'Ramos Generales'], modalidades: ['Presencial'], activo: true },
+    { inspector: 'Mauricio Endara', organizacion: 'Eurosurvey', agencia: 'eurosurvey', tipo: 'Agencia', credencial: 'EUR-INS-0044', base: [-0.1406, -78.4757], zonas: ['Quito'], grupos: ['Vehículos', 'Ramos Generales'], modalidades: ['Presencial', 'Virtual guiada'], activo: true },
+    { inspector: 'Sofía Arteaga', organizacion: 'Inspecciones Andinas Cía. Ltda.', agencia: 'andinas', tipo: 'Agencia', credencial: 'AND-INS-0015', base: [-0.1950, -78.4890], zonas: ['Quito', 'Ambato', 'Cuenca'], grupos: ['Vehículos', 'Ramos Generales', 'Equipo y maquinaria'], modalidades: ['Presencial'], activo: true },
     { inspector: 'Pedro Lasso', organizacion: 'Peritajes del Pacífico S.A.', tipo: 'Agencia', credencial: 'PAC-INS-0003', zonas: ['Manta', 'Guayaquil'], grupos: ['Ramos Generales'], modalidades: ['Presencial'], activo: false, nota: 'Invitación vencida: no recibe ofertas' },
   ],
   // Etapa C2-2 · DEC-178: duración de la visita virtual guiada (videollamada) cuando el enlace de autoagendamiento es de esa modalidad; la presencial sigue la del grupo o el ramo.

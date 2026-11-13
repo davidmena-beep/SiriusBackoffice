@@ -4,6 +4,61 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0c
+
+Publiqué la etapa P-6f-0c (Versión 193). Aplica el catálogo de sucursales de Aseguradora del Sur (DEC-220) y publica Provincias en la forma del archivo (DEC-187).
+
+**Qué cambió**
+- **Sucursales (DEC-220):**
+  - `SUC` queda con las 11 sucursales, en este orden: Quito, Loja, Cuenca, Machala, Santo Domingo, Riobamba, Ambato, Ibarra, Manta, El Coca y Guayaquil.
+  - «Quito Norte» y «Quito Sur» pasan a «Quito» en 17 archivos: casos de ejemplo, alcance de los usuarios, zonas de los inspectores (agenda, red y app), agencias, Niveles, monitor, completado, coordinación, notificaciones y descripciones de escenas.
+  - Las listas quedan sin repetidos (['Quito Norte', 'Quito Sur'] queda ['Quito']).
+  - En los pesos de los datos de ejemplo de Niveles, Quito suma 30 + 15 = 45.
+  - La lógica de las zonas de los inspectores no cambió (transitorio hasta DEC-223). «Latacunga» de catalogosforma sigue como ejemplo de sucursal nueva.
+- **Provincias (DEC-187):**
+  - Se publica como `provinciaRegion`, un objeto `{ provincia: región }` como en `datos-ejemplo.js`. Antes iba como `prov`, una lista de registros. Al publicar se quita la clave `prov` anterior.
+  - La lectura acepta también lo publicado antes con el id de la pantalla (`prov`). Aplica en Catálogos, el motor de calificación, el informe de Ramos Generales y las listas de Formularios.
+  - Lo guardado vuelve a `SIRIUS_EJEMPLO.catalogos.provinciaRegion` en memoria. «Ciudad → sucursal» no cambia.
+
+**Verificado**
+- **Búsqueda de «Quito Norte» y «Quito Sur»** en todo el proyecto, sin contar registro-envios.md ni inventario-proyecto.md: antes 74 coincidencias en 17 archivos; ahora 0.
+- **Escena sucursales11:** Catálogos › Sucursales muestra «1–11 de 11» y Nueva solicitud › Sucursal ofrece las mismas 11 en el mismo orden.
+- **Escenas a 1280×720 y 1920×1080:** abrí sucursales11, catalogosforma, niv, flujoresp, monitor, inspyo, agendasemana, agendadia, agendamover, agendaok, usuarios, usuarioinvitar, usuarioficha, usuariosuspender, agencias, roles y complprobar. Ninguna mostró errores, «[object Object]» ni scroll horizontal. Las comparé con la versión anterior, leyendo «Quito Norte» y «Quito Sur» como «Quito».
+- **niv y roles:** idénticas a la versión anterior.
+- **Escenas con cambios esperados por el nuevo catálogo:**
+  - Catálogos › Sucursales: «1–11 de 11» (en catalogosforma, «1–12 de 12»).
+  - Flujo y SLA › Responsables, coordinador por sucursal: «1–11 de 11» (antes «1–7 de 7»).
+  - Los filtros de sucursal de Agenda y de Monitor listan las 11.
+  - En Usuarios (lista, ficha, suspender), Agencias, inspyo y agendamover, los valores repetidos quedan en uno: «Quito» donde decía «Quito, Quito». En agendamover: «(sus zonas: Quito)».
+- **Escenas del Monitor:** el monitor y sus escenas muestran los mismos números que antes. La única diferencia es la lista de sucursales del filtro. La campana también queda en 17.
+- **Provincias con una conexión temporal** (copia aparte): al guardar una provincia nueva, `publicarConfiguracion` lleva `clave: 'SIRIUS_CATALOGOS'` y `datos.provinciaRegion` como objeto (25 provincias, con la nueva en «Insular»), sin clave `prov`. Con `{ ok: false }` vuelve a 24 provincias.
+- **Lectura de `prov`:** con el catálogo en la forma anterior (`prov`, lista de `{ provincia, region }`), Catálogos › Provincia → región muestra las filas.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: 581 escenas en datos-escenas y KNOWN_ESC 538.
+
+**No verificado**
+- Que la base real acepte `provinciaRegion` como objeto; se probó contra una conexión temporal.
+- Las escenas de Agenda y Usuarios que no están en la lista de arriba, ni otras pantallas con filtros de sucursal. Solo busqué el texto en el código.
+
+**Diferencias**
+- **Monitor:** el modelo de ejemplo usa pesos por sucursal. Con un solo «Quito» (0,27 + 0,11 = 0,38), los cuellos de botella cambiaban (por ejemplo, 6 pasaban a 5 y la campana bajaba de 17 a 16). Para que el monitor muestre lo mismo, Quito queda con 0,27 y «Quito Sur» pasó a **Santo Domingo** con 0,11, en el mismo lugar de la lista. Es el único caso donde usé otra sucursal.
+- **Niveles:** los datos de ejemplo suman 45 en Quito, como pediste.
+- **Coordinación:** las zonas «Quito norte» y «Quito sur y valles» pasaron a «Quito» y «Quito y valles». Ahí eran el texto de la zona de cada inspector.
+- **Se mantiene «Quito norte» (con minúscula)** en el mapa esquemático de la ruta del día de la app del inspector (datos-ejemplo.js, sirius-app-inspector.js y una descripción de escena). Es el esquema geográfico del mapa y no una sucursal.
+- **Alcance «Elegir» y «no cubre»:** no necesitaron otra sucursal. Marco Tapia y el segundo inspector de Eurosurvey quedan con una sola sucursal («Quito»); agendamover sigue mostrando que Marco Tapia no cubre Ambato.
+- **Dato que ya existía:** en `datos-ejemplo.js`, Galápagos tiene como región «Galápagos» y no «Insular». No lo cambié.
+- **Fuera de alcance:** quedan sin cambiar «Ciudad → sucursal» (DEC-221, etapa posterior) y las zonas de los inspectores (DEC-223).
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| sucursales11 | Catálogos › Sucursales con las 11; Nueva solicitud › Sucursal con las mismas, en ese orden |
+
+También abrí catalogosforma, niv, flujoresp, monitor, inspyo, las de Agenda (agendasemana, agendadia, agendamover, agendaok) y las de Usuarios (usuarios, usuarioinvitar, usuarioficha, usuariosuspender, agencias, roles).
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0a
 
 Publiqué la etapa P-6f-0a (Versión 192). Corrige tres cosas de la etapa anterior: los catálogos publicados en la forma del archivo (DEC-187), el cilindraje del Resumen (DEC-219) y la barra fija sin pendientes repetidos (DEC-218).
