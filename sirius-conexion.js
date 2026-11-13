@@ -6,6 +6,7 @@
 // SIRIUS_CONTROLES se vigila como las demás claves. Evento «sirius-configuracion» { clave } cada vez que cambia la configuración aplicada.
 // 11/11/2026 · C2-16: cada evidencia trae id, estado, motivo y observación (SQL 22) para confirmar o excluir fotos desde el back-office.
 // 11/11/2026 · DEC-198: cada control trae vistoEn y vistoPor (SQL 24); la acción «verControles» { caso, comentario } los marca como vistos.
+// 12/11/2026 · P-6e-3: casos[].visitasBase = [{ n, modalidad, estado, inicio, fin, agendadoEn, origen, inspector, enlace: { tipo, estado, vence, url }, enlaces }] (todas las visitas de la base).
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
@@ -118,6 +119,12 @@
     // C2-7 · solicitud (precargados) y visita (automáticos del informe)
     var dd0 = r0.datos || {}; x.solicitud = { marca: dd0.marca || '', modelo: dd0.modelo || '', anio: dd0.anio ? String(dd0.anio) : '', placa: dd0.placa || '' };
     var vv = (k.visitas || []).slice().sort(function (a, b) { return String(b.creado || '').localeCompare(String(a.creado || '')); })[0];
+    // P-6e-3 · todas las visitas de la base con su enlace vigente de cada tipo (Coordinación: reenviar, generar nuevo, cancelar, reagendar)
+    x.visitasBase = (k.visitas || []).slice().sort(function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); }).map(function (v, i) {
+      var ens = (v.enlaces || []).filter(function (e) { return ['Vencido','Invalidado','Revocado'].indexOf(e.estado) < 0; }).map(function (e) {
+        return { tipo: e.tipo || 'Autoagendamiento', estado: e.estado, vence: isoLocal(e.vence), url: (e.tipo === 'Autoinspección' ? 'https://davidmena-beep.github.io/autoinspecciones_v1/?t=' : 'https://davidmena-beep.github.io/Autoagendamiento/?t=') + e.token }; });
+      return { n: i + 1, modalidad: v.modalidad || '', estado: v.estado || '', inicio: isoLocal(v.inicio), fin: isoLocal(v.fin), agendadoEn: isoLocal(v.agendado_en), origen: v.origen || '',
+               inspector: v.inspector ? v.inspector.nombre : '', enlace: ens[0] || null, enlaces: ens }; });
     if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
       if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), detalle: r.descripcion || '', estado: k.estado, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
@@ -175,7 +182,7 @@
 
   function cargarCasos() {
     return Promise.all([
-      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero'),
+      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero'),
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora')
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};

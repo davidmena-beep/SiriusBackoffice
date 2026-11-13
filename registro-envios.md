@@ -4,6 +4,43 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-3
+
+Publiqué la etapa P-6e-3 (Versión 187; la primera publicación quedó como Versión 186 con este número mal escrito y la republiqué con el número corregido). Con la conexión, los casos de la base ya no toman datos de un caso de ejemplo con el mismo número; Coordinación arma las visitas con `visitasBase` y ofrece acciones para las visitas con enlace; el Coordinador y el Administrador ven las mismas acciones.
+
+**Qué cambió**
+- **DEC-200 completo:** al cargar la conexión, y cada vez que un archivo de datos se vuelve a ejecutar, se quitan de todos los datos de ejemplo (`SIRIUS_*`) las entradas de los casos de la base: claves por número de caso o riesgo, filas con ese `caso` o `id`, y tuplas. En 30007 eso eliminó el SLA de ejemplo («Vencido hace 2 h»), la fila, el vehículo (PCD5521), la visita, los eventos y las evidencias del ejemplo, los datos de SiriusCompletar y la dirección de evidencias. El mismo criterio cubre SiriusCompletado y los demás conjuntos por número de caso. Lo que la base no trae queda «—», «Sin dato» o «SLA —». Lo que la pantalla copia de la base (consentimientos, Datos adicionales) va marcado y no se quita.
+- **Visitas desde la base:** la tarjeta sale de `visitasBase`, con los estados «Enlace enviado · vence …», «Autoinspección enviada · vence …», «En curso por el cliente», «Realizada», «Cancelada», «Por agendar» y, como hoy, «Agendada». Muestra el vencimiento del enlace, el enlace (sin cortar el código) y el último envío.
+- **Acciones de la tarjeta:**
+  - Con enlace: «Reenviar enlace» (`reenviarEnlace { caso, tipo, canal }`), «Generar nuevo enlace» (confirmación; `enviarEnlace` del mismo tipo), «Copiar enlace» y «Cancelar visita» (`cancelarVisita { caso, modalidad, motivo }`, motivo obligatorio).
+  - Agendada: como hoy.
+  - Por agendar: «Enviar enlace de autoagendamiento» y «Enviar enlace de autoinspección» (deshabilitada con el motivo si la plantilla o los criterios no la permiten).
+  - El cambio se ve mientras responde la base: con `{ ok: false }` la tarjeta vuelve atrás y se muestra el mensaje; con `{ ok: true }` se vuelven a leer los datos del caso.
+- **Coordinador y Administrador:** la cabecera calculaba las visitas solo para el rol Coordinador de inspecciones. Por eso, con el mismo usuario, el Administrador veía «Coordinar inspección» y el Coordinador «Ver visita». Ahora los dos usan las visitas del caso y el mismo permiso, así que la acción es la misma.
+- **Escenas nuevas (3):** `cxvisitaenlace`, `cxvisitacancelar` y `cxnumerocruce`.
+
+**Verificado**
+- Abrí desde el selector `cxvisitaenlace`, `cxvisitacancelar`, `cxnumerocruce`, `coord`, `coordvis` y `coordmodalidades` a 1280×720 y 1920×1080, sin errores ni desplazamiento horizontal.
+- Sin conexión, `coord`, `coordvis`, `coordchoque`, `coordauto`, `envioenlace`, `enlaceagenda` (salvo el token aleatorio), `enlacesincorreo`, `coordrg`, `coordcxmoto` y `coordmodalidades` quedan igual que antes, comparados texto a texto con la versión anterior.
+- `coord`, `coordvis`, `cxvisitaenlace` y `cxnumerocruce` muestran las mismas acciones con el rol Coordinador de inspecciones y con Administrador.
+- En `cxnumerocruce` (30007 de la base) no aparece ningún dato del ejemplo (PCD5521, Mauricio Endara, Carolina Mejía, Renault Duster ni su comentario) en las seis pestañas ni en Solicitudes, Informes por completar, Agenda, Inicio, Calificación y Reportes, con los dos roles. Mauricio Endara solo aparece en Inicio como inspector del catálogo, sin el caso. El SLA queda «SLA —».
+- Prueba interna con conexión en una copia separada, con seis casos que cubren todos los estados:
+  - Se enviaron `reenviarEnlace { caso, tipo, canal }`, `enviarEnlace { caso, canal, destinatario, modalidad, tipo }` (nuevo enlace y envío desde «Por agendar») y `cancelarVisita { caso, modalidad, motivo }`.
+  - Con `{ ok: true }` las tarjetas se recargaron; con `{ ok: false }` volvieron atrás con el mensaje.
+  - `sirius-conexion.js` de la copia publicada sigue con su contenido mínimo.
+- `cxlimpio`, `historden`, `calcxcalif`, `calpdfcx`, `infcxfotos`, `autorecibida` y `autointerno` abren sin errores.
+
+**No verificado**
+- La base real de GitHub: probé con una conexión de prueba con la forma del contrato. No comprobé qué devuelve la base al reenviar (el canal) ni cuándo pasa un enlace a «En curso».
+- El texto del diálogo «Cancelar visita» es el de siempre («Sus riesgos vuelven a "por coordinar"…»); no dice que la base invalida los enlaces.
+
+**Diferencias**
+- Con la conexión, el panel «Informe en PDF» de un caso de la base se armaba con el vehículo de ejemplo del mismo número (por ejemplo 30004 en `cxlimpio` e `historden`). Por DEC-200 ya no se arma, y «Ver PDF» dice «El PDF no está disponible para este caso» hasta que la base entregue el informe en la forma del PDF. El «Origen del veredicto» sí se mantiene: ahora sale de la calificación de la base.
+- «Generar nuevo enlace» de una visita de la base pide confirmación sin motivo, porque `enviarEnlace` no lleva motivo. Sin conexión, sigue pidiendo el motivo como antes.
+- «Cancelar visita» también aparece en una visita «Por agendar», para poder cerrarla.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-2
 
 Publiqué la etapa P-6e-2 (Versión 184; la primera publicación quedó como Versión 183 con este número mal escrito y la republiqué con el número corregido): cuando no hay inspector en sitio, quién completa el informe ahora lo decide una configuración (DEC-207), con su tarifa de completado y los casos de autoinspección armados con los datos de la base.
