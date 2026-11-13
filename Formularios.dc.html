@@ -665,7 +665,7 @@ class Component extends DCLogic {
   TYPES = ['Texto', 'Número', 'Moneda', 'Fecha', 'Catálogo', 'Sí/No', 'Opción única', 'Opción múltiple', 'Grilla', 'Cálculo', 'Foto'];
   SRC = ['Solicitud', 'Servicio de placas', 'Cliente 360', 'Extracción automática'];
   EXTR = ['Placa', 'VIN', 'Motor', 'Color', 'Kilometraje', 'Marca y modelo', 'Daños', 'Testigos del tablero', 'Profundidad del labrado', 'Datos de la matrícula', 'Datos de la cédula', 'Datos de la licencia'];
-  BY = ['Cliente', 'Inspector', 'Back-office'];
+  BY = ['Cliente', 'Inspector', 'Back-office', 'No aplica']; // etapa P-6e-4 · DEC-211: «No aplica» en una modalidad (p. ej. Autoinspección sin inspector en sitio)
   FMT = ['Ninguno', 'Placa', 'VIN', 'Cédula'];
   get ALC() { return { 'Vehículos': ['Vehículos livianos', 'Motos', 'Pesados', 'Eléctricos e híbridos'], 'Ramos Generales': this.RAMOS }; }
   TONE = { Borrador: 'brand', Vigente: 'success', Programada: 'warning', Retirada: 'neutral', 'Dada de baja': 'neutral' };

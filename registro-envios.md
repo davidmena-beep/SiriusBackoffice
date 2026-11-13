@@ -4,6 +4,45 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6e-4
+
+Publiqué la etapa P-6e-4 (Versión 188): el informe de autoinspección arma las fotos por sección con la plantilla publicada, muestra el video, no exige campos que no aplican, calcula el total de la solicitud y la decisión sigue DEC-211. El login usa el diseño «Dividido».
+
+**Qué cambió**
+- **Fotos por sección:** lo que publica Formularios trae los pasos sin «sec» y las secciones como objetos. El back-office tomaba cada paso como «Otras fotos» y agregaba ese bloque una vez por paso, siempre con las fotos 17 y 18. Ahora cada paso toma su sección de la plantilla del informe (DEC-194), las secciones se normalizan y «Otras fotos» aparece una sola vez, solo con pasos que no están en la plantilla (un extra o el video). Los pasos de Motos declaran ahora su sección.
+- **Video de 360°:** una evidencia con `tipoArchivo: 'video'` se trata como video: miniatura con reproducir y duración, y reproducción en el visor único con controles. Ya no sale como imagen rota. D-7 corregido: la duración va arriba a la derecha y el nombre abajo.
+- **Estado de las secciones:** con la conexión, el informe usa la plantilla y la versión del informe (antes siempre «Vehículos livianos v1») y lo que la versión publicada dice en «Obligatorio» y «Quién lo llena». Una sección queda «Completa» solo si todos sus obligatorios aplicables tienen valor.
+- **No aplica:** en Vehículos livianos y Motos, columna Autoinspección, «Inspector que ejecutó», «Persona que atiende» y «Relación con el asegurado» quedan «No aplica». Se cambia en Formularios › Campos › «Quién lo llena», que ahora ofrece esa opción. Además, en cualquier modalidad, un campo que nadie puede llenar no cuenta como pendiente.
+- **Total de la solicitud:** valor del casco más valor de extras de la solicitud, bloqueado y con el origen «Cálculo».
+- **Decisión sin inspector (DEC-211):** el paso 3 no muestra «Criterio del inspector».
+  - La agencia o el independiente eligen Asegurable o No asegurable (con motivo) y se muestra su facultad, por ejemplo «Facultad de Eurosurvey: Determinar solo Asegurable · este caso queda Inspeccionado» o «… pasa a calificación».
+  - El interno sigue con «Completar y calificar».
+  - «Devolver a coordinación» (motivo obligatorio) deja el informe «Devuelto» y el caso «En coordinación»; con la conexión, `devolverCoordinacion { caso, motivo }`.
+- **Login:** el diseño «Dividido» con la constelación es el predeterminado.
+- **Escenas nuevas (7):** `autoporseccion`, `autovideovisor`, `autonoaplica`, `autodecision`, `autodevolver`, `valorestotal` y `login`.
+
+**Verificado**
+- Abrí desde el selector las 7 escenas nuevas y `infcompletarcaso`, `infvalores`, `autorecibida` y `autointerno` a 1280×720 y 1920×1080, sin errores ni desplazamiento horizontal.
+- En `autoporseccion` ninguna sección se repite: hay 10 secciones y «Otras fotos» una sola vez, con el extra y el video. La suma por sección (18) es igual a la galería (18), y no hay ninguna imagen rota.
+- En `autovideovisor` el video se reproduce en el visor con controles.
+- En `autonoaplica` los tres campos dicen «No aplica · autoinspección» y el informe queda «sin pendientes». En `valorestotal` el Total de la Solicitud es USD 19.150,00, bloqueado y con «Cálculo». Con la versión publicada que pide año y vigencia de la matrícula, «Matrícula y propietario» queda «Por completar · 2 obligatorios vacíos».
+- Flujos en la simulación: Asegurable dentro de la facultad de Eurosurvey → Inspeccionado; No asegurable fuera de la facultad → a calificación; Devolver → «En coordinación». Con `{ ok: false }` todo volvió a «Informe por completar» con el mensaje. El interno sigue completando y calificando en un paso.
+- Prueba interna con conexión en una copia aparte: se enviaron `completarInforme { …, decision: determinar, criterio: Asegurable }` y `devolverCoordinacion { caso, motivo }`, y con `{ ok: false }` la pantalla volvió atrás. `sirius-conexion.js` de la copia publicada sigue con su contenido mínimo.
+- Sin conexión, los casos presenciales de ejemplo se ven igual, salvo el conteo de campos (ver Diferencias). Comparé `infcompletarcaso`, `infvalores`, `infpasoinforme` e `infdecision` texto a texto con la versión anterior.
+
+**No verificado**
+- No probé con la base real de GitHub (50007 y 50009). Reproduje su forma con una versión publicada en Formularios armada desde las plantillas del prototipo.
+- No probé el independiente de punta a punta: usa el mismo camino que la agencia, con su propia facultad.
+
+**Diferencias**
+- La facultad que se muestra es la de determinación que ya está configurada (Eurosurvey «Determinar solo Asegurable»). Hoy no existe un tope en USD por agencia, así que no aparece «hasta USD 40.000».
+- El «Total» de la Solicitud ya no se cuenta como campo por llenar, así que el conteo baja en uno también en los casos de ejemplo («39 de 66» en lugar de «40 de 67»).
+- «Devolver a coordinación» también está disponible para el interno.
+- La escena del visor se llama `autovideovisor`, porque `autovideo` ya era una escena de Formularios.
+- Los pasos de Motos ahora declaran su sección, así que sus fotos también se reparten por sección en presencial.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6e-3
 
 Publiqué la etapa P-6e-3 (Versión 187; la primera publicación quedó como Versión 186 con este número mal escrito y la republiqué con el número corregido). Con la conexión, los casos de la base ya no toman datos de un caso de ejemplo con el mismo número; Coordinación arma las visitas con `visitasBase` y ofrece acciones para las visitas con enlace; el Coordinador y el Administrador ven las mismas acciones.

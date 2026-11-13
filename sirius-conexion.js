@@ -111,7 +111,7 @@
     x.nota = d.nota || k.subestado || x.nota || '';
     // P-6e · plantilla de cada riesgo (riesgos.datos.formulario, SQL 29) y su carrocería: Coordinación ofrece las modalidades de esa plantilla.
     x.formularios = rs.map(function (r) { return (r.datos || {}).formulario || ''; }); x.carrocerias = rs.map(function (r) { return (r.datos || {}).carroceria || ''; });
-    x.sumaAsegurada = rs.reduce(function (t, r) { return t + (Number(r.suma_asegurada) || 0); }, 0) || x.sumaAsegurada; x.anios = rs.map(function (r) { return (r.datos || {}).anio || null; }); x.placas = rs.map(function (r) { return (r.datos || {}).placa || r.descripcion || ''; });
+    x.sumaAsegurada = rs.reduce(function (t, r) { return t + (Number(r.suma_asegurada) || 0); }, 0) || x.sumaAsegurada; x.anios = rs.map(function (r) { return (r.datos || {}).anio || null; }); x.placas = rs.map(function (r) { return (r.datos || {}).placa || r.descripcion || ''; }); x.riesgosBase = rs.map(function (r) { return { descripcion: r.descripcion || '', composicion: r.composicion || '', suma: Number(r.suma_asegurada) || null, datos: r.datos || {} }; });   // detalle de la solicitud por riesgo (marca, modelo, versión, año, color, VIN, motor, clase, uso, extras)
     // C2-3 · inspector del caso (para la bandeja «Informes por completar» del Control de calidad) y plazo de 24 h hábiles
     var vi = (k.visitas || []).filter(function (v) { return v.inspector; })[0];
     if (vi) x.inspector = { nombre: vi.inspector.nombre, tipo: vi.inspector.tipo_inspector || '', agencia: vi.inspector.agencia ? vi.inspector.agencia.nombre : '' };
