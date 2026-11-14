@@ -4,6 +4,97 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0b
+
+Publiqué la etapa P-6f-0b (Versión 200). La primera publicación quedó como Versión 199 con el registro diciendo 197; la Versión 200 solo corrige el número en el registro y no cambia nada más.
+
+Agrega «Eliminar formulario» y el bloqueo de versiones con visitas en curso (DEC-217, amplía DEC-208), y los conteos de Formularios con la base (D-6).
+
+**Qué cambió**
+- **Eliminar formulario (DEC-217):**
+  - Está en el menú de la fila y en el editor, y solo lo ve el Administrador.
+  - **Cuándo se deshabilita:** si no se puede eliminar, queda deshabilitado con el primer motivo, en este orden:
+    - «Tiene una versión Vigente» o «Programada»;
+    - «Tiene N informes vinculados»;
+    - «La usan N casos activos»;
+    - visitas en curso;
+    - «La nombra la regla de completado N» u otra configuración publicada (criterios de autoinspección y documentos requeridos de Modalidades, documentos del cliente, controles, documentos PDF y reglas de llenado).
+  - **Casos activos:** con la conexión, los de `casos[].formularios` (con o sin « vN») cuyo estado no es final en SIRIUS_FLUJO. Sin la conexión, los usos de ejemplo.
+  - **Diálogo:**
+    - muestra el nombre y las versiones que se quitan (número y estado);
+    - muestra la revisión: «Se revisaron N informes de la plantilla: 0 vinculados», los casos activos revisados y las configuraciones;
+    - pide un motivo de una línea (`data-eliminar-motivo`, mínimo 10 caracteres), y «Eliminar formulario» queda deshabilitado hasta escribirlo;
+    - avisa «Esto no se puede deshacer». Ya no hay «Deshacer».
+  - **Con la conexión:**
+    - Se publica `SIRIUS_FORMULARIOS` sin el formulario y con `eliminados`, para que un formulario del prototipo no reaparezca al volver a leer la base.
+    - El historial dice «Eliminó el formulario <nombre> · <motivo>».
+    - Con `{ ok: false }` el formulario vuelve y se muestra el mensaje. El nombre queda libre.
+- **Eliminar versión (DEC-217):**
+  - Se bloquea con «Tiene N visitas en curso con esta versión» (`visitasBase[].plantilla`).
+  - Las visitas en curso sin versión registrada no bloquean. El diálogo avisa «1 visita en curso sin versión registrada» y cuenta las visitas revisadas.
+- **Conteos con la base (D-6):**
+  - «Informes con esta versión» sale de `SIRIUS_CONEXION.informes` (la función de DEC-208).
+  - «Casos en curso» sale de las visitas en curso con esa versión.
+  - Los casos activos de la plantilla salen de `casos[].formularios`.
+  - Se usan en las subfilas de la lista, el panel Versiones («Uso: Informes N · casos en curso N»), el editor, «Retirar» y su diálogo.
+  - Sin la conexión, los conteos son los de antes.
+
+**Verificado**
+- **Escenas a 1280×720 y 1920×1080, desde el selector:** formeliminar, formeliminarbloq, versionvisitacurso, cxformconteos, versioneliminar, versioneliminarok y la lista de Formularios (escena form). Ninguna mostró errores ni scroll horizontal.
+- **Sin conexión:** la lista (form y formmodalidades) queda idéntica a la versión anterior. En versioneliminar y versioneliminarok solo cambian el botón «Eliminar formulario» y el formato «Uso: Informes N · casos en curso N»; los números son los mismos (por ejemplo, «Uso: Informes 1.284 · casos en curso 23» en la versión 1).
+- **formeliminarbloq:** los cuatro formularios muestran «Eliminar formulario» deshabilitado con «Tiene una versión Vigente», «Tiene 3 informes vinculados», «La usan 2 casos activos» (el tercer caso, Emitida, no cuenta) y «La nombra la regla de completado 2».
+- **formeliminar:**
+  - El diálogo dice «Se revisaron 0 informes de la plantilla: 0 vinculados» y «Se revisó 1 caso activo de la base: 0 usan la plantilla».
+  - Con 9 caracteres el botón sigue deshabilitado; con el motivo se habilita.
+  - Al confirmar, el formulario desaparece de la lista y el historial dice «Eliminó el formulario Inspección de bodegas (prueba) · Formulario de prueba sin uso» y «Publicada en la base (SIRIUS_FORMULARIOS · eliminarFormulario · versión 1)».
+  - Con `?cxok=0` vuelve con «La base rechazó la acción (prueba). Se deshizo el cambio.».
+- **versionvisitacurso:** la v1 tiene «Eliminar versión» bloqueado con «Tiene 1 visita en curso con esta versión» («Uso: Informes 0 · casos en curso 1»). La v2 se puede eliminar, y el diálogo dice «Se revisaron 2 visitas en curso de la plantilla: 0 con esta versión» y «1 visita en curso sin versión registrada».
+- **cxformconteos (Vehículos livianos con la base simulada):**
+
+| Versión | Informes con esta versión | Casos en curso |
+|---|---|---|
+| v4 (Vigente) | 5 (1 de la base y 4 de la escena) | 3 |
+| v3 (Retirada) | 2 | 1 |
+
+  - Los casos en curso de la v4 son 50071 y 50072 (presencial en curso) y 50073 (autoinspección con enlace en curso). El de la v3 es 50074.
+  - La visita terminada del 50075 (Emitida) no cuenta.
+  - Casos activos de la plantilla: 4 (50071 a 50074), calculados con la misma regla del código.
+  - Sin conexión, los de ejemplo son «Informes 1.284 · casos en curso 23» en la v1 y 0 en las demás.
+- **Prueba con una conexión temporal** (copia aparte):
+  - Al eliminar «Inspección de bodegas (prueba)», `publicarConfiguracion` lleva `clave: 'SIRIUS_FORMULARIOS'`, `datos.formularios` sin él, `eliminados: ['fpr1']`, `cambio.accion: 'eliminarFormulario'` y el motivo.
+  - Al volver a abrir Formularios no reaparece, y tampoco un formulario del prototipo marcado como eliminado (Pesados).
+  - Con `{ ok: false }` vuelve a la lista con el mensaje.
+- **Roles:**
+  - Solo el Administrador ve Formularios en el menú.
+  - Forzando el rol del componente a Coordinador de inspecciones, Ejecutivo de inspecciones y Suscriptor, «Eliminar formulario» no aparece ni en el menú de la fila ni en el editor.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: contrato con `visitasBase[].plantilla` y `eliminados`, 587 escenas en datos-escenas y KNOWN_ESC 544.
+
+**No verificado**
+- Que la base real envíe `visitasBase[].plantilla` y acepte `eliminados` en `SIRIUS_FORMULARIOS`: se probó contra una conexión simulada y una temporal.
+- La recarga real de la página con la base: la simulé leyendo otra vez la base al volver a abrir Formularios.
+
+**Diferencias**
+- **Lista:** no hay una columna de uso; los conteos van en las subfilas de versiones. Con la conexión, la subfila agrega «· casos en curso: N». Sin la conexión, queda igual.
+- **Panel Versiones:** el uso dice «Uso: Informes N · casos en curso N» también sin conexión (antes, «Informes: N · casos en curso: N»; mismos números). El panel tiene 36 px de margen a la derecha: el aviso «Tiene 1 visita en curso con esta versión» del botón deshabilitado salía 4 px de la pantalla a 1280.
+- **Regla de completado:** las reglas no tienen hoy una condición de plantilla en su pantalla. La revisión lee `plantilla`, `plantillas`, `formulario` o `formularios` si una regla los trae; la escena lo simula en la regla 2.
+- **Documentos requeridos de Modalidades:** cuentan como configuración que nombra la plantilla. Los formularios vigentes ya están bloqueados antes por su versión Vigente.
+- **Antes solo se podían eliminar formularios en borrador; ahora también** los que tienen solo versiones Retiradas sin uso. Todos pasan por el diálogo con motivo.
+- **Arreglos en el editor con formularios publicados en la base:** un campo publicado sin opciones o una grilla sin columnas ya no rompen el editor, y las versiones sin autor ya no dicen «por undefined».
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| formeliminar | Formulario de prueba con v1 y v2 Retiradas; se elimina con motivo y queda en el historial |
+| formeliminarbloq | Cuatro formularios bloqueados, cada uno con su motivo |
+| versionvisitacurso | v1 bloqueada por 1 visita en curso; v2 permitida con el aviso de 1 visita sin versión registrada |
+| cxformconteos | Vehículos livianos con conteos de la base simulada |
+
+También abrí versioneliminar, versioneliminarok y la lista de Formularios (escena form).
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0d
 
 Publiqué la etapa P-6f-0d (Versión 196). La primera publicación quedó como Versión 195 con el registro diciendo 194; la Versión 196 solo corrige el número en el registro y no cambia nada más.

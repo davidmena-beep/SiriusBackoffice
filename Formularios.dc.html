@@ -200,6 +200,7 @@
 </div>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" icon-left="{{ histIcon }}" on-click="{{ openHist }}" hint-size="200px,40px">Historial de cambios</x-import>
+<sc-if value="{{ ed.delF.show }}" hint-placeholder-val="{{ false }}"><button type="button" data-eliminar-formulario="" aria-disabled="{{ ed.delF.dis }}" title="{{ ed.delF.why }}" onClick="{{ ed.delF.on }}" style="height:40px;padding:0 14px;border:1.5px solid {{ ed.delF.bd }};border-radius:var(--radius-sm);background:#FFFFFF;cursor:{{ ed.delF.cur }};font-family:var(--font-brand);font-size:15px;font-weight:700;color:{{ ed.delF.color }};white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Eliminar formulario</button></sc-if>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ ed.vp.toggle }}" hint-size="150px,40px">{{ ed.vp.btn }}</x-import>
 <sc-if value="{{ ed.hasCmp }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="md" on-click="{{ ed.openCmp }}" hint-size="190px,40px">Comparar versiones</x-import></sc-if>
 <sc-if value="{{ ed.isDraft }}" hint-placeholder-val="{{ true }}">
@@ -212,7 +213,7 @@
 </div>
 </div>
 <sc-if value="{{ ed.isRO }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Alert" tone="info" size="sm" hint-size="100%,48px">{{ ed.roText }}</x-import></sc-if><sc-if value="{{ ed.isRO }}" hint-placeholder-val="{{ false }}"><p id="fm-ro-note" style="margin:0;font-size:13px;color:var(--text-muted)">{{ ed.roWhy }}</p></sc-if>
-<sc-if value="{{ ed.vp.open }}" hint-placeholder-val="{{ false }}"><section data-versiones="{{ ed.vp.n }}" aria-labelledby="vp-t" style="display:flex;flex-direction:column;gap:12px;padding:16px 20px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF"><div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px 16px"><div style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 360px"><h2 id="vp-t" style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Versiones de la plantilla</h2><span style="font-size:13px;line-height:1.45;color:var(--text-muted)">{{ ed.vp.nota }}</span></div><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ ed.vp.close }}" hint-size="90px,32px">Cerrar</x-import></div>
+<sc-if value="{{ ed.vp.open }}" hint-placeholder-val="{{ false }}"><section data-versiones="{{ ed.vp.n }}" aria-labelledby="vp-t" style="display:flex;flex-direction:column;gap:12px;padding:16px 36px 16px 20px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF"><div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px 16px"><div style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 360px"><h2 id="vp-t" style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Versiones de la plantilla</h2><span style="font-size:13px;line-height:1.45;color:var(--text-muted)">{{ ed.vp.nota }}</span></div><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="sm" on-click="{{ ed.vp.close }}" hint-size="90px,32px">Cerrar</x-import></div>
 <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column"><sc-for list="{{ ed.vp.rows }}" as="r" hint-placeholder-count="4"><li data-version="{{ r.n }}" data-estado="{{ r.estado }}" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px 24px;padding:10px 0;border-top:1px solid var(--border-subtle)"><div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 340px;max-width:760px"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><button type="button" onClick="{{ r.abrir }}" style="border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:15px;font-weight:700;color:var(--text-link);white-space:nowrap" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ r.titulo }}</button><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ r.tone }}" style="white-space:nowrap" hint-size="80px,22px">{{ r.estado }}</x-import><sc-if value="{{ r.abierta }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap">Abierta</span></sc-if><span style="font-size:13px;color:var(--text-body)">{{ r.fecha }}</span></div><span style="font-size:13px;line-height:1.4;color:var(--text-body)">{{ r.motivo }}</span><span style="font-size:12px;color:var(--text-muted)">{{ r.uso }}</span><sc-if value="{{ r.hayNoEliminar }}" hint-placeholder-val="{{ false }}"><span data-eliminar-motivo="{{ r.n }}" style="font-size:12px;color:var(--text-muted)">{{ r.noEliminar }}</span></sc-if></div><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ r.acciones }}" as="a" hint-placeholder-count="1"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="{{ a.variant }}" size="sm" on-click="{{ a.on }}" unavailable-reason="{{ a.why }}" hint-size="150px,32px">{{ a.l }}</x-import></sc-for></div></li></sc-for></ul></section></sc-if>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
 <span aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">{{ live }}</span>
@@ -646,7 +647,13 @@
 </div>
 </x-import>
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ qm.open }}" on-close="{{ closeModal }}" size="sm" title="{{ qm.title }}" description="{{ qm.desc }}" footer="{{ qm.footer }}" hint-size="0px,0px"></x-import>
-<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ vm.open }}" on-close="{{ closeModal }}" size="sm" align="left" title="{{ vm.title }}" description="{{ vm.desc }}" footer="{{ vm.footer }}" hint-size="0px,0px"><div data-vm-motivo style="display:flex;flex-direction:column;gap:6px;text-align:left"><label for="vm-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="vm-mot" rows="3" value="{{ vm.mot }}" onChange="{{ vm.onMot }}" aria-invalid="{{ vm.inv }}" aria-required="true" placeholder="Por qué se hace este cambio" style="resize:vertical;width:100%;padding:10px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ vm.err }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo.</span></sc-if></div></x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ vm.open }}" on-close="{{ closeModal }}" size="sm" align="left" title="{{ vm.title }}" description="{{ vm.desc }}" footer="{{ vm.footer }}" hint-size="0px,0px"><div data-vm-motivo style="display:flex;flex-direction:column;gap:6px;text-align:left"><sc-if value="{{ vm.aviso }}" hint-placeholder-val="{{ false }}"><p data-vm-aviso="" role="note" style="margin:0 0 6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--alert-warning-bg);font-size:13px;font-weight:600;line-height:1.4;color:var(--text-strong)">{{ vm.aviso }}</p></sc-if><label for="vm-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><textarea id="vm-mot" rows="3" value="{{ vm.mot }}" onChange="{{ vm.onMot }}" aria-invalid="{{ vm.inv }}" aria-required="true" placeholder="Por qué se hace este cambio" style="resize:vertical;width:100%;padding:10px 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></textarea><sc-if value="{{ vm.err }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Escribe el motivo.</span></sc-if></div></x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ fd.open }}" on-close="{{ closeModal }}" size="sm" align="left" title="{{ fd.title }}" description="Esto no se puede deshacer." footer="{{ fd.footer }}" hint-size="0px,0px"><div data-eliminar-form="{{ fd.id }}" style="display:flex;flex-direction:column;gap:14px;text-align:left">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text-muted)">Formulario</span><strong style="font-size:15px;color:var(--text-strong)">{{ fd.nombre }}</strong></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:var(--text-muted)">Versiones que se quitan</span><ul style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ fd.vers }}" as="x" hint-placeholder-count="2"><li data-fd-version="{{ x.n }}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid var(--border-default);border-radius:999px;font-size:13px;color:var(--text-body);white-space:nowrap"><strong style="color:var(--text-strong)">Versión {{ x.n }}</strong><span>· {{ x.estado }}</span></li></sc-for></ul></div>
+<ul data-fd-revision="" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.45;color:var(--text-body)"><li>{{ fd.revInf }}</li><li>{{ fd.revCasos }}</li><li>{{ fd.revCfg }}</li></ul>
+<div style="display:flex;flex-direction:column;gap:6px"><label for="fd-mot" style="font-size:13px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label><input id="fd-mot" data-eliminar-motivo="" type="text" value="{{ fd.mot }}" onChange="{{ fd.onMot }}" aria-required="true" aria-describedby="fd-mot-h" autocomplete="off" placeholder="Por qué se elimina este formulario" style="height:40px;width:100%;box-sizing:border-box;padding:0 12px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"/><span id="fd-mot-h" aria-live="polite" style="font-size:13px;color:{{ fd.hColor }}">{{ fd.hint }}</span></div>
+</div></x-import>
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ bj.open }}" on-close="{{ closeModal }}" size="sm" title="{{ bj.title }}" description="{{ bj.desc }}" footer="{{ bj.footer }}" hint-size="0px,0px"></x-import>
 <div aria-hidden="true" onClick="{{ closeHist }}" style="position:fixed;inset:0;z-index:1500;background:var(--scrim-drawer);opacity:{{ hScrim }};pointer-events:{{ hPointer }};transition:opacity var(--dur-action) var(--ease-standard)"></div>
 <aside role="dialog" aria-modal="true" aria-labelledby="fh-title" aria-hidden="{{ hHidden }}" onKeyDown="{{ onHistKey }}" style="position:fixed;top:0;right:0;z-index:1501;height:100vh;width:560px;max-width:100vw;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal);transform:{{ hTransform }};visibility:{{ hVis }};transition:transform var(--dur-drawer) var(--ease-standard), visibility var(--dur-drawer)">
@@ -767,8 +774,8 @@ class Component extends DCLogic {
   leerBase() { const X = window.SIRIUS_CONEXION, S = window.SIRIUS_FORMULARIOS; if (!((X && X.activo === true) || window.__sirFormBaseSim)) return null;
     return S && Array.isArray(S.formularios) && S.formularios.length ? S : null; }
   seed() { if ((this.props.escena || '') === 'formbase') this.simBase(); const loc = this.seedLocal(), pb = this.leerBase(); if (!pb) return loc; this._needSeed = false; // con lo publicado no hace falta esperar los datos del prototipo
-    const forms = this.verNorm(this.clone(pb.formularios));
-    loc.forEach(f => { if (!forms.some(x => x.id === f.id)) forms.push(f); });
+    const forms = this.verNorm(this.clone(pb.formularios)), fuera = Array.isArray(pb.eliminados) ? pb.eliminados.map(String) : []; /* P-6f-0b · DEC-217: un formulario eliminado no vuelve desde los datos del prototipo */
+    loc.forEach(f => { if (!forms.some(x => x.id === f.id) && !fuera.includes(String(f.id))) forms.push(f); });
     return forms; }
   // Escena formbase (demostración): simula que la base trae SIRIUS_FORMULARIOS con Vehículos livianos v5 «Vigente» y la v4 «Retirada». Se limpia al cambiar de escena (irEscena).
   simBase() { if (window.__sirFormBaseSim) return; const loc = this.seedLocal(); if (!loc.length) return;
@@ -806,7 +813,7 @@ class Component extends DCLogic {
     if (st.dirty || st.modal || st.vm) { this.toast('Hay una versión más reciente publicada en la base. Guarda o descarta tus cambios para verla.'); return; }
     const forms = this.seed(); if (!forms.length) return;
     const f = forms.find(x => x.id === st.fid), ok = f && f.versions.some(v => v.n === st.vn);
-    const nuevo = Object.assign({ forms }, this.estadoBase(st.hist));
+    const nuevo = Object.assign({ forms, eliminados: (((this.leerBase() || {}).eliminados) || []).map(String) }, this.estadoBase(st.hist));
     if (st.fid && !f) Object.assign(nuevo, { view: 'list', fid: null, vn: null, step: null, fld: null, sec: null });
     else if (st.fid && !ok) { const vg = this.vigente(f) || f.versions[f.versions.length - 1]; Object.assign(nuevo, { vn: vg.n, step: null, fld: null }); }
     this.setState(nuevo); }
@@ -886,6 +893,7 @@ class Component extends DCLogic {
       { when: '15/08/2026 · 08:00', by: 'Sistema', where: 'Motos · versión 1', what: 'Versión 1 entró en vigencia', motivo: '' },
       { when: '25/07/2026 · 17:05', by: 'Andrea Salazar', where: 'Vehículos livianos · versión 1', what: 'Publicó la versión 1, vigente desde 01/08/26', motivo: '' }], forms: this.seed(), libTab: e === 'modulos' ? 1 : e === 'etiquetas' ? 2 : 0, etqs: null, etqEst: '', etqQ: '', etF: { name: '', desc: '', err: '' }, libCat: '', libEst: '', libQ: '', libMods: null, nm: { name: '', cat: 'Común', err: '' }, rl: null, view: 'list', fid: null, vn: null, tab: 0, sec: 'ins', fld: null, step: null, open: {}, filters: {}, search: '', exp: ['f1'], modal: null, reason: '', reasonErr: false, snack: '', snackAct: null, dirty: false, saved: '', pvMod: 'P', auStep: 'fotos', over: null, live: '', cmpA: '1', cmpB: '2', pub: { when: 'hoy', date: '' }, nf: { name: '', tipo: 'Vehículos', alcance: '', base: 'nucleo', from: 'f1', err: {} } };
     if (e === 'vlhist') s.histOpen = true;
+    s.eliminados = (((this.leerBase() || {}).eliminados) || []).map(String); // P-6f-0b · DEC-217: formularios eliminados en la base
     if (e === 'rg') Object.assign(s, { view: 'editor', fid: 'f4', vn: 1, sec: null });
     if (e === 'em') Object.assign(s, { view: 'editor', fid: 'f5', vn: 1, sec: null, tab: 0 });
     // Etapa 12a · DEC-132: propiedad «Guía» del paso de foto y bloque «Mapa de captura» (pestaña Pasos de foto).
@@ -960,6 +968,10 @@ class Component extends DCLogic {
     if (e === 'versioneliminar') Object.assign(out, { view: 'editor', fid: 'f1', vn: 4, sec: null, tab: 0, verOpen: true });
     if (e === 'versioneliminarok') { const f = s.forms.find(x => x.id === 'f1'); if (f) { f.ultima = Math.max(f.ultima || 0, ...f.versions.map(x => x.n)); f.versions = f.versions.filter(x => x.n !== 2);
         Object.assign(out, { view: 'editor', fid: 'f1', vn: 4, sec: null, tab: 0, verOpen: true, histOpen: true, hist: [{ when: '18/10/2026 · 20:30', by: 'Andrea Salazar', where: f.name + ' · versión 2', what: 'Eliminó la v2 (sin informes vinculados)', motivo: 'Versión retirada sin informes: se quita para dejar clara la lista de versiones' }].concat(hist0 || []) }); } }
+    // Etapa P-6f-0b · DEC-217 y D-6 (con la conexión simulada): versionvisitacurso abre «Prueba de visitas en curso» con el panel Versiones; cxformconteos, Vehículos livianos con sus conteos de la base.
+    if (e === 'versionvisitacurso') { const f = s.forms.find(x => x.id === 'fvis'); if (f) Object.assign(out, { view: 'editor', fid: 'fvis', vn: Math.max(...f.versions.map(x => x.n)), sec: null, tab: 0, verOpen: true }); }
+    if (e === 'cxformconteos') { const f = s.forms.find(x => x.id === 'f1'), vg = f && this.vigente(f); if (f) Object.assign(out, { view: 'editor', fid: 'f1', vn: vg ? vg.n : Math.max(...f.versions.map(x => x.n)), sec: null, tab: 0, verOpen: true }); }
+    if (e === 'eliminarbloq' || e === 'eliminar') Object.assign(out, { search: '', exp: [] });
     if (e === 'doccatalogo') Object.assign(out, { view: 'portal', pcTab: 'Documentos', pcPreset: 'contrato', pcEditar: null });
     return out; }
   user() { return this.props.userName || 'Andrea Salazar'; }
@@ -1123,7 +1135,7 @@ class Component extends DCLogic {
         if (v.motivo == null) { const l = (v.log || []).filter(x => x.reason).pop(); v.motivo = l ? l.reason : ''; } v.enCurso = usos.filter(x => x.formulario === f.name + ' v' + v.n).length; }); });
     return forms; }
   pubDatos(forms, cambio, hist) { return { publicadoEn: this.nowStr(), publicadoPor: this.user(), historial: this.clone((hist || this.state.hist || []).slice(0, 200)), formularios: forms.map(f => Object.assign({}, f, { versions: f.versions.map(v => Object.assign({}, v, { estado: v.estado, vigenteDesde: v.vigenteDesde || '', motivo: v.motivo || '' }, this.cfgV(f, v))) })), /* P-6e-1: cada versión con modalidades, criteriosA y documentos */
-    vigentes: forms.reduce((o, f) => { const vg = this.vigente(f); o[f.id] = vg ? vg.n : null; return o; }, {}), contrato: 'La app y los portales usan solo la versión «Vigente» de cada plantilla; un borrador nunca se usa fuera de Formularios.', cambio }; }
+    vigentes: forms.reduce((o, f) => { const vg = this.vigente(f); o[f.id] = vg ? vg.n : null; return o; }, {}), eliminados: ((this.state && this.state.eliminados) || []).slice(), contrato: 'La app y los portales usan solo la versión «Vigente» de cada plantilla; un borrador nunca se usa fuera de Formularios.', cambio }; }
   quedaPublicado(datos) { const X = window.SIRIUS_CONEXION; if (X && X.activo === true) { window.SIRIUS_FORMULARIOS = JSON.parse(JSON.stringify(datos)); this.setState({ deBase: true, basePub: { en: datos.publicadoEn, por: datos.publicadoPor } }); } } // C2-13: con { ok: true } lo publicado queda en window.SIRIUS_FORMULARIOS; con { ok: false } no cambia
   pubBase(f, n, accion, motivo, prev, aviso, formsPub) { const SP = window.SiriusPublicar; if (!SP || !SP.activo()) return;
     const datos = this.pubDatos(formsPub || this.state.forms, { formulario: f.id, nombre: f.name, version: n, accion });
@@ -1132,6 +1144,51 @@ class Component extends DCLogic {
   // Etapa P-6e-1c · DEC-208: número de la siguiente versión de una plantilla. Un número eliminado no se reutiliza: `ultima` guarda el más alto que tuvo.
   nSig(f) { return Math.max(0, f.ultima || 0, ...((f && f.versions) || []).map(x => x.n)) + 1; }
   esAdmin() { const r = this.props.rol; return !r || r === 'Administrador'; }
+  // Etapa P-6f-0b · DEC-217 y D-6: conteos con la base y «Eliminar formulario». Sin la conexión, los conteos son los de hoy (datos del prototipo).
+  cxOn() { const X = window.SIRIUS_CONEXION; return !!(X && X.activo === true); }
+  nomPl(t) { return String(t == null ? '' : t).split(' · ')[0].replace(/\s+v\d+$/i, '').trim(); } // «Vehículos livianos v4» o «Vehículos livianos · Presencial» → «Vehículos livianos»
+  esFinal(est) { const F = window.SIRIUS_FLUJO || {}, n = F.normalizar ? F.normalizar(est) : est, e = (F.estados || []).find(x => x.nombre === n); return !!e && e.resp === 'ninguno'; } // estado final: su responsable es «ninguno»
+  formsDeCaso(c) { return [].concat((c && c.formularios) || [], ((c && c.solicitud) || {}).formularios || []).map(x => this.nomPl(x)); }
+  // Casos activos que usan la plantilla: con la conexión, casos[].formularios la nombra (con o sin « vN») y el estado no es final; sin ella, los usos de ejemplo (vehículos y equipos con «<nombre> vN»).
+  casosActivos(f) { if (this.cxOn()) return ((window.SIRIUS_CONEXION.casos) || []).filter(c => c && !this.esFinal(c.estado) && this.formsDeCaso(c).includes(f.name)).map(c => String(c.id));
+    const E = window.SIRIUS_EJEMPLO || {}; return (E.vehiculos || []).concat(E.equipos || []).filter(x => this.nomPl(x.formulario) === f.name && /\sv\d+$/.test(String(x.formulario || ''))).map(x => String(x.caso || x.id || '')).filter((x, i, a) => a.indexOf(x) === i); }
+  visEnCurso(vis) { return !!vis && (vis.estado === 'En curso' || !!(vis.enlace && vis.enlace.estado === 'En curso')); }
+  // Uso de una versión: informes (DEC-208), visitas en curso con esa versión (visitasBase[].plantilla), casos con esas visitas y visitas en curso de la plantilla sin versión registrada.
+  usoDe(f, v) { const I = this.informesDe(f, v); if (!this.cxOn()) return { informes: v.informes || 0, rev: I.rev, enCurso: 0, casos: v.enCurso || 0, sinVersion: 0, visRev: 0 };
+    const casos = []; let enCurso = 0, sinVersion = 0, visRev = 0;
+    ((window.SIRIUS_CONEXION.casos) || []).forEach(c => (Array.isArray(c && c.visitasBase) ? c.visitasBase : []).forEach(vis => { if (!this.visEnCurso(vis)) return; const pl = vis.plantilla;
+      if (pl && typeof pl === 'object') { if (this.nomPl(pl.nombre) !== f.name) return; visRev++; if (String(pl.version == null ? '' : pl.version).replace(/^v/i, '') === String(v.n)) { enCurso++; if (!casos.includes(String(c.id))) casos.push(String(c.id)); } }
+      else if (this.formsDeCaso(c).includes(f.name)) { visRev++; sinVersion++; } }));
+    return { informes: I.n, rev: I.rev, enCurso, casos: casos.length, sinVersion, visRev }; }
+  // Configuraciones publicadas que nombran la plantilla (DEC-217 d): reglas de completado, criterios de autoinspección y documentos del cliente de Modalidades, documentos del cliente, controles, documentos PDF y reglas de llenado.
+  refsForm(f) { const W = window, out = [], es = (x) => (Array.isArray(x) ? x : [x]).some(y => y != null && y !== '' && this.nomPl(y) === f.name), nom = (r) => es(r.plantilla) || es(r.plantillas) || es(r.formulario) || es(r.formularios);
+    ((W.SiriusCompletado && W.SiriusCompletado.reglas ? W.SiriusCompletado.reglas() : null) || (W.SIRIUS_COMPLETADO || {}).reglas || []).forEach((r, i) => { if (r && nom(r)) out.push('La nombra la regla de completado ' + (i + 1)); }); // la configuración viva (con lo publicado en la sesión)
+    const pp = ((W.SIRIUS_MODALIDADES || {}).porPlantilla || {})[f.name];
+    if (pp && pp.criteriosA && pp.criteriosA.activo) out.push('La nombran los criterios de autoinspección');
+    if (pp && pp.documentos && Object.keys(pp.documentos).some(k => (pp.documentos[k] || {}).uso === 'requerido')) out.push('La nombran los documentos del cliente requeridos');
+    ((W.SIRIUS_DOCUMENTOS_CLIENTE || {}).documentos || []).forEach(d => { if (d && nom(d)) out.push('La nombra el documento del cliente «' + d.nombre + '»'); });
+    ((W.SIRIUS_CONTROLES || {}).catalogo || []).forEach(c => { if (c && nom(c)) out.push('La nombra el control «' + (c.nombre || c.id) + '»'); });
+    ((W.SIRIUS_DOCUMENTOS_PDF || {}).documentos || []).forEach(d => { if (d && nom(d)) out.push('La nombra el documento PDF «' + d.nombre + '»'); });
+    if (W.SIRIUS_LLENADO && es(W.SIRIUS_LLENADO.plantilla)) out.push('La nombran las reglas de llenado');
+    return out; }
+  porQueNoEliminarForm(f) { if (!this.esAdmin()) return 'Solo el Administrador puede eliminar formularios';
+    if (f.versions.some(v => v.estado === 'Vigente')) return 'Tiene una versión Vigente';
+    if (f.versions.some(v => v.estado === 'Programada')) return 'Tiene una versión Programada';
+    const k = f.versions.reduce((t, v) => t + this.informesDe(f, v).n, 0); if (k > 0) return 'Tiene ' + this.num(k) + (k === 1 ? ' informe vinculado' : ' informes vinculados');
+    const ca = this.casosActivos(f).length; if (ca > 0) return ca === 1 ? 'La usa 1 caso activo' : 'La usan ' + this.num(ca) + ' casos activos';
+    const vc = f.versions.reduce((t, v) => t + this.usoDe(f, v).enCurso, 0); if (vc > 0) return 'Tiene ' + this.num(vc) + (vc === 1 ? ' visita en curso' : ' visitas en curso');
+    const r = this.refsForm(f); if (r.length) return r[0];
+    return ''; }
+  // Elimina el formulario con todas sus versiones (motivo obligatorio). Con la conexión se publica SIRIUS_FORMULARIOS sin él; con { ok: false } vuelve.
+  eliminarForm(fid, mot) { const st = this.state, f = st.forms.find(x => x.id === fid); if (!f || this.porQueNoEliminarForm(f)) { this.setState({ modal: null }); return; }
+    const prev = { forms: st.forms, hist: st.hist, eliminados: st.eliminados || [], view: st.view, fid: st.fid, vn: st.vn, verOpen: st.verOpen }, forms = st.forms.filter(x => x.id !== fid), eliminados = (st.eliminados || []).concat(String(fid));
+    const hist = [{ when: this.nowStr(), by: this.user(), where: f.name, what: 'Eliminó el formulario ' + f.name + ' · ' + mot, motivo: mot }].concat(st.hist);
+    this.setState({ forms, hist, eliminados, modal: null, fdMot: '', view: 'list', verOpen: false, dirty: false, step: null }, () => {
+      const SP = window.SiriusPublicar; if (!SP || !SP.activo()) return; const datos = this.pubDatos(forms, { formulario: f.id, nombre: f.name, accion: 'eliminarFormulario' }, hist);
+      SP.publicar({ clave: 'SIRIUS_FORMULARIOS', datos, motivo: mot, pantalla: 'Formularios › ' + f.name, aviso: 'Formulario eliminado también en la base',
+        revertir: () => this.setState(prev), alPublicar: (i) => { this.quedaPublicado(datos); this.setState(s2 => ({ hist: [{ when: i.fecha, by: this.user(), where: f.name, what: 'Publicada en la base (SIRIUS_FORMULARIOS · eliminarFormulario · versión ' + i.version + ')', motivo: mot }].concat(s2.hist) })); } }); });
+    if (!(window.SiriusPublicar && window.SiriusPublicar.activo())) this.toast('Formulario «' + f.name + '» eliminado'); } // con la conexión, el aviso es el de la publicación (o el del rechazo)
+  abrirEliminarForm(f) { if (!f || !this.esAdmin() || this.porQueNoEliminarForm(f)) return; this.setState({ modal: { kind: 'delf', fid: f.id }, fdMot: '' }); }
   // Informes vinculados a una versión: con la conexión, los de SIRIUS_CONEXION.informes con la misma plantillaClave y plantillaVersion (una versión vacía, p. ej. «local», no cuenta para ninguna versión con número);
   // sin conexión, los informes del prototipo (conteo de la versión y los vehículos y equipos de ejemplo que la usan). `rev` = informes revisados de la plantilla.
   informesDe(f, v) { const X = window.SIRIUS_CONEXION, E = window.SIRIUS_EJEMPLO || {};
@@ -1148,18 +1205,19 @@ class Component extends DCLogic {
     if (v.estado === 'Vigente') return 'Está vigente';
     if (v.estado === 'Programada') return 'Está programada';
     const k = this.informesDe(f, v).n; if (k > 0) return 'Tiene ' + this.num(k) + (k === 1 ? ' informe vinculado' : ' informes vinculados');
+    const ec = this.usoDe(f, v).enCurso; if (ec > 0) return 'Tiene ' + this.num(ec) + (ec === 1 ? ' visita en curso con esta versión' : ' visitas en curso con esta versión'); // P-6f-0b · DEC-217
     return ''; }
   eliminar(fid, n, mot) { const f0 = this.state.forms.find(x => x.id === fid), v0 = f0 && f0.versions.find(x => x.n === n); if (!v0 || this.porQueNoEliminar(f0, v0)) { this.setState({ modal: null }); return; }
     const prev = { forms: this.state.forms, hist: this.state.hist, vn: this.state.vn }, forms = this.clone(this.state.forms), f = forms.find(x => x.id === fid), vg = this.vigente(f);
     f.ultima = Math.max(f.ultima || 0, ...f.versions.map(x => x.n)); f.versions = f.versions.filter(x => x.n !== n);
     const vn = this.state.vn === n ? (vg ? vg.n : f.versions[f.versions.length - 1].n) : this.state.vn;
-    const hist = [{ when: this.nowStr(), by: this.user(), where: f.name + ' · versión ' + n, what: 'Eliminó la v' + n + ' (sin informes vinculados)', motivo: mot }].concat(this.state.hist);
+    const hist = [{ when: this.nowStr(), by: this.user(), where: f.name + ' · versión ' + n, what: 'Eliminó la v' + n + ' (sin informes vinculados' + (this.cxOn() ? ' ni visitas en curso con esa versión' : '') + ')', motivo: mot }].concat(this.state.hist);
     this.setState({ forms, hist, modal: null, vmMot: '', vmErr: false, vn, dirty: false, step: null }, () => this.pubBase(f, n, 'eliminarVersion', mot, prev, 'Versión eliminada también en la base'));
     this.toast('Versión ' + n + ' eliminada'); }
   porQueNoRetirar(f, v) { const vg = this.vigente(f), prog = f.versions.find(x => x.estado === 'Programada');
     if (v.estado === 'Borrador') return 'Un borrador no se retira: descártalo';
     if (v.estado === 'Retirada') return 'Ya está retirada';
-    if (v.enCurso) return 'La usan ' + v.enCurso + (v.enCurso === 1 ? ' caso en curso' : ' casos en curso') + ': no se retira mientras sigan (conservan su versión)';
+    const ec = this.usoDe(f, v).casos; /* P-6f-0b · D-6: con la conexión, los casos con visitas en curso con esta versión */ if (ec) return 'La usan ' + ec + (ec === 1 ? ' caso en curso' : ' casos en curso') + ': no se retira mientras sigan (conservan su versión)';
     if (vg && v.n === vg.n && !prog) return 'Es la versión vigente: publica el borrador para reemplazarla';
     return ''; }
   descartar(fid, n, mot) { const prev = { forms: this.state.forms, hist: this.state.hist, vn: this.state.vn }, forms = this.clone(this.state.forms), f = forms.find(x => x.id === fid), vg = this.vigente(f);
@@ -1263,15 +1321,15 @@ class Component extends DCLogic {
         if (!vg) dis.baja = 'No hay una versión vigente';
         else if (!prog) dis.baja = 'Es la única versión vigente de ' + f.alcance + '. Publica otra antes de retirarla.';
         if (f.versions.length < 2) dis.comparar = 'Solo tiene una versión';
-        if (f.versions.some(v => v.estado !== 'Borrador' || v.informes)) dis.del = 'Tiene versiones publicadas. Usa Desactivar para retirar la vigente.';
+        { const why = this.porQueNoEliminarForm(f); if (why) dis.del = why; } // P-6f-0b · DEC-217: el primer motivo que lo impide
         return { id: f.id, ariaName: 'formulario ' + f.name, nombre: { label: f.name, sort: f.name }, tipo: f.tipo, objeto: f.tipoObjeto || '—', alcance: f.alcance,
           version: vg ? { label: 'Versión ' + vg.n, sort: vg.n, nowrap: true } : '', desde: vg ? { label: this.fmt(vg.desde), sort: vg.desde, nowrap: true } : '',
           mod: { label: this.fmt(lm.mod), sort: lm.mod, nowrap: true }, by: lm.by,
           estado: Object.assign({ label: est, tone: this.TONE[est], sort: est }, note ? { note, noteKind: 'none' } : {}),
           disabledActions: dis,
-          sub: f.versions.slice().sort((a, b) => b.n - a.n).map(v => ({ id: f.id + ':' + v.n, title: 'Versión ' + v.n, fecha: v.estado === 'Borrador' ? 'Sin publicar' : v.estado === 'Programada' ? 'Entra en vigencia el ' + this.fmt(v.desde) : 'Vigente desde ' + this.fmt(v.desde), inspector: 'Modificada el ' + this.fmt(v.mod) + ' por ' + v.by, estado: v.estado, tone: this.TONE[v.estado], nota: 'Informes con esta versión: ' + this.num(v.informes) })) };
+          sub: f.versions.slice().sort((a, b) => b.n - a.n).map(v => ({ id: f.id + ':' + v.n, title: 'Versión ' + v.n, fecha: v.estado === 'Borrador' ? 'Sin publicar' : v.estado === 'Programada' ? 'Entra en vigencia el ' + this.fmt(v.desde) : 'Vigente desde ' + this.fmt(v.desde), inspector: 'Modificada el ' + this.fmt(v.mod) + (v.by ? ' por ' + v.by : ''), estado: v.estado, tone: this.TONE[v.estado], nota: (() => { const u = this.usoDe(f, v); return 'Informes con esta versión: ' + this.num(u.informes) + (this.cxOn() ? ' · casos en curso: ' + this.num(u.casos) : ''); })() })) }; /* P-6f-0b · D-6 */
       }),
-      rowActions: [{ id: 'abrir', label: 'Editar', icon: 'edit' }, { id: 'nueva', label: 'Duplicar como nueva versión', path: this.ICON.copy, menu: true }, { id: 'comparar', label: 'Comparar versiones', path: this.ICON.cmp, menu: true }, { id: 'baja', label: 'Desactivar (retirar la vigente)', path: this.ICON.baja, menu: true }, { id: 'del', label: 'Eliminar', path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', menu: true, danger: true }],
+      rowActions: [{ id: 'abrir', label: 'Editar', icon: 'edit' }, { id: 'nueva', label: 'Duplicar como nueva versión', path: this.ICON.copy, menu: true }, { id: 'comparar', label: 'Comparar versiones', path: this.ICON.cmp, menu: true }, { id: 'baja', label: 'Desactivar (retirar la vigente)', path: this.ICON.baja, menu: true }].concat(this.esAdmin() ? [{ id: 'del', label: 'Eliminar formulario', path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', menu: true, danger: true }] : []), /* P-6f-0b · DEC-217: solo el Administrador */
       exp: st.exp, noun: ['formulario', 'formularios'],
       onExp: (id) => this.setState(s => ({ exp: s.exp.includes(id) ? s.exp.filter(x => x !== id) : s.exp.concat(id) })),
       onRowAction: (a, r) => {
@@ -1281,7 +1339,7 @@ class Component extends DCLogic {
         else if (a === 'nueva') this.newVersion(f.id);
         else if (a === 'comparar') { const ns = f.versions.map(v => v.n).sort((x, y) => x - y); this.setState({ fid: f.id, vn: ns[ns.length - 1], cmpA: String(ns[ns.length - 2]), cmpB: String(ns[ns.length - 1]), modal: { kind: 'cmp' } }); }
         else if (a === 'baja') this.setState({ fid: f.id, modal: { kind: 'baja' } });
-        else if (a === 'del') { const snap = this.clone(f), idx = st.forms.indexOf(f); this.setState({ forms: st.forms.filter(x => x.id !== f.id), hist: [{ when: this.nowStr(), by: this.user(), where: f.name, what: 'Eliminó el formulario «' + f.name + '» (solo tenía borrador)', motivo: '' }].concat(st.hist) }); this.toast('Formulario «' + f.name + '» eliminado', { label: 'Deshacer', run: () => this.setState(s => { const a2 = s.forms.slice(); a2.splice(idx, 0, snap); return { forms: a2, snack: '' }; }) }); }
+        else if (a === 'del') this.abrirEliminarForm(f); // P-6f-0b · DEC-217: con motivo y sin «Deshacer»
       },
       openNuevo: () => this.setState({ modal: { kind: 'nuevo' } }),
     };
@@ -1563,7 +1621,7 @@ class Component extends DCLogic {
     if (x.locked) notes.push('Bloqueado para el inspector');
     if (x.src.length && !x.vis) notes.push('Precarga: ' + x.src.join(' › '));
     if (x.nuevo && !x.src.length) notes.push('Sin precarga');
-    const opts = x.type === 'Sí/No' ? ['Sí', 'No'] : x.opts;
+    const opts = x.type === 'Sí/No' ? ['Sí', 'No'] : (x.opts || []); // P-6f-0b: un campo publicado sin opciones no rompe el editor
     return { key: x.key, label: x.label || 'Sin etiqueta', req: !!x.req.P, core: x.core, help: x.help, hasHelp: !!x.help,
       isInput: ['Texto', 'Número', 'Moneda'].includes(x.type), isFecha: x.type === 'Fecha', isStub: ['Texto', 'Número', 'Moneda', 'Fecha'].includes(x.type), fModo: /hora/i.test(x.key + ' ' + x.label) ? 'fechaHora' : 'fecha', isSelect: x.type === 'Catálogo', isChoice: choice, isGrid: x.type === 'Grilla', isCalc: x.type === 'Cálculo', isPhoto: x.type === 'Foto',
       ph: { Texto: 'Texto', Número: 'Número', Moneda: 'USD', Fecha: 'dd/mm/aaaa', Catálogo: 'Selecciona' }[x.type] || '', locked: x.locked,
@@ -1571,7 +1629,7 @@ class Component extends DCLogic {
       formula: x.formula ? '= ' + x.formula : 'Sin fórmula',
       // Etapa 8b · la vista previa captura la grilla con las validaciones de sus columnas (SiriusGrillaCaptura).
       grCampo: x.type === 'Grilla' ? { key: x.key, label: x.label, cols: x.cols || [], rows: x.rows || [], colsT: x.colsT || null, filas: x.filas || null } : null, grPre: this.prefijoForm(), grId: 'pv-cap-' + String(x.key).replace(/\W+/g, ''),
-      cols: x.cols.map(c => ({ l: c })), rows: (x.rows.length ? x.rows : ['']).map(r => ({ first: r || ' ', cells: x.cols.slice(1).map(() => ({})) })), hasFoot: !!x.foot, foot: x.foot, gridNote: x.rows.length ? 'Filas fijas' : 'El inspector agrega filas',
+      cols: (x.cols || []).map(c => ({ l: c })), rows: ((x.rows || []).length ? x.rows : ['']).map(r => ({ first: r || ' ', cells: (x.cols || []).slice(1).map(() => ({})) })), hasFoot: !!x.foot, foot: x.foot, gridNote: (x.rows || []).length ? 'Filas fijas' : 'El inspector agrega filas', /* P-6f-0b: una grilla publicada sin columnas o filas no rompe el editor */
       span: x.type === 'Grilla' ? '1 / -1' : 'auto',
       border: selected ? 'var(--color-brand)' : 'var(--border-subtle)', bg: selected ? 'var(--color-brand-wash)' : '#FFFFFF', pressed: selected ? 'true' : 'false',
       hasNote: notes.length > 0, note: notes.slice(0, 2).join(' · '),
@@ -1601,14 +1659,15 @@ class Component extends DCLogic {
     const cur = v.secs.find(s => s.id === st.sec) || v.secs[0];
     const roText = v.estado === 'Vigente' ? 'Esta versión está vigente y no se puede editar. Para hacer cambios, crea una nueva versión: se duplicará como borrador.'
       : v.estado === 'Programada' ? 'Versión programada: entra en vigencia el ' + this.fmt(v.desde) + '. Ese día, la versión vigente pasa a Retirada automáticamente.'
-      : 'Versión retirada: ya no la usan la app ni los portales. Se conserva para consultar los ' + this.num(v.informes) + ' informes creados con ella; los casos en curso que la usan la conservan.';
+      : 'Versión retirada: ya no la usan la app ni los portales. Se conserva para consultar los ' + this.num(this.usoDe(f, v).informes) + ' informes creados con ella; los casos en curso que la usan la conservan.';
     const ed = {
       name: f.name, crumb: f.name + ' · versión ' + v.n, tipo: f.tipo, alcance: f.alcance, estado: v.estado, tone: this.TONE[v.estado], vn: String(v.n),
       verOpts: f.versions.map(x => ({ v: String(x.n), l: 'Versión ' + x.n + ' · ' + x.estado })),
       onVer: (e) => this.openVersion(f.id, Number(e.target.value)),
       desdeTxt: v.estado === 'Borrador' ? 'Sin publicar' : v.estado === 'Programada' ? 'Entra en vigencia el ' + this.fmt(v.desde) : v.estado === 'Vigente' ? 'Vigente desde ' + this.fmt(v.desde) : 'Estuvo vigente desde ' + this.fmt(v.desde) + (v.retiradaEl ? ' · retirada el ' + this.fmt(v.retiradaEl) : ''),
-      informes: this.num(v.informes),
-      savedTxt: ro ? 'Modificada el ' + this.fmt(v.mod) + ' por ' + v.by : st.dirty ? 'Cambios sin guardar' : st.saved ? 'Guardado a las ' + st.saved : 'Modificada el ' + this.fmt(v.mod) + ' por ' + v.by,
+      informes: this.num(this.usoDe(f, v).informes), /* P-6f-0b · D-6 */
+      delF: (() => { const why = this.porQueNoEliminarForm(f); return { show: this.esAdmin(), dis: why ? 'true' : 'false', why: why || 'Elimina el formulario con todas sus versiones', cur: why ? 'not-allowed' : 'pointer', color: why ? 'var(--neutral-400)' : 'var(--color-danger)', bd: why ? 'var(--border-subtle)' : 'var(--color-danger)', on: () => this.abrirEliminarForm(f) }; })(),
+      savedTxt: ro ? 'Modificada el ' + this.fmt(v.mod) + (v.by ? ' por ' + v.by : '') : st.dirty ? 'Cambios sin guardar' : st.saved ? 'Guardado a las ' + st.saved : 'Modificada el ' + this.fmt(v.mod) + (v.by ? ' por ' + v.by : ''),
       savedColor: !ro && st.dirty ? 'var(--color-warning)' : 'var(--text-muted)',
       isDraft: !ro, isRO: ro, roWhy: ro ? this.roWhyOf(v) : undefined, roText, canNew: v.estado === 'Vigente' || v.estado === 'Retirada', hasCmp: f.versions.length > 1,
       goList: () => this.setState({ view: 'list', modal: null }),
@@ -1620,7 +1679,7 @@ class Component extends DCLogic {
         rows: f.versions.slice().sort((a, b) => b.n - a.n).map(x => { const why = this.porQueNoRetirar(f, x), noEl = this.porQueNoEliminar(f, x);
           return { n: String(x.n), titulo: 'Versión ' + x.n, abierta: x.n === v.n, estado: x.estado, tone: this.TONE[x.estado],
             fecha: x.estado === 'Borrador' ? 'Sin publicar · modificada el ' + this.fmt(x.mod) : x.estado === 'Programada' ? 'Entra en vigencia el ' + this.fmt(x.vigenteDesde || x.desde) : x.estado === 'Vigente' ? 'Vigente desde ' + this.fmt(x.vigenteDesde || x.desde) : 'Estuvo vigente desde ' + this.fmt(x.vigenteDesde || x.desde) + (x.retiradaEl ? ' · retirada el ' + this.fmt(x.retiradaEl) : ''),
-            motivo: x.estado === 'Borrador' ? 'Sin publicar: el motivo se escribe al publicar' + ((x.log || []).length ? ' · ' + x.log.length + ((x.log || []).length === 1 ? ' cambio pendiente' : ' cambios pendientes') : '') : x.motivo ? 'Motivo: ' + x.motivo : 'Sin motivo registrado', uso: 'Informes: ' + this.num(x.informes || 0) + ' · casos en curso: ' + (x.enCurso || 0),
+            motivo: x.estado === 'Borrador' ? 'Sin publicar: el motivo se escribe al publicar' + ((x.log || []).length ? ' · ' + x.log.length + ((x.log || []).length === 1 ? ' cambio pendiente' : ' cambios pendientes') : '') : x.motivo ? 'Motivo: ' + x.motivo : 'Sin motivo registrado', uso: (() => { const u = this.usoDe(f, x); return 'Uso: Informes ' + this.num(u.informes) + ' · casos en curso ' + this.num(u.casos); })(), /* P-6f-0b · D-6 */
             abrir: () => this.openVersion(f.id, x.n),
             acciones: x.estado === 'Borrador' ? [{ k: 'p', l: 'Publicar versión', variant: 'primary', on: () => { this.openVersion(f.id, x.n); this.setState({ modal: { kind: 'pub' }, pub: { when: 'hoy', date: '' } }); } }, { k: 'd', l: 'Descartar borrador', variant: 'secondary', on: () => this.setState({ modal: { kind: 'desc', n: x.n }, vmMot: '', vmErr: false }) }]
               : [{ k: 'r', l: 'Retirar versión', variant: 'secondary', why: why || undefined, on: () => { if (why) return; this.setState({ modal: { kind: 'ret', n: x.n }, vmMot: '', vmErr: false }); } },
@@ -1905,14 +1964,23 @@ class Component extends DCLogic {
   modalVals() {
     const st = this.state, m = st.modal || {}, close = () => this.setState({ modal: null, reason: '', reasonErr: false });
     const f = this.form(), v = this.ver();
-    const out = { closeModal: close, vm: { open: false }, wm: { open: false }, cmp: { open: false }, pub: { open: false }, nf: { open: false }, bj: { open: false }, nm: { open: false }, rl: { open: false }, qm: { open: false }, et: { open: false } };
+    const out = { closeModal: close, fd: { open: false, vers: [] }, vm: { open: false }, wm: { open: false }, cmp: { open: false }, pub: { open: false }, nf: { open: false }, bj: { open: false }, nm: { open: false }, rl: { open: false }, qm: { open: false }, et: { open: false } };
     const MN = {}; this.mods().forEach(x => { MN[x.id] = x; });
     if ((m.kind === 'desc' || m.kind === 'ret' || m.kind === 'del') && f) { const x = f.versions.find(y => y.n === m.n) || {}, des = m.kind === 'desc', eli = m.kind === 'del', mot = st.vmMot || ''; /* C2-12 · P-6e-1c: «del» elimina una versión retirada sin informes */
       const ok = () => { const t = String(mot).trim(); if (!t) { this.setState({ vmErr: true }); setTimeout(() => { const el = document.getElementById('vm-mot'); if (el) el.focus(); }, 30); return; } if (des) this.descartar(f.id, m.n, t); else if (eli) this.eliminar(f.id, m.n, t); else this.retirar(f.id, m.n, t); };
       out.vm = { open: true, title: (des ? 'Descartar el borrador de la versión ' : eli ? 'Eliminar la versión ' : 'Retirar la versión ') + m.n + ' de ' + f.name,
-        desc: eli ? (() => { const I = this.informesDe(f, x); return 'Se quita la versión ' + m.n + ' de «' + f.name + '». Se revisaron ' + this.num(I.rev) + (I.rev === 1 ? ' informe' : ' informes') + ' de la plantilla: ' + this.num(I.n) + ' vinculados a esta versión. El número ' + m.n + ' no se vuelve a usar: la siguiente versión nueva será la ' + this.nSig(f) + '. Esto no se puede deshacer.'; })() : des ? 'El borrador se elimina con sus cambios sin publicar. No lo usó ningún caso; la versión vigente no cambia.' : 'La versión queda «Retirada»: la app y los portales no la usan y no se elimina; los ' + this.num(x.informes || 0) + ' informes creados con ella la conservan.',
+        desc: eli ? (() => { const I = this.informesDe(f, x), U = this.usoDe(f, x); return 'Se quita la versión ' + m.n + ' de «' + f.name + '». Se revisaron ' + this.num(I.rev) + (I.rev === 1 ? ' informe' : ' informes') + ' de la plantilla: ' + this.num(I.n) + ' vinculados a esta versión.' + (this.cxOn() ? ' Se revisaron ' + this.num(U.visRev) + (U.visRev === 1 ? ' visita en curso' : ' visitas en curso') + ' de la plantilla: ' + this.num(U.enCurso) + ' con esta versión.' : '') + ' El número ' + m.n + ' no se vuelve a usar: la siguiente versión nueva será la ' + this.nSig(f) + '. Esto no se puede deshacer.'; })() : des ? 'El borrador se elimina con sus cambios sin publicar. No lo usó ningún caso; la versión vigente no cambia.' : 'La versión queda «Retirada»: la app y los portales no la usan y no se elimina; los ' + this.num(this.usoDe(f, x).informes) + ' informes creados con ella la conservan.',
+        aviso: eli && this.cxOn() ? (() => { const k = this.usoDe(f, x).sinVersion; return k ? this.num(k) + (k === 1 ? ' visita en curso sin versión registrada: empezó antes de que la base guardara la versión, así que no bloquea. Revisa con Coordinación qué versión usa antes de eliminar.' : ' visitas en curso sin versión registrada: empezaron antes de que la base guardara la versión, así que no bloquean. Revisa con Coordinación qué versión usan antes de eliminar.') : ''; })() : '',
         mot, onMot: (e) => this.setState({ vmMot: e.target.value, vmErr: false }), err: !!st.vmErr, inv: st.vmErr ? 'true' : 'false',
         footer: this.footer(this.btn('Cancelar', 'ghost', close), this.btn(des ? 'Descartar borrador' : eli ? 'Eliminar versión' : 'Retirar versión', 'primary', ok)) }; }
+    if (m.kind === 'delf') { const fx = st.forms.find(y => y.id === m.fid); if (fx) { const mot = st.fdMot || '', ok10 = mot.trim().length >= 10, I = fx.versions.length ? this.informesDe(fx, fx.versions[0]) : { rev: 0 }, nInf = fx.versions.reduce((t, y) => t + this.informesDe(fx, y).n, 0), ca = this.casosActivos(fx).length, refs = this.refsForm(fx);
+      const nCasos = this.cxOn() ? ((window.SIRIUS_CONEXION.casos) || []).filter(c => c && !this.esFinal(c.estado)).length : ca; /* P-6f-0b · DEC-217 */
+      out.fd = { open: true, id: fx.id, title: 'Eliminar el formulario «' + fx.name + '»', nombre: fx.name, vers: fx.versions.slice().sort((a, b) => a.n - b.n).map(y => ({ n: String(y.n), estado: y.estado })),
+        revInf: (I.rev === 1 ? 'Se revisó 1 informe' : 'Se revisaron ' + this.num(I.rev) + ' informes') + ' de la plantilla: ' + this.num(nInf) + ' vinculados.',
+        revCasos: this.cxOn() ? (nCasos === 1 ? 'Se revisó 1 caso activo' : 'Se revisaron ' + this.num(nCasos) + ' casos activos') + ' de la base: ' + this.num(ca) + ' usan la plantilla.' : 'Casos activos que la usan: ' + this.num(ca) + '.',
+        revCfg: refs.length ? refs[0] : 'Ninguna configuración publicada la nombra (reglas de completado, criterios de autoinspección, documentos del cliente, controles, documentos PDF y reglas de llenado).',
+        mot, onMot: (e) => this.setState({ fdMot: e.target.value }), hint: ok10 ? 'Queda en el historial de Formularios.' : 'Mínimo 10 caracteres (' + mot.trim().length + ' de 10).', hColor: ok10 ? 'var(--text-muted)' : 'var(--text-muted)',
+        footer: this.footer(this.btn('Cancelar', 'ghost', close), this.btn('Eliminar formulario', 'primary', () => { if (ok10) this.eliminarForm(fx.id, mot.trim()); }, !ok10)) }; } }
     if (m.kind === 'nm') { const n = st.nm, set = (o) => this.setState({ nm: Object.assign({}, n, o) });
       const prefErr = (pf) => !pf ? 'Escribe el prefijo.' : !/^rg_[a-z0-9]+_$/.test(pf) ? 'Formato rg_xxx_: minúsculas, sin espacios, termina en guion bajo.' : this.mods().some(x => x.prefijo === pf) ? 'Ya lo usa el módulo ' + this.mods().find(x => x.prefijo === pf).nombre + '.' : '';
       const create = () => { const name = n.name.trim(), pf = (n.pref || '').trim(); if (!name) { set({ err: 'Escribe el nombre del módulo.' }); return; } if (this.mods().some(x => x.nombre.toLowerCase() === name.toLowerCase())) { set({ err: 'Ya existe un módulo con ese nombre.' }); return; } const pe = prefErr(pf); if (pe) { set({ prefErr: pe }); return; }

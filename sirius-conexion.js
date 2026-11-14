@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 13/11/2026 · P-6f-0b · DEC-217: casos[].visitasBase[].plantilla = { nombre, version } (versión con que empezó la visita; null si no empezó o es anterior al SQL 36).
 // 13/11/2026 · P-6f-0: cada caso trae tipoRiesgo según su grupo de ramo (Vehículos o Ramos Generales).
 // 13/11/2026 · P-6f-0: SIRIUS_CATALOGOS se aplica en la forma del archivo de datos (listas de texto; noaseg, noinsp y verif con su clave del archivo).
 // 13/11/2026 · P-6f-0: los riesgos de cada caso llegan en orden fijo (creación y descripción).
@@ -144,7 +145,8 @@
       var ens = (v.enlaces || []).filter(function (e) { return ['Vencido','Invalidado','Revocado'].indexOf(e.estado) < 0; }).map(function (e) {
         return { tipo: e.tipo || 'Autoagendamiento', estado: e.estado, vence: isoLocal(e.vence), url: (e.tipo === 'Autoinspección' ? 'https://davidmena-beep.github.io/autoinspecciones_v1/?t=' : 'https://davidmena-beep.github.io/Autoagendamiento/?t=') + e.token }; });
       return { n: i + 1, modalidad: v.modalidad || '', estado: v.estado || '', inicio: isoLocal(v.inicio), fin: isoLocal(v.fin), agendadoEn: isoLocal(v.agendado_en), origen: v.origen || '',
-               inspector: v.inspector ? v.inspector.nombre : '', enlace: ens[0] || null, enlaces: ens }; });
+               inspector: v.inspector ? v.inspector.nombre : '', enlace: ens[0] || null, enlaces: ens,
+               plantilla: v.plantilla && v.plantilla.nombre ? { nombre: v.plantilla.nombre, version: v.plantilla.version == null ? null : v.plantilla.version } : null }; });   // P-6f-0b · DEC-217 (SQL 36)
     if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
       if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), detalle: r.descripcion || '', estado: k.estado, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
@@ -202,7 +204,7 @@
 
   function cargarCasos() {
     return Promise.all([
-      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
+      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora')
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
