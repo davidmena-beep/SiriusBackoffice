@@ -1,4 +1,4 @@
-// SIRIUS · Ciudades y zonas (v1.0 · etapa G-2a · DEC-221 y DEC-234 · 18/10/2026).
+// SIRIUS · Ciudades y zonas (v1.1 · etapa G-2a · DEC-221 y DEC-234; G-2a2 · DEC-235: eliminar zonas y contador de ids · 18/10/2026).
 // Ciudades: los cantones del INEC (window.SIRIUS_GEOGRAFIA, datos-geografia.js, solo lectura; más adelante se conectan al catálogo CANTON de gobernanza).
 // Zonas: puntos de atención que define Aseguradora del Sur, solo en las ciudades que las tienen (window.SIRIUS_ZONAS, datos-zonas.js).
 // Regla de asignación (toda la ciudad queda cubierta):
@@ -55,7 +55,9 @@
   // ---------- zonas: publicado y copia de trabajo ----------
   let PUB = null, TRAB = null, CAMB = {}, HIST = [], VER_FECHA = 'datos iniciales';
   const fuente = () => W.SIRIUS_ZONAS || { version: '1', ciudades: {} };
-  const iniciar = () => { if (PUB) return; PUB = clon(fuente()); if (!PUB.ciudades) PUB.ciudades = {}; TRAB = clon(PUB);
+  // Etapa G-2a2 · DEC-235: cada ciudad lleva el contador del siguiente id (siguienteId); los ids de las zonas eliminadas no se reutilizan.
+  const sigDe = (cod, cz) => { let mx = 0; (cz.zonas || []).forEach((x) => { const m = String(x.id).match(/-(\d+)$/); if (m) mx = Math.max(mx, +m[1]); }); return Math.max(Number(cz.siguienteId) || 0, mx + 1); };
+  const iniciar = () => { if (PUB) return; PUB = clon(fuente()); if (!PUB.ciudades) PUB.ciudades = {}; Object.keys(PUB.ciudades).forEach((c) => { PUB.ciudades[c].siguienteId = sigDe(c, PUB.ciudades[c]); }); TRAB = clon(PUB);
     HIST = [{ version: Number(PUB.version) || 1, fecha: VER_FECHA, por: 'Asesoría', ciudad: '', motivo: 'Zonas iniciales de Quito, Guayaquil y Cuenca · ' + (PUB.vigencia || 'demostración') + '.', cambios: [], estado: 'Publicada' }]; };
   S.version = () => { iniciar(); return Number(PUB.version) || 1; };
   S.fechaVersion = () => { iniciar(); return VER_FECHA; };
@@ -75,7 +77,14 @@
   S.nCambios = (cod) => (CAMB[cod] || []).length;
   S.hayCambios = () => Object.keys(CAMB).some((c) => CAMB[c].length);
   S.descartar = (cod) => { iniciar(); if (PUB.ciudades[cod]) TRAB.ciudades[cod] = clon(PUB.ciudades[cod]); else delete TRAB.ciudades[cod]; CAMB[cod] = []; avisar(); };
-  S.nuevoId = (cod) => { const z = S.tocar(cod), usados = z.zonas.map((x) => x.id); let n = z.zonas.length + 1; while (usados.indexOf('z' + cod + '-' + n) >= 0) n++; return 'z' + cod + '-' + n; };
+  S.nuevoId = (cod) => { const z = S.tocar(cod), n = sigDe(cod, z); z.siguienteId = n + 1; return 'z' + cod + '-' + n; }; // usa y avanza el contador de la ciudad
+  S.siguienteId = (cod) => { iniciar(); const z = TRAB.ciudades[cod]; return z ? sigDe(cod, z) : 1; };
+  // Eliminar (DEC-235): sale de la copia de trabajo; al publicar, sale de SIRIUS_ZONAS. Devuelve una función para deshacer (mientras no se publique).
+  S.eliminar = (cod, id, afectados) => { const z = S.tocar(cod), pos = z.zonas.findIndex((x) => x.id === id); if (pos < 0) return null; const x = z.zonas[pos], camb = clon(CAMB[cod] || []), pz = S.publicadasDe(cod), publicada = !!(pz && pz.zonas.some((y) => y.id === id));
+    z.zonas.splice(pos, 1); CAMB[cod] = (CAMB[cod] || []).filter((c) => !c.k || !/:/.test(c.k) || c.k.split(':')[1] !== id);
+    if (publicada) S.registrar(cod, 'Eliminó la zona ' + x.nombre + (afectados && afectados.length ? ' (se quita de la cobertura de ' + S.lista(afectados) + ')' : ''), 'elim:' + id); else avisar();
+    return () => { const z2 = S.tocar(cod); if (!z2.zonas.some((y) => y.id === id)) z2.zonas.splice(Math.min(pos, z2.zonas.length), 0, x); CAMB[cod] = camb; avisar(); }; };
+  S.lista = (a) => { a = a.slice(); if (a.length <= 1) return a.join(''); const u = a.pop(); return a.join(', ') + ' y ' + u; };
   S.nombreRepetido = (cod, nombre, salvoId) => { const z = S.zonasDe(cod), v = S.norm(nombre); return !!(z && v && z.zonas.some((y) => y.id !== salvoId && S.norm(y.nombre) === v)); };
   // ---------- asignación ----------
   S.zonaDe = (cod, pt) => { iniciar(); const z = PUB_O_TRAB(cod);
@@ -114,14 +123,16 @@
     if (!L.length) return Promise.resolve({ ok: false, validacion: true, mensaje: 'No hay cambios para publicar.' });
     if (mot.length < 10) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Escribe el motivo (mínimo 10 caracteres).' });
     const antes = { pub: clon(PUB), camb: clon(CAMB[cod]), fecha: VER_FECHA }, version = S.version() + 1, ciudad = S.ciudad(cod);
-    const nuevo = clon(PUB); nuevo.version = String(version); if (TRAB.ciudades[cod] && TRAB.ciudades[cod].zonas.length) nuevo.ciudades[cod] = clon(TRAB.ciudades[cod]); else delete nuevo.ciudades[cod];
+    const nuevo = clon(PUB); nuevo.version = String(version); if (TRAB.ciudades[cod] && (TRAB.ciudades[cod].zonas.length || PUB.ciudades[cod])) nuevo.ciudades[cod] = clon(TRAB.ciudades[cod]); else delete nuevo.ciudades[cod]; /* G-2a2: la ciudad que se queda sin zonas conserva su contador de ids */
+    const quitadas = PUB.ciudades[cod] ? PUB.ciudades[cod].zonas.map((x) => x.id).filter((id) => !(nuevo.ciudades[cod] && nuevo.ciudades[cod].zonas.some((y) => y.id === id))) : [];
+    const sacarDeCoberturas = () => { const C = W.SiriusCobertura; if (C && C.quitarZonas && quitadas.length) C.quitarZonas(cod, quitadas); };
     const fecha = ahora(), reg = { version, fecha, por: por || '', ciudad: cod, ciudadNombre: ciudad ? ciudad.nombre : cod, motivo: mot, cambios: L.map((x) => x.t), estado: 'Publicada en la sesión' };
     PUB = nuevo; VER_FECHA = fecha; CAMB[cod] = []; HIST.unshift(reg); if (W.SIRIUS_ZONAS) { W.SIRIUS_ZONAS.version = nuevo.version; W.SIRIUS_ZONAS.ciudades = clon(nuevo.ciudades); } avisar();
-    const SP = W.SiriusPublicar; if (!SP || !SP.activo || !SP.activo()) return Promise.resolve({ ok: true, local: true, version });
+    const SP = W.SiriusPublicar; if (!SP || !SP.activo || !SP.activo()) { sacarDeCoberturas(); return Promise.resolve({ ok: true, local: true, version }); }
     return SP.publicar({ clave: 'SIRIUS_ZONAS', version, datos: clon(nuevo), motivo: mot, pantalla: 'Administración › Ciudades y zonas · ' + reg.ciudadNombre,
       aviso: 'Publicado: las zonas de ' + reg.ciudadNombre + ' se usan desde ya en Coordinación, las ofertas y el portal.',
       revertir: () => { PUB = antes.pub; VER_FECHA = antes.fecha; CAMB[cod] = antes.camb; const i = HIST.indexOf(reg); if (i >= 0) HIST.splice(i, 1); if (W.SIRIUS_ZONAS) { W.SIRIUS_ZONAS.version = PUB.version; W.SIRIUS_ZONAS.ciudades = clon(PUB.ciudades); } avisar(); },
-      alPublicar: (info) => { reg.estado = 'Publicada en la base'; if (info && info.fecha) reg.fechaBase = info.fecha; avisar(); } })
+      alPublicar: (info) => { sacarDeCoberturas(); reg.estado = 'Publicada en la base'; if (info && info.fecha) reg.fechaBase = info.fecha; avisar(); } })
       .then((r) => (r && r.ok === false ? r : Object.assign({}, r, { ok: true, version }))); };
   S.reset = () => { PUB = null; TRAB = null; CAMB = {}; HIST = []; VER_FECHA = 'datos iniciales'; avisar(); };
   W.SiriusZonas = S;

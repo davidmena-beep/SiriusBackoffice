@@ -75,7 +75,7 @@
     return c.ciudades.length ? c.ciudades.map((x) => ciudadTxt(x, false)).join(' · ') : 'Sin ciudades'; };
   // Quita las zonas eliminadas (su id ya no existe en SIRIUS_ZONAS); se aplica al guardar.
   S.limpiar = (c) => { c = S.normalizar(c); if (c.modo !== 'ciudad') return { modo: c.modo, sucursales: c.modo === 'sucursales' ? c.sucursales : [], ciudades: [] };
-    return { modo: 'ciudad', sucursales: [], ciudades: c.ciudades.map((x) => ({ cod: x.cod, zonas: x.zonas.filter((id) => zonasCiudad(x.cod).some((z) => z.id === id)) })) }; };
+    return { modo: 'ciudad', sucursales: [], ciudades: c.ciudades.map((x) => ({ cod: x.cod, zonas: x.zonas.filter((id) => zonasCiudad(x.cod).some((z) => z.id === id)), antes: x.zonas.length })).filter((x) => !(x.antes && !x.zonas.length)).map((x) => ({ cod: x.cod, zonas: x.zonas })) }; }; // G-2a2: si todas sus zonas de una ciudad se eliminaron, la ciudad sale (zonas vacías sería «toda la ciudad»)
   S.igual = (a, b) => JSON.stringify(S.limpiar(a)) === JSON.stringify(S.limpiar(b));
   // Guarda la cobertura (motivo de 10 caracteres o más). o = { nombre, email?, cobertura, motivo, por }. Con la conexión y el correo del usuario de la base,
   // editarUsuario { email, cambios: { cobertura }, motivo }; con { ok: false } vuelve atrás. Sin la conexión, queda en la sesión y en el historial del usuario.
@@ -96,7 +96,17 @@
     if (e === 'cobertura' || e === 'coberturalectura') S.ed['Mauricio Endara'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] };
     if (e === 'coberturazonainactiva') { const SZ = Z(); if (SZ && SZ.tocar) { const cz = SZ.tocar('1701'), x = cz.zonas.find((y) => y.id === 'z1701-5'); if (x && x.estado !== 'Inactiva') { x.estado = 'Inactiva'; SZ.registrar('1701', 'Desactivó ' + x.nombre, 'est:' + x.id); SZ.publicar('1701', 'Escena: zona fuera de servicio por obras en la vía.', 'Escena de demostración'); } }
       S.ed['Sofía Arteaga'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-5'] }, { cod: '0101', zonas: ['z0101-2', 'z0101-9'] }] }; }
+    if (e === 'zonaseliminar') { S.ed['Mauricio Endara'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] }; S.ed['Diana Cárdenas'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-2', 'z1701-3'] }] }; }
     avisar(); };
+  // Etapa G-2a2 · DEC-235: a quién afecta eliminar una zona y cómo sale de las coberturas al publicar.
+  S.inspectores = () => { const out = [], add = (n) => { if (n && out.indexOf(n) < 0) out.push(n); }, A = W.SIRIUS_AGENDA || {};
+    Object.keys(S.ed).forEach(add); (A.disponibilidad || []).forEach((x) => add(x.inspector)); (A.red || []).forEach((x) => add(x.inspector));
+    const SU = W.SiriusUsuarios; if (SU && SU.usuarios) (SU.usuarios() || []).forEach((u) => { if ((u.roles || []).some((r) => (SU.base ? SU.base(r) : r) === 'Inspector')) add(u.nombre); });
+    const B = UB(); if (B && B.activo && B.activo()) B.lista().forEach((u) => { if (B.esInspector(u.roles)) add(u.nombre); });
+    const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) C.inspectores.forEach((i) => add(i && i.nombre)); return out; };
+  S.conZona = (cod, id) => S.inspectores().filter((n) => { const c = S.de(n); return c.modo === 'ciudad' && c.ciudades.some((x) => x.cod === String(cod) && x.zonas.indexOf(id) >= 0); });
+  // Al publicar la eliminación: se quita de las coberturas guardadas en la sesión (las de la base las actualiza la base).
+  S.quitarZonas = (cod, ids) => { let n = 0; Object.keys(S.ed).forEach((k) => { const c = S.normalizar(S.ed[k]); c.ciudades.forEach((x) => { if (x.cod === String(cod)) { const a = x.zonas.length; x.zonas = x.zonas.filter((id) => ids.indexOf(id) < 0); n += a - x.zonas.length; x.vacia = a > 0 && !x.zonas.length; } }); c.ciudades = c.ciudades.filter((x) => !x.vacia).map((x) => ({ cod: x.cod, zonas: x.zonas })); S.ed[k] = c; }); /* si se queda sin zonas en esa ciudad, la ciudad sale (zonas vacías sería «toda la ciudad») */ if (n) avisar(); return n; };
   S.reset = () => { S.ed = {}; S.hist = []; avisar(); };
 
   // ---------- Editor (React): la sección «Cobertura» de la ficha del inspector ----------

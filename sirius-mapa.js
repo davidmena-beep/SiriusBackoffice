@@ -20,7 +20,7 @@
       '.smapa.dibujando,.smapa.dibujando .leaflet-grab,.smapa.dibujando .leaflet-interactive,.smapa.dibujando .leaflet-marker-icon{cursor:crosshair!important}' +
       '.smapa-et{display:inline-block;background:#fff;border-radius:6px;padding:2px 6px;font:700 12px/1.3 var(--font-brand),sans-serif;color:var(--text-strong,#011E41);box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap}' +
       '.smapa-et.grande{font-size:13.5px;box-shadow:0 0 0 2px var(--color-brand,#00AEEF)}' +
-      '.smapa-nota{position:absolute;right:8px;bottom:22px;z-index:900;pointer-events:none;background:rgba(255,255,255,.92);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text-muted,#6B6B6B);box-shadow:0 1px 3px rgba(0,0,0,.15)}';
+      '.smapa-nota.arriba{top:8px;bottom:auto}.smapa-nota{position:absolute;right:8px;bottom:22px;z-index:900;pointer-events:none;background:rgba(255,255,255,.92);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text-muted,#6B6B6B);box-shadow:0 1px 3px rgba(0,0,0,.15)}';
     document.head.appendChild(s); };
   M.pin = (color, txt, grande) => W.L.divIcon({ className: '', iconSize: [0, 0], iconAnchor: [0, 0],
     html: '<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)"><span class="smapa-et' + (grande ? ' grande' : '') + '">' + esc(txt) + '</span><svg width="' + (grande ? 28 : 22) + '" height="' + (grande ? 38 : 30) + '" viewBox="0 0 22 30" aria-hidden="true"><path d="M11 29s9-10.5 9-17A9 9 0 1 0 2 12c0 6.5 9 17 9 17Z" fill="' + esc(color) + '" stroke="#fff" stroke-width="2"/><circle cx="11" cy="12" r="3.5" fill="#fff"/></svg></div>' });
@@ -30,7 +30,7 @@
     if (o.radios && cz && cz.radio) act.forEach((x) => L.circle(x.punto, { radius: cz.radio * 1000, color: col(x), weight: 1.5, dashArray: '6 6', fillColor: col(x), fillOpacity: 0.04, interactive: false }).addTo(capa)); };
   M.crear = (el, o) => { o = o || {}; const L = W.L; if (!L || !el) return null; ponerEstilo(); el.classList.add('smapa');
     const map = L.map(el, { zoomControl: true, attributionControl: true }).setView(o.centro || [-1.5, -78.5], o.zoom || 11);
-    const nota = document.createElement('div'); nota.className = 'smapa-nota'; nota.textContent = NOTA; nota.hidden = true; nota.setAttribute('role', 'note'); el.appendChild(nota);
+    const nota = document.createElement('div'); nota.className = 'smapa-nota' + (o.notaArriba ? ' arriba' : ''); /* G-2a2: la nota puede ir arriba a la derecha */ nota.textContent = NOTA; nota.hidden = true; nota.setAttribute('role', 'note'); el.appendChild(nota);
     let k = 0, fallas = 0, cargadas = 0, base = null, sin = false, reloj = null;
     const marcarSin = () => { if (sin || cargadas) return; sin = true; nota.hidden = false; if (base) { map.removeLayer(base); base = null; } };
     const poner = () => { if (base) map.removeLayer(base); fallas = 0; base = L.tileLayer(M.BASES[k].url, M.BASES[k].o).addTo(map); base.bringToBack();

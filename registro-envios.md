@@ -4,6 +4,115 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2a2
+
+Publiqué la etapa G-2a2 (Versión 214 con los archivos; la Versión 215 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Rehice «Ciudades y zonas» con la disposición de la maqueta G-1b, adaptada al sistema de diseño y con los íconos del proyecto (DEC-235): el mapa ocupa todo el espacio libre y queda un solo panel a la derecha, ajustable y contraíble. Ahora también se pueden eliminar zonas.
+
+**Qué cambió**
+- **Disposición:** el mapa ocupa todo el espacio libre y a la derecha queda un solo panel; ya no está la columna de ciudades.
+  - **Cabecera:** la ciudad en una lista desplegable con búsqueda (nombre de uso común, oficial o provincia), «Con zonas / Todas», «N zonas» o «Sin publicar» en cada ciudad y, dentro de la lista, la fuente del INEC 2026. Se abre con clic o Enter y se cierra con Esc o con un clic fuera. Debajo van los chips del resumen y dos botones: Historial y Contraer.
+  - **Cuerpo con desplazamiento:** «Agregar zona», las tarjetas y las inactivas plegadas.
+  - **Pie fijo, siempre a la vista:** sin cambios, «Publicado · versión N · fecha» e «Historial (N)». Con cambios: «Ver cambios», el motivo y «Publicar».
+- **Panel ajustable y contraíble:**
+  - El tirador del borde izquierdo cambia el ancho entre 300 y 560 px, con el mouse o con las flechas cuando tiene el foco (Inicio y Fin van al mínimo y al máximo).
+  - «Contraer», Enter o doble clic en el tirador dejan un riel con la ciudad, el número de zonas, los cambios sin publicar y «Expandir».
+  - El ancho y el estado se recuerdan durante la sesión, y el mapa se reajusta.
+- **Barra de dibujo abajo al centro del mapa:**
+  - Al dibujar un área: «Área de X · N puntos», la ayuda corta, el error del borde cruzado, «Cerrar área», «Deshacer» y «Cancelar».
+  - Al agregar: «Nueva zona X · clic en el mapa donde está su centro» y «Cancelar».
+  - Mientras se dibuja o se agrega se ocultan las otras barras.
+- **«Probar una dirección»:** barra compacta abajo a la izquierda.
+  - Texto libre con «Buscar», sugerencias mientras se escribe (flechas y Enter eligen) y «✕» para limpiar; un clic en el mapa también prueba ese punto.
+  - Sin resultado: «Zona por confirmar · «texto» no se pudo ubicar. Marca el punto en el mapa.».
+  - Elegir una dirección de otra ciudad cambia la ciudad.
+- **`SiriusUbicacion` (`sirius-ubicacion.js`, nuevo):**
+  - `buscar(texto, codCiudad)` devuelve una promesa de `[{ texto, ciudad, punto }]`.
+  - Usa `SIRIUS_CONEXION.buscarDireccion` si existe; si no, un diccionario con las 8 direcciones de G-2a y 8 de la maqueta (La Carolina, El Inca, Quitumbe, Carcelén, Calderón, Tumbaco, Malecón 2000 y Parque Calderón).
+- **«Ajustes de la ciudad»:** caja compacta abajo a la derecha con el radio y «Ver radios». Solo aparece si la ciudad tiene zonas, y es de solo lectura para quien no es Administrador.
+- **Historial:** un cajón que se abre sobre el mapa desde la derecha, con cada versión (número, fecha, quién, motivo y cambios). Se cierra con Esc o «Cerrar» y ya no ocupa el cuerpo del panel.
+- **Eliminar zona** (solo el Administrador):
+  - «Eliminar» en rojo, la última acción de cada tarjeta, también en las inactivas.
+  - La confirmación va dentro de la tarjeta: «¿Eliminar la zona X?», «Los casos y visitas que ya la usan conservan el nombre que tenían.», «Se quitará de la cobertura de A y B» (o «Ningún inspector la tiene en su cobertura»), y los botones «Eliminar» y «Cancelar».
+  - Después aparece un aviso con «Deshacer», y en «Ver cambios», «Eliminó la zona X (se quita de la cobertura de …)».
+  - Al publicar, la zona sale de SIRIUS_ZONAS y de las coberturas de los inspectores.
+- **Ids que no se reutilizan:** cada ciudad lleva su contador `siguienteId`, que «Agregar zona» usa y avanza. Al cargar queda en el número más alto + 1 (Quito 6, Guayaquil 5, Cuenca 4).
+- **Accesibilidad:** la lista de ciudades, el tirador, los botones del riel, el cajón y la confirmación de eliminar funcionan con teclado y tienen nombre para el lector de pantalla.
+- **Se mantiene todo lo de G-2a:**
+  - Punto fantasma y arrastre de puntos; la cruz y la línea guía; tres formas de cerrar un área; Retroceso y Esc; los avisos de área.
+  - Solo punto, desactivar y activar con «Deshacer», y renombrar.
+  - Solo lectura para quien no es Administrador, y la publicación con motivo y con la conexión.
+
+**Verificado**
+- **Las 11 escenas de zonas a 1280 × 720 y 1920 × 1080:**
+  - El mapa ocupa el espacio libre: 678 × 614 junto a un panel de 380 px a 1280, y 1318 × 974 a 1920.
+  - El pie con «Publicar» se ve sin desplazarse, sin scroll de la página ni horizontal, y sin errores.
+- **Con el mouse:**
+  - Arrastrar el tirador 100 px deja el panel en 484 px; más allá se detiene en 560. El mapa de Leaflet toma el ancho nuevo (574 y 498 px).
+  - El doble clic deja el riel y el mapa pasa a 1022 px; «Expandir» lo devuelve con el mismo ancho.
+  - Al dibujar el área de Norte, la barra queda abajo. Un clic justo encima de la barra agrega un punto, Retroceso lo quita y un clic en el primer punto cierra el área (resultado: «Zona Norte · dentro de su área dibujada»).
+  - «carol» sugiere La Carolina, y ↓ con Enter la elige. «✕» limpia. «malecón» con «Buscar» cambia a Guayaquil (zona Centro, a 0,6 km). «calle 123» queda en zona por confirmar, y un clic en el mapa marca el punto.
+  - Eliminar Centro y luego «Deshacer» la devuelve, y los cambios vuelven a cero.
+  - Eliminar Sur estando inactiva funciona igual.
+  - «Agregar zona» después de eliminar crea z1701-6, no reutiliza el id.
+- **Con el teclado:**
+  - Tirador: tres veces → lo deja en 500 px, Inicio en 300 y cuatro veces ← en 380. Enter lo contrae y deja el foco en «Expandir»; Enter ahí lo expande y deja el foco en «Contraer».
+  - Lista de ciudades: Enter la abre con el foco en el buscador. «guaya», ↓ y Enter eligen Guayaquil y el foco vuelve al botón de la ciudad. Esc cierra la lista, y un clic fuera también (ese clic no marca un punto en el mapa).
+  - Confirmación de eliminar: el foco va a «Eliminar»; Esc cancela y devuelve el foco al «Eliminar» de la tarjeta; Enter confirma.
+  - Cajón: Enter en Historial lo abre con el foco en cerrar; Esc lo cierra y devuelve el foco al botón; «Cerrar» también lo cierra.
+- **Escenas nuevas:**
+  - **zonaspanel:** el panel a 500 px; con `?zriel=1`, el riel «Quito · 5 zonas».
+  - **zonasbuscar:** «quitumbe» → «Zona Sur · su punto está a 2 km»; `?zq=malecón` → Guayaquil, zona Centro; `?zq=calle 123` → zona por confirmar.
+  - **zonaseliminar:** la confirmación de Centro nombra a Mauricio Endara y Diana Cárdenas. Con `?zelim=1`, Centro ya eliminada con «Deshacer» y el cambio pendiente.
+  - **zonashistorial:** el cajón con la versión 2 (radio de 15 a 12 km, de Andrea Salazar, con su motivo) y la versión 1 inicial.
+- **Conexión temporal en una copia aparte** (`sirius-conexion.js` que solo registra, no publicada):
+  - Elimino Centro con las coberturas de la escena y publico: se envía `publicarConfiguracion { clave: 'SIRIUS_ZONAS', version: 2 }` con Quito en z1701-1, z1701-3, z1701-4 y z1701-5 y `siguienteId: 6` (Guayaquil 5, Cuenca 4).
+  - Después, Mauricio Endara queda con [z1701-1] y Diana Cárdenas con [z1701-3].
+  - Con `{ ok: false }` todo vuelve atrás: Centro sigue en SIRIUS_ZONAS y en las dos coberturas, el cambio sigue sin publicar y se ve «La base no aceptó la versión. La publicación se deshizo: los cambios siguen sin publicar.».
+- **Lo demás, sin cambios:** cobertura, coberturasucursales, coberturalectura, coberturazonainactiva, cxcobertura, catalogos, usuarios, agendasemana e inspyo dan el mismo texto que la versión publicada antes (213), a las dos medidas.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** probé con la conexión simulada y una temporal; `buscarDireccion` solo con el diccionario de prueba.
+- **Lector de pantalla:** revisé los nombres y roles en el código y el foco con el teclado, pero no lo probé con un lector real.
+- **Mapa base:** el artifact bloquea las teselas, así que todo se probó sobre el fondo neutro.
+- **Pantallas táctiles:** no probé el tirador ni el dibujo con el dedo.
+- **Casos y visitas que conservan su zona:** la regla y el texto quedan definidos, pero la copia del nombre en el caso se construye en G-2c.
+
+**Diferencias**
+- **Pie sin cambios:** para el Administrador, además de «Publicado · versión N · fecha» e «Historial (N)», se ve el motivo deshabilitado y «Publicar» deshabilitado, para que el botón siempre esté a la vista. El Coordinador ve «Solo lectura…».
+- **Caja de ajustes:** dice «Radio» para que quepa a 1280; el lector de pantalla lee «Radio de referencia en kilómetros».
+- **«Expandir» del riel:** es un botón de ícono con nombre y título «Expandir el panel de zonas».
+- **Chips:** una ciudad sin zonas muestra el chip «Sin zonas» en lugar de «0 zonas activas».
+- **Sugerencias:** aparecen desde 3 letras y van primero las de la ciudad abierta.
+- **Escenas:** cada escena vuelve el panel a 380 px expandido; el ancho se recuerda solo mientras se navega.
+- **Zona nueva sin publicar:** eliminarla la quita sin dejar cambio (desaparece su «Agregó la zona X»).
+- **Ciudad sin zonas al publicar:** una ciudad publicada que se queda sin zonas conserva su entrada con `zonas: []` y su contador. Para la asignación sigue siendo «sin zonas».
+- **Coberturas:** si a un inspector se le eliminan todas las zonas que tenía en una ciudad, esa ciudad sale de su cobertura, para que no pase a «toda la ciudad». Si era su única ciudad, queda en «Por ciudad y zona» sin ciudades (no cubre ningún caso) hasta que el Administrador la edite; al guardar se pide «Agrega al menos una ciudad.».
+- **`SiriusZonas.DIRECCIONES`:** queda por compatibilidad, pero la pantalla usa `SiriusUbicacion`. Las 8 direcciones de G-2a mantienen su orden, así que `?zdir=n` muestra lo mismo.
+- **Avisos:** salen arriba al centro del mapa.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| zonas | Quito con sus 5 zonas: el mapa ocupa el espacio libre y a la derecha está el panel único con el pie «Publicado · versión 1» |
+| zonasagregar | Agregar «Carcelén»: barra abajo al centro y punto fantasma (`?zrep=1`: nombre repetido) |
+| zonasarea | Área de Norte dibujada (`?zcruce=1`: barra de dibujo con el error del borde cruzado; `?zpunto=1`: vuelve a solo punto con «Deshacer») |
+| zonasprobar | «Mitad del Mundo» en Norte · lejos del centro (`?zdir=2`, `?zdir=6`, `?zdir=7`) |
+| zonaspublicar | Conexión simulada, 2 cambios y el motivo en el pie fijo (`?cxok=0`) |
+| zonaslectura | Coordinador: solo lectura, sin «Eliminar» y con el radio fijo |
+| ciudadesbuscar | La lista desplegable de ciudades con «El Coca» (`?ztodas=1`: las 223) |
+| zonaspanel | Panel a 500 px (`?zriel=1`: riel) |
+| zonasbuscar | «quitumbe» → Sur (`?zq=malecón` → Guayaquil; `?zq=calle 123` → por confirmar) |
+| zonaseliminar | Confirmación de eliminar Centro con los inspectores afectados (`?zelim=1`: eliminada, con «Deshacer») |
+| zonashistorial | Cajón del historial con 2 versiones |
+
+También abrí cobertura, coberturasucursales, coberturalectura, coberturazonainactiva, cxcobertura, catalogos, usuarios, agendasemana e inspyo, comparadas con la versión 213 a 1280 × 720 y 1920 × 1080.
+
+Tiempo de la etapa: inicio 14/11/2026 13:34 · fin 14/11/2026 13:58 · 24 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2b
 
 Publiqué la etapa G-2b (Versión 212 con los archivos; la Versión 213 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Las «zonas» del inspector, que en realidad eran sucursales, pasan a ser su cobertura, con un solo modo por inspector: «Todas», «Por sucursales» o «Por ciudad y zona» (DEC-223). Con la migración, la Agenda y la red dan los mismos resultados que antes.

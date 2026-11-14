@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · G-2a2 · DEC-222: SIRIUS_CONEXION.buscarDireccion(texto, codCiudad) con OpenStreetMap (Nominatim): espera al teclear, 1 consulta por segundo, memoria de búsquedas y respaldo en el diccionario de prueba.
 // 14/11/2026 · G-2b · DEC-223: usuarios[].cobertura e inspectores[].cobertura (datos.cobertura; SQL 37 la guarda con editarUsuario y crearUsuario).
 // 14/11/2026 · G-2a · DEC-221: SIRIUS_ZONAS (Ciudades y zonas) se vigila: lo publicado en la base manda sobre datos-zonas.js.
 // 14/11/2026 · P-6f-0g · DEC-233: SIRIUS_CONEXION.usuarios (con vinculado e historial de la base) y agencias; crearUsuario, editarUsuario y cambiarEstadoUsuario van por bo_accion (SQL 36d).
@@ -243,6 +244,37 @@
     });
   }
 
+  // G-2a2 · DEC-222: búsqueda de direcciones con OpenStreetMap (Nominatim). Se llama mientras se escribe: espera a que la persona
+  // deje de escribir, hace como máximo una consulta por segundo (política de uso de Nominatim) y guarda lo ya buscado. Si no hay
+  // respuesta o no encuentra nada, usa el diccionario de prueba del prototipo (SiriusUbicacion.buscarLocal).
+  var GEO = { cache: {}, ultimo: 0, pend: null };
+  function geoNorm(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/^(canton|distrito metropolitano de)\s+/, '').trim(); }
+  function geoCiudad(nombres, cod) { var G = window.SIRIUS_GEOGRAFIA; if (!G || !G.ciudades) return cod || '';
+    for (var i = 0; i < nombres.length; i++) { var n = geoNorm(nombres[i]); if (!n) continue;
+      var c = G.ciudades.filter(function (x) { return x.estado !== 'INACTIVO' && (geoNorm(x.buscador) === n || geoNorm(x.nombre) === n); });
+      if (c.length) return c[0].cod; }
+    return cod || ''; }
+  function geoTexto(x) { var a = x.address || {}, p = [[a.road, a.house_number].filter(Boolean).join(' '), a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village || a.county].filter(Boolean);
+    return p.length ? p.join(', ') : String(x.display_name || '').split(',').slice(0, 3).join(',').trim(); }
+  function geoLocal(texto, cod) { var U = window.SiriusUbicacion; try { return U && typeof U.buscarLocal === 'function' ? U.buscarLocal(texto, cod) : []; } catch (e) { return []; } }
+  CX.buscarDireccion = function (texto, cod) { var q = String(texto || '').trim(); if (q.length < 3) return Promise.resolve([]);
+    var G = window.SIRIUS_GEOGRAFIA, ciu = G && G.ciudades && cod ? G.ciudades.filter(function (c) { return c.cod === cod; })[0] : null, nom = ciu ? (ciu.buscador || ciu.nombre) : '';
+    var clave = q.toLowerCase() + '|' + (cod || ''); if (GEO.cache[clave]) return Promise.resolve(GEO.cache[clave]);
+    return new Promise(function (res) {
+      if (GEO.pend) { clearTimeout(GEO.pend.t); GEO.pend.res(null); }
+      var p = { res: res }; GEO.pend = p;
+      p.t = setTimeout(function () { GEO.pend = null; GEO.ultimo = Date.now();
+        var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ec&accept-language=es&q=' +
+          encodeURIComponent(q + (nom && geoNorm(q).indexOf(geoNorm(nom)) < 0 ? ', ' + nom : '') + ', Ecuador');
+        fetch(url, { headers: { Accept: 'application/json' } }).then(function (r) { return r.ok ? r.json() : []; }).then(function (a) {
+          var out = (Array.isArray(a) ? a : []).map(function (x) { var ad = x.address || {};
+            return { texto: geoTexto(x), ciudad: geoCiudad([ad.city, ad.town, ad.municipality, ad.county, ad.village], cod), punto: [+(+x.lat).toFixed(6), +(+x.lon).toFixed(6)] }; })
+            .filter(function (x) { return isFinite(x.punto[0]) && isFinite(x.punto[1]); });
+          if (!out.length) out = geoLocal(q, cod); GEO.cache[clave] = out; res(out);
+        }, function () { res(geoLocal(q, cod)); });
+      }, Math.max(450, 1100 - (Date.now() - GEO.ultimo)));
+    }).then(function (r) { return r === null ? [] : r; });   // una búsqueda reemplazada por otra más nueva devuelve []
+  };
   CX.listo = get('usuarios?select=nombre,email,rol,tipo_inspector,datos,agencia:agencias(nombre)&auth_id=eq.' + (sesion.user && sesion.user.id))
     .then(function (us) {
       var u = us && us[0]; if (!u) { salir('Tu correo no está habilitado en SIRIUS.'); throw new Error('sin usuario'); }
