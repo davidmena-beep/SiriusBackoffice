@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · G-2a · DEC-221: SIRIUS_ZONAS (Ciudades y zonas) se vigila: lo publicado en la base manda sobre datos-zonas.js.
 // 14/11/2026 · P-6f-0g · DEC-233: SIRIUS_CONEXION.usuarios (con vinculado e historial de la base) y agencias; crearUsuario, editarUsuario y cambiarEstadoUsuario van por bo_accion (SQL 36d).
 // 14/11/2026 · P-6f-0f · DEC-232: riesgos con label (placa), detalle («Marca, Modelo, Año») y nowrap; visitasBase[].riesgos (ids del caso) y direccion (texto). agendarVisita guarda los riesgos (SQL 36c).
 // 13/11/2026 · P-6f-0e · DEC-231: SIRIUS_CONEXION.inspectores = [{ nombre, tipo ('Interno' | 'Agencia' | 'Independiente'), agencia, zonas [], estado }] (activos con rol Inspector). agendarVisita valida en la base (SQL 36b).
@@ -43,7 +44,7 @@
   ['SIRIUS_COMPANIA','SIRIUS_CATALOGO_CIIU','SIRIUS_INFORMES_RG','SIRIUS_CATALOGOS_MAESTROS','SIRIUS_FLUJO','SIRIUS_FLUJO_MOTOR','SIRIUS_MONITOR','SIRIUS_SEGUIMIENTO',
    'SIRIUS_EQUIPOS','SIRIUS_SALIDA_RG','SIRIUS_SALIDA_VEH','SIRIUS_DOCUMENTOS_PDF','SIRIUS_INFORME_VEH','SIRIUS_CAMPOS','SIRIUS_USUARIOS','SIRIUS_NOTIFICACIONES','SIRIUS_CONFLICTOS',
    'SIRIUS_INICIO','SIRIUS_AGENDA','SIRIUS_LIQUIDACIONES','SIRIUS_HONORARIOS','SIRIUS_TARIFAS_CUENTAS','SIRIUS_MATRIZ_GARANTIAS','SIRIUS_DATOS_IA','SIRIUS_SILUETAS','SIRIUS_CAPTURA',
-   'SIRIUS_AUTOINSPECCION','SIRIUS_PORTAL_CLIENTE','SIRIUS_APP_INSPECTOR','SIRIUS_CONTROLES','SIRIUS_DOCUMENTOS_CLIENTE','SIRIUS_COMPLETADO'].forEach(vigilar);   // P-6e-1: catálogo de documentos del cliente (DEC-203)
+   'SIRIUS_AUTOINSPECCION','SIRIUS_PORTAL_CLIENTE','SIRIUS_APP_INSPECTOR','SIRIUS_CONTROLES','SIRIUS_DOCUMENTOS_CLIENTE','SIRIUS_COMPLETADO','SIRIUS_ZONAS'].forEach(vigilar);   // G-2a · DEC-221: zonas de las ciudades (datos-zonas.js)   // P-6e-1: catálogo de documentos del cliente (DEC-203)
   // P-6f-0 · DEC-216: la facultad publicada en Niveles de calificación (SIRIUS_FACULTADES) no tiene archivo de datos propio: se registra sin archivo
   // para que, al leer la base y al publicar, window.SIRIUS_FACULTADES tome lo vigente (si la base no la tiene, queda indefinida y manda el ejemplo).
   vigilar('SIRIUS_FACULTADES'); if (!Object.prototype.hasOwnProperty.call(ARCH, 'SIRIUS_FACULTADES')) ARCH.SIRIUS_FACULTADES = undefined;

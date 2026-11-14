@@ -77,6 +77,7 @@
     // Etapas 16f-3 y 16f-3b · DEC-170: «Flujo y SLA › Monitor» para quien tenga «Ver el monitor del proceso» en la matriz (Administrador y Coordinador
     // por defecto); sin permisos de configuración se ve solo esa pestaña.
     var monV = SU.puede(rol, 'monitor');
+    if (mod === 'administracion' && child === 'zonas') return true; // etapa G-2a · DEC-221: Ciudades y zonas la ven todos los roles (solo el Administrador edita)
     if (mod === 'administracion' && child === 'flujo' && monV) return true;
     if (mod === 'administracion' && !child && monV) return true;
     if (mod === 'administracion') return child === 'usuarios' ? SU.puede(rol, 'usuarios') : child === 'conflictos' ? SU.puede(rol, 'conflictos') : child === 'configuracion' ? (SU.puede(rol, 'cfgGeneral') || SU.puede(rol, 'impuestos')) : child ? SU.puede(rol, 'config') : (SU.puede(rol, 'usuarios') || SU.puede(rol, 'conflictos') || SU.puede(rol, 'config') || SU.puede(rol, 'cfgGeneral') || SU.puede(rol, 'impuestos'));

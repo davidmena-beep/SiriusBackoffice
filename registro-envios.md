@@ -4,6 +4,95 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2a
+
+Publiqué la etapa G-2a (Versión 210 con los archivos; la Versión 211 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Hay una pantalla nueva, «Ciudades y zonas», con las 223 ciudades del INEC y las zonas de Quito, Guayaquil y Cuenca sobre un mapa Leaflet local. Solo el Administrador edita y publica, siempre con motivo. Se retiró «Ciudad → sucursal».
+
+**Qué cambió**
+- **Dónde está:** Administración › Ciudades y zonas, como entrada propia del menú debajo de «Catálogos». En el índice de Catálogos, la fila «Ciudades y zonas» reemplaza a «Ciudad → sucursal» y lleva a la misma pantalla.
+- **Tres columnas, como la maqueta:**
+  - Izquierda: buscador por nombre de uso común, nombre oficial o provincia («Quito» y «El Coca» encuentran sus nombres oficiales); filtro «Con zonas / Todas»; lista con la provincia, el código y la etiqueta «N zonas» o «Sin publicar»; la nota de la fuente (INEC 2026, 223 cantones activos y 2 en estudio, estructura de gobernanza).
+  - Centro: el mapa.
+  - Derecha: la barra de zonas, con cabecera y pie fijos; solo el cuerpo se desplaza.
+- **Barra de zonas:**
+  - Cabecera: ciudad, código INEC, nombre oficial y «N zonas activas · Radio X km»; con más de 8 zonas activas, el aviso «Más de 8 zonas: cuesta configurar la cobertura».
+  - Cuerpo: «Agregar zona»; tarjetas con el borde del color de su zona, nombre editable (Enter guarda, Esc cancela, sin nombres repetidos), tipo «Punto» o «Área · N pts», avisos y acciones «Ver», «Dibujar área» o «Redibujar», «Volver a solo punto» y «Desactivar»; inactivas plegadas con «Activar»; secciones plegables «Probar una dirección», «Ajustes de la ciudad» (radio y «Ver los radios en el mapa») e «Historial de publicaciones».
+  - Pie fijo: con cambios, «N cambios sin publicar», «Ver cambios», «Descartar», el motivo (10 caracteres o más) y «Publicar»; sin cambios, «Publicado · versión N · fecha».
+  - Pasar el mouse por una tarjeta agranda su punto; un clic en un punto marca su tarjeta.
+- **Agregar, mover y dibujar:** como la maqueta, con punto fantasma, «Deshacer», arrastre de puntos, dibujo de áreas con cruz, línea guía, cierre por tres caminos, Retroceso, Esc, rechazo del borde cruzado y los dos avisos que se aceptan.
+- **Mapa reutilizable (`sirius-mapa.js`, `SiriusMapa`):** Leaflet 1.9.4 local, OpenStreetMap y Esri de respaldo. Si las teselas no cargan, el mapa funciona sobre un fondo neutro con la nota «Mapa base no disponible en esta vista».
+- **Reglas y datos (`sirius-zonas.js`, `SiriusZonas`):** `zonaDe(codCiudad, [lat, lng] | null)` devuelve `{ tipo: 'area' | 'punto' | 'sinZonas' | 'sinUbicar', zona, distanciaKm, lejos }` con la regla de asignación; además guarda la copia de trabajo, los cambios, la publicación y el historial.
+- **Publicación:** con la conexión, `SiriusPublicar` con la clave `SIRIUS_ZONAS` (todo el objeto con la versión siguiente) y el motivo; con `{ ok: false }` la publicación vuelve atrás y se muestra el mensaje. Sin la conexión queda en la sesión. Cada publicación deja su historial (quién, cuándo, motivo y cambios).
+- **Archivos nuevos en `project/`:** `datos-geografia.js` (copiado tal cual), `datos-zonas.js`, `leaflet.js`, `leaflet.css`, `sirius-zonas.js`, `sirius-mapa.js`, `sirius-ciudades-zonas.js` (la pantalla) y `datos-cx-zonas.js` (la conexión simulada de zonaspublicar).
+
+**Verificado**
+- **Las 7 escenas a 1280 × 720 y 1920 × 1080:** el pie con «Publicar» se ve sin desplazar, sin scroll horizontal ni errores nuevos.
+- **Con el mouse, en la escena zonas:**
+  - Agregar: el campo recibe el cursor; «Norte» avisa «Ya hay una zona con ese nombre en Quito.»; el punto fantasma «Carcelén» sigue al mouse y un clic lo coloca; la tarjeta se ilumina y aparece «Zona Carcelén agregada…» con «Deshacer», que la quita. Esc cancela. Sin nombre queda «Zona 6».
+  - Mover: arrastrar Centro deja «Movió el punto de Centro».
+  - Dibujar: 4 clics y Retroceso dejan 3; se cierra con clic en el primer punto, con doble clic (sin zoom) y con «Cerrar área». Esc abandona. Un clic sobre un punto mientras se dibuja agrega un vértice y no selecciona la zona.
+  - El borde cruzado se rechaza con «El borde del área se cruza consigo mismo…» y sigue el dibujo. Un área de Centro que no contiene su punto y cruza la de Sur muestra «El punto de la zona está fuera de su área» y «Se superpone con Sur: donde se crucen, gana la más cercana».
+  - «Volver a solo punto» y «Desactivar» (con «Norte quedó inactiva: sus direcciones pasan a la zona más cercana.») vuelven atrás con «Deshacer».
+  - Renombrar con Enter, rechazo de un nombre repetido y Esc que cancela.
+  - Pasar el mouse por Sur agranda su punto; un clic en Norte marca su tarjeta.
+  - «Publicar» queda deshabilitado con motivo corto; con motivo, «Publicado · versión 2 · 18/10/2026 20:30» y el historial con los cambios. «Descartar» vuelve a lo publicado.
+- **zonaspublicar (conexión simulada):** se envía `publicarConfiguracion` con `clave: 'SIRIUS_ZONAS'`, `version: 2` y `datos` completo (`version` «2», `vigencia`, `reglas` y las 3 ciudades, con Quito en radio 12 y Centro movido). Con `?cxok=0` vuelve a «2 cambios sin publicar» y muestra «La base rechazó la acción (prueba)…».
+- **Conexión temporal en una copia aparte:** como Administrador, desde el menú, cambiar el radio de Quito a 14 y publicar envía la clave `SIRIUS_ZONAS` y el objeto completo con la versión 2; con `{ ok: false }` todo vuelve atrás.
+- **zonaslectura:** el Coordinador ve todo en solo lectura (sin «Agregar zona», nombres sin editar, puntos sin arrastrar, solo «Ver», y en el pie «Solo lectura: solo el Administrador edita y publica las zonas.»).
+- **ciudadesbuscar:** «El Coca» encuentra Francisco de Orellana; «quito» encuentra Quito y Puerto Quito; «Todas» lista las 223 ciudades activas.
+- **Desde Catálogos:** la fila «Ciudades y zonas» abre la pantalla.
+- **Sin cambios no pedidos:** catalogoveh, siluetas, catalogoramos, sucursales11, inicio, inicioadm, iniciocoo, usuarios, roles, cxusuarios, confgeneral, agendajornada, resumenflotabase y coordinacion quedan con el mismo texto que antes. En catalogos solo cambia la fila «Ciudad → sucursal» por «Ciudades y zonas».
+- `sirius-conexion.js` queda con su línea mínima.
+
+**Zona de cada dirección de prueba**
+
+| Dirección | Ciudad | Zona |
+|---|---|---|
+| Av. Amazonas N36-152 y Naciones Unidas | Quito | Norte (su punto a 4,6 km) |
+| Av. Mariscal Sucre S12-45 y Ajaví | Quito | Sur (2,1 km) |
+| Conocoto, calle García Moreno y Montúfar | Quito | Valle de los Chillos (2,3 km) |
+| Interoceánica km 12, Cumbayá | Quito | Valles Cumbayá y Tumbaco (1,8 km) |
+| Mitad del Mundo, San Antonio de Pichincha | Quito | Norte · lejos del centro (15,1 km; radio 15 km) |
+| Av. Francisco de Orellana, Kennedy Norte | Guayaquil | Norte (2,2 km) |
+| Av. Cevallos y Montalvo | Ambato | Ciudad sin zonas (se asigna por ciudad) |
+| Calle sin nombre, barrio La Esperanza | Quito | Zona por confirmar (no se pudo ubicar) |
+
+**No verificado**
+- **Mapa base real:** en mis pruebas las teselas estaban bloqueadas, así que vi la nota y el fondo neutro, no OpenStreetMap ni Esri.
+- **Teclado y lector de pantalla en el mapa:** las acciones de las tarjetas funcionan con teclado, pero mover un punto o dibujar un área solo se hace con el mouse.
+- **Uso en otras pantallas:** Coordinación, el portal y las ofertas todavía no llaman a `zonaDe`.
+
+**Diferencias**
+- **Entrada propia del menú:** además de la fila en Catálogos, porque el Coordinador no ve Catálogos y debe ver las zonas en solo lectura. Todos los roles ven «Ciudades y zonas»; solo el Administrador edita.
+- **Dónde se usaba «Ciudad → sucursal»:** solo en Catálogos («Usado en» vacío) con su dato `ciudadSucursal` de `datos-ejemplo.js` (Otavalo → Ibarra). Ninguna pantalla, regla ni salida lo leía. Se retiró la fila del índice; el dato queda sin uso en `datos-ejemplo.js` y Catálogos deja de publicarlo.
+- **Rechazo de la base:** con `{ ok: false }` vuelven atrás la versión, lo publicado y el historial, pero los cambios quedan sin publicar para no perder lo editado. El aviso general dice «Se deshizo el cambio».
+- **Versión única:** `SIRIUS_ZONAS` tiene una sola versión. Publicar una ciudad sube la versión del objeto, y los cambios sin publicar de otras ciudades no viajan.
+- **Fecha de la versión 1:** el archivo no trae fecha, así que el pie dice «Publicado · versión 1 · datos iniciales». Las publicaciones usan el reloj del prototipo.
+- **Ciudades sin centro aproximado:** solo 12 tienen centro en `datos-geografia.js`. En las demás el mapa no se mueve y aparece una nota.
+- **`zonaDe` y `zonaDePublicada`:** `zonaDe` usa lo que se ve en la pantalla, incluidos los cambios sin publicar. Para Coordinación, el portal y las ofertas agregué `zonaDePublicada`, que usa solo lo publicado.
+- **Zona nueva renombrada:** el cambio sigue siendo «Agregó la zona X» con el nombre nuevo.
+- **Avisos y «Deshacer»:** el aviso se oculta al empezar a agregar o dibujar, para no tapar el mapa. «Activar» también tiene «Deshacer».
+- **Variantes de las escenas:** se abren con parámetros (`?zrep=1`, `?zcruce=1`, `?zpunto=1`, `?zdir=n`, `?cxok=0`, `?ztodas=1`).
+- **Diseño:** el título va en la columna izquierda, como en la maqueta, con tipografía, botones y etiquetas del sistema de diseño. El mapa aísla sus capas para que los paneles del Back-office queden por encima.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| zonas | Administrador, Quito con sus 5 zonas y los radios de 15 km |
+| zonasagregar | Agregar «Carcelén» con el punto fantasma (`?zrep=1`: «Norte» y el aviso de nombre repetido) |
+| zonasarea | El área de Norte dibujada (`?zcruce=1`: borde cruzado rechazado; `?zpunto=1`: «Volver a solo punto» con «Deshacer») |
+| zonasprobar | «Mitad del Mundo» en Norte · lejos del centro (`?zdir=2`: Conocoto en Valle de los Chillos; `?zdir=7`: «Calle sin nombre», por confirmar; `?zdir=6`: Ambato, sin zonas) |
+| zonaspublicar | 2 cambios, «Ver cambios» y el motivo, con la conexión simulada (`?cxok=0`: `{ ok: false }`) |
+| zonaslectura | Coordinador de inspecciones, todo en solo lectura |
+| ciudadesbuscar | «El Coca» encuentra Francisco de Orellana (`?ztodas=1`: «Todas» con las 223 activas) |
+
+También abrí catalogos, catalogoveh, siluetas, catalogoramos, sucursales11, inicio, inicioadm, iniciocoo, usuarios, roles, cxusuarios, confgeneral, agendajornada, resumenflotabase y coordinacion.
+
+Tiempo de la etapa: inicio 14/11/2026 10:02 · fin 14/11/2026 11:02 · 60 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0h
 
 Publiqué la etapa P-6f-0h (Versión 208 con los archivos; la Versión 209 solo completa en este registro la hora de fin, que se toma al terminar de publicar). «Expandir todo / Contraer todo» ya sale con 2 riesgos o más, a la derecha del título, y el botón de confirmar de Usuarios se habilita —y se ve habilitado— solo cuando se puede guardar.
