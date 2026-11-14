@@ -42,6 +42,17 @@ footer{flex:0 0 auto;background:#0033A1;color:#fff;font-size:13px;text-align:rig
     <div class="lock" id="lock"><img class="l1" src="assets/ads-logo-oscuro.png" alt="Aseguradora del Sur"><span class="div"></span><img class="l2" src="assets/sirius-logo-oscuro-solo.png" alt="SIRIUS"></div>
     <div class="frase" id="frase">Aseguradora del Sur &amp; Sirius, innovando para tu futuro.</div></section>
   <main class="form"><div class="card">
+    <div id="act" hidden>
+      <h1>Activa tu cuenta</h1><p class="sub">Crea tu contraseña para entrar a SIRIUS</p>
+      <div class="campo"><input id="ae" type="email" readonly aria-label="Correo" style="background:var(--n-100)"></div>
+      <div class="campo"><input id="ak" type="password" autocomplete="new-password" placeholder="Contraseña (mínimo 8 caracteres)" aria-label="Contraseña"></div>
+      <div class="campo"><input id="ak2" type="password" autocomplete="new-password" placeholder="Repite la contraseña" aria-label="Repite la contraseña"></div>
+      <button class="btn pri" id="aok" type="button">Activar mi cuenta</button>
+      <button class="link" id="aya" type="button" style="margin-top:12px">Ya tengo acceso con este correo: activar con mi contraseña</button>
+      <div class="aviso" id="aa" hidden></div>
+      <p class="nota">El enlace es personal, de un solo uso y vence a los 7 días. Si venció, pide uno nuevo al Administrador.</p>
+    </div>
+    <div id="ingreso">
     <h1>Iniciar sesión</h1><p class="sub">Ingresa tu correo y contraseña</p>
     <div class="campo"><input id="e" type="email" autocomplete="email" placeholder="Correo" aria-label="Correo"><span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span></div>
     <div class="campo"><input id="k" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña"><button class="ic" id="ojo" type="button" aria-label="Mostrar la contraseña"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path id="tachado" d="M4 4l16 16"/></svg></button></div>
@@ -52,6 +63,7 @@ footer{flex:0 0 auto;background:#0033A1;color:#fff;font-size:13px;text-align:rig
     <a class="btn sec" href="SIRIUS%20Back-office.dc.html?demo=on">Ver la demostración (sin cuenta)</a>
     <div class="aviso" id="a" hidden></div>
     <p class="nota">Prueba de concepto conectada a la base de datos. Si usas el enlace, ábrelo en este mismo navegador. Solo datos de prueba.</p>
+    </div>
   </div></main>
 </div>
 <footer>©2026 Aseguradora del Sur</footer>
@@ -91,8 +103,30 @@ const SB=supabase.createClient('https://qdciqoxselwmudlycprq.supabase.co','sb_pu
 const BO='SIRIUS%20Back-office.dc.html',q=new URLSearchParams(location.search),a=document.getElementById('a'),$=id=>document.getElementById(id);
 const aviso=t=>{a.hidden=false;a.textContent=t;};
 if(q.get('motivo'))aviso(q.get('motivo'));
-SB.auth.getSession().then(({data:{session}})=>{if(session&&!q.get('motivo'))location.replace(BO);});
-SB.auth.onAuthStateChange((ev,s)=>{if(ev==='SIGNED_IN'&&s)location.replace(BO);});
+// P-6f-0g · DEC-233: activación de cuenta con el enlace del Administrador (?activar=<código>&correo=<correo>)
+const COD=q.get('activar')||'',ACT=!!COD;
+if(!ACT){SB.auth.getSession().then(({data:{session}})=>{if(session&&!q.get('motivo'))location.replace(BO);});
+ SB.auth.onAuthStateChange((ev,s)=>{if(ev==='SIGNED_IN'&&s)location.replace(BO);});}
+else{const aa=document.getElementById('aa'),av=t=>{aa.hidden=false;aa.textContent=t;},em=(q.get('correo')||'').trim().toLowerCase();
+ $('ingreso').hidden=true;$('act').hidden=false;$('ae').value=em;
+ const activar=async()=>{const r=await SB.rpc('activar_cuenta',{p_codigo:COD});const d=r.data||{};
+  if(r.error||!d.ok){av((d&&d.mensaje)||('No se pudo activar: '+(r.error?r.error.message:'sin respuesta')));await SB.auth.signOut();return false;}
+  av(d.mensaje+'. Entrando a SIRIUS…');setTimeout(()=>location.replace(BO),900);return true;};
+ $('aok').onclick=async()=>{const k=$('ak').value,k2=$('ak2').value;
+  if(!em)return av('El enlace no trae el correo. Pide uno nuevo al Administrador.');
+  if(k.length<8)return av('La contraseña debe tener al menos 8 caracteres.');if(k!==k2)return av('Las dos contraseñas no coinciden.');
+  $('aok').disabled=true;av('Activando…');
+  const {data,error}=await SB.auth.signUp({email:em,password:k,options:{data:{activacion:COD},emailRedirectTo:location.origin+location.pathname.replace(/index\.html$/,'')}});
+  $('aok').disabled=false;
+  if(error){if(/registered|exists/i.test(error.message))return av('Este correo ya tiene acceso. Escribe tu contraseña actual en el primer campo y toca «Ya tengo acceso con este correo».');
+   return av(/rate limit/i.test(error.message)?'Se alcanzó el límite de correos por hora. Intenta en unos minutos.':'No se pudo activar: '+error.message);}
+  if(data&&data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)return av('Este correo ya tiene acceso. Escribe tu contraseña actual en el primer campo y toca «Ya tengo acceso con este correo».');
+  if(data&&data.session)return activar();
+  av('Listo. Te enviamos un correo para confirmar la dirección: confírmala y luego entra con tu correo y tu contraseña.');};
+ $('aya').onclick=async()=>{const k=$('ak').value;if(!k)return av('Escribe tu contraseña actual en el primer campo.');av('Entrando…');
+  const {error}=await SB.auth.signInWithPassword({email:em,password:k});if(error)return av(/Invalid login/i.test(error.message)?'Contraseña incorrecta.':'No se pudo entrar: '+error.message);
+  activar();};
+ $('ak2').addEventListener('keydown',e=>{if(e.key==='Enter')$('aok').click();});}
 $('ojo').onclick=()=>{const k=$('k'),v=k.type==='password';k.type=v?'text':'password';$('tachado').style.display=v?'none':'';$('ojo').setAttribute('aria-label',v?'Ocultar la contraseña':'Mostrar la contraseña');};
 $('ing').onclick=async()=>{const m=$('e').value.trim().toLowerCase(),k=$('k').value;if(!m||!k)return aviso('Escribe tu correo y tu contraseña.');aviso('Ingresando…');$('ing').disabled=true;
  const {error}=await SB.auth.signInWithPassword({email:m,password:k});$('ing').disabled=false;if(error)return aviso(/Invalid login/i.test(error.message)?'Correo o contraseña incorrectos.':'No se pudo ingresar: '+error.message);location.replace(BO);};

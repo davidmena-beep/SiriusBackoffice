@@ -10,7 +10,7 @@
 <helmet>
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
-<script src="datos-compania.js"></script><script src="datos-honorarios.js"></script><script src="sirius-monto.js"></script><script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-usuarios.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-usuarios.js"></script><script src="sirius-calificacion.js"></script><script src="sirius-modal.js"></script><script src="datos-tarifas-cuentas.js"></script><script src="sirius-tarifas-cuentas.js"></script>
+<script src="datos-compania.js"></script><script src="datos-honorarios.js"></script><script src="sirius-monto.js"></script><script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-usuarios.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-usuarios.js"></script><script src="sirius-usuarios-base.js"></script><script src="sirius-calificacion.js"></script><script src="sirius-modal.js"></script><script src="datos-tarifas-cuentas.js"></script><script src="sirius-tarifas-cuentas.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}.us-in:focus,.us-in:focus-visible{border-color:var(--color-brand)!important;outline:none;box-shadow:0 0 0 3px var(--cyan-100)}.us-bt:focus-visible,.us-lk:focus-visible,.us-cb:focus-visible,.us-rd:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}.us-cb{width:20px;height:20px;margin:0;accent-color:var(--color-brand);flex:none;cursor:pointer}.us-lk{border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px}.us-lk[aria-disabled=true]{color:var(--neutral-500);cursor:not-allowed;text-decoration:none}.us-mx td,.us-mx th{border-bottom:1px solid var(--border-subtle)}</style>
 </helmet>
 <section data-screen-label="BO-27 Usuarios y roles" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
@@ -68,7 +68,7 @@ class Component extends DCLogic {
   independientes() { const SU = this.SU(); return SU.usuarios().filter(u => u.tipo === 'Externo' && u.roles.some(r => SU.base(r) === 'Inspector')); }
   fmt(s) { const SU = this.SU(); return SU ? SU.fmt(s) : ''; }
   componentDidMount() {
-    const SU = this.SU(); if (SU) this._off = SU.on(() => this.forceUpdate());
+    const SU = this.SU(); if (SU) this._off = SU.on(() => this.forceUpdate()); const UB0 = window.SiriusUsuariosBase; if (UB0) this._offB = UB0.on(() => this.forceUpdate()); // P-6f-0g
     this._k = (ev) => { if (ev.key === 'Escape' && this.state.panel && !ev.defaultPrevented) { ev.preventDefault(); this.cerrar(); } }; document.addEventListener('keydown', this._k, true);
     this._rz = () => this.forceUpdate(); window.addEventListener('resize', this._rz);
     setTimeout(() => { this.seedEscena(); this.verIr(); }, 30);
@@ -79,8 +79,8 @@ class Component extends DCLogic {
     if (!k) this._pk = '';
     if (prev.ir !== this.props.ir) this.verIr();
   }
-  componentWillUnmount() { window.removeEventListener('resize', this._rz); if (this._off) this._off(); document.removeEventListener('keydown', this._k, true); clearTimeout(this._st); }
-  verIr() { const go = this.props.ir; if (!go || go.n === this._irN) return; this._irN = go.n; if (go.panel === 'reenviar' && go.usuario) this.setState({ tab: 0, panel: { k: 'reenviar', n: go.usuario } }); if (go.panel === 'ficha' && go.usuario) this.setState({ tab: 0, panel: { k: 'ficha', n: go.usuario } });
+  componentWillUnmount() { window.removeEventListener('resize', this._rz); if (this._off) this._off(); if (this._offB) this._offB(); document.removeEventListener('keydown', this._k, true); clearTimeout(this._st); }
+  verIr() { const go = this.props.ir; if (!go || go.n === this._irN) return; this._irN = go.n; const B = this.UB(); if (B) { if (go.fEst) this.setState(st => ({ tab: 0, fTipo: 'all', fRol: 'all', fAg: 'all', fEst: go.fEst, fk: st.fk + 1 })); if (go.panel === 'invitar') { this.setState({ tab: 0 }); this.cxAbrirCrear(); } if ((go.panel === 'ficha' || go.panel === 'reenviar') && go.usuario) { const u = B.lista().find(x => x.nombre === go.usuario || x.email === go.usuario); if (u) this.setState({ tab: 0, panel: { k: 'cxFicha', email: u.email } }); } return; } // P-6f-0g if (go.panel === 'reenviar' && go.usuario) this.setState({ tab: 0, panel: { k: 'reenviar', n: go.usuario } }); if (go.panel === 'ficha' && go.usuario) this.setState({ tab: 0, panel: { k: 'ficha', n: go.usuario } });
     // Etapa 9 · desde Inicio: filtro de estado («pendiente» = Invitado o Invitación vencida) y «Invitar usuario».
     if (go.fEst) this.setState(st => ({ tab: 0, fTipo: 'all', fRol: 'all', fAg: 'all', fEst: go.fEst, fk: st.fk + 1 }));
     if (go.panel === 'invitar') { this.setState({ tab: 0 }); this.abrir({ k: 'invitar', d: { nombre: '', correo: '', celular: '', tipo: 'Interno', agencia: '', roles: [], suc: 'Todas', sucSel: [], gru: 'Todos', gruSel: [] }, err: {}, tried: false }); } }
@@ -92,6 +92,7 @@ class Component extends DCLogic {
   // ---------- Escenas ----------
   seedEscena() {
     const e = this.props.escena || '', SU = this.SU(); if (!SU || this._seeded) return; this._seeded = true;
+    if (this.UB()) return this.cxSeed(); // P-6f-0g · DEC-233: con la conexión, las escenas abren lo que trae SIRIUS_CONEXION.usuariosEscena
     if (e === 'usuarioinvitar') this.abrir({ k: 'invitar', d: { nombre: 'Camila Reyes', correo: 'camila.reyes@asur.ec', celular: '0996654123', tipo: 'Interno', agencia: '', roles: ['Ejecutivo comercial'], suc: 'Elegir', sucSel: ['Quito'], gru: 'Todos', gruSel: [] }, err: {}, tried: false });
     if (e === 'usuarioficha') this.abrir({ k: 'ficha', n: 'Marco Tapia' });
     // Etapa 15-4 · DEC-174: ficha de Eurosurvey (tarifas a sus inspectores y cuenta) y la cuenta de Luis Andrade vista por un Coordinador.
@@ -162,6 +163,7 @@ class Component extends DCLogic {
   renderVals() {
     const SU = this.SU(), U = this.U(), st = this.state, h = React.createElement, v = { tab: st.tab, tabs: [], tabUsu: st.tab === 0, tabRol: st.tab === 1, tabAge: st.tab === 2, tabInd: false, indCols: [], indRows: [], indActions: [], indNoun: ['inspector', 'inspectores'], indIntro: '', onIndAction: () => {}, onTab: (i) => { if (st.tab === 1 && i !== 1 && Object.keys(st.pend).length) return this.abrir({ k: 'cambiarRol', tab: i }); this.setState({ tab: i, pend: i === 1 ? st.pend : {} }); }, headBtns: null, filtersNode: null, matrixNode: null, overlay: null, snackNode: null, usuCols: [], usuRows: [], usuActions: [], ageCols: [], ageRows: [], ageActions: [], usuNoun: ['usuario', 'usuarios'], ageNoun: ['agencia', 'agencias'], usuIntro: '', ageIntro: '' };
     if (!SU || !U) return v;
+    const UBx = this.UB(); if (UBx && this.gestiona()) return this.renderCx(v, UBx); // P-6f-0g · DEC-233: con la conexión, usuarios y agencias de la base
     const NS = this.NS(), c = SU.contarEstados(), plus = NS.FeedbackIcon ? h(NS.FeedbackIcon, { name: 'plus', size: 20 }) : null, histIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, h('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' }));
     v.tabs = ['Usuarios (' + c.total + ')', 'Roles y permisos (' + SU.roles().length + ')', 'Agencias (' + SU.agencias().length + ')'];
     v.headBtns = [this.btn('secondary', 'Historial de cambios', () => this.abrir({ k: 'hist', rol: '' }), { icon: histIcon, key: 'hist' }), st.tab === 0 ? this.btn('primary', 'Invitar usuario', () => this.abrir({ k: 'invitar', d: { nombre: '', correo: '', celular: '', tipo: 'Interno', agencia: '', roles: [], suc: 'Todas', sucSel: [], gru: 'Todos', gruSel: [] }, err: {}, tried: false }), { icon: plus, key: 'inv' }) : null];
@@ -216,6 +218,126 @@ class Component extends DCLogic {
     v.overlay = this.panelNode();
     v.snackNode = st.snack ? h('div', { role: 'status', style: { position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 90, maxWidth: 'min(560px,90vw)', padding: '12px 20px', borderRadius: 'var(--radius-sm)', background: 'var(--neutral-900,#011E41)', color: '#FFFFFF', fontSize: 14, boxShadow: 'var(--shadow-md)' } }, st.snack) : null;
     return v;
+  }
+  // ---------- Etapa P-6f-0g · DEC-233: usuarios y agencias de la base (con la conexión) ----------
+  // Con la conexión, la pestaña Usuarios, la ficha, los filtros y Agencias salen de SIRIUS_CONEXION.usuarios y SIRIUS_CONEXION.agencias (SiriusUsuariosBase); ningún usuario sale del ejemplo.
+  // Crear deja al usuario «Invitado» con el enlace de activación que devuelve la base; editar y cambiar estado piden motivo y quedan en el historial del usuario. Roles y permisos no cambia.
+  UB() { const B = window.SiriusUsuariosBase; return B && B.activo && B.activo() ? B : null; }
+  cxForm0(u) { return u ? { email: u.email, celular: u.celular, tipo: u.tipo, agencia: u.agencia || '', roles: u.roles.slice(), suc: u.alcance.sucursales.length ? 'Elegir' : 'Todas', sucSel: u.alcance.sucursales.slice(), gru: u.alcance.grupos.length ? 'Elegir' : 'Todos', gruSel: u.alcance.grupos.slice(), zonas: u.zonas.slice() }
+    : { nombre: '', email: '', celular: '', tipo: 'Interno', agencia: '', roles: [], suc: 'Todas', sucSel: [], gru: 'Todos', gruSel: [], zonas: [] }; }
+  cxAbrirCrear(d, motivo) { this.abrir({ k: 'cxCrear', d: Object.assign(this.cxForm0(null), d || {}), motivo: motivo || '', tried: false, err: '' }); }
+  cxAbrirEditar(email, d, motivo) { const B = this.UB(), u = B && B.usuario(email); if (!u) return; this.abrir({ k: 'cxEditar', email: u.email, d: Object.assign(this.cxForm0(u), d || {}), motivo: motivo || '', tried: false, err: '' }); }
+  cxAcciones(u) { const B = this.UB(), d = {}, dest = B.destinos(u), libres = Object.keys(dest).filter(e => !dest[e]);
+    if (!libres.length) d.estado = B.esYo(u.email) ? 'No puedes suspenderte ni darte de baja a ti mismo.' : 'Aún no activó su cuenta: no hay otro estado posible.';
+    return d; }
+  cxSeed() { const C = window.SIRIUS_CONEXION || {}, E = C.usuariosEscena, B = this.UB(); if (!E || !B || this._cxSeeded) return; this._cxSeeded = true;
+    if (E.panel === 'ficha') this.abrir({ k: 'cxFicha', email: E.email });
+    if (E.panel === 'crear') { const d = E.d || {}; this.cxAbrirCrear({ nombre: d.nombre, email: d.email, celular: d.celular, tipo: d.tipo, agencia: d.agencia || '', roles: d.roles || [], suc: (d.sucursales || []).length ? 'Elegir' : 'Todas', sucSel: d.sucursales || [], gru: (d.grupos || []).length ? 'Elegir' : 'Todos', gruSel: d.grupos || [], zonas: d.zonas || [] }, E.motivo); }
+    if (E.panel === 'editar') this.cxAbrirEditar(E.email, E.d, E.motivo); }
+  cxCarga(d) { return { nombre: d.nombre, email: d.email, celular: d.celular, tipo: d.tipo, agencia: d.tipo === 'Agencia' ? d.agencia : null, roles: d.roles, rol: d.roles[0], alcance: { sucursales: d.suc === 'Elegir' ? d.sucSel : [], grupos: d.gru === 'Elegir' ? d.gruSel : [] }, zonas: d.zonas }; }
+  renderCx(v, B) {
+    const SU = this.SU(), U = this.U(), st = this.state, h = React.createElement, NS = this.NS(), c = B.contar(), L0 = B.lista(), ags = B.agencias();
+    const plus = NS.FeedbackIcon ? h(NS.FeedbackIcon, { name: 'plus', size: 20 }) : null, histIcon = h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, h('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' }));
+    v.tabs = ['Usuarios (' + c.total + ')', 'Roles y permisos (' + SU.roles().length + ')', 'Agencias (' + ags.length + ')'];
+    v.headBtns = [this.btn('secondary', 'Historial de cambios', () => this.abrir({ k: st.tab === 0 ? 'cxHist' : 'hist', rol: '' }), { icon: histIcon, key: 'hist' }), st.tab === 0 ? this.btn('primary', 'Crear usuario', () => this.cxAbrirCrear(), { icon: plus, key: 'inv' }) : null];
+    const opt = (a, b) => ({ v: a, l: b }), fil = (id, lab, val, opts, on) => h('span', { key: id, style: { display: 'inline-flex', alignItems: 'center', gap: 8 } }, h('label', { htmlFor: id, style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, lab), this.select(id, val, opts, on, { style: { minWidth: 150 } }));
+    const fEst = st.fEst === 'pendiente' ? 'Invitado' : st.fEst, hasF = st.fTipo !== 'all' || st.fRol !== 'all' || fEst !== 'all' || st.fAg !== 'all';
+    const rolesL = SU.roles().map(r => r.nombre); L0.forEach(u => u.roles.forEach(r => { if (rolesL.indexOf(r) < 0) rolesL.push(r); }));
+    v.filtersNode = h('div', { role: 'search', 'aria-label': 'Filtrar los usuarios', key: 'f' + st.fk, style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px' } },
+      fil('us-f-tipo', 'Tipo', B.TIPOS.indexOf(st.fTipo) >= 0 ? st.fTipo : 'all', [opt('all', 'Todos')].concat(B.TIPOS.map(x => opt(x, x))), (e) => this.setState({ fTipo: e.target.value })),
+      fil('us-f-rol', 'Rol', st.fRol, [opt('all', 'Todos')].concat(rolesL.map(r => opt(r, r))), (e) => this.setState({ fRol: e.target.value })),
+      fil('us-f-est', 'Estado', B.ESTADOS.indexOf(fEst) >= 0 ? fEst : 'all', [opt('all', 'Todos')].concat(B.ESTADOS.map(x => opt(x, x))), (e) => this.setState({ fEst: e.target.value })),
+      fil('us-f-ag', 'Agencia', ags.some(a => a.nombre === st.fAg) ? st.fAg : 'all', [opt('all', 'Todas')].concat(ags.map(a => opt(a.nombre, a.nombre))), (e) => this.setState({ fAg: e.target.value })),
+      hasF ? h('button', { type: 'button', className: 'us-lk', onClick: () => this.setState({ fTipo: 'all', fRol: 'all', fEst: 'all', fAg: 'all', fk: st.fk + 1 }), style: { height: 40, padding: '0 12px', fontSize: 14 } }, 'Limpiar filtros') : null);
+    const L = L0.filter(u => (st.fTipo === 'all' || B.TIPOS.indexOf(st.fTipo) < 0 || u.tipo === st.fTipo) && (st.fRol === 'all' || u.roles.includes(st.fRol)) && (fEst === 'all' || B.ESTADOS.indexOf(fEst) < 0 || u.estado === fEst) && (st.fAg === 'all' || !ags.some(a => a.nombre === st.fAg) || u.agencia === st.fAg));
+    const pl = { Activo: ['activo', 'activos'], Invitado: ['invitado', 'invitados'], Suspendido: ['suspendido', 'suspendidos'], Inactivo: ['inactivo', 'inactivos'] }, partes = B.ESTADOS.filter(e => c[e]).map(e => c[e] + ' ' + pl[e][c[e] === 1 ? 0 : 1]);
+    v.usuIntro = (hasF ? 'Mostrando ' + L.length + ' de ' + c.total + ' usuarios de la base. ' : c.total + ' usuarios de la base: ') + partes.join(', ') + '. Un usuario creado queda «Invitado» hasta que activa su cuenta con su correo y una contraseña.';
+    v.usuCols = [
+      { key: 'usuario', label: 'Usuario', type: 'sub', minWidth: 340, flex: true, sticky: true }, { key: 'tipo', label: 'Tipo', width: 130 }, { key: 'agencia', label: 'Agencia', minWidth: 170, flex: true },
+      { key: 'roles', label: 'Roles', type: 'chips', minWidth: 250 }, { key: 'alcance', label: 'Alcance', minWidth: 250, flex: true }, { key: 'zonas', label: 'Zonas', minWidth: 150 },
+      { key: 'estado', label: 'Estado', type: 'badge', width: 140 }, { key: 'cuenta', label: 'Cuenta', type: 'badge', width: 150 } ];
+    v.usuRows = L.map(u => ({ id: u.email, ariaName: u.nombre, disabledActions: this.cxAcciones(u), usuario: { label: u.nombre, sub: u.email }, tipo: u.tipo, agencia: u.agencia || '', roles: { label: '', chips: u.roles.map(r => ({ label: r, tone: 'neutral' })) },
+      alcance: { label: B.alcanceTxt(u.alcance), title: B.alcanceTxt(u.alcance) }, zonas: u.zonas.join(', '), estado: { label: u.estado, tone: SU.estadoInfo(u.estado).badge }, cuenta: u.vinculado ? { label: 'Vinculada', tone: 'success' } : { label: 'Sin vincular', tone: 'neutral' } }));
+    v.usuActions = [{ id: 'ficha', label: 'Ver ficha', icon: 'eye' }, { id: 'editar', label: 'Editar', icon: 'edit' }, { id: 'estado', label: 'Cambiar estado', path: 'M6 4h4v16H6z M14 4h4v16h-4z', menu: true }];
+    v.onUsuAction = (a, row) => { const u = B.usuario(row.id); if (!u || this.cxAcciones(u)[a]) return; if (a === 'ficha') return this.abrir({ k: 'cxFicha', email: u.email }); if (a === 'editar') return this.cxAbrirEditar(u.email); if (a === 'estado') return this.abrir({ k: 'cxEstado', email: u.email, estado: '', motivo: '', tried: false, err: '' }); };
+    v.ageIntro = ags.length + (ags.length === 1 ? ' agencia de la base' : ' agencias de la base') + ' (SIRIUS_CONEXION.agencias). La agencia de cada usuario se elige de esta lista; RUC, logo, cuenta y tarifas no llegan de la base en esta etapa.';
+    v.ageCols = [{ key: 'agencia', label: 'Agencia', minWidth: 280, flex: true, sticky: true }, { key: 'insp', label: 'Inspectores', minWidth: 220, flex: true }, { key: 'usu', label: 'Usuarios', width: 130 }, { key: 'estado', label: 'Estado', type: 'badge', width: 120 }];
+    v.ageRows = ags.map(a => { const us = L0.filter(u => u.agencia === a.nombre), ins = us.filter(u => B.esInspector(u.roles)); return { id: a.nombre, ariaName: a.nombre, agencia: a.nombre, insp: ins.length ? { label: ins.length + (ins.length === 1 ? ' inspector' : ' inspectores'), title: ins.map(x => x.nombre).join(', '), sub: ins.map(x => x.nombre).join(', ') } : { label: 'Sin inspectores', dim: true }, usu: String(us.length), estado: { label: a.estado, tone: /^activ/i.test(a.estado) ? 'success' : 'neutral' } }; });
+    v.ageActions = []; v.onAgeAction = () => {};
+    v.matrixNode = st.tab === 1 ? this.matrix() : null;
+    v.overlay = this.panelNode();
+    v.snackNode = st.snack ? h('div', { role: 'status', style: { position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 90, maxWidth: 'min(560px,90vw)', padding: '12px 20px', borderRadius: 'var(--radius-sm)', background: 'var(--neutral-900,#011E41)', color: '#FFFFFF', fontSize: 14, boxShadow: 'var(--shadow-md)' } }, st.snack) : null;
+    return v;
+  }
+  cxCard(t, kids, key, extra) { const h = React.createElement; return h('section', Object.assign({ key, 'aria-label': t, style: { display: 'flex', flexDirection: 'column', gap: 10, padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)' } }, extra || {}), h('h3', { style: { margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-strong)' } }, t), kids); }
+  cxError(p) { const h = React.createElement; return p.err ? h('div', { key: 'err', role: 'alert', 'data-cx-error': '1', style: { padding: '12px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--alert-error-bg,#FDECEC)', color: 'var(--color-danger)', fontSize: 14, fontWeight: 700 } }, p.err) : null; }
+  cxHistLista(L, conNombre) { const h = React.createElement; return L.length ? h('ul', { style: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 } }, L.map((x, i) => h('li', { key: i, style: { display: 'flex', flexDirection: 'column', gap: 2, fontSize: 14, color: 'var(--text-body)' } },
+      h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, h('span', { style: { whiteSpace: 'nowrap' } }, this.fmt(x.fecha)), ' · ' + x.por + ' · ', h('span', { style: { whiteSpace: 'nowrap' } }, x.estado)), h('span', { style: { color: 'var(--text-strong)', fontWeight: 600 } }, (conNombre ? x.nombre + ': ' : '') + x.que), h('span', null, 'Motivo: ' + x.motivo))))
+    : h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Sin cambios en esta sesión. Los cambios anteriores los guarda la base.'); }
+  pCxFicha(p) {
+    const B = this.UB(), SU = this.SU(), h = React.createElement, u = B && B.usuario(p.email); if (!u) return null; const ins = B.esInspector(u.roles), link = B.activacion(u.email), acc = this.cxAcciones(u);
+    const mods = []; u.roles.forEach(r => (SU.moduloNombres(r) || []).forEach(m => { if (!mods.includes(m)) mods.push(m); }));
+    const copiar = () => { if (!link) return; const fin = () => this.toast('Enlace de activación copiado.'); try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(fin, () => { const el = document.getElementById('us-cx-link'); if (el) { el.select(); try { document.execCommand('copy'); } catch (e) { /* nada */ } } fin(); }); else { const el = document.getElementById('us-cx-link'); if (el) { el.select(); document.execCommand('copy'); } fin(); } } catch (e) { fin(); } };
+    return this.drawer('cxf', u.nombre, [
+      h('div', { key: 'top', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 } }, this.badge(SU.estadoInfo(u.estado).badge, u.estado, 'e'), this.badge('neutral', u.tipo, 't'), this.badge(u.vinculado ? 'success' : 'neutral', u.vinculado ? 'Cuenta vinculada' : 'Cuenta sin vincular', 'v'), B.esYo(u.email) ? this.badge('brand', 'Eres tú', 'yo') : null),
+      this.cxCard('Datos de la base', this.dl([['Correo', u.email], ['Celular', u.celular || '—'], ['Tipo', u.tipo + (u.tipoInspector ? ' · inspector ' + u.tipoInspector : '')], u.agencia ? ['Agencia', u.agencia] : null, ['Roles', u.roles.join(', ')], ['Rol principal', u.rol], ['Alcance', B.alcanceTxt(u.alcance)], ins ? ['Zonas', u.zonas.length ? u.zonas.join(', ') : 'Sin zonas'] : null,
+        ['Cuenta', u.vinculado ? 'Vinculada: entra con su correo y su contraseña.' : 'Sin vincular: aún no activó su cuenta.', true]]), 'd'),
+      u.estado === 'Invitado' ? this.cxCard('Enlace de activación', [
+        link ? h('div', { key: 'l', style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } }, h('div', { style: { flex: '1 1 260px', minWidth: 0 } }, this.input('us-cx-link', link, () => {}, { ro: true })), this.btn('secondary', 'Copiar', copiar, { key: 'cp' }))
+          : h('div', { key: 'l', style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } }, h('p', { style: { margin: 0, flex: '1 1 260px', fontSize: 14, color: 'var(--text-body)' } }, 'La base no envió el enlace de este usuario: se entrega al crearlo.'), this.btn('secondary', 'Copiar', undefined, { key: 'cp', reason: 'No hay enlace que copiar.' })),
+        h('span', { key: 'a', style: this.S.help }, 'Envíaselo a ' + u.nombre + ': abre el enlace, entra con ' + u.email + ' y crea su contraseña. Al activarla pasa a «Activo». En la prueba todos activan con correo y contraseña; Google para internos queda para producción.')], 'act', { 'data-activacion': u.email }) : null,
+      this.cxCard('Qué ve en SIRIUS', mods.length ? h('ul', { style: { margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 14, color: 'var(--text-body)' } }, mods.map(m => h('li', { key: m }, m))) : h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Sus roles no abren módulos.'), 'm'),
+      this.cxCard('Historial del usuario', this.cxHistLista(B.historial(u.email)), 'h')],
+      [this.btn('secondary', 'Cerrar', () => this.cerrar(), { key: 'c' }), this.btn('secondary', 'Cambiar estado', () => { if (acc.estado) return; this.abrir({ k: 'cxEstado', email: u.email, estado: '', motivo: '', tried: false, err: '' }); }, { key: 'es', reason: acc.estado }), this.btn('primary', 'Editar', () => this.cxAbrirEditar(u.email), { key: 'o' })]);
+  }
+  pCxForm(p) {
+    const B = this.UB(), SU = this.SU(), h = React.createElement, d = p.d, crear = p.k === 'cxCrear', u = crear ? null : B.usuario(p.email); if (!crear && !u) return null;
+    const ags = B.agencias().filter(a => /^activ/i.test(a.estado) || a.nombre === d.agencia), ins = B.esInspector(d.roles), sucs = SU.sucursales(), grus = SU.grupos(), tog = (L, x) => L.includes(x) ? L.filter(y => y !== x) : L.concat([x]);
+    const eNom = crear && p.tried && !String(d.nombre || '').trim() ? 'Escribe el nombre.' : '', eMail = p.tried ? B.validarCorreo(d.email) : '', eRol = p.tried && !d.roles.length ? 'Elige al menos un rol.' : '', eAg = p.tried && d.tipo === 'Agencia' && !d.agencia ? 'Elige la agencia.' : '';
+    const eSuc = p.tried && d.suc === 'Elegir' && !d.sucSel.length ? 'Elige al menos una sucursal.' : '', eGru = p.tried && d.gru === 'Elegir' && !d.gruSel.length ? 'Elige al menos un grupo.' : '', eZon = p.tried && ins && !d.zonas.length ? 'Elige al menos una zona.' : '';
+    const propio = !crear && B.esYo(u.email) && u.roles.includes('Administrador') && !d.roles.includes('Administrador');
+    const carga = this.cxCarga(Object.assign({}, d, { nombre: crear ? d.nombre : u.nombre })), cambios = crear ? null : (() => { const o = {}; ['email', 'celular', 'agencia', 'roles', 'alcance', 'zonas'].forEach(k => { const nv = k === 'agencia' ? (u.tipo === 'Agencia' ? d.agencia || null : u.agencia) : k === 'zonas' ? (ins ? carga.zonas : []) : k === 'email' ? String(carga.email || '').trim().toLowerCase() : carga[k]; if (JSON.stringify(nv) !== JSON.stringify(u[k])) o[k] = nv; }); return o; })();
+    const sinCambios = !crear && !Object.keys(cambios).length, motOk = String(p.motivo || '').trim().length >= 10, errs = eNom || eMail || eRol || eAg || eSuc || eGru || eZon;
+    const enviar = () => { if (p.busy) return; if (propio || sinCambios) return; if (errs || !motOk || (crear && (!String(d.nombre || '').trim() || B.validarCorreo(d.email) || !d.roles.length || (d.tipo === 'Agencia' && !d.agencia) || (ins && !d.zonas.length))) || (!crear && (B.validarCorreo(d.email) || !d.roles.length))) return this.setP({ tried: true });
+      this.setP({ busy: true, err: '' }); const mot = String(p.motivo).trim();
+      const pr = crear ? B.crear(Object.assign({}, carga, { zonas: ins ? carga.zonas : [] }), mot, this.user()) : B.editar(u.email, cambios, mot, this.user());
+      pr.then(r => { if (!this.state.panel || this.state.panel.k !== p.k) return; if (r && r.ok) { const em = crear ? String(carga.email).trim().toLowerCase() : (cambios.email || u.email); this.abrir({ k: 'cxFicha', email: em }); this.toast(crear ? carga.nombre + ' quedó «Invitado» en la base. Copia el enlace de activación y envíaselo.' : 'Cambios de ' + u.nombre + ' guardados en la base.'); }
+        else this.setP({ busy: false, err: (r && r.validacion ? '' : 'La base no guardó el cambio: ') + ((r && r.mensaje) || 'sin respuesta') + (r && r.validacion ? '' : '. Se deshizo el cambio.') }); }); };
+    const reason = propio ? 'No puedes quitarte tu propio rol de Administrador.' : sinCambios ? 'No hay cambios para guardar.' : p.busy ? 'Enviando a la base…' : undefined;
+    const filaChecks = (id, L, sel, on) => h('div', { key: id, style: { display: 'flex', flexWrap: 'wrap', gap: '4px 16px' } }, L.map(x => this.chk(id + '-' + this.norm(x).replace(/[^a-z0-9]+/g, '-'), sel.includes(x), x, () => on(x))));
+    return this.drawer('cxe', crear ? 'Crear usuario en la base' : 'Editar a ' + u.nombre, [
+      this.cxError(p),
+      h('p', { key: 'i', style: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--text-body)', textWrap: 'pretty' } }, crear ? 'El usuario queda «Invitado» en la base. La base devuelve su enlace de activación: con él entra con su correo y crea su contraseña, y pasa a «Activo».' : 'Los cambios se guardan en la base y quedan en el historial del usuario.'),
+      crear ? this.campo('us-cx-nom', 'Nombre completo', this.input('us-cx-nom', d.nombre, (e) => this.setD({ nombre: e.target.value }), { err: eNom, first: true }), { req: true, err: eNom }) : null,
+      this.campo('us-cx-mail', 'Correo', this.input('us-cx-mail', d.email, (e) => this.setD({ email: e.target.value }), { err: eMail, type: 'email', first: !crear }), { req: true, err: eMail, help: crear ? 'Con este correo activa su cuenta y entra a SIRIUS.' : 'Es su usuario para entrar; si cambia, la base lo valida.' }),
+      this.campo('us-cx-cel', 'Celular', this.input('us-cx-cel', d.celular, (e) => this.setD({ celular: e.target.value }), {})),
+      crear ? this.pills('us-cx-tipo', 'Tipo', B.TIPOS.map(x => ({ v: x, l: x })), d.tipo, (x) => this.setD({ tipo: x, agencia: x === 'Agencia' ? d.agencia : '' }), { req: true }) : this.dl([['Tipo', u.tipo + (u.tipoInspector ? ' · inspector ' + u.tipoInspector : '')]]),
+      d.tipo === 'Agencia' ? this.campo('us-cx-ag', 'Agencia', this.select('us-cx-ag', d.agencia, [{ v: '', l: 'Elige la agencia' }].concat(ags.map(a => ({ v: a.nombre, l: a.nombre }))), (e) => this.setD({ agencia: e.target.value }), { err: eAg, style: { height: 44 } }), { req: true, err: eAg }) : null,
+      h('fieldset', { key: 'roles', style: { margin: 0, padding: 0, border: 'none', display: 'flex', flexDirection: 'column', gap: 6 } }, h('legend', { style: Object.assign({}, this.S.lab, { marginBottom: 6 }) }, 'Roles', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *')),
+        filaChecks('us-cx-rol', SU.roles().map(r => r.nombre), d.roles, (x) => this.setD({ roles: tog(d.roles, x) })), eRol ? h('span', { role: 'alert', style: this.S.err }, eRol) : null,
+        propio ? h('div', { role: 'alert', 'data-cx-propio': '1', style: { padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--alert-warning-bg,#FDF3DC)', color: 'var(--text-strong)', fontSize: 14 } }, 'No puedes quitarte tu propio rol de Administrador. Pide a otro Administrador que lo haga.') : null,
+        h('span', { style: this.S.help }, crear ? 'El rol principal es el primero que marques.' : 'El rol principal sigue siendo ' + u.rol + '; si lo quitas, pasa a serlo el primero de los que quedan.')),
+      this.pills('us-cx-suc', 'Sucursales', [{ v: 'Todas', l: 'Todas' }, { v: 'Elegir', l: 'Elegir' }], d.suc, (x) => this.setD({ suc: x })), d.suc === 'Elegir' ? filaChecks('us-cx-s', sucs, d.sucSel, (x) => this.setD({ sucSel: tog(d.sucSel, x) })) : null, eSuc ? h('span', { key: 'es', role: 'alert', style: this.S.err }, eSuc) : null,
+      this.pills('us-cx-gru', 'Grupos de ramo', [{ v: 'Todos', l: 'Todos' }, { v: 'Elegir', l: 'Elegir' }], d.gru, (x) => this.setD({ gru: x })), d.gru === 'Elegir' ? filaChecks('us-cx-g', grus, d.gruSel, (x) => this.setD({ gruSel: tog(d.gruSel, x) })) : null, eGru ? h('span', { key: 'eg', role: 'alert', style: this.S.err }, eGru) : null,
+      ins ? h('fieldset', { key: 'zon', style: { margin: 0, padding: 0, border: 'none', display: 'flex', flexDirection: 'column', gap: 6 } }, h('legend', { style: Object.assign({}, this.S.lab, { marginBottom: 6 }) }, 'Zonas del inspector', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *')), filaChecks('us-cx-z', sucs, d.zonas, (x) => this.setD({ zonas: tog(d.zonas, x) })), eZon ? h('span', { role: 'alert', style: this.S.err }, eZon) : null) : null,
+      this.motivoCampo(p, 'us-cx-mot', 'Motivo', crear ? 'Por qué se crea este usuario' : 'Qué cambia y por qué')],
+      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn('primary', crear ? 'Crear usuario' : 'Guardar cambios', enviar, { key: 'o', reason })]);
+  }
+  pCxEstado(p) {
+    const B = this.UB(), SU = this.SU(), h = React.createElement, u = B && B.usuario(p.email); if (!u) return null; const dest = B.destinos(u);
+    const enviar = () => { if (p.busy) return; if (!p.estado || dest[p.estado] || String(p.motivo || '').trim().length < 10) return this.setP({ tried: true });
+      this.setP({ busy: true, err: '' }); B.cambiarEstado(u.email, p.estado, String(p.motivo).trim(), this.user()).then(r => { if (!this.state.panel || this.state.panel.k !== 'cxEstado') return;
+        if (r && r.ok) { this.abrir({ k: 'cxFicha', email: u.email }); this.toast(u.nombre + ' quedó «' + p.estado + '» en la base.'); } else this.setP({ busy: false, err: (r && r.validacion ? '' : 'La base no guardó el cambio: ') + ((r && r.mensaje) || 'sin respuesta') + (r && r.validacion ? '' : '. Se deshizo el cambio.') }); }); };
+    const info = { Activo: 'Entra a SIRIUS con sus roles y alcance.', Suspendido: 'No puede entrar mientras dure la suspensión; se reactiva con otro cambio de estado.', Inactivo: 'Dado de baja: no entra y conserva su trazabilidad.' };
+    return this.drawer('cxs', 'Cambiar estado de ' + u.nombre, [this.cxError(p),
+      h('p', { key: 'a', style: { margin: 0, fontSize: 14, color: 'var(--text-body)' } }, 'Estado actual: ', h('strong', { style: { whiteSpace: 'nowrap' } }, u.estado), '.'),
+      h('div', { key: 'r', role: 'radiogroup', 'aria-labelledby': 'us-cx-est-l', style: { display: 'flex', flexDirection: 'column', gap: 8 } }, h('span', { id: 'us-cx-est-l', style: this.S.lab }, 'Estado nuevo', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *')),
+        Object.keys(dest).map((e, i) => { const no = dest[e], on = p.estado === e; return h('button', { key: e, type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', 'aria-disabled': no ? 'true' : undefined, title: no || undefined, 'data-us-first': i === 0 ? '1' : undefined, className: 'us-bt', onClick: () => { if (no) return; this.setP({ estado: e }); },
+          style: { textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2, padding: '10px 14px', border: '1.5px solid ' + (on ? 'var(--color-brand)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)', background: on ? 'var(--cyan-100)' : no ? 'var(--surface-subtle,#F5F7FA)' : '#FFFFFF', cursor: no ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-brand)' } },
+          h('strong', { style: { fontSize: 15, color: no ? 'var(--neutral-500)' : 'var(--text-strong)' } }, e), h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, no || info[e])); }),
+        p.tried && !p.estado ? h('span', { role: 'alert', style: this.S.err }, 'Elige el estado nuevo.') : null),
+      this.motivoCampo(p, 'us-cx-emot', 'Motivo', 'Por qué cambia su estado')],
+      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn(p.estado === 'Activo' ? 'primary' : 'danger', 'Cambiar estado', enviar, { key: 'o', reason: p.busy ? 'Enviando a la base…' : undefined })]);
   }
   // ---------- Matriz de permisos ----------
   letraChip(l, key) {
@@ -347,6 +469,8 @@ class Component extends DCLogic {
   }
   panelNode() {
     const p = this.state.panel, SU = this.SU(); if (!p || !SU) return null; const h = React.createElement, k = p.k;
+    if (k === 'cxFicha') return this.pCxFicha(p); if (k === 'cxCrear' || k === 'cxEditar') return this.pCxForm(p); if (k === 'cxEstado') return this.pCxEstado(p); // P-6f-0g · DEC-233
+    if (k === 'cxHist') { const B = this.UB(); return B ? this.drawer('cxh', 'Historial de cambios de usuarios', [this.cxHistLista(B.historial(), true)], [this.btn('secondary', 'Cerrar', () => this.cerrar(), { key: 'c' })]) : null; }
     const AP = window.SiriusAppInspectorLogic; // etapa 15-1 · DEC-173: dispositivos de la app del inspector y cambios de alcance pedidos desde la app
     if (k === 'revDv') return this.pSimple(p, 'Revocar dispositivo · ' + p.nombre, 'El celular deja de entrar a la app del inspector. Al reconectarse se borran sus datos locales y ' + p.n + ' vuelve a ingresar con su usuario (el primer ingreso exige conexión).', 'Revocar dispositivo', (m) => { if (AP) AP.revocar(p.n, p.id, m, this.user()); setTimeout(() => this.abrir({ k: 'ficha', n: p.n }), 80); return 'Dispositivo de ' + p.n + ' revocado: al reconectarse se borran sus datos locales.'; }, true);
     if (k === 'agFicha') return this.pAgFicha(p);

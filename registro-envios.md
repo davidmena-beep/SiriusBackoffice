@@ -4,6 +4,73 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0g
+
+Publiqué la etapa P-6f-0g (Versión 206 con los archivos; la Versión 207 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Con la conexión, Administración › Usuarios y roles ya muestra los usuarios y las agencias de la base, y permite crear, editar y cambiar el estado de un usuario (DEC-233). Sin la conexión, queda igual.
+
+**Qué cambió**
+- **Lista, ficha y filtros:** salen de `SIRIUS_CONEXION.usuarios`; la pestaña Agencias, de `SIRIUS_CONEXION.agencias`. Ningún usuario sale del ejemplo.
+  - Columnas: usuario y correo, tipo, agencia, roles, alcance, zonas, estado y cuenta («Vinculada» o «Sin vincular»).
+  - Filtros: tipo (Interno, Agencia, Independiente), rol, estado (Activo, Invitado, Suspendido, Inactivo) y agencia.
+  - La ficha muestra los datos de la base, qué ve en SIRIUS según sus roles y el historial del usuario.
+- **Crear usuario:** nombre, correo, celular, tipo, agencia, roles, sucursales, grupos, zonas (si es inspector) y motivo. Llama a `crearUsuario`. El usuario queda «Invitado» y su ficha muestra «Enlace de activación» con el botón «Copiar»; el enlace lo devuelve la base. Con su correo y una contraseña activa la cuenta y pasa a «Activo». En la prueba todos activan así; Google para internos (DEC-128) queda para producción.
+- **Editar:** correo, celular, agencia, roles, alcance y zonas, con motivo de 10 caracteres o más. `editarUsuario` lleva el correo actual y en `cambios` solo lo que cambió.
+- **Cambiar estado:** Activo, Suspendido o Inactivo, con motivo, por `cambiarEstadoUsuario`. Cada opción que no aplica queda bloqueada con su razón.
+- **Rechazo de la base:** el cambio se ve al instante; con `{ ok: false }` vuelve atrás, el panel sigue abierto con lo escrito y muestra «La base no guardó el cambio: <mensaje>. Se deshizo el cambio.».
+- **El propio Administrador:** no puede quitarse su rol de Administrador («No puedes quitarte tu propio rol de Administrador. Pide a otro Administrador que lo haga.», con «Guardar cambios» bloqueado) ni suspenderse o darse de baja («No puedes suspenderte ni darte de baja a ti mismo.»).
+- **Archivos nuevos:** `sirius-usuarios-base.js` (`SiriusUsuariosBase`: lista, historial y enlaces de la sesión) y `datos-cx-usuarios.js` (escenas con la base simulada).
+- **Escenas nuevas:** cxusuarios, cxusuariocrear y cxusuarioeditar.
+
+**Verificado**
+- **Escenas nuevas a 1280×720 y 1920×1080, desde el selector:** cxusuarios, cxusuariocrear y cxusuarioeditar, sin errores ni scroll horizontal.
+- **cxusuarios:** 8 usuarios de la base (5 activos, 2 invitados y 1 inactivo) con sus correos de prueba, por ejemplo david.mena.coordinador+agencia@gmail.com. Se abre la ficha de David Mena con «Cuenta vinculada».
+  - Filtros: Invitado deja a Carolina Vega y Sofía Arteaga («Mostrando 2 de 8»); Eurosurvey, a David Mena y Mauricio Endara; Independiente, a Luis Andrade y Diego Salinas.
+  - Agencias: Eurosurvey (1 inspector, 2 usuarios), Inspecciones Andinas (1 y 1) y Peritajes del Pacífico (sin inspectores, Inactiva).
+- **cxusuariocrear:** al crear a Valeria Cevallos (Eurosurvey, Inspector, Quito) queda «Invitado», sin vincular, con su enlace de activación. «Copiar» deja el enlace en el portapapeles y avisa «Enlace de activación copiado.». Con un correo que ya existe, la base responde «El correo ya lo usa otro usuario» y el usuario no queda en la lista.
+- **cxusuarioeditar:**
+  - Agregar «Ejecutivo de inspecciones» a David Mena con motivo se guarda, queda en su historial y en la lista.
+  - Con `?cxdup=1` (correo de Luis Andrade) la base responde «El correo ya lo usa otro usuario» y David Mena vuelve a sus datos.
+  - Con `?cxyo=1` (Andrea Salazar sin el rol de Administrador) aparece el aviso y «Guardar cambios» queda bloqueado; no se envía nada.
+- **Cambiar estado:** Gabriela Toapanta pasa a «Suspendido» con motivo; con `?cxok=0` vuelve a «Activo» con el mensaje de la base. Carolina Vega (invitada) solo puede pasar a «Inactivo». En la fila de Andrea Salazar, «Cambiar estado» está bloqueado.
+- **Sin la conexión, comparadas con la versión anterior a las dos medidas:** usuarios, usuarioinvitar, usuarioficha, usuariosuspender, inspdispositivo, roles, roleseditar, rolessolocambios, rolesguardar, rolescomparar, agencias, monitorpermiso, agenciatarifas, cuentaagencia, cuentamascara y agenciaopcion quedan iguales. También inicio, inicioadm e iniciocoo.
+- **Inicio con la conexión:** «Invitaciones pendientes» muestra 2 (los invitados de la base).
+- **Conexión temporal** (copia aparte, no simulada, con 3 usuarios y 1 agencia):
+  - `crearUsuario`: `{ nombre, email (en minúsculas), celular, agencia: 'Eurosurvey', rol: 'Inspector', roles: ['Inspector'], tipoInspector: 'agencia', alcance: { sucursales: [], grupos: [] }, zonas: ['Quito'], motivo }`; la ficha mostró el enlace que devolvió la base.
+  - `editarUsuario`: `{ email, cambios: { roles: ['Inspector', 'Ejecutivo de inspecciones'] }, motivo }`.
+  - `cambiarEstadoUsuario`: `{ email, estado: 'Inactivo', motivo }`.
+  - Con `{ ok: false }` el usuario creado no quedó y la edición volvió atrás, con el mensaje de la base.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: `SIRIUS_CONEXION.usuarios` y `agencias`, las tres acciones, `sirius-usuarios-base.js`, `datos-cx-usuarios.js`, 597 escenas en datos-escenas y KNOWN_ESC 554.
+
+**No verificado**
+- **La base real:** se probó contra la conexión simulada y una temporal.
+- **La activación:** ocurre en la base (enlace, correo y contraseña); en el prototipo no se recorre. Al activarse, el usuario se verá «Activo» cuando la base lo mande.
+- **Usuarios sin «Gestionar usuarios»** (Finanzas, Finanzas de agencia, Coordinador): con la conexión siguen viendo Agencias e Inspectores independientes del ejemplo, como antes; no los pasé a la base.
+
+**Diferencias**
+- **Correo editable:** el contrato lista roles, agencia, alcance, zonas y celular; agregué el correo porque `editarUsuario` lleva «el actual» y el error de ejemplo es de correo repetido.
+- **Tipo:** se elige al crear; al editar se muestra sin cambiar (el contrato no lo incluye en los cambios).
+- **Estados:** «Activo» solo para quien ya vinculó su cuenta; un invitado solo puede pasar a «Inactivo» (para anular la invitación).
+- **Enlace de activación:** se guarda en la sesión al crear. Para los invitados que ya venían de la base, la ficha dice «La base no envió el enlace de este usuario: se entrega al crearlo», salvo que la base mande `usuarios[].activacion` (opcional, agregado al contrato).
+- **Duplicados:** el correo repetido lo valida la base, no la pantalla, para que se vea su mensaje.
+- **Agencias con la conexión:** solo nombre, estado, inspectores y usuarios. RUC, logo, cuenta y tarifas no llegan de la base en esta etapa, así que esa pestaña no tiene acciones.
+- **Inicio:** con la conexión, «Invitaciones pendientes» cuenta los invitados de la base (antes contaba los del ejemplo).
+- **Roles y permisos:** sin cambio; la matriz sigue en la configuración del prototipo.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| cxusuarios | Los 8 usuarios de la base (Invitado y Activo) y la ficha de David Mena, con la cuenta vinculada |
+| cxusuariocrear | Crear a Valeria Cevallos, inspectora de Eurosurvey: con «Crear usuario» queda «Invitado» con su enlace de activación y «Copiar» |
+| cxusuarioeditar | Agregar un rol a David Mena con motivo; con `?cxdup=1`, «El correo ya lo usa otro usuario»; con `?cxyo=1`, el aviso al quitarse el propio rol de Administrador |
+
+También abrí usuarios, usuarioinvitar, usuarioficha, usuariosuspender, inspdispositivo, roles, roleseditar, rolessolocambios, rolesguardar, rolescomparar, agencias, monitorpermiso, agenciatarifas, cuentaagencia, cuentamascara, agenciaopcion, inicio, inicioadm e iniciocoo.
+
+Tiempo de la etapa: inicio 14/11/2026 07:09 · fin 14/11/2026 07:34 · 25 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0f2
 
 Publiqué la etapa P-6f-0f2 (Versión 205). La primera publicación quedó como Versión 204 con el registro diciendo 203; la Versión 205 solo corrige el número en el registro y no cambia nada más. La jornada por defecto de las visitas ya no está fija en Coordinación: es un parámetro de la Agenda, con valor inicial lun a sáb, 08:30–17:30, que el Administrador cambia en Configuración general (DEC-232).

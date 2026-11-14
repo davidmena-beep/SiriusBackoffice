@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · P-6f-0g · DEC-233: SIRIUS_CONEXION.usuarios (con vinculado e historial de la base) y agencias; crearUsuario, editarUsuario y cambiarEstadoUsuario van por bo_accion (SQL 36d).
 // 14/11/2026 · P-6f-0f · DEC-232: riesgos con label (placa), detalle («Marca, Modelo, Año») y nowrap; visitasBase[].riesgos (ids del caso) y direccion (texto). agendarVisita guarda los riesgos (SQL 36c).
 // 13/11/2026 · P-6f-0e · DEC-231: SIRIUS_CONEXION.inspectores = [{ nombre, tipo ('Interno' | 'Agencia' | 'Independiente'), agencia, zonas [], estado }] (activos con rol Inspector). agendarVisita valida en la base (SQL 36b).
 // 13/11/2026 · P-6f-0b · DEC-217: casos[].visitasBase[].plantilla = { nombre, version } (versión con que empezó la visita; null si no empezó o es anterior al SQL 36).
@@ -191,7 +192,7 @@
  respuestas: x.respuestas || {}, estado: x.estado, determinacion: x.determinacion || '', motivo: x.motivo || '', enviadoPor: x.enviado ? x.enviado.nombre : '', enviadoEn: reloj(x.enviado_en), criterio: x.criterio || null, decision: x.decision || null }); });
         return { evidencias: E, controles: C, informes: I, calificaciones: Q }; }); }); }
   var oyentes = [], huella = '';
-  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], inspectores: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {},
+  var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], inspectores: [], usuarios: [], agencias: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
@@ -212,9 +213,18 @@
     return Promise.all([
       get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora'),
-      get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; })   // P-6f-0e · DEC-231
+      get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; }),   // P-6f-0e · DEC-231
+      get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,agencia:agencias(nombre)&order=nombre').catch(function (e) { console.warn('[SIRIUS] usuarios:', e.message); return null; }),   // P-6f-0g · DEC-233
+      get('agencias?select=nombre,estado&order=nombre').catch(function (e) { console.warn('[SIRIUS] agencias:', e.message); return null; })
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
+      if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
+        return { nombre: u.nombre, email: u.email, rol: u.rol, roles: Array.isArray(d.roles) && d.roles.length ? d.roles : [u.rol],
+                 tipo: u.agencia ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', tipoInspector: t || null, agencia: u.agencia ? u.agencia.nombre : null,
+                 estado: u.estado || 'Activo', celular: d.celular || '', alcance: { sucursales: Array.isArray(al.sucursales) ? al.sucursales : [], grupos: Array.isArray(al.grupos) ? al.grupos : [] },
+                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], vinculado: !!u.auth_id,
+                 historial: Array.isArray(d.historial) ? d.historial : [] }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base)
+      if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa' }; });
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], estado: u.estado || 'Activo' }; });
