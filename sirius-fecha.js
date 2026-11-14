@@ -150,9 +150,23 @@
   SiriusFecha.aMin = function (t) { var q = String(t || '').split(':').map(Number); return (q[0] || 0) * 60 + (q[1] || 0); };
   SiriusFecha.aHora = function (m) { m = Math.max(0, Math.min(23 * 60 + 59, m)); return z(Math.floor(m / 60)) + ':' + z(m % 60); };
   SiriusFecha.minimaHoy = function (r) { return SiriusFecha.aHora(Math.ceil(((r && r.min) || 0) / 15) * 15 + (((r && r.min) || 0) % 15 === 0 ? 15 : 0)); };
-  // Propuesta de visita (DEC-230): hoy a la hora mínima si termina antes de las 18:00; si no, mañana a las 08:00. Duración por defecto: 45 minutos.
-  SiriusFecha.propuestaVisita = function (r, dur) { dur = dur || 45; var ini = SiriusFecha.aMin(SiriusFecha.minimaHoy(r)), fecha = r.hoy;
-    if (ini + dur > 18 * 60) { var t = new Date(r.hoy + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + 1); fecha = t.getUTCFullYear() + '-' + z(t.getUTCMonth() + 1) + '-' + z(t.getUTCDate()); ini = 8 * 60; }
+  // Jornada por defecto de las visitas (DEC-232 · P-6f-0f2): la que se usa cuando el inspector no tiene jornada propia en SIRIUS_AGENDA.disponibilidad.
+  // Se lee de SiriusJornada.valor (lo editado en la sesión), de SIRIUS_AGENDA.jornadaDefecto o, si no existe o no es válida, del valor inicial: lunes a sábado, de 08:30 a 17:30.
+  // dias: 1 = lunes … 7 = domingo (0 también vale como domingo). Es el único lugar de esas horas fuera de los datos.
+  SiriusFecha.JORNADA_INICIAL = { dias: [1, 2, 3, 4, 5, 6], desde: '08:30', hasta: '17:30' };
+  SiriusFecha.jornadaValida = function (j) { if (!j || !Array.isArray(j.dias) || !j.dias.length) return null; var hm = /^([01]\d|2[0-3]):[0-5]\d$/, d = [];
+    for (var k = 0; k < j.dias.length; k++) { var x = Number(j.dias[k]); if (x === 0) x = 7; if (!(x >= 1 && x <= 7) || Math.floor(x) !== x) return null; if (d.indexOf(x) < 0) d.push(x); }
+    if (!hm.test(String(j.desde || '')) || !hm.test(String(j.hasta || '')) || SiriusFecha.aMin(j.desde) >= SiriusFecha.aMin(j.hasta)) return null; return { dias: d.sort(function (a, b) { return a - b; }), desde: String(j.desde), hasta: String(j.hasta) }; };
+  SiriusFecha.jornadaDefecto = function () { var S = window.SiriusJornada, A = window.SIRIUS_AGENDA || {}, v = SiriusFecha.jornadaValida(S && S.valor) || SiriusFecha.jornadaValida(A.jornadaDefecto) || SiriusFecha.jornadaValida(SiriusFecha.JORNADA_INICIAL); return v; };
+  SiriusFecha.diasTxt = function (dias) { var N = ['', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'], d = (dias || []).map(function (x) { return x === 0 ? 7 : x; }).sort(function (a, b) { return a - b; }), seg = d.length > 1 && d.every(function (x, i) { return i === 0 || x === d[i - 1] + 1; });
+    return seg ? N[d[0]] + ' a ' + N[d[d.length - 1]] : d.map(function (x) { return N[x]; }).join(', '); };
+  SiriusFecha.jornadaTxt = function (j) { j = j || SiriusFecha.jornadaDefecto(); return SiriusFecha.diasTxt(j.dias) + ', ' + (j.desde || j.ini) + '–' + (j.hasta || j.fin); };
+  // Día de la semana de AAAA-MM-DD: 1 = lunes … 7 = domingo.
+  SiriusFecha.diaSemana = function (iso) { var t = new Date(iso + 'T12:00:00Z'); return ((t.getUTCDay() + 6) % 7) + 1; };
+  // Propuesta de visita (DEC-230 y DEC-232): hoy a la hora mínima si es día de la jornada por defecto y la visita termina antes de su hora de fin; si no, el siguiente día de la jornada a su hora de inicio.
+  // Nunca antes del inicio de la jornada. Duración por defecto: 45 minutos.
+  SiriusFecha.propuestaVisita = function (r, dur, jor) { dur = dur || 45; var J = SiriusFecha.jornadaValida(jor) || SiriusFecha.jornadaDefecto(), d0 = SiriusFecha.aMin(J.desde), d1 = SiriusFecha.aMin(J.hasta), ini = Math.max(SiriusFecha.aMin(SiriusFecha.minimaHoy(r)), d0), fecha = r.hoy, t = new Date(r.hoy + 'T12:00:00Z');
+    if (J.dias.indexOf(SiriusFecha.diaSemana(fecha)) < 0 || ini + dur > d1) { for (var k = 0; k < 8; k++) { t.setUTCDate(t.getUTCDate() + 1); fecha = t.getUTCFullYear() + '-' + z(t.getUTCMonth() + 1) + '-' + z(t.getUTCDate()); if (J.dias.indexOf(SiriusFecha.diaSemana(fecha)) >= 0) break; } ini = d0; }
     return { fecha: fecha, hIni: SiriusFecha.aHora(ini), hFin: SiriusFecha.aHora(ini + dur) }; };
   window.SiriusFecha = SiriusFecha;
 })();

@@ -55,7 +55,8 @@
     calificacion: ['Calificar nivel 1', 'Calificar nivel 2 (dictamen final)', 'Marcar revisión de control como revisada'],
     garantias: ['Adjuntar documento o respaldo de garantía', 'Marcar documento como cumplido o rechazar adjunto', 'Marcar garantía como cumplida o rechazar respaldo', 'Solicitar inspección de garantías', 'Solicitar ampliación de plazo o cierre', 'Aprobar ampliación de plazo'],
     informes: ['Completar el informe'], // etapa C2-3 · DEC-180: módulo «Informes por completar»
-    liquidaciones: ['Liquidar honorarios'], usuarios: ['Gestionar usuarios, roles e invitaciones', 'Ver y configurar las tarifas a sus inspectores y las cuentas bancarias'], // etapa 15-4: Agencias en solo lectura o lo propio conflictos: ['Ver y resolver conflictos de configuración'], cfgGeneral: ['Configurar compañía y moneda'], impuestos: ['Configurar impuestos'],
+    liquidaciones: ['Liquidar honorarios'], usuarios: ['Gestionar usuarios, roles e invitaciones', 'Ver y configurar las tarifas a sus inspectores y las cuentas bancarias'], // etapa 15-4: Agencias en solo lectura o lo propio
+    conflictos: ['Ver y resolver conflictos de configuración'], cfgGeneral: ['Configurar compañía y moneda'], impuestos: ['Configurar impuestos'], // P-6f-0f2: el comentario de arriba ocupaba toda la línea y dejaba estas tres entradas fuera (Configuración general no se veía)
     config: ['Configurar formularios, niveles, facultades, reglas, catálogos, plantillas y notificaciones'], monitor: ['Ver el monitor del proceso'],
   };
   SU.permiso = function (rol, accion) { var u = U(); return u ? u.permiso(rol, accion) : ''; };

@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
-<script src="sirius-fecha.js"></script>
+<script src="sirius-fecha.js"></script><script src="sirius-jornada.js"></script>
 </helmet>
 <div data-screen-label="BO-06 Coordinar inspección" style="display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)">
 <section aria-labelledby="co-rec-h" style="display:grid;grid-template-columns:auto minmax(0,1.6fr) minmax(0,1fr);gap:24px;align-items:start;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
@@ -200,7 +200,7 @@
 </ul>
 </sc-if>
 <sc-if value="{{ hasIns }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-body)">{{ insSummary }}</span></sc-if>
-<sc-if value="{{ insErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">Selecciona el inspector.</span></sc-if>
+<sc-if value="{{ insErrShow }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size:13px;color:var(--color-danger)">{{ insErrTxt }}</span></sc-if><sc-if value="{{ insMismo }}" hint-placeholder-val="{{ false }}"><span role="alert" data-ins-mismo="" style="font-size:13px;color:var(--color-danger)">Ya es el inspector de esta visita</span></sc-if>
 </div>
 </sc-if>
 <sc-if value="{{ hasClash }}" hint-placeholder-val="{{ false }}">
@@ -327,6 +327,21 @@ class Component extends DCLogic {
   reloj() { const B = this.cxBase(); return B && B.reloj && B.reloj.hoy ? B.reloj : null; }
   get today() { const r = this.reloj(); return r ? r.hoy : '2026-10-16'; }
   get nowIso() { const r = this.reloj(); return r ? r.hoy + 'T' + r.hora : '2026-10-16T13:40'; }
+  // Etapa P-6f-0f · DEC-232 (con la conexión): jornada del inspector según la Agenda (SIRIUS_AGENDA.disponibilidad, por nombre; en las escenas simuladas también base.escena.disponibilidad).
+  // Etapa P-6f-0f2: sin jornada propia se usa la «Jornada por defecto de las visitas» (SIRIUS_AGENDA.jornadaDefecto; sin ella, lunes a sábado de 08:30 a 17:30), que se edita en Configuración general › Agenda.
+  jornada(nombre) { const A = window.SIRIUS_AGENDA || {}, SF = window.SiriusFecha, B = this.cxBase(), E = B && B.escena && Array.isArray(B.escena.disponibilidad) ? B.escena.disponibilidad : [], d = nombre ? E.concat(A.disponibilidad || []).find(x => x && x.inspector === nombre) : null, ok = d && Array.isArray(d.dias) && Array.isArray(d.jornada) && d.jornada.length === 2;
+    const G = SF.jornadaDefecto(), dias = ok ? d.dias.map(x => x === 0 ? 7 : x).sort((a, b) => a - b) : G.dias.slice(), ini = ok ? d.jornada[0] : G.desde, fin = ok ? d.jornada[1] : G.hasta;
+    return { dias, ini, fin, txt: SF.jornadaTxt({ dias, desde: ini, hasta: fin }), propia: !!ok }; }
+  jTit(nombre, J) { return 'Fuera de la jornada ' + (J.propia && nombre ? 'de ' + nombre : 'de las visitas') + ' (' + J.txt + ')'; }
+  diaSemana(iso) { const t = new Date(iso + 'T12:00:00Z'); return ((t.getUTCDay() + 6) % 7) + 1; } // lunes = 1 … domingo = 7
+  fueraJornada(nombre, fecha, a, b) { const SF = window.SiriusFecha; if (!SF || !fecha || !a) return ''; const J = this.jornada(nombre), m = SF.aMin;
+    if (!J.dias.includes(this.diaSemana(fecha)) || m(a) < m(J.ini) || m(a) >= m(J.fin) || (b && m(b) > m(J.fin))) return this.jTit(nombre, J); return ''; }
+  // Primer horario libre dentro de la jornada (45 minutos), desde la hora mínima de hoy, sin chocar con la agenda del inspector.
+  proponer(nombre, exceptId) { const r = this.reloj(), SF = window.SiriusFecha; if (!r || !SF || !SF.minimaHoy) return null; const J = this.jornada(nombre), m = SF.aMin, d0 = new Date(r.hoy + 'T12:00:00Z');
+    for (let k = 0; k < 21; k++) { const t = new Date(d0.getTime() + k * 864e5), f = t.toISOString().slice(0, 10); if (!J.dias.includes(this.diaSemana(f))) continue;
+      const libre = nombre ? this.slots(nombre, f, exceptId) : []; let a = Math.max(m(J.ini), k === 0 ? m(SF.minimaHoy(r)) : 0); a = Math.ceil(a / 15) * 15;
+      for (; a + 45 <= m(J.fin); a += 15) { const A = SF.aHora(a), B = SF.aHora(a + 45); if (!libre.some(x => x.a < B && A < x.b)) return { fecha: f, hIni: A, hFin: B }; } }
+    return null; }
   pideMotivoCx(p) { return !!this.cxBase() && !!p && (p.mode === 'reagendar' || p.mode === 'inspector'); } // DEC-231: reagendar y cambiar inspector con motivo
   addHours(val) { const h = /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 48; const d = window.SIRIUS_EJEMPLO.ahora(); d.setHours(d.getHours() + h); const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
   fmtDT(iso) { const [dd, tt] = iso.split('T'); return this.fmtD(dd) + ' · ' + tt; }
@@ -339,6 +354,11 @@ class Component extends DCLogic {
     if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; }
     else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; }
     else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección' });   // etapa 12b · envioenlace (20186)
+    else if ((pr === 'cxcoordmismo' || pr === 'cxcoordjornada') && this.visits().some(x => x.inspector && x.estado === 'Agendada')) { const E = (this.cxBase() || {}).escena || {}, v = this.visits().find(x => x.inspector && x.estado === 'Agendada'); // P-6f-0f · DEC-232
+      if (v && pr === 'cxcoordmismo') { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })); s.insQ = E.inspector || ''; s.insOpen = true; }
+      if (v && pr === 'cxcoordjornada') { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'reagendar', visitId: v.id, hIni: E.hIni || '00:00', hFin: E.hFin || '00:45', motivoCx: E.motivo || '' })); s.insQ = v.inspector; s.touched = { hIni: true, hFin: true }; } }
+    else if (pr === 'cxvisitariesgos' && rs.length > 1) { const E = (this.cxBase() || {}).escena || {}; s.pnl = this.newForm([rs[0].id], { dir: E.dir || '' }); if (this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0f · DEC-232: un vehículo de tres
+      if (E.inspector) { const pr2 = this.proponer(E.inspector); Object.assign(s.pnl, { inspector: E.inspector }, pr2 || {}); s.insQ = E.inspector; } }
     else if (pr === 'cxcoordcambiar') { const E = (this.cxBase() || {}).escena || {}, v = this.visits().find(x => x.inspector && x.estado === 'Agendada'); if (v) { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: E.inspector || '', motivoCx: E.motivo || '' })); s.insQ = E.inspector || ''; } } // P-6f-0e · DEC-231
     else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false) { s.pnl = this.newForm(rs.map(r => r.id));
       if ((pr === 'cxcoordins' || pr === 'cxcoordpasado') && this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0e: presencial, con hora de fin (45 minutos)
@@ -383,11 +403,11 @@ class Component extends DCLogic {
   recFor(ids) { const ms = ids.map(id => this.rById(id).recMod).filter(Boolean).filter(m => this.modOk(m)); const r = ms.includes('Presencial') ? 'Presencial' : ms[0] || (this.props.rec || {}).modalidad || 'Presencial'; return this.modOk(r) ? r : 'Presencial'; }
   newForm(ids, extra) {
     const c = this.props.contacto || {}, dirs = ids.map(id => this.rById(id).dir).filter(Boolean);
-    const r = this.reloj(), SF = window.SiriusFecha, pr = r && SF && SF.propuestaVisita ? SF.propuestaVisita(r, 45) : null; // DEC-230: con el reloj real, propone fecha y hora (45 minutos)
-    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: pr ? pr.fecha : '', hIni: pr ? pr.hIni : '', hFin: pr ? pr.hFin : '', hFinAuto: !!pr, dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', motivoCx: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
+    const r = this.reloj(), SF = window.SiriusFecha, pr = r && SF ? (this.proponer('') || (SF.propuestaVisita ? SF.propuestaVisita(r, 45) : null)) : null; // DEC-230 y DEC-232: con el reloj real, propone el primer horario dentro de la jornada (45 minutos)
+    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: pr ? pr.fecha : '', hIni: pr ? pr.hIni : '', hFin: pr ? pr.hFin : '', hFinAuto: !!pr, propAuto: !!pr, dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', motivoCx: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
   }
   setP(k, v) { this.setState(st => { const o = { [k]: v }, SF = window.SiriusFecha;
-    if (this.reloj() && SF && SF.aMin) { if (k === 'hFin') o.hFinAuto = false; if (k === 'hIni' && /^\d\d:\d\d$/.test(v) && (!st.pnl.hFin || st.pnl.hFinAuto)) { o.hFin = SF.aHora(SF.aMin(v) + 45); o.hFinAuto = true; } } // DEC-230: duración por defecto 45 minutos
+    if (this.reloj() && SF && SF.aMin) { if (['fecha', 'hIni', 'hFin'].includes(k)) o.propAuto = false; if (k === 'hFin') o.hFinAuto = false; if (k === 'hIni' && /^\d\d:\d\d$/.test(v) && (!st.pnl.hFin || st.pnl.hFinAuto)) { o.hFin = SF.aHora(SF.aMin(v) + 45); o.hFinAuto = true; } } // DEC-230: duración por defecto 45 minutos
     return { pnl: Object.assign({}, st.pnl, o) }; }); }
   touch(k) { if (!this.state.touched[k]) this.setState(st => ({ touched: Object.assign({}, st.touched, { [k]: true }) })); }
   fmtD(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y.slice(2); }
@@ -418,6 +438,8 @@ class Component extends DCLogic {
     if (p.mode === 'dividir' && !p.split) e.split = 'Elige el ramo.';
     if (this.needsIns(p) && !p.inspector) e.inspector = 'Selecciona el inspector.';
     if (this.pideMotivoCx(p) && String(p.motivoCx || '').trim().length < 10) e.motivoCx = 'Escribe el motivo (mínimo 10 caracteres).'; // DEC-231
+    if (p.mode === 'inspector' && this.cxBase() && p.inspector) { const src = this.visits().find(v => v.id === p.visitId) || {}; // DEC-232: no al mismo inspector; la cita se valida con la jornada del nuevo
+      if (src.inspector && p.inspector === src.inspector) e.inspector = 'Ya es el inspector de esta visita'; else if (this.reloj() && ['Presencial', 'Virtual guiada'].includes(src.mod)) { const fj = this.fueraJornada(p.inspector, src.fecha, src.hIni, src.mod === 'Presencial' ? src.hFin : ''); if (fj) e.inspector = fj; } }
     if (p.mode === 'inspector') return e;
     if (['Presencial', 'Virtual guiada', 'Documental'].includes(p.mod) && !p.fecha) e.fecha = p.mod === 'Documental' ? 'Indica la fecha límite de revisión.' : 'Indica la fecha.';
     if (p.mod === 'No requiere inspección') { if (!p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (!String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.'; return e; }
@@ -426,7 +448,9 @@ class Component extends DCLogic {
     if (p.mod === 'Presencial') { if (!p.hFin) e.hFin = 'Indica la hora de fin.'; else if (p.hIni && p.hFin <= p.hIni) e.hFin = 'La hora de fin debe ser posterior al inicio.'; if (!p.dir.trim()) e.dir = 'Ingresa la dirección.'; }
     { const r = this.reloj(), SF = window.SiriusFecha; if (r && SF && SF.minimaHoy && ['Presencial', 'Virtual guiada'].includes(p.mod)) { // DEC-230: no en el pasado (hora mínima: la actual redondeada a los 15 minutos siguientes) y al menos 15 minutos
       const mn = SF.minimaHoy(r); if (p.fecha === this.today && p.hIni && !e.hIni && p.hIni < mn) e.hIni = 'La hora ya pasó: hoy se puede agendar desde las ' + mn + '.';
-      if (p.mod === 'Presencial' && p.hIni && p.hFin && !e.hFin && SF.aMin(p.hFin) - SF.aMin(p.hIni) < 15) e.hFin = 'La visita debe durar al menos 15 minutos.'; } }
+      if (p.mod === 'Presencial' && p.hIni && p.hFin && !e.hFin && SF.aMin(p.hFin) - SF.aMin(p.hIni) < 15) e.hFin = 'La visita debe durar al menos 15 minutos.';
+      if (p.fecha && p.hIni && !e.hIni && !e.fecha) { const J = this.jornada(p.inspector), m = SF.aMin, fj = this.jTit(p.inspector, J); // DEC-232 y P-6f-0f2
+        if (!J.dias.includes(this.diaSemana(p.fecha)) || m(p.hIni) < m(J.ini) || m(p.hIni) >= m(J.fin)) e.hIni = fj; else if (p.mod === 'Presencial' && p.hFin && !e.hFin && m(p.hFin) > m(J.fin)) e.hFin = fj; } } }
     if (p.mod === 'No requiere inspección' && !p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (p.mod === 'No requiere inspección' && !String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.';
     if (!p.cName.trim()) e.cName = 'Ingresa el nombre del contacto.';
     if (!/^09\d{8}$/.test(p.cCel.replace(/\s/g, ''))) e.cCel = 'Ingresa un celular de 10 dígitos que empiece con 09.';
@@ -465,7 +489,8 @@ class Component extends DCLogic {
     const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
     const rs = P.riesgos || [], single = rs.length === 1, veh = P.tipo === 'Vehículos';
     const vis = this.visits();
-    const assigned = new Set(); vis.filter(v => v.estado !== 'Cancelada').forEach(v => v.riesgos.forEach(id => assigned.add(id)));
+    const ABIERTA = ['Agendada', 'Por agendar', 'Enlace enviado', 'Autoinspección enviada', 'En curso por el cliente', 'En curso', 'Realizada']; // DEC-232: con la conexión, cuentan las visitas abiertas (y las ya realizadas)
+    const assigned = new Set(); vis.filter(v => this.cxBase() ? ABIERTA.includes(v.estado) : v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => assigned.add(id)));
     const pend = rs.filter(r => !assigned.has(r.id));
     const sel = s.sel.filter(id => pend.some(r => r.id === id));
     const rec = P.rec || { score: 80, nivel: 'Riesgo bajo', alertas: [], modalidad: 'Presencial', motivo: '' };
@@ -479,7 +504,9 @@ class Component extends DCLogic {
     const loadDate = (p && p.fecha) || this.today;
     const loadOf = (n) => { const k = this.slots(n, loadDate, p && p.visitId).length; return (k === 1 ? '1 visita' : k + ' visitas') + (loadDate === this.today ? ' hoy' : ' el ' + this.fmtD(loadDate).slice(0, 5)); };
     const q = s.insQ.trim().toLowerCase();
-    const insList = this.INS.filter(i => !q || (ins && s.insQ === ins.n) || (i.n + ' ' + (i.meta || (i.tipo + ' ' + i.zona))).toLowerCase().includes(q));
+    const actual = p && p.mode === 'inspector' && this.cxBase() ? ((vis.find(v => v.id === p.visitId) || {}).inspector || '') : ''; // DEC-232: el inspector actual no se ofrece al cambiar
+    const insList = this.INS.filter(i => i.n !== actual).filter(i => !q || (ins && s.insQ === ins.n) || (i.n + ' ' + (i.meta || (i.tipo + ' ' + i.zona))).toLowerCase().includes(q));
+    const insMismo = !!actual && (s.insQ.trim().toLowerCase() === actual.toLowerCase() || (p && p.inspector === actual));
     const cl = this.clash(p);
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
@@ -504,7 +531,7 @@ class Component extends DCLogic {
       if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); const rN = onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.trasEnvio(rN, (x) => { const nx = this.conCx(nv, x); this.setState({ pnl: null, touched: {}, wa: { title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nx), ins: '', enlace: this.enlaceCopia(nx) } }); /* etapa C2-5: «Copiar enlace» también en demostración */ }); return; }
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
       let v, rA = null;
-      if (mode === 'reagendar') { v = Object.assign({}, src, base); onA('reagendar', { id: p.visitId, patch: base, motivo: String(p.motivoCx || '').trim() }); }
+      if (mode === 'reagendar') { const pt = this.cxBase() ? Object.assign({}, base, { riesgos: p.riesgos.slice() }) : base; /* DEC-232: los vehículos de la visita van a la base */ v = Object.assign({}, src, pt); onA('reagendar', { id: p.visitId, patch: pt, motivo: String(p.motivoCx || '').trim() }); }
       else { const id = nextId; v = Object.assign({ id, riesgos: mode === 'dividir' ? [p.split] : p.riesgos.slice(), estado: 'Agendada' }, base);
         if (p.mod === 'Virtual guiada') v.enlace = 'meet.sirius.ec/' + P.caseId + '-' + id.toLowerCase();
         if (p.mod === 'Autoinspección') { v.enlace = 'sirius.ec/ai/' + P.caseId + '-' + id; v.vence = this.addHours(p.validez); }
@@ -635,7 +662,7 @@ class Component extends DCLogic {
       fTitle: p ? (p.mode === 'nueva' ? (single ? 'Coordinar inspección' : 'Nueva visita · ' + nextId) : p.mode === 'reagendar' ? 'Reagendar visita' : p.mode === 'inspector' ? 'Cambiar inspector' : p.mode === 'enlace' ? 'Generar nuevo enlace' : 'Nueva visita para un especialista · ' + nextId) : '',
       closePnl: () => this.setState({ pnl: null }),
       showIncl: !!p && (p.mode === 'nueva' || p.mode === 'reagendar'), inclLabel: p && p.riesgos.length === 1 ? 'Riesgo incluido' : 'Riesgos incluidos' + (p ? ' (' + p.riesgos.length + ')' : ''), inclErr: !!(p && errs.riesgos),
-      incl: p ? p.riesgos.map(id => ({ label: this.rById(id).label, canRemove: p.mode === 'nueva' && !single, aria: 'Quitar ' + this.rById(id).label + ' de la visita', remove: () => this.setP('riesgos', p.riesgos.filter(x => x !== id)) })) : [],
+      incl: p ? p.riesgos.map(id => ({ label: this.rById(id).label, canRemove: (p.mode === 'nueva' || (p.mode === 'reagendar' && !!this.cxBase() && p.riesgos.length > 1)) && !single, aria: 'Quitar ' + this.rById(id).label + ' de la visita', remove: () => this.setP('riesgos', p.riesgos.filter(x => x !== id)) })) : [],
       showSplit: !!p && p.mode === 'dividir',
       splitOpts: p && p.mode === 'dividir' ? p.riesgos.map(id => ({ label: this.rById(id).label, checked: p.split === id, border: p.split === id ? 'var(--cyan-500)' : 'var(--border-default)', bg: p.split === id ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => this.setP('split', id) })) : [],
       showMods: !!p && p.mode !== 'inspector' && p.mode !== 'enlace', soloPres: !this.modCfg() && this.soloPresencial(), modNota: this.modCfg() ? 'Modalidades según la plantilla vigente «' + this.modCfg().plantilla + (this.modCfg().version ? ' v' + this.modCfg().version : '') + '»' + (this.modCfg().criterios ? ' y sus criterios para la autoinspección' : '') + '.' : '', recModTxt: this.modOk((P.rec || {}).modalidad || 'Presencial') ? ((P.rec || {}).modalidad || 'Presencial') : 'Presencial',
@@ -643,9 +670,9 @@ class Component extends DCLogic {
       needsIns: !!p && this.needsIns(p),
       insQ: s.insQ, insOpen: s.insOpen, onInsQ: (e) => this.setState({ insQ: e.target.value, insOpen: true }), openIns: () => this.setState({ insOpen: true }),
       insBlur: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { this.setState({ insOpen: false, insQ: p && p.inspector ? p.inspector : s.insQ }); this.touch('inspector'); } },
-      insOpts: insList.map(i => { const k = this.slots(i.n, loadDate, p && p.visitId).length; return { n: i.n, meta: i.meta || (i.tipo + ' · ' + i.zona), load: loadOf(i.n), loadColor: k >= 4 ? 'var(--color-danger)' : 'var(--text-body)', sel: p && p.inspector === i.n ? 'true' : 'false', bg: p && p.inspector === i.n ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.setP('inspector', i.n); this.setState({ insQ: i.n, insOpen: false }); } }; }),
+      insOpts: insList.map(i => { const k = this.slots(i.n, loadDate, p && p.visitId).length; return { n: i.n, meta: i.meta || (i.tipo + ' · ' + i.zona), load: loadOf(i.n), loadColor: k >= 4 ? 'var(--color-danger)' : 'var(--text-body)', sel: p && p.inspector === i.n ? 'true' : 'false', bg: p && p.inspector === i.n ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.setP('inspector', i.n); this.setState(st => { const o = { insQ: i.n, insOpen: false }; if (this.cxBase() && st.pnl && this.reloj()) { const q0 = st.pnl; if (q0.mode === 'nueva' && q0.propAuto) { const pr = this.proponer(i.n, q0.visitId); if (pr) o.pnl = Object.assign({}, q0, pr, { inspector: i.n, hFinAuto: true, propAuto: true }); } o.touched = Object.assign({}, st.touched, q0.fecha ? { hIni: true, hFin: true, fecha: true, inspector: true } : { inspector: true }); } return o; }); } }; }), /* DEC-232: con la jornada del inspector elegido se vuelve a proponer (si la propuesta no se cambió) y a validar */
       insNoMatch: !insList.length, hasIns: !!ins, insSummary: ins ? (ins.meta || (ins.tipo + ' · ' + ins.zona)) + ' · ' + loadOf(ins.n) : '',
-      insErrShow: !!(p && s.touched.inspector && errs.inspector), insInvalid: p && s.touched.inspector && errs.inspector ? 'true' : undefined, insBorder: p && s.touched.inspector && errs.inspector ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      insErrShow: !!(p && s.touched.inspector && errs.inspector) && !insMismo, insErrTxt: errs.inspector || 'Selecciona el inspector.', insMismo, insInvalid: p && s.touched.inspector && errs.inspector ? 'true' : undefined, insBorder: p && s.touched.inspector && errs.inspector ? 'var(--color-danger)' : 'var(--input-outlined-border)',
       hasClash: !!cl, clashText: cl ? p.inspector + ' tiene otra visita de ' + cl.a + ' a ' + cl.b : '',
       hasFields: fields.length > 0, fFields: fields,
       showMap: !!p && p.mode !== 'inspector' && p.mod === 'Presencial', mapAria: 'Mapa de referencia de ' + (p ? p.dir : ''), mapText: p && p.dir ? p.dir + (p.inter ? ' y ' + p.inter : '') : 'Ingresa la dirección para ubicarla',

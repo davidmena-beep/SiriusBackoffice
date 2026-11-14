@@ -4,6 +4,163 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0f2
+
+Publiqué la etapa P-6f-0f2 (Versión 205). La primera publicación quedó como Versión 204 con el registro diciendo 203; la Versión 205 solo corrige el número en el registro y no cambia nada más. La jornada por defecto de las visitas ya no está fija en Coordinación: es un parámetro de la Agenda, con valor inicial lun a sáb, 08:30–17:30, que el Administrador cambia en Configuración general (DEC-232).
+
+**Qué cambió**
+- **El parámetro:** `SIRIUS_AGENDA.jornadaDefecto = { dias: [1, 2, 3, 4, 5, 6], desde: '08:30', hasta: '17:30' }` (1 = lunes) en `datos-agenda-liquidaciones.js`. Se usa cuando el inspector no tiene jornada propia en `SIRIUS_AGENDA.disponibilidad`. Sin el parámetro, todo usa el valor inicial.
+- **Quién lo lee:** Coordinación, la propuesta de las escenas con la conexión y `SiriusFecha.propuestaVisita`, que ahora respeta los días y las horas de la jornada. Los errores muestran el valor vigente, por ejemplo «Fuera de la jornada de las visitas (lun a vie, 09:00–17:00)».
+- **Dónde se edita:** Administración › Configuración general › pestaña «Agenda» › «Jornada por defecto de las visitas».
+  - Casillas lun–dom y «Desde» y «Hasta» cada 15 minutos. El texto de ayuda dice «Se usa cuando el inspector no tiene jornada propia en la Agenda».
+  - Valida que haya al menos un día («Marca al menos un día.») y que «Desde» sea anterior a «Hasta».
+  - Pide motivo de 10 caracteres o más y queda en el historial con el nombre y la fecha.
+  - Con la conexión se publica con `SiriusPublicar` como parte de `SIRIUS_AGENDA`; con `{ ok: false }` el cambio vuelve atrás y se ve el mensaje de la base.
+  - Finanzas la ve en solo lectura, con la nota «Solo el Administrador edita la jornada por defecto de las visitas.».
+- **Archivo nuevo:** `sirius-jornada.js` (`SiriusJornada`: guardar, validar, historial, reinicio). Guarda el valor editado y el historial en un solo módulo, porque los componentes vuelven a ejecutar los archivos de datos y reemplazan `SIRIUS_AGENDA`.
+- **Escena nueva `agendajornada`** (Administrador, con la conexión simulada solo en la escena): el parámetro con su valor inicial, el borrador lun a vie 09:00–17:00 con motivo, el error de horas y el caso 50095 para ver Coordinación con la jornada nueva.
+
+**Verificado**
+- **Escenas a 1280×720 y 1920×1080, desde el selector:** agendajornada, cxcoordjornada, cxcoordins, cxcoordmismo, cxcoordcambiar, cxcoordpasado y cxvisitariesgos, más confgeneral, confimpuestos, confmoneda, agendasemana, agendadia, agendamover y agendaok. Ninguna mostró errores ni scroll horizontal.
+- **agendajornada, guardar lun a vie 09:00–17:00:**
+  - El valor vigente pasa de «lun a sáb, 08:30–17:30» a «lun a vie, 09:00–17:00».
+  - El historial muestra «Jornada por defecto de las visitas: lun a sáb, 08:30–17:30 → lun a vie, 09:00–17:00», el motivo y «Publicada en la base · versión 1».
+  - `SIRIUS_AGENDA.jornadaDefecto` queda en `{ dias: [1, 2, 3, 4, 5], desde: '09:00', hasta: '17:00' }`.
+- **Errores:**
+  - `?jdesde=18:00`: «La hora «Desde» debe ser anterior a «Hasta» (18:00 no es anterior a 17:00).», con «Guardar cambios» sin efecto y nada en el historial.
+  - Sin ningún día marcado: «Marca al menos un día.».
+  - Motivo de menos de 10 caracteres: «Escribe el motivo (mínimo 10 caracteres): queda en el historial.».
+  - `?cxok=0`: la base rechaza, el valor vuelve a lun a sáb, 08:30–17:30, el historial queda vacío y se ve «La base rechazó la acción (prueba). Se deshizo el cambio.».
+- **Coordinación con la jornada nueva** (en la misma página, caso 50095, Gabriela Toapanta sin jornada propia; reloj real 14/11/2026, de madrugada):
+  - Propone el lunes 16/11 a las 09:00.
+  - Presencial de 16:30 a 17:15 da «Fuera de la jornada de las visitas (lun a vie, 09:00–17:00)» en la hora de fin; de 08:30 a 09:15, en la hora de inicio.
+  - Un sábado (21/11) a las 10:00 da el mismo error; el viernes 20/11 de 09:00 a 09:45 no tiene error.
+  - Luis Andrade, con jornada propia (09:00–18:00), no tiene error el sábado 21/11 de 09:00 a 09:45.
+- **Sin editar:** como Finanzas (confimpuestos › Agenda) las casillas y las horas están bloqueadas y no hay botón de guardar. Al cambiar a una escena sin la conexión simulada, el valor y el historial vuelven al inicio.
+- **Comparación con la versión anterior** (sin la conexión): coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar, cxnumerocruce, agendasemana y agendadia quedan iguales; en enlaceagenda solo cambia el código del enlace, que es al azar. Con la conexión, cxcoordjornada, cxcoordins, cxcoordcambiar, cxcoordmismo, cxcoordpasado y cxvisitariesgos también quedan iguales al abrirse, salvo lo que aparece en Diferencias.
+- **Búsqueda en el proyecto:** la jornada fija estaba en tres archivos y ya no queda en ninguno.
+  - `Coordinacion.dc.html`: `jornada()` usaba lun a sáb, 08:00–18:00.
+  - `datos-cx-inspectores.js`: `prop()` tenía un respaldo 08:00–08:45.
+  - `sirius-fecha.js`: `propuestaVisita` proponía «mañana a las 08:00» y hasta las 18:00.
+  - El valor inicial 08:30–17:30 queda solo en `datos-agenda-liquidaciones.js` y en `SiriusFecha.JORNADA_INICIAL`.
+  - Se dejaron a propósito, porque son otra cosa: el horario de los mensajes a clientes (`sirius-enlace.js` y `datos-notificaciones.js`, 08:00–19:00), los recordatorios de la app (`datos-app-inspector.js`, 15:00 y 18:00), el eje de la rejilla de `Agenda.dc.html`, el calendario de SIRIUS_FLUJO (`datos-flujo.js` y `sirius-portal-caso.js`) y las jornadas propias de cada inspector. `sirius-agenda.js` no tenía jornada por defecto.
+- **Conexión temporal** (copia aparte, no simulada, con un Administrador): al guardar, `accion('publicarConfiguracion')` recibió `clave: 'SIRIUS_AGENDA'`, `version: 1`, `datos` con todo `SIRIUS_AGENDA` (13 claves, incluida `jornadaDefecto` = lun a vie 09:00–17:00 y las 6 jornadas de `disponibilidad`) y el motivo. Con `{ ok: false }` el valor vuelve a lun a sáb, 08:30–17:30 y el historial queda vacío.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: `SIRIUS_AGENDA.jornadaDefecto`, `publicarConfiguracion` de `SIRIUS_AGENDA`, `sirius-jornada.js`, 594 escenas en datos-escenas y KNOWN_ESC 551.
+
+**No verificado**
+- **La base real:** se probó contra la conexión simulada y una temporal.
+- **De día:** las pruebas se hicieron de madrugada (reloj real). Con el reloj a media jornada no se revisó la propuesta en pantalla.
+- **Días salteados:** no probé una jornada con días no seguidos (p. ej. lun, mié, vie). El texto se arma separado por comas.
+- **Otras pantallas con la jornada nueva:** la app del inspector y los portales leen sus propias jornadas; no hay cambio en ellos y no los revisé con el valor editado.
+
+**Diferencias**
+- **Dónde se edita:** Configuración general ya tenía lugar (pestañas Compañía, Moneda e Impuestos), así que agregué la pestaña «Agenda» ahí y no en la pantalla de la Agenda.
+- **Dónde vive el valor editado:** en `SiriusJornada` (memoria de la sesión, como el resto de Configuración general) y se refleja en `SIRIUS_AGENDA.jornadaDefecto`. Con la conexión, el valor definitivo es el que publica la base.
+- **Arreglo que no estaba pedido, en `sirius-usuarios.js`:** un comentario en línea ocultaba `conflictos`, `cfgGeneral` e `impuestos` en la matriz de permisos. Por eso Configuración general no abría para nadie y `confgeneral`, `confimpuestos` y `confmoneda` caían en Inicio. Ahora abren; el Administrador ve Configuración general y Conflictos, y Finanzas ve Configuración general. Es la única diferencia visible en las escenas sin conexión (menú de Administración y esas tres escenas).
+- **Qué cambió en cada escena que mostraba 08:00–18:00:**
+  - cxcoordjornada: Gabriela Toapanta (sin jornada propia) pasa de «sábado 14/11 a las 08:00» a «sábado 14/11 a las 08:30»; la propuesta inicial también (08:30). Mauricio Endara (lun a vie, 08:00–17:00) y Luis Andrade (09:00–18:00) siguen igual.
+  - cxcoordins: la primera propuesta pasa de 08:00–08:45 a 08:30–09:15.
+  - cxcoordcambiar y cxcoordmismo: sin cambio (la visita del próximo lunes de 10:00 a 10:45).
+  - cxcoordpasado y cxvisitariesgos: sin cambio (Luis Andrade, con jornada propia; el error «La hora ya pasó: hoy se puede agendar desde las 07:00.» sigue igual).
+- **Días de los inspectores:** un `dias` con 0 en la jornada propia de un inspector se lee como domingo (7).
+- **Jornada de Mauricio Endara:** existe solo en cxcoordjornada, como en la etapa anterior.
+- **Qué se publica:** `datos` es `SIRIUS_AGENDA` completo con `jornadaDefecto`, y `version` sale de `SiriusPublicar.versionDe('SIRIUS_AGENDA', 0)`.
+- **Fecha del historial:** usa la del prototipo (18/10/2026 · 20:30); Coordinación en agendajornada usa el reloj real, como las demás escenas de la base.
+- **agendajornada:** es una escena con la conexión simulada solo en la escena, con el caso 50095 «En coordinación».
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| agendajornada | Configuración general › Agenda: el parámetro con su valor inicial y el borrador lun a vie 09:00–17:00 con motivo (con `?jdesde=18:00`, el error de horas; con `?cxok=0`, el rechazo); el caso 50095 sirve para ver Coordinación con la jornada nueva |
+| cxcoordjornada | Reagendar fuera de la jornada de Mauricio Endara; el caso 50092 compara propuestas, ahora con 08:30 para quien no tiene jornada propia |
+| cxcoordins | Coordinar inspección: primera propuesta a las 08:30 |
+
+También abrí cxcoordmismo, cxcoordcambiar, cxcoordpasado, cxvisitariesgos, confgeneral, confimpuestos, confmoneda, agendasemana, agendadia, agendamover, agendaok, coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar y cxnumerocruce.
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6f-0f
+
+Publiqué la etapa P-6f-0f (Versión 202). Con la conexión, Coordinación ya no ofrece al inspector actual, respeta la jornada de cada inspector y guarda en la base los vehículos y la dirección de cada visita (DEC-232). Sin la conexión, queda igual.
+
+**Qué cambió**
+- **Mismo inspector:** en «Cambiar inspector», el inspector actual no aparece en la lista. Si se escribe su nombre, se ve «No hay inspectores con ese criterio» y el aviso «Ya es el inspector de esta visita».
+- **Jornada del inspector:**
+  - Sale de la Agenda (`SIRIUS_AGENDA.disponibilidad`, por nombre). Si el inspector no tiene jornada configurada, se usa lun a sáb, 08:00–18:00.
+  - La propuesta es el primer espacio libre de 45 minutos dentro de la jornada del inspector elegido, sin chocar con sus visitas de la base. Al elegir otro inspector se vuelve a proponer, mientras la fecha y la hora no se hayan tocado.
+  - Fuera de la jornada aparece el error en línea «Fuera de la jornada de <inspector> (<días>, <inicio>–<fin>)». Va en la hora de inicio o, si solo el fin se pasa, en la hora de fin. Se vuelve a validar al cambiar de inspector.
+- **Vehículos de la visita:**
+  - `agendarVisita` lleva `riesgos` en agendar, reagendar y cambiar inspector.
+  - Al dividir se envían dos llamadas: «agendar» de la visita nueva con su riesgo y «reagendar» de la de origen con los que le quedan y el motivo «Se dividió la visita: …».
+  - La tarjeta toma los vehículos de `visitasBase[].riesgos`; sin ese dato, la visita lleva todos los del caso.
+  - «Vehículos por coordinar» cuenta solo los que no están en una visita abierta.
+  - Después de `{ ok: true }` la pantalla vuelve a leer la base. Con `{ ok: false }` la visita vuelve con sus vehículos anteriores, Coordinación se cierra sin la vista previa del mensaje y se ve el mensaje de la base.
+- **Dirección de la visita:** se toma de `visitasBase[].direccion` y, sin ese dato, de la del caso.
+
+**Verificado**
+- **Escenas a 1280×720 y 1920×1080, desde el selector:** cxcoordmismo, cxcoordjornada, cxvisitariesgos, cxcoordins, cxcoordpasado y cxcoordcambiar. Ninguna mostró errores ni scroll horizontal.
+- **Sin la conexión, comparadas con la versión anterior a las dos medidas:** coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlaceagendamodalidad, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar y cxnumerocruce.
+  - Quedan iguales.
+  - En enlaceagenda solo cambia el código del enlace, que se genera al azar en cada carga.
+- **cxcoordmismo:** con «Mauricio Endara» escrito, la lista queda vacía y aparece «Ya es el inspector de esta visita».
+- **cxcoordjornada** (reloj real 14/11/2026, 00:27):
+  - Reagendar la visita del lunes 16/11 a las 00:00 y a las 19:00 (`?cxhora=19:00`) da «Fuera de la jornada de Mauricio Endara (lun a vie, 08:00–17:00)».
+  - De 16:45 a 17:30 el error aparece en la hora de fin.
+  - En el caso 50092 se propone:
+    - Mauricio Endara (lun a vie): lunes 16/11 a las 08:00.
+    - Gabriela Toapanta, sin jornada (lun a sáb, 08:00–18:00): sábado 14/11 a las 08:00.
+    - Luis Andrade (de 09:00 a 18:00 en la Agenda): sábado 14/11 a las 09:00.
+  - Al pasar de Mauricio a Gabriela con 16:45–17:30, el error se quita. Al volver a Mauricio, el error regresa.
+- **cxvisitariesgos:**
+  - Nueva visita con PRB1212, Luis Andrade y la dirección «Av. Mariana de Jesús E7-42 y La Pradera, Quito».
+  - La base guardó `riesgos: ['50093-V1']` y esa dirección. Al releer, la tarjeta muestra PRB1212 y esa dirección.
+  - «Vehículos por coordinar» muestra 2 (PR121A y PRB1213, con «Marca, Modelo, Año») y ningún «Sin placa».
+  - Con `?cxrech=1` la visita no queda, vuelven los 3 vehículos y se ve «El inspector Luis Andrade no existe en la base».
+- **cxcoordcambiar:** cambiar a Luis Andrade y reagendar siguen funcionando, también con `?cxrech=1`. El reagendar guarda `riesgos` y `direccion` en la base.
+- **Conexión temporal** (copia aparte, no simulada): `agendarVisita` llegó con `riesgos` en todos los casos.
+  - Agendar: `riesgos: ['50093-V1']`, con la dirección escrita.
+  - Reagendar: `riesgos: ['50093-V1']` y el motivo.
+  - Dividir una visita de Ramos Generales con 2 riesgos:
+    - «agendar» de la V2 con `['50094-R2']`;
+    - «reagendar» de la V1 con `['50094-R1']` y «Se dividió la visita: 1 riesgo pasa a la V2»;
+    - la pantalla muestra las dos visitas como las guardó la base.
+  - Con `{ ok: false }` la visita no quedó y volvieron los 3 vehículos.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados:
+  - contrato con `agendarVisita.riesgos`, `visitasBase[].riesgos` y `direccion`;
+  - `riesgos[]` con `label`, `detalle` y `nowrap`;
+  - 593 escenas en datos-escenas y KNOWN_ESC 550.
+
+**No verificado**
+- **La base real:** se probó contra la conexión simulada y una temporal.
+- **El caso 50012 de la base:** no lo tengo.
+- **De día:** las pruebas se hicieron de madrugada (reloj real). Con el reloj a media jornada no se revisó en pantalla.
+- **Jornadas de la Agenda:** no probé días no seguidos (p. ej. lun, mié, vie). El texto se arma igual, separado por comas.
+
+**Diferencias**
+- **Visitas abiertas:** cuentan como asignadas, además de las cuatro que pide la etapa, «Autoinspección enviada», «En curso por el cliente» y «Realizada». Así un vehículo ya inspeccionado no vuelve a «por coordinar».
+- **Reagendar:** solo permite quitar vehículos de la visita, no agregar. Para agregar se crea otra visita.
+- **Dividir:** en el prototipo solo se ofrece en Ramos Generales, como antes. Por eso lo probé con riesgos y no con vehículos, y el motivo dice «riesgo» o «vehículo» según el ramo.
+- **Jornada de Mauricio Endara:** existe solo en cxcoordjornada (en `coordEscena.disponibilidad`, sin tocar `SIRIUS_AGENDA`). En las demás escenas no tiene jornada configurada.
+- **cxcoordcambiar y cxcoordmismo:** la visita pasa al próximo lunes de 10:00 a 10:45. Antes se calculaba con la hora real y de madrugada caía fuera de toda jornada.
+- **Agenda de las escenas:** las visitas de demostración de Mauricio caen dentro de lun a sáb, 08:00–18:00.
+- **cxcoordins:** al elegir a Mauricio Endara se propone su primer espacio libre (09:45 en la prueba). Antes quedaba la hora con choque. El aviso de choque se ve si se escribe 08:00.
+- **Rechazo de la base:** con `{ ok: false }`, Coordinación se cierra y vuelve a empezar. Antes quedaba abierta la vista previa «Visita agendada» aunque la base la había rechazado.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| cxcoordmismo | Cambiar inspector escribiendo al inspector actual: «Ya es el inspector de esta visita» |
+| cxcoordjornada | Reagendar a las 00:00 (o 19:00 con `?cxhora=19:00`) fuera de la jornada de Mauricio Endara (lun a vie, 08:00–17:00); el caso 50092 sirve para comparar propuestas |
+| cxvisitariesgos | Nueva visita con 1 de 3 vehículos y su dirección; al agendar quedan 2 por coordinar (con `?cxrech=1`, el rechazo) |
+
+También abrí cxcoordins, cxcoordpasado, cxcoordcambiar, coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlaceagendamodalidad, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar y cxnumerocruce.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0e
 
 Publiqué la etapa P-6f-0e (Versión 201). Con la conexión, Coordinación usa los inspectores y el reloj de la base (DEC-230 y DEC-231). Sin la conexión, queda igual.

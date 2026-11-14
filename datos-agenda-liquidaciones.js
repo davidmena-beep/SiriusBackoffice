@@ -15,6 +15,9 @@ window.SIRIUS_AGENDA = {
   version: '1.1', vigencia: 'Provisional',
   vistas: ['Día', 'Semana', 'Lista'], vistaInicial: { Coordinador: 'Semana', Inspector: 'Día' },
   franjaMinima: 30, // minutos
+  // Etapa P-6f-0f2 · DEC-232: «Jornada por defecto de las visitas». Se usa para agendar, reagendar y validar cuando el inspector no tiene jornada propia en `disponibilidad`.
+  // Parametrizable (Administración › Configuración general › Agenda). dias: 1 = lunes … 7 = domingo; desde y hasta en HH:MM. Valor inicial: lunes a sábado, de 08:30 a 17:30.
+  jornadaDefecto: { dias: [1, 2, 3, 4, 5, 6], desde: '08:30', hasta: '17:30' },
   disponibilidad: [
     { inspector: 'Marco Tapia', credencial: 'AS-INS-0142', ciudadBase: 'Quito', base: [-0.1807, -78.4678], dias: [1, 2, 3, 4, 5], jornada: ['08:00', '17:00'], zonas: ['Quito'], capacidadDia: 6, modalidades: ['Presencial', 'Virtual guiada'] },
     { inspector: 'Cristian Vaca', credencial: 'AS-INS-0157', ciudadBase: 'Quito', dias: [1, 2, 3, 4, 5, 6], jornada: ['08:00', '17:00'], zonas: ['Quito', 'Manta'], capacidadDia: 5, modalidades: ['Presencial', 'Virtual guiada'] },

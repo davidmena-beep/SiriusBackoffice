@@ -10,7 +10,7 @@
 <helmet>
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
-<script src="datos-compania.js"></script><script src="sirius-compania.js"></script><script src="sirius-monto.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-honorarios.js"></script><script src="sirius-honorarios.js"></script><script src="sirius-liquidaciones.js"></script><script src="sirius-modal.js"></script>
+<script src="datos-compania.js"></script><script src="sirius-compania.js"></script><script src="sirius-monto.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-fecha.js"></script><script src="sirius-jornada.js"></script><script src="datos-honorarios.js"></script><script src="sirius-honorarios.js"></script><script src="sirius-liquidaciones.js"></script><script src="sirius-modal.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}
 .cg-sel,.cg-in{height:40px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);width:100%}
 .cg-sel:focus-visible,.cg-in:focus-visible,.cg-ta:focus-visible{border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)}
@@ -32,22 +32,25 @@
 <section data-screen-label="BO-11 Configuración general" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">{{ top }}{{ bottom }}</section>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:800},&quot;datos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;escena&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
-// BO-11 · Administración › Configuración general (etapa 11-c · DEC-139). Pestañas Compañía, Moneda e Impuestos sobre SIRIUS_COMPANIA
+// BO-11 · Administración › Configuración general (etapa 11-c · DEC-139). Pestañas Compañía, Moneda, Impuestos (sobre SIRIUS_COMPANIA) y Agenda (P-6f-0f2 · DEC-232: jornada por defecto de las visitas, SiriusJornada)
 // (lógica en SiriusCompania, en memoria). El Administrador edita todo; Finanzas edita Impuestos. Cambiar la moneda pide motivo y muestra
 // el impacto sin convertir valores; una vigencia de IVA nueva cierra la anterior (sin huecos ni cruces) y las liquidaciones facturadas no se recalculan.
 class Component extends DCLogic {
-  state = { tab: 0, comp: null, mon: '', monModal: null, vig: { tasa: null, tasaErr: '', desde: '', nota: '' }, vigModal: null, probar: '', snack: '' };
+  state = { tab: 0, comp: null, mon: '', monModal: null, vig: { tasa: null, tasaErr: '', desde: '', nota: '' }, vigModal: null, probar: '', snack: '', ag: null };
   SC() { return window.SiriusCompania; }
+  SJ() { return window.SiriusJornada; } // P-6f-0f2 · DEC-232: jornada por defecto de las visitas
   C() { return window.SIRIUS_COMPANIA; }
   NS() { return window.AseguradoraDelSurDesignSystem_4fbf29 || {}; }
   d() { return this.props.datos || { puedeCompania: true, puedeImpuestos: true, yo: 'Mónica Ríos' }; }
-  componentDidMount() { const SC = this.SC(); if (SC) this._off = SC.on(() => this.forceUpdate()); setTimeout(() => this.semilla(), 30); setTimeout(() => this.crumb(), 40); }
-  componentWillUnmount() { if (this._off) this._off(); clearTimeout(this._st); }
+  componentDidMount() { const SC = this.SC(), SJ = this.SJ(); if (SC) this._off = SC.on(() => this.forceUpdate()); if (SJ) this._offJ = SJ.on(() => this.forceUpdate()); setTimeout(() => this.semilla(), 30); setTimeout(() => this.crumb(), 40); }
+  componentWillUnmount() { if (this._off) this._off(); if (this._offJ) this._offJ(); clearTimeout(this._st); }
   componentDidUpdate(prev) { prev = prev || {}; if (this._tabC !== this.state.tab) this.crumb(); }
-  crumb() { this._tabC = this.state.tab; const f = this.props.onCrumb; if (f) f(['Compañía', 'Moneda', 'Impuestos'][this.state.tab]); }
+  crumb() { this._tabC = this.state.tab; const f = this.props.onCrumb; if (f) f(['Compañía', 'Moneda', 'Impuestos', 'Agenda'][this.state.tab]); }
   semilla() { if (this._sem) return; this._sem = true; const e = this.props.escena || '', SC = this.SC(); if (!SC) return;
     if (e === 'confgeneral') this.setState({ tab: 1, mon: this.C().moneda.codigo });
     if (e === 'confimpuestos') this.setState({ tab: 2 });
+    if (e === 'agendajornada') { let q = new URLSearchParams(); try { q = new URLSearchParams(location.search); } catch (er) { /* nada */ } // P-6f-0f2: borrador listo para guardar (lun a vie, 09:00–17:00); ?jdesde=18:00 muestra el error de horas
+      this.setState({ tab: 3, ag: { dias: [1, 2, 3, 4, 5], desde: q.get('jdesde') || '09:00', hasta: q.get('jhasta') || '17:00', motivo: 'Las visitas empiezan más tarde en todas las sucursales.', tried: false } }); }
     if (e === 'confmoneda') this.setState({ tab: 1, mon: 'COP', monModal: { motivo: 'Cambio de moneda de reporte para la operación en Colombia', tried: false } }); }
   toast(m) { this.setState({ snack: m }); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ snack: '' }), 5200); }
   fmtF(s) { return this.SC().fechaTxt(s ? String(s).slice(0, 10) : ''); }
@@ -105,6 +108,29 @@ class Component extends DCLogic {
       h('section', { key: 'r', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Retenciones'), h('p', { style: { margin: 0, fontSize: 14 } }, h('strong', null, re.nombre + ': '), re.nota + '. ' + re.aplicaA + '. Mientras tanto, las liquidaciones muestran «Por definir».')),
       h('section', { key: 'rg', className: 'cg-card', style: { maxWidth: 960 }, 'aria-label': 'Reglas' }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Cómo se aplica'), h('ul', { style: { margin: 0, paddingLeft: 18, fontSize: 14, display: 'flex', flexDirection: 'column', gap: 4 } }, C.reglas.map((r, i) => h('li', { key: i }, r)))),
       this.hist('impuestos')]; }
+  // ---------- Agenda (P-6f-0f2 · DEC-232) ----------
+  tabAgenda() { const h = React.createElement, SJ = this.SJ(), SF = window.SiriusFecha, d = this.d(), ed = !!d.puedeCompania, vig = SJ.defecto(), A = window.SIRIUS_AGENDA || {}, propias = (A.disponibilidad || []).length;
+    const f = this.state.ag || { dias: vig.dias.slice(), desde: vig.desde, hasta: vig.hasta, motivo: '', tried: false }, set = (o) => this.setState({ ag: Object.assign({}, f, o) });
+    const err = SJ.validar(f), hayErr = Object.keys(err).length > 0, camb = !SJ.igual(f, vig), eM = f.tried && camb && !hayErr && f.motivo.trim().length < 10, primero = err.dias || err.desde || err.hasta || '';
+    const guardar = () => { if (!camb || hayErr) return; if (f.motivo.trim().length < 10) { set({ tried: true }); return; }
+      SJ.guardar(f, f.motivo.trim(), d.yo).then((r) => { if (r && r.ok === false) { this.setState({ ag: f }); if (r.validacion || !r.mensaje) this.toast(r.mensaje || 'No se pudo guardar'); } else if (r && r.local) this.toast('Jornada guardada: Coordinación la usa desde ahora; quedó en el historial.'); }); this.setState({ ag: null }); };
+    const dias = h('fieldset', { id: 'cg-ag-dias', style: { border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }, 'aria-describedby': 'cg-ag-dias-e' },
+      h('legend', { style: { padding: 0, marginBottom: 6, fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, 'Días', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *')),
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, SJ.DIAS.map((x) => { const on = f.dias.indexOf(x[0]) >= 0; return h('label', { key: x[0], className: 'cg-nw', style: { display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 40, padding: '0 14px', border: '1.5px solid ' + (on ? 'var(--color-brand)' : 'var(--input-outlined-border)'), borderRadius: 'var(--radius-sm)', background: on ? 'var(--color-brand-wash,#E6F7FD)' : '#FFFFFF', cursor: ed ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, color: 'var(--text-strong)' } },
+        h('input', { type: 'checkbox', checked: on, disabled: !ed, 'aria-label': x[2], onChange: () => set({ dias: on ? f.dias.filter((n) => n !== x[0]) : f.dias.concat([x[0]]).sort((a, b) => a - b) }) }), x[1]); })),
+      err.dias ? h('span', { id: 'cg-ag-dias-e', role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, err.dias) : null);
+    const hora = (id, k, t) => this.campo(id, t, h('select', { id, className: 'cg-sel', value: f[k], disabled: !ed, 'aria-invalid': err[k] ? 'true' : 'false', 'aria-describedby': id + '-e', onChange: (e) => set({ [k]: e.target.value }) }, SJ.HORAS.map((x) => h('option', { key: x, value: x }, x))), { req: true, err: err[k] || '' });
+    const L = SJ.historial();
+    return [h('section', { key: 'ag', className: 'cg-card', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Agenda'),
+      !ed ? h('p', { role: 'note', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Solo el Administrador edita la jornada por defecto de las visitas.') : null,
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('strong', { style: { fontSize: 15, color: 'var(--text-strong)' } }, 'Jornada por defecto de las visitas'), h('span', { id: 'cg-ag-ayuda', style: { fontSize: 14, color: 'var(--text-muted)' } }, 'Se usa cuando el inspector no tiene jornada propia en la Agenda.')),
+      h('p', { id: 'cg-ag-vigente', role: 'status', style: { margin: 0, fontSize: 14 } }, h('strong', null, 'Vigente: '), SJ.txt(vig) + '.' + (propias ? ' Los ' + propias + ' inspectores con jornada propia en la Agenda no la usan.' : '')),
+      dias, h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,240px))', gap: 16 } }, hora('cg-ag-desde', 'desde', 'Desde'), hora('cg-ag-hasta', 'hasta', 'Hasta')),
+      h('p', { role: 'note', style: { margin: 0, fontSize: 14, padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle,#F3F5F8)' } }, 'Así lo usa Coordinación con un inspector sin jornada propia: propone el primer horario libre de 45 minutos dentro de ' + SJ.txt(vig) + ' y, fuera de ella, avisa «Fuera de la jornada de las visitas (' + SJ.txt(vig) + ')».'),
+      ed ? [this.motivo('cg-ag-m', f, set, 'Por qué cambia la jornada por defecto'), h('div', { key: 'b', style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' } }, this.btn('primary', 'Guardar cambios', camb && !hayErr ? guardar : undefined, camb && !hayErr ? {} : { unavailableReason: hayErr ? primero : 'No hay cambios para guardar' }), camb ? this.btn('ghost', 'Descartar', () => this.setState({ ag: null })) : null)] : null),
+      h('section', { key: 'hist-agenda', className: 'cg-card', 'aria-label': 'Historial de cambios', style: { maxWidth: 960 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Historial de cambios'),
+        L.length ? h('div', { className: 'cg-tw' }, h('table', { className: 'cg-t', style: { minWidth: 760 } }, h('thead', null, h('tr', null, h('th', { scope: 'col', className: 'cg-c0 cg-nw' }, 'Fecha'), h('th', { scope: 'col' }, 'Cambio'), h('th', { scope: 'col' }, 'Motivo'), h('th', { scope: 'col' }, 'Estado'), h('th', { scope: 'col', className: 'cg-nw' }, 'Por'))),
+          h('tbody', null, L.map((e, i) => h('tr', { key: i }, h('td', { className: 'cg-c0 cg-nw' }, this.fecha(e.fecha)), h('td', null, e.que), h('td', null, e.motivo || '—'), h('td', null, e.estado || '—'), h('td', { className: 'cg-nw' }, e.por)))))) : h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Sin cambios en esta sesión. La jornada parte de SIRIUS_AGENDA.jornadaDefecto.'))]; }
   modales() { const h = React.createElement, M = window.SiriusModal || this.NS().Modal, C = this.C(), SC = this.SC(), st = this.state, d = this.d(), out = []; if (!M) return out;
     if (st.monModal) { const m = st.monModal, cod = st.mon, imp = SC.impactoMoneda(cod), cierra = () => this.setState({ monModal: null });
       out.push(h(M, { key: 'mm', open: true, onClose: cierra, size: 'md', align: 'left', title: 'Cambiar la moneda a ' + imp.nombre + ' (' + cod + ')', description: 'No convierte los valores guardados: solo cambia cómo se muestran.', footer: h(React.Fragment, null, this.btn('ghost', 'Cancelar', cierra), this.btn('primary', 'Cambiar moneda', () => { if (m.motivo.trim().length < 10) { this.setState({ monModal: Object.assign({}, m, { tried: true }) }); return; } SC.cambiarMoneda(cod, m.motivo.trim(), d.yo); this.setState({ monModal: null, mon: '' }); this.toast('Moneda cambiada a ' + cod + '. Los valores guardados no se convirtieron.'); })) },
@@ -118,9 +144,9 @@ class Component extends DCLogic {
   renderVals() {
     const h = React.createElement, NS = this.NS(), st = this.state, SC = this.SC(), v = {}; if (!SC || !this.C()) { v.top = h('p', null, 'Cargando…'); v.bottom = null; return v; }
     const titulo = h('div', { key: 'tt', style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('h1', { style: { margin: 0, fontWeight: 300, fontSize: 36, lineHeight: 1.05, color: 'var(--text-strong)' } }, 'Configuración general'), h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)', maxWidth: 900 } }, 'Datos de la compañía, moneda e impuestos: una sola fuente para toda pantalla, PDF, notificación y cálculo que muestre o sume dinero.'));
-    const tb = NS.Tabs ? h(NS.Tabs, { key: 'tb', tabs: ['Compañía', 'Moneda', 'Impuestos'], active: st.tab, onChange: (i) => this.setState({ tab: i }) }) : null;
+    const tb = NS.Tabs ? h(NS.Tabs, { key: 'tb', tabs: ['Compañía', 'Moneda', 'Impuestos', 'Agenda'], active: st.tab, onChange: (i) => this.setState({ tab: i }) }) : null;
     const snack = st.snack ? h('div', { key: 'sn', role: 'status', style: { position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 1700, maxWidth: 'min(640px,90vw)', padding: '12px 20px', borderRadius: 'var(--radius-sm)', background: 'var(--neutral-900,#011E41)', color: '#FFFFFF', fontSize: 14, boxShadow: 'var(--shadow-md)' } }, st.snack) : null;
-    v.top = [titulo, tb].concat(st.tab === 0 ? this.tabCompania() : st.tab === 1 ? this.tabMoneda() : this.tabImpuestos());
+    v.top = [titulo, tb].concat(st.tab === 0 ? this.tabCompania() : st.tab === 1 ? this.tabMoneda() : st.tab === 2 ? this.tabImpuestos() : this.tabAgenda());
     v.bottom = [this.modales(), snack];
     return v;
   }
