@@ -4,6 +4,57 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0h
+
+Publiqué la etapa P-6f-0h (Versión 208 con los archivos; la Versión 209 solo completa en este registro la hora de fin, que se toma al terminar de publicar). «Expandir todo / Contraer todo» ya sale con 2 riesgos o más, a la derecha del título, y el botón de confirmar de Usuarios se habilita —y se ve habilitado— solo cuando se puede guardar.
+
+**Qué cambió**
+- **Expandir todo / Contraer todo (DEC-226):** con 2 riesgos o más, a la derecha del título «Objeto a asegurar · N …» hay un botón de texto: «Expandir todo» si alguna tarjeta está cerrada, «Contraer todo» si todas están abiertas. Lleva `aria-expanded` y `aria-controls`; con 1 riesgo no aparece. Antes salía solo con 4 o más y encima de las tarjetas.
+- **Apertura inicial:** no cambia. Hasta 3 riesgos, todas abiertas; con 4 o más, todas cerradas. Lo abierto se mantiene mientras se navega por el caso.
+- **Cambiar estado, Crear usuario y Editar usuario (DEC-233):** el botón de confirmar está `disabled` de verdad y se ve gris cuando no se puede guardar, y se ve azul y habilitado cuando sí se puede. Debajo del motivo, una nota «Para continuar: …» dice lo que falta.
+  - Cambiar estado: habilitado solo con un estado nuevo distinto del actual y no bloqueado, y un motivo de 10 caracteres o más.
+  - Crear usuario: nombre, correo válido, al menos un rol, agencia si es de agencia, sucursales y grupos si se eligen, zonas si es inspector, y el motivo.
+  - Editar usuario: lo mismo, más que haya algo que cambiar y que el Administrador no se quite su propio rol de Administrador.
+- **Causa del botón gris:** «Cambiar estado» se pintaba con una variante «danger» que el sistema de diseño no tiene; con «Suspendido» o «Inactivo» salía sin estilo y parecía deshabilitado, aunque respondía al clic. Ahora todos los botones de confirmar de Usuarios usan la variante principal.
+- **Escena nueva:** cxusuarioestado.
+
+**Verificado**
+- **Riesgos, a 1280 × 720 y 1920 × 1080:** resumenflotabase (3 abiertas, «Contraer todo»), resumenflota5 (5 cerradas, «Expandir todo»), resumenequipos2 (2 abiertas, botón) y resumenvehsol (1 riesgo, sin botón). El botón queda en la misma fila del título, a su derecha, sin scroll horizontal.
+- **Teclado:** con Tab desde el campo anterior el foco llega al botón; Enter alterna entre «Contraer todo» y «Expandir todo» y las tarjetas siguen al botón en las tres escenas con botón.
+- **Lo abierto se mantiene:** en 50012 cerré la tarjeta 2, salí a Inicio y volví por Solicitudes › Bandeja; seguía cerrada y el botón decía «Expandir todo».
+- **cxusuarioestado:** sin estado ni motivo, gris y deshabilitado; con «Suspendido» y motivo corto, deshabilitado; con motivo válido, azul y habilitado (también con «Inactivo»); con el estado actual y motivo válido (`?cxmismo=1`), deshabilitado; un clic forzado sobre el botón gris no hace nada. Con `?cxestado=1` y un clic, Gabriela Toapanta queda «Suspendido».
+- **Crear y Editar:** deshabilitados con motivo corto, sin nombre, con correo inválido, sin cambios y con `?cxyo=1` (el Administrador sin su rol); habilitados con los datos completos.
+- **Escenas a 1280 × 720 y 1920 × 1080 desde el selector:** cxusuarioestado, cxusuarios, cxusuariocrear y cxusuarioeditar, sin errores ni scroll horizontal.
+- **Sin cambios no pedidos:** 16 escenas de Usuarios, inicio, inicioadm, iniciocoo, resumenequipo, resumenubicacion, resumenvehsol y resumenflota5 quedan con el mismo texto que antes; solo resumenflota, resumenflotabase y resumenequipos2 suman «Contraer todo».
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **La base real:** el caso 50012 de verdad no lo abrí; probé con la conexión simulada que arma un caso igual.
+- **Lector de pantalla:** `aria-expanded` y `aria-controls` están puestos, pero no los oí con uno.
+
+**Diferencias**
+- **Causa de las tarjetas cerradas en el 50012:** no pude reproducirlas. Con la conexión simulada (resumenflotabase, 3 vehículos) las 3 abren al entrar, también entrando por la Bandeja, y el estado de «abierto» se reinicia al cambiar de escena. El único camino que encontré es que alguien toque la cabecera de una tarjeta: como lo abierto se conserva, siguen así al volver. No hacía falta corregir la apertura; con el botón nuevo se abren o cierran todas de una vez. Con la base real no lo probé.
+- **Dónde va el botón:** lo moví a la fila del título (un componente aparte, `SiriusRiesgos.Todos`), en vez de dejarlo dentro de las tarjetas.
+- **Botón deshabilitado y su motivo:** un botón `disabled` no muestra el aviso al pasar el mouse ni con el foco, así que agregué la nota «Para continuar: …» dentro del panel. Antes, «Crear» y «Editar» usaban el modo del sistema de diseño que deja el botón enfocable con aviso; ahora, como pediste, quedan deshabilitados de verdad.
+- **Paneles de ejemplo (sin la conexión):** solo cambia el color de los botones que se pintaban con «danger» (dar de baja, revocar y similares: ahora azules, antes sin estilo). Sus reglas de cuándo se habilitan no las toqué.
+- **Escena cxusuarioestado:** abre vacía (sin estado ni motivo). `?cxestado=1` la abre con «Suspendido» y motivo; `?cxmismo=1`, con el estado actual y motivo.
+- **Inventario:** la fila de `registro-envios.md` tenía 372727 caracteres y ya eran 372766; la corregí.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| resumenflotabase | 3 vehículos de la base, las 3 tarjetas abiertas y «Contraer todo» a la derecha del título |
+| resumenflota5 | 5 vehículos con las tarjetas cerradas y «Expandir todo» |
+| resumenequipos2 | 2 equipos con el botón (abiertos, «Contraer todo») |
+| cxusuarioestado | «Cambiar estado» de Gabriela Toapanta, usuaria activa de la base: sin motivo el botón está gris y deshabilitado, con motivo válido se habilita y con su estado actual sigue deshabilitado (`?cxestado=1`, `?cxmismo=1`) |
+
+También abrí resumenvehsol (1 riesgo, sin botón), cxusuarios, cxusuariocrear y cxusuarioeditar, usuarios, usuarioinvitar, usuarioficha, usuariosuspender, inspdispositivo, roles, roleseditar, rolessolocambios, rolesguardar, rolescomparar, agencias, monitorpermiso, agenciatarifas, cuentaagencia, cuentamascara, agenciaopcion, inicio, inicioadm, iniciocoo, resumenflota, resumenequipo y resumenubicacion.
+
+Tiempo de la etapa: inicio 14/11/2026 08:08 · fin 14/11/2026 08:28 · 20 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0g
 
 Publiqué la etapa P-6f-0g (Versión 206 con los archivos; la Versión 207 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Con la conexión, Administración › Usuarios y roles ya muestra los usuarios y las agencias de la base, y permite crear, editar y cambiar el estado de un usuario (DEC-233). Sin la conexión, queda igual.

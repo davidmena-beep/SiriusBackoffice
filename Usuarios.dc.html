@@ -117,7 +117,7 @@ class Component extends DCLogic {
   S = { lab: { fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' }, help: { fontSize: 12, lineHeight: 1.4, color: 'var(--text-muted)' }, err: { fontSize: 13, color: 'var(--color-danger)' },
     inp: (bd) => ({ width: '100%', height: 44, padding: '0 12px', border: '1.5px solid ' + (bd || 'var(--input-outlined-border)'), borderRadius: 'var(--radius-sm)', background: '#FFFFFF', fontFamily: 'var(--font-brand)', fontSize: 15, color: 'var(--text-strong)' }),
     sel: { height: 40, padding: '0 8px', border: '1.5px solid var(--input-outlined-border)', borderRadius: 'var(--radius-sm)', background: '#FFFFFF', fontFamily: 'var(--font-brand)', fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } };
-  btn(variant, label, onClick, o) { const NS = this.NS(), h = React.createElement; o = o || {}; return h(NS.Button, Object.assign({ variant, size: o.size || 'md', onClick, key: o.key || label }, o.reason ? { unavailableReason: o.reason } : {}, o.icon ? { iconLeft: o.icon } : {}), label); }
+  btn(variant, label, onClick, o) { const NS = this.NS(), h = React.createElement; o = o || {}; if (variant === 'danger') variant = 'primary'; /* P-6f-0h: el sistema de diseño no tiene la variante «danger»: el botón salía sin estilo y parecía deshabilitado */ return h(NS.Button, Object.assign({ variant, size: o.size || 'md', onClick, key: o.key || label }, o.reason ? { unavailableReason: o.reason } : {}, o.disabled ? { disabled: true } : {}, o.icon ? { iconLeft: o.icon } : {}), label); }
   badge(tone, label, key) { const NS = this.NS(); return React.createElement(NS.Badge, { tone, style: { whiteSpace: 'nowrap' }, key: key || label }, label); }
   campo(id, label, control, o) { const h = React.createElement; o = o || {}; return h('div', { key: id, style: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 } }, h('label', { htmlFor: id, style: this.S.lab }, label, o.req ? h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *') : null), control, o.err ? h('span', { role: 'alert', style: this.S.err }, o.err) : null, o.help ? h('span', { id: id + '-h', style: this.S.help }, o.help) : null); }
   input(id, value, onChange, o) { const h = React.createElement; o = o || {}; return h('input', Object.assign({ id, className: 'us-in', type: o.type || 'text', value: value == null ? '' : value, onChange, autoComplete: 'off', 'aria-invalid': o.err ? 'true' : 'false', 'aria-describedby': o.help ? id + '-h' : undefined, style: this.S.inp(o.err ? 'var(--color-danger)' : null), maxLength: o.max }, o.first ? { 'data-us-first': '1' } : {}, o.ro ? { readOnly: true, style: Object.assign(this.S.inp(), { background: 'var(--surface-subtle)' }) } : {})); }
@@ -233,7 +233,8 @@ class Component extends DCLogic {
   cxSeed() { const C = window.SIRIUS_CONEXION || {}, E = C.usuariosEscena, B = this.UB(); if (!E || !B || this._cxSeeded) return; this._cxSeeded = true;
     if (E.panel === 'ficha') this.abrir({ k: 'cxFicha', email: E.email });
     if (E.panel === 'crear') { const d = E.d || {}; this.cxAbrirCrear({ nombre: d.nombre, email: d.email, celular: d.celular, tipo: d.tipo, agencia: d.agencia || '', roles: d.roles || [], suc: (d.sucursales || []).length ? 'Elegir' : 'Todas', sucSel: d.sucursales || [], gru: (d.grupos || []).length ? 'Elegir' : 'Todos', gruSel: d.grupos || [], zonas: d.zonas || [] }, E.motivo); }
-    if (E.panel === 'editar') this.cxAbrirEditar(E.email, E.d, E.motivo); }
+    if (E.panel === 'editar') this.cxAbrirEditar(E.email, E.d, E.motivo);
+    if (E.panel === 'estado') this.abrir({ k: 'cxEstado', email: E.email, estado: E.estado || '', motivo: E.motivo || '', tried: false }); }
   cxCarga(d) { return { nombre: d.nombre, email: d.email, celular: d.celular, tipo: d.tipo, agencia: d.tipo === 'Agencia' ? d.agencia : null, roles: d.roles, rol: d.roles[0], alcance: { sucursales: d.suc === 'Elegir' ? d.sucSel : [], grupos: d.gru === 'Elegir' ? d.gruSel : [] }, zonas: d.zonas }; }
   renderCx(v, B) {
     const SU = this.SU(), U = this.U(), st = this.state, h = React.createElement, NS = this.NS(), c = B.contar(), L0 = B.lista(), ags = B.agencias();
@@ -290,6 +291,7 @@ class Component extends DCLogic {
       this.cxCard('Historial del usuario', this.cxHistLista(B.historial(u.email)), 'h')],
       [this.btn('secondary', 'Cerrar', () => this.cerrar(), { key: 'c' }), this.btn('secondary', 'Cambiar estado', () => { if (acc.estado) return; this.abrir({ k: 'cxEstado', email: u.email, estado: '', motivo: '', tried: false, err: '' }); }, { key: 'es', reason: acc.estado }), this.btn('primary', 'Editar', () => this.cxAbrirEditar(u.email), { key: 'o' })]);
   }
+  cxFalta(txt) { return txt ? React.createElement('p', { key: 'falta', 'data-cx-falta': '1', role: 'status', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Para continuar: ' + txt.charAt(0).toLowerCase() + txt.slice(1)) : null; } // P-6f-0h: qué falta mientras el botón de confirmar está deshabilitado
   pCxForm(p) {
     const B = this.UB(), SU = this.SU(), h = React.createElement, d = p.d, crear = p.k === 'cxCrear', u = crear ? null : B.usuario(p.email); if (!crear && !u) return null;
     const ags = B.agencias().filter(a => /^activ/i.test(a.estado) || a.nombre === d.agencia), ins = B.esInspector(d.roles), sucs = SU.sucursales(), grus = SU.grupos(), tog = (L, x) => L.includes(x) ? L.filter(y => y !== x) : L.concat([x]);
@@ -303,7 +305,7 @@ class Component extends DCLogic {
       const pr = crear ? B.crear(Object.assign({}, carga, { zonas: ins ? carga.zonas : [] }), mot, this.user()) : B.editar(u.email, cambios, mot, this.user());
       pr.then(r => { if (!this.state.panel || this.state.panel.k !== p.k) return; if (r && r.ok) { const em = crear ? String(carga.email).trim().toLowerCase() : (cambios.email || u.email); this.abrir({ k: 'cxFicha', email: em }); this.toast(crear ? carga.nombre + ' quedó «Invitado» en la base. Copia el enlace de activación y envíaselo.' : 'Cambios de ' + u.nombre + ' guardados en la base.'); }
         else this.setP({ busy: false, err: (r && r.validacion ? '' : 'La base no guardó el cambio: ') + ((r && r.mensaje) || 'sin respuesta') + (r && r.validacion ? '' : '. Se deshizo el cambio.') }); }); };
-    const reason = propio ? 'No puedes quitarte tu propio rol de Administrador.' : sinCambios ? 'No hay cambios para guardar.' : p.busy ? 'Enviando a la base…' : undefined;
+    const falta = propio ? 'No puedes quitarte tu propio rol de Administrador.' : sinCambios ? 'No hay cambios para guardar.' : (crear && !String(d.nombre || '').trim() ? 'Escribe el nombre.' : '') || B.validarCorreo(d.email) || (!d.roles.length ? 'Elige al menos un rol.' : '') || (d.tipo === 'Agencia' && !d.agencia ? 'Elige la agencia.' : '') || (d.suc === 'Elegir' && !d.sucSel.length ? 'Elige al menos una sucursal.' : '') || (d.gru === 'Elegir' && !d.gruSel.length ? 'Elige al menos un grupo.' : '') || (ins && !d.zonas.length ? 'Elige al menos una zona.' : '') || (!motOk ? 'Escribe el motivo (mínimo 10 caracteres).' : ''), puede = !falta && !p.busy; // P-6f-0h: el botón se habilita solo cuando se puede guardar
     const filaChecks = (id, L, sel, on) => h('div', { key: id, style: { display: 'flex', flexWrap: 'wrap', gap: '4px 16px' } }, L.map(x => this.chk(id + '-' + this.norm(x).replace(/[^a-z0-9]+/g, '-'), sel.includes(x), x, () => on(x))));
     return this.drawer('cxe', crear ? 'Crear usuario en la base' : 'Editar a ' + u.nombre, [
       this.cxError(p),
@@ -320,12 +322,13 @@ class Component extends DCLogic {
       this.pills('us-cx-suc', 'Sucursales', [{ v: 'Todas', l: 'Todas' }, { v: 'Elegir', l: 'Elegir' }], d.suc, (x) => this.setD({ suc: x })), d.suc === 'Elegir' ? filaChecks('us-cx-s', sucs, d.sucSel, (x) => this.setD({ sucSel: tog(d.sucSel, x) })) : null, eSuc ? h('span', { key: 'es', role: 'alert', style: this.S.err }, eSuc) : null,
       this.pills('us-cx-gru', 'Grupos de ramo', [{ v: 'Todos', l: 'Todos' }, { v: 'Elegir', l: 'Elegir' }], d.gru, (x) => this.setD({ gru: x })), d.gru === 'Elegir' ? filaChecks('us-cx-g', grus, d.gruSel, (x) => this.setD({ gruSel: tog(d.gruSel, x) })) : null, eGru ? h('span', { key: 'eg', role: 'alert', style: this.S.err }, eGru) : null,
       ins ? h('fieldset', { key: 'zon', style: { margin: 0, padding: 0, border: 'none', display: 'flex', flexDirection: 'column', gap: 6 } }, h('legend', { style: Object.assign({}, this.S.lab, { marginBottom: 6 }) }, 'Zonas del inspector', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, ' *')), filaChecks('us-cx-z', sucs, d.zonas, (x) => this.setD({ zonas: tog(d.zonas, x) })), eZon ? h('span', { role: 'alert', style: this.S.err }, eZon) : null) : null,
-      this.motivoCampo(p, 'us-cx-mot', 'Motivo', crear ? 'Por qué se crea este usuario' : 'Qué cambia y por qué')],
-      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn('primary', crear ? 'Crear usuario' : 'Guardar cambios', enviar, { key: 'o', reason })]);
+      this.motivoCampo(p, 'us-cx-mot', 'Motivo', crear ? 'Por qué se crea este usuario' : 'Qué cambia y por qué'), p.busy ? null : this.cxFalta(falta)],
+      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn('primary', crear ? 'Crear usuario' : 'Guardar cambios', enviar, { key: 'o', disabled: !puede })]);
   }
   pCxEstado(p) {
     const B = this.UB(), SU = this.SU(), h = React.createElement, u = B && B.usuario(p.email); if (!u) return null; const dest = B.destinos(u);
-    const enviar = () => { if (p.busy) return; if (!p.estado || dest[p.estado] || String(p.motivo || '').trim().length < 10) return this.setP({ tried: true });
+    const motOk = String(p.motivo || '').trim().length >= 10, falta = !p.estado ? 'Elige el estado nuevo.' : dest[p.estado] ? dest[p.estado] : p.estado === u.estado ? 'Ya está «' + u.estado + '».' : !motOk ? 'Escribe el motivo (mínimo 10 caracteres).' : '', puede = !falta && !p.busy; // P-6f-0h: habilitado solo con un estado nuevo distinto, no bloqueado, y motivo de 10 caracteres o más
+    const enviar = () => { if (p.busy || !puede) return; if (!p.estado || dest[p.estado] || !motOk) return this.setP({ tried: true });
       this.setP({ busy: true, err: '' }); B.cambiarEstado(u.email, p.estado, String(p.motivo).trim(), this.user()).then(r => { if (!this.state.panel || this.state.panel.k !== 'cxEstado') return;
         if (r && r.ok) { this.abrir({ k: 'cxFicha', email: u.email }); this.toast(u.nombre + ' quedó «' + p.estado + '» en la base.'); } else this.setP({ busy: false, err: (r && r.validacion ? '' : 'La base no guardó el cambio: ') + ((r && r.mensaje) || 'sin respuesta') + (r && r.validacion ? '' : '. Se deshizo el cambio.') }); }); };
     const info = { Activo: 'Entra a SIRIUS con sus roles y alcance.', Suspendido: 'No puede entrar mientras dure la suspensión; se reactiva con otro cambio de estado.', Inactivo: 'Dado de baja: no entra y conserva su trazabilidad.' };
@@ -336,8 +339,8 @@ class Component extends DCLogic {
           style: { textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2, padding: '10px 14px', border: '1.5px solid ' + (on ? 'var(--color-brand)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)', background: on ? 'var(--cyan-100)' : no ? 'var(--surface-subtle,#F5F7FA)' : '#FFFFFF', cursor: no ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-brand)' } },
           h('strong', { style: { fontSize: 15, color: no ? 'var(--neutral-500)' : 'var(--text-strong)' } }, e), h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, no || info[e])); }),
         p.tried && !p.estado ? h('span', { role: 'alert', style: this.S.err }, 'Elige el estado nuevo.') : null),
-      this.motivoCampo(p, 'us-cx-emot', 'Motivo', 'Por qué cambia su estado')],
-      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn(p.estado === 'Activo' ? 'primary' : 'danger', 'Cambiar estado', enviar, { key: 'o', reason: p.busy ? 'Enviando a la base…' : undefined })]);
+      this.motivoCampo(p, 'us-cx-emot', 'Motivo', 'Por qué cambia su estado'), p.busy ? null : this.cxFalta(falta)],
+      [this.btn('secondary', 'Cancelar', () => this.cerrar(), { key: 'c' }), this.btn('primary', 'Cambiar estado', enviar, { key: 'o', disabled: !puede })]);
   }
   // ---------- Matriz de permisos ----------
   letraChip(l, key) {

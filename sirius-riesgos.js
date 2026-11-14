@@ -1,8 +1,8 @@
-// SIRIUS · Varios riesgos en el Resumen (v1.0 · etapa P-6f-0d · DEC-226 · 18/10/2026).
+// SIRIUS · Varios riesgos en el Resumen (v1.1 · etapa P-6f-0d · ajuste P-6f-0h · DEC-226 · 18/10/2026).
 // Con varios riesgos, «Objeto a asegurar» muestra cada riesgo como una tarjeta propia (borde de 1 px, esquinas de 8 px, 12 px entre tarjetas)
 // con una cabecera de resumen siempre visible (número, bien con su identificación, estado como en la bandeja, valor total y flecha) que abre y cierra
 // el detalle con clic, Enter o Espacio (aria-expanded y aria-controls). Debajo, la tabla de valores con la fila «Total del caso».
-// Con hasta 3 riesgos, todas abiertas; con 4 o más, todas cerradas y «Expandir todo» / «Contraer todo». Lo abierto vive en el estado del Back-office.
+// Con hasta 3 riesgos, todas abiertas; con 4 o más, todas cerradas. Con 2 o más, «Expandir todo» / «Contraer todo» (componente Todos, a la derecha del título; P-6f-0h). Lo abierto vive en el estado del Back-office.
 // Componente: window.SiriusRiesgos.Tarjetas({ datos, abiertos, onToggle, onTodos, uid }).
 //  · datos = { noun, items: [{ n, titulo, ident, estado, tone, totalTxt, fields: [{ label, value, ws, span }], valores: [{ label, amount, bold }] }],
 //            tabla: { cols: [texto], rows: [[texto]], total: [texto] } }  (la primera columna es el riesgo; las demás, montos)
@@ -55,13 +55,17 @@
         h('tfoot', null, h('tr', { 'data-total-caso': '', style: { borderTop: '2px solid var(--border-strong)' } }, fila(t.total).map((c, i) => td(c, i, true)))))));
   }
 
+  // Botón de texto a la derecha del título «Objeto a asegurar · N …» (lo pinta el Back-office en la fila del título): con 2 riesgos o más.
+  // «Expandir todo» si alguna tarjeta está cerrada; «Contraer todo» si todas están abiertas. Componente: window.SiriusRiesgos.Todos({ abiertos, uid, onTodos }).
+  function Todos(p) { const ab = p.abiertos || [], n = ab.length, todas = n > 0 && ab.every(Boolean), uid = 'rz-' + String(p.uid || 'caso').replace(/[^\w-]/g, '');
+    if (n < 2) return null;
+    return h('button', { type: 'button', 'data-riesgos-todos': '', 'aria-expanded': todas ? 'true' : 'false', 'aria-controls': ab.map((x, i) => uid + '-cuerpo-' + (i + 1)).join(' '), onClick: () => p.onTodos && p.onTodos(!todas),
+      style: { border: 'none', background: 'transparent', padding: '4px 0', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 14, fontWeight: 700, color: 'var(--text-link)', textDecoration: 'underline', textUnderlineOffset: 3, whiteSpace: 'nowrap' } }, todas ? 'Contraer todo' : 'Expandir todo'); }
+
   function Tarjetas(p) { const d = p.datos || { items: [] }, ab = p.abiertos || [], ang = useAngosto(), uid = 'rz-' + String(p.uid || 'caso').replace(/[^\w-]/g, '');
-    const todas = d.items.length > 0 && d.items.every((x, i) => !!ab[i]);
     return h('div', { 'data-riesgos': String(d.items.length), style: { display: 'flex', flexDirection: 'column', gap: 12 } },
-      d.items.length >= 4 ? h('div', { style: { display: 'flex', justifyContent: 'flex-end' } }, h('button', { type: 'button', 'data-riesgos-todos': '', onClick: () => p.onTodos && p.onTodos(!todas),
-        style: { border: 'none', background: 'transparent', padding: '4px 0', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 14, fontWeight: 700, color: 'var(--text-link)', textDecoration: 'underline', textUnderlineOffset: 3 } }, todas ? 'Contraer todo' : 'Expandir todo')) : null,
       d.items.map((it, i) => h(Tarjeta, { key: i, it, abierta: !!ab[i], angosto: ang, uid, nombre: d.nombre, onToggle: () => p.onToggle && p.onToggle(i) })),
       d.tabla ? h(Tabla, { tabla: d.tabla, angosto: ang }) : null); }
 
-  window.SiriusRiesgos = { Tarjetas, ANGOSTO };
+  window.SiriusRiesgos = { Tarjetas, Todos, ANGOSTO };
 })();

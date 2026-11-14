@@ -1,7 +1,8 @@
-// SIRIUS · Usuarios y agencias de la base, con la conexión simulada (v1.0 · provisional · etapa P-6f-0g · DEC-233 · 18/10/2026)
+// SIRIUS · Usuarios y agencias de la base, con la conexión simulada (v1.1 · provisional · etapa P-6f-0g · DEC-233 · ajuste P-6f-0h · 18/10/2026)
 // Escenas: cxusuarios (8 usuarios de la base y la ficha de un usuario vinculado), cxusuariocrear (crear una inspectora de agencia: queda «Invitado» con su enlace
 // de activación) y cxusuarioeditar (cambiar roles con motivo; ?cxdup=1 escribe un correo que ya usa otro usuario y la base responde { ok: false, «El correo ya lo usa otro usuario» };
 // ?cxyo=1 abre la propia ficha del Administrador sin el rol de Administrador para ver el aviso). Los correos son los de las cuentas de prueba de la base, no los del ejemplo.
+// cxusuarioestado (P-6f-0h): «Cambiar estado» de un usuario activo; ?cxestado=1 abre con «Suspendido» y motivo, ?cxmismo=1 con el estado actual y motivo (el botón sigue deshabilitado).
 // Forma del contrato: ver sirius-usuarios-base.js. Se suma a SIRIUS_CX_COORD (datos-cx-coordinacion.js): las mismas escenas simuladas (cxSimBoot), que se limpian al cambiar de escena.
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC) return;
@@ -23,6 +24,7 @@
   const ESC = {
     cxusuarios: { panel: 'ficha', email: 'david.mena.coordinador+agencia@gmail.com' },
     cxusuariocrear: { panel: 'crear', d: { nombre: 'Valeria Cevallos', email: 'valeria.cevallos.inspectora+eurosurvey@gmail.com', celular: '0991187245', tipo: 'Agencia', agencia: 'Eurosurvey', roles: ['Inspector'], sucursales: ['Quito'], grupos: ['Vehículos'], zonas: ['Quito'] }, motivo: 'Nueva inspectora de Eurosurvey para la zona de Quito.' },
+    cxusuarioestado: { panel: 'estado', email: 'gabriela.toapanta.inspectora@gmail.com', estado: '', motivo: '' }, // ?cxestado=1: «Suspendido» con motivo; ?cxmismo=1: su estado actual con motivo
     cxusuarioeditar: { panel: 'editar', email: 'david.mena.coordinador+agencia@gmail.com', d: { roles: ['Coordinador de inspecciones', 'Ejecutivo de inspecciones'] }, motivo: 'También revisará los informes de Eurosurvey en Quito.' },
   };
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
@@ -32,6 +34,8 @@
     const ue = JSON.parse(JSON.stringify(e));
     if (escena === 'cxusuarioeditar' && q('cxdup') === '1') ue.d.email = 'luis.andrade.independiente@gmail.com'; // la base responde que el correo ya lo usa otro usuario
     if (escena === 'cxusuarioeditar' && q('cxyo') === '1') { ue.email = ADM.email; ue.d = { roles: ['Coordinador de inspecciones'] }; ue.motivo = 'Dejo la administración a otra persona del área.'; } // el aviso del propio rol de Administrador
+    if (escena === 'cxusuarioestado' && q('cxestado') === '1') { ue.estado = 'Suspendido'; ue.motivo = 'Licencia sin sueldo por tres meses.'; }
+    if (escena === 'cxusuarioestado' && q('cxmismo') === '1') { ue.estado = 'Activo'; ue.motivo = 'Se confirma que sigue activa en el área.'; }
     return { usuario: ADM, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: [], usuarios: JSON.parse(JSON.stringify(USUARIOS)), agencias: JSON.parse(JSON.stringify(AGENCIAS)), usuariosEscena: ue }; };
   // Base simulada: el correo es único; crear devuelve el enlace de activación; editar y cambiar estado guardan en usuarios.
   const fnv = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('0000000' + h.toString(16)).slice(-8); };
