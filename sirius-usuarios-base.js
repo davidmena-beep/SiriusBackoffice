@@ -20,7 +20,7 @@
   const norm = (u) => { u = u || {}; const roles = arr(u.roles).length ? arr(u.roles) : arr([u.rol]), tipo = S.TIPOS.indexOf(u.tipo) >= 0 ? u.tipo : (u.agencia ? 'Agencia' : 'Interno');
     return { nombre: String(u.nombre || u.email || ''), email: String(u.email || '').trim().toLowerCase(), rol: u.rol || roles[0] || '', roles, tipo, tipoInspector: u.tipoInspector || null, agencia: u.agencia || null,
       estado: S.ESTADOS.indexOf(u.estado) >= 0 ? u.estado : 'Activo', celular: u.celular || '', alcance: { sucursales: arr((u.alcance || {}).sucursales), grupos: arr((u.alcance || {}).grupos) }, zonas: arr(u.zonas), vinculado: !!u.vinculado,
-      activacion: u.activacion || null }; };
+      activacion: u.activacion || null, cobertura: u.cobertura && typeof u.cobertura === 'object' ? JSON.parse(JSON.stringify(u.cobertura)) : null /* G-2b · DEC-223: si no viene, SiriusCobertura aplica migrar(zonas) */ }; };
   // Lista de la sesión: copia de SIRIUS_CONEXION.usuarios; si la base la reemplaza (otro arreglo), se vuelve a leer.
   S.lista = () => { const c = C(), src = c && Array.isArray(c.usuarios) ? c.usuarios : []; if (src !== S._src || !S._lista) { S._src = src; S._lista = src.map(norm); } return S._lista; };
   S.agencias = () => { const c = C(), src = c && Array.isArray(c.agencias) ? c.agencias : []; if (src !== S._agSrc || !S._ag) { S._agSrc = src; S._ag = src.map((a) => ({ nombre: String((a && a.nombre) || ''), estado: (a && a.estado) || 'Activa' })).filter((a) => a.nombre); } return S._ag; };
@@ -60,8 +60,8 @@
     const u = norm(Object.assign({}, carga, { tipo, estado: 'Invitado', vinculado: false })), L = S.lista(); L.push(u); const reg = registrar(u, 'Creado como «Invitado» · ' + u.roles.join(', '), motivo, por, 'Enviado a la base'); avisar();
     return base('crearUsuario', carga).then((r) => { if (r && r.ok) { if (r.activacion) S.links[email] = String(r.activacion); reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
       const i = L.indexOf(u); if (i >= 0) L.splice(i, 1); const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó el usuario.' }; }); };
-  const CAMPOS = { email: 'Correo', celular: 'Celular', agencia: 'Agencia', roles: 'Roles', rol: 'Rol principal', tipoInspector: 'Tipo de inspector', alcance: 'Alcance', zonas: 'Zonas' };
-  const txt = (k, v) => (k === 'alcance' ? S.alcanceTxt(v) : Array.isArray(v) ? (v.length ? v.join(', ') : '—') : v == null || v === '' ? '—' : String(v));
+  const CAMPOS = { email: 'Correo', celular: 'Celular', agencia: 'Agencia', roles: 'Roles', rol: 'Rol principal', tipoInspector: 'Tipo de inspector', alcance: 'Alcance', zonas: 'Zonas', cobertura: 'Cobertura' };
+  const txt = (k, v) => (k === 'cobertura' ? (W.SiriusCobertura ? (v ? W.SiriusCobertura.corto(v) : 'Migrada de sus zonas') : '—') : k === 'alcance' ? S.alcanceTxt(v) : Array.isArray(v) ? (v.length ? v.join(', ') : '—') : v == null || v === '' ? '—' : String(v));
   // Editar: solo se envía lo que cambió (cambios { email, celular, agencia, rol, roles, tipoInspector, alcance, zonas }).
   S.editar = (email, cambios, motivo, por) => { const u = S.usuario(email); if (!u) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Ese usuario ya no está en la lista.' });
     const ch = {}; Object.keys(cambios || {}).forEach((k) => { if (CAMPOS[k] && JSON.stringify(cambios[k]) !== JSON.stringify(u[k])) ch[k] = clon(cambios[k]); });
@@ -71,7 +71,7 @@
     if (!Object.keys(ch).length) return Promise.resolve({ ok: false, validacion: true, mensaje: 'No hay cambios para guardar.' });
     if (!motivoOk(motivo)) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Escribe el motivo (mínimo 10 caracteres).' });
     if (ch.roles && !ch.rol && ch.roles.indexOf(u.rol) < 0) ch.rol = ch.roles[0];
-    const antes = clon(u), actual = u.email, que = Object.keys(ch).filter((k) => k !== 'rol' || !ch.roles).map((k) => CAMPOS[k] + ': ' + txt(k, antes[k]) + ' → ' + txt(k, ch[k])).join(' · ');
+    const antes = clon(u), actual = u.email, que = Object.keys(ch).filter((k) => k !== 'rol' || !ch.roles).map((k) => CAMPOS[k] + ': ' + (k === 'cobertura' && !antes[k] && W.SiriusCobertura ? W.SiriusCobertura.corto(W.SiriusCobertura.migrar(antes)) + ' (migrada de sus zonas)' : txt(k, antes[k])) + ' → ' + txt(k, ch[k])).join(' · ');
     Object.assign(u, clon(ch)); if (ch.agencia !== undefined) u.tipo = ch.agencia ? 'Agencia' : u.tipo === 'Agencia' ? 'Interno' : u.tipo;
     if (ch.email && S.links[actual]) { S.links[ch.email] = S.links[actual]; delete S.links[actual]; }
     const reg = registrar(u, que, motivo, por, 'Enviado a la base'); avisar();

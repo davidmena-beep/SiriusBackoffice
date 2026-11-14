@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · G-2b · DEC-223: usuarios[].cobertura e inspectores[].cobertura (datos.cobertura; SQL 37 la guarda con editarUsuario y crearUsuario).
 // 14/11/2026 · G-2a · DEC-221: SIRIUS_ZONAS (Ciudades y zonas) se vigila: lo publicado en la base manda sobre datos-zonas.js.
 // 14/11/2026 · P-6f-0g · DEC-233: SIRIUS_CONEXION.usuarios (con vinculado e historial de la base) y agencias; crearUsuario, editarUsuario y cambiarEstadoUsuario van por bo_accion (SQL 36d).
 // 14/11/2026 · P-6f-0f · DEC-232: riesgos con label (placa), detalle («Marca, Modelo, Año») y nowrap; visitasBase[].riesgos (ids del caso) y direccion (texto). agendarVisita guarda los riesgos (SQL 36c).
@@ -223,12 +224,12 @@
         return { nombre: u.nombre, email: u.email, rol: u.rol, roles: Array.isArray(d.roles) && d.roles.length ? d.roles : [u.rol],
                  tipo: u.agencia ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', tipoInspector: t || null, agencia: u.agencia ? u.agencia.nombre : null,
                  estado: u.estado || 'Activo', celular: d.celular || '', alcance: { sucursales: Array.isArray(al.sucursales) ? al.sucursales : [], grupos: Array.isArray(al.grupos) ? al.grupos : [] },
-                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], vinculado: !!u.auth_id,
+                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, vinculado: !!u.auth_id,
                  historial: Array.isArray(d.historial) ? d.historial : [] }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base)
       if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa' }; });
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
-                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], estado: u.estado || 'Activo' }; });
+                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo' }; });   // G-2b · DEC-223: sin cobertura, el prototipo migra las zonas
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });

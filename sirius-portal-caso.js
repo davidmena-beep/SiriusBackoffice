@@ -78,9 +78,11 @@
   const tipoIns = (n) => ((EJ().inspectores || []).find((x) => x.n === n) || {}).tipo || 'Interno';
   const orgDe = (n) => { const x = (EJ().inspectores || []).find((y) => y.n === n) || {}, r = (AGD().red || []).find((y) => y.inspector === n); return r ? r.organizacion : x.tipo === 'Agencia' ? (x.ag || 'Agencia') : x.tipo === 'Externo' ? 'Independiente' : 'Aseguradora del Sur'; };
   // Agenda fija: internos y de agencia con disponibilidad en SIRIUS, de la zona y la modalidad (los externos van por la red).
-  function fijos(d) { return (AGD().disponibilidad || []).filter((x) => (x.zonas || []).indexOf(d.zona) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
+  // Etapa G-2b · DEC-223: «cubre» usa la cobertura del inspector con la sucursal del caso (d.zona); sin SiriusCobertura, sus zonas como antes.
+  const cubre = (x, d) => { const C = W.SiriusCobertura; return C ? !!C.cubre(x, { sucursal: d.zona }).nivel : (x.zonas || []).indexOf(d.zona) >= 0; };
+  function fijos(d) { return (AGD().disponibilidad || []).filter((x) => cubre(x, d) && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
   // Red (DEC-172): externos y agencias habilitados para la zona, el grupo de ramo y la modalidad.
-  function redDe(d) { const AP = W.SiriusAppInspectorLogic; return (AGD().red || []).map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && (x.zonas || []).indexOf(d.zona) >= 0 && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }
+  function redDe(d) { const AP = W.SiriusAppInspectorLogic; return (AGD().red || []).map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && cubre(x, d) && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }
   function apartadosActivos() { const n = now(); return S.apartados.filter((x) => parse(x.hasta) > n); }
   function apartadoDe(caso) { return apartadosActivos().find((x) => x.caso === caso) || null; }
   // Inspectores de agenda fija con ese horario libre: trabaja ese día, cabe en su jornada, sin bloqueo, sin choque con otra visita o cupo

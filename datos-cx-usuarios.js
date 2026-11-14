@@ -1,4 +1,4 @@
-// SIRIUS · Usuarios y agencias de la base, con la conexión simulada (v1.1 · provisional · etapa P-6f-0g · DEC-233 · ajuste P-6f-0h · 18/10/2026)
+// SIRIUS · Usuarios y agencias de la base, con la conexión simulada (v1.2 · provisional · etapa P-6f-0g · DEC-233 · ajustes P-6f-0h y G-2b · 18/10/2026)
 // Escenas: cxusuarios (8 usuarios de la base y la ficha de un usuario vinculado), cxusuariocrear (crear una inspectora de agencia: queda «Invitado» con su enlace
 // de activación) y cxusuarioeditar (cambiar roles con motivo; ?cxdup=1 escribe un correo que ya usa otro usuario y la base responde { ok: false, «El correo ya lo usa otro usuario» };
 // ?cxyo=1 abre la propia ficha del Administrador sin el rol de Administrador para ver el aviso). Los correos son los de las cuentas de prueba de la base, no los del ejemplo.
@@ -24,6 +24,7 @@
   const ESC = {
     cxusuarios: { panel: 'ficha', email: 'david.mena.coordinador+agencia@gmail.com' },
     cxusuariocrear: { panel: 'crear', d: { nombre: 'Valeria Cevallos', email: 'valeria.cevallos.inspectora+eurosurvey@gmail.com', celular: '0991187245', tipo: 'Agencia', agencia: 'Eurosurvey', roles: ['Inspector'], sucursales: ['Quito'], grupos: ['Vehículos'], zonas: ['Quito'] }, motivo: 'Nueva inspectora de Eurosurvey para la zona de Quito.' },
+    cxcobertura: { panel: 'ficha', email: 'mauricio.endara.inspector+eurosurvey@gmail.com' }, // G-2b · DEC-223: su cobertura (sin cobertura en la base: migrada de sus zonas, «Sucursales: Quito»); guardar envía editarUsuario { cambios: { cobertura } } (?cxok=0: { ok: false })
     cxusuarioestado: { panel: 'estado', email: 'gabriela.toapanta.inspectora@gmail.com', estado: '', motivo: '' }, // ?cxestado=1: «Suspendido» con motivo; ?cxmismo=1: su estado actual con motivo
     cxusuarioeditar: { panel: 'editar', email: 'david.mena.coordinador+agencia@gmail.com', d: { roles: ['Coordinador de inspecciones', 'Ejecutivo de inspecciones'] }, motivo: 'También revisará los informes de Eurosurvey en Quito.' },
   };

@@ -46,12 +46,15 @@
     A.bloqueos(n, dst.fecha).forEach(function (b) { if (ini < b.fin && fin > b.ini) out.push({ tipo: 'bloqueo', texto: n + ' tiene un bloqueo el ' + A.corta(dst.fecha) + (b.todoElDia ? ' todo el día' : ' de ' + A.hhmm(b.ini) + ' a ' + A.hhmm(b.fin)) + ': ' + b.motivo + '.' }); });
     var otras = visitas.filter(function (x) { return x.key !== v.key && A.ocupa(x) && x.inspector === n && x.fecha === dst.fecha; });
     otras.forEach(function (x) { var a = A.min(x.hIni), b = a + A.dur(x); if (a != null && ini < b && fin > a) out.push({ tipo: 'choque', texto: 'Choca con la visita del caso ' + x.caso + ' (' + A.hhmm(a) + '–' + A.hhmm(b) + ').' }); });
-    if (suc && d.zonas.indexOf(suc) < 0) out.push({ tipo: 'zona', texto: n + ' no cubre ' + suc + ' (sus zonas: ' + A.lista(d.zonas) + ').' });
+    // Etapa G-2b · DEC-223: la cobertura del inspector (SiriusCobertura) con la sucursal del caso; sin el módulo, las zonas como antes.
+    var COB = window.SiriusCobertura;
+    if (suc && COB) { var cb = COB.cubre(d, { sucursal: suc }); if (!cb.nivel) out.push({ tipo: 'zona', texto: cb.faltaLugar ? n + ': falta el lugar de la inspección para saber si cubre ' + suc + ' (' + COB.corto(d) + ').' : n + ' no cubre ' + suc + ' (su cobertura: ' + COB.corto(d) + ').' }); }
+    else if (suc && d.zonas.indexOf(suc) < 0) out.push({ tipo: 'zona', texto: n + ' no cubre ' + suc + ' (sus zonas: ' + A.lista(d.zonas) + ').' });
     if (v.mod && d.modalidades.indexOf(v.mod) < 0) out.push({ tipo: 'modalidad', texto: n + ' no hace visitas «' + v.mod + '» (hace ' + A.lista(d.modalidades.map(function (m) { return '«' + m + '»'; })) + ').' });
     if (otras.length + 1 > d.capacidadDia) out.push({ tipo: 'capacidad', texto: n + ' ya tiene ' + otras.length + ' de ' + d.capacidadDia + ' visitas el ' + A.corta(dst.fecha) + '.' });
     if (v.fecha === dst.fecha && v.hIni === dst.hIni && v.inspector === n) out.push({ tipo: 'igual', texto: 'Es la misma fecha, hora e inspector: no hay nada que mover.' });
     return { ok: !out.length, motivos: out, fin: A.hhmm(fin) };
   };
-  A.CHECKS = [['choque', 'Sin choque de horario'], ['jornada', 'Dentro de la jornada'], ['bloqueo', 'Sin bloqueos'], ['zona', 'Zona del inspector'], ['modalidad', 'Modalidad que hace'], ['capacidad', 'Capacidad del día']];
+  A.CHECKS = [['choque', 'Sin choque de horario'], ['jornada', 'Dentro de la jornada'], ['bloqueo', 'Sin bloqueos'], ['zona', 'Cobertura del inspector'], ['modalidad', 'Modalidad que hace'], ['capacidad', 'Capacidad del día']];
   window.SiriusAgenda = A;
 })();

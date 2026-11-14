@@ -4,6 +4,102 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2b
+
+Publiqué la etapa G-2b (Versión 212 con los archivos; la Versión 213 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Las «zonas» del inspector, que en realidad eran sucursales, pasan a ser su cobertura, con un solo modo por inspector: «Todas», «Por sucursales» o «Por ciudad y zona» (DEC-223). Con la migración, la Agenda y la red dan los mismos resultados que antes.
+
+**Qué cambió**
+- **`SiriusCobertura` (`sirius-cobertura.js`):**
+  - `cubre(inspector, { sucursal, ciudad, zonaId })` devuelve `{ nivel: 'zona' | 'ciudad' | 'sucursal' | 'todas' | null, por }`, por ejemplo «Atiende la zona Norte», «Atiende toda Quito», «Atiende la sucursal Quito» o «Atiende todas las inspecciones».
+  - `resumen()` da la frase de la maqueta y `corto()` el texto de las listas; además están `avisos()`, `migrar()` y `guardar()`, y el componente `Editor`.
+  - Las coberturas apuntan al código de la ciudad y al id de la zona. Una zona inactiva o eliminada deja de contar; la eliminada se quita al guardar.
+- **Ficha del inspector en Usuarios y roles:** la sección «Cobertura», como en la maqueta.
+  - Los tres modos son tarjetas de opción: Tab llega a la marcada, las flechas cambian de modo y Enter o Espacio eligen.
+  - «Por sucursales» muestra las 11 sucursales. «Por ciudad y zona» tiene «Agregar ciudad» con buscador del INEC; en cada ciudad, «Toda la ciudad» o sus zonas activas (se excluyen entre sí) y «Quitar».
+  - Debajo van los avisos, el resumen en una frase, el motivo y «Guardar cobertura», que se habilita solo con cambios y motivo válido.
+  - Solo lectura para quien no es Administrador. Está en la ficha del ejemplo, en la del inspector independiente y en la de la base.
+- **Lista de Usuarios:** columna «Cobertura» con el resumen corto («Quito: Norte y Centro», «Sucursales: Quito, Ambato», «Todas»), también en Inspectores independientes y en la lista de la base. En la lista de la base reemplaza a «Zonas».
+- **Agenda y red de inspectores:** usan `cubre` con la sucursal del caso.
+  - En la Agenda: la validación al mover una visita («Cobertura del inspector»), el filtro por sucursal y el texto bajo cada inspector.
+  - En el portal de autoagendamiento: la agenda fija y la red que recibe las ofertas.
+  - Si el modo es «Por ciudad y zona» y el caso no tiene lugar, no cubre y la validación lo explica («…: falta el lugar de la inspección para saber si cubre…»).
+- **App del inspector › Yo:** la cobertura en solo lectura, con su resumen, en lugar de las zonas. Ya no se piden zonas desde la app; los pedidos de modalidades siguen.
+- **Con la conexión:**
+  - La cobertura se lee de `SIRIUS_CONEXION.usuarios[].cobertura` y `SIRIUS_CONEXION.inspectores[].cobertura`; si no viene, `migrar(zonas)`.
+  - Guardar envía `editarUsuario { email, cambios: { cobertura }, motivo }`; con `{ ok: false }` vuelve atrás y muestra el mensaje.
+  - En Coordinación, el texto bajo el inspector usa la cobertura cuando la base la trae.
+
+**Verificado**
+- **Escena cobertura:** Mauricio Endara empieza en «Por ciudad y zona» con Quito (Norte y Centro). Paso a «Toda la ciudad», busco «amba» y agrego Ambato. «Guardar cobertura» se habilita solo con el motivo, y al guardar queda «Atiende en Quito (toda la ciudad) y Ambato (toda la ciudad).». El historial del usuario lo registra y la lista muestra «Quito: toda la ciudad · Ambato: toda la ciudad».
+- **Teclado en los modos:** las flechas mueven el foco y la selección; Espacio y Enter eligen.
+- **coberturasucursales:** Luis Andrade en «Por sucursales» con Quito y Ambato.
+- **coberturalectura:** la misma ficha vista por el Coordinador, en solo lectura, sin botones ni campos.
+- **coberturazonainactiva:** Sofía Arteaga con los avisos «Sus zonas en Quito están inactivas: no recibe inspecciones ahí» y «La zona eliminada z0101-9 ya no cuenta en su cobertura».
+- **cxcobertura (conexión simulada):** la cobertura migrada «Sucursales: Quito»; guardar envía `editarUsuario` con `{ email, cambios: { cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1'] }] } }, motivo }`. Con `?cxok=0` vuelve a la cobertura anterior con «La base rechazó la acción (prueba). Se deshizo el cambio.».
+- **Conexión temporal en una copia aparte:** la cobertura de `usuarios[]` y de `inspectores[]` se lee tal cual («Quito: Norte y Centro»); quitar Centro y guardar envía `editarUsuario` con la cobertura nueva; con `{ ok: false }` vuelve atrás.
+- **Misma respuesta que antes:**
+  - En las 110 combinaciones de inspector de la Agenda y la red con cada una de las 11 sucursales, `cubre` da lo mismo que las zonas de antes.
+  - agendamover sigue en «no cumple» («Marco Tapia no cubre Ambato…») y agendaok en «cumple».
+  - El filtro por sucursal de la Agenda muestra los mismos inspectores para cada sucursal.
+  - portalhoras, portalredok, enlaceagendamodalidad, inspofertas, inspaceptar, insptomada, inspofertaagencia e inspofertaindep quedan con el mismo texto.
+- **Las 5 escenas nuevas y las de Usuarios, Agenda e Inicio a 1280 × 720 y 1920 × 1080:** sin errores ni scroll horizontal.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**cubre() de 4 inspectores en 3 lugares (todos con sucursal Quito)**
+Las coberturas son las de la maqueta G-1. En el prototipo, Mauricio Endara usa la de la escena cobertura; Diana Cárdenas y Marco Tapia quedan migrados a «Por sucursales».
+
+| Inspector y cobertura | Quito · zona Norte | Ambato | Guayaquil · zona Sur |
+|---|---|---|---|
+| Mauricio Endara · Quito (Norte y Centro) | zona · «Atiende la zona Norte» | null · «No atiende Ambato» | null · «No atiende Guayaquil» |
+| Diana Cárdenas · Quito (toda la ciudad) | ciudad · «Atiende toda Quito» | null · «No atiende Ambato» | null · «No atiende Guayaquil» |
+| Luis Andrade · sucursales Quito y Ambato | sucursal · «Atiende la sucursal Quito» | sucursal · «Atiende la sucursal Quito» | sucursal · «Atiende la sucursal Quito» |
+| Marco Tapia · todas | todas · «Atiende todas las inspecciones» | todas · «Atiende todas las inspecciones» | todas · «Atiende todas las inspecciones» |
+
+**No verificado**
+- **Base real:** probé con la conexión simulada y una temporal.
+- **Lector de pantalla:** no probé las tarjetas de modo con uno.
+- **Lugar del caso:** hasta G-2c, ningún caso trae ciudad ni zona, así que un inspector en «Por ciudad y zona» no cubre ningún caso de la Agenda ni de la red.
+
+**Diferencias**
+- **Cómo quedó cada inspector de ejemplo** (de sus zonas de la Agenda o la red):
+
+  | Inspector | Cobertura |
+  |---|---|
+  | Marco Tapia | Sucursales: Quito |
+  | Cristian Vaca | Sucursales: Quito, Manta |
+  | Paola Vinueza | Sucursales: Guayaquil |
+  | Luis Andrade | Sucursales: Quito, Ambato |
+  | Diana Cárdenas | Sucursales: Quito, Guayaquil |
+  | Jorge Pazmiño | Sucursales: Ambato, Cuenca |
+  | Mauricio Endara | Sucursales: Quito |
+  | Sofía Arteaga | Sucursales: Quito, Ambato, Cuenca |
+  | Pedro Lasso | Sucursales: Manta, Guayaquil |
+
+  Con la base simulada, Gabriela Toapanta y Diego Salinas quedan «Sucursales: Quito». Ninguno tenía zonas vacías, así que ninguno pasó a «Todas». Las coberturas por ciudad de las escenas viven solo en la sesión.
+- **Textos que cambian, no resultados:** bajo cada inspector de la Agenda se lee «Sucursales: Quito» en lugar de «Quito». La validación dice «Cobertura del inspector» y «(su cobertura: Sucursales: Quito)». En «Yo», «Solo en tu cobertura, grupos y modalidades».
+- **Pedidos de zonas desde la app:** se retiró «Editar» de las zonas en «Yo» (la cobertura la edita el Administrador). La escena inspyo ya no siembra el pedido de Ambato; los pedidos de modalidades y su aprobación siguen igual.
+- **Ciudad sin zonas activas:** si todas las zonas de una ciudad quedan inactivas, la ciudad cuenta como «sin zonas» y se atiende entera, según «Una ciudad sin zonas siempre es la ciudad entera». El aviso de zonas inactivas aparece cuando la ciudad tiene otras zonas activas pero ninguna de las del inspector.
+- **Zona del lugar:** en «Por ciudad y zona», con ciudad pero sin zona, `cubre` responde «Falta la zona del lugar para saber si cubre».
+- **Sin sucursales o sin ciudades:** no se puede guardar («Elige al menos una sucursal.» / «Agrega al menos una ciudad.»).
+- **Crear y Editar de la base:** siguen con «Zonas del inspector» (DEC-233); la cobertura se edita en la ficha.
+- **Historial:** sin la conexión, el cambio queda en el historial del usuario («Cobertura: antes → después»). Con la conexión, en el historial de la base, y si no venía cobertura dice «… (migrada de sus zonas)».
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| cobertura | Ficha de Mauricio Endara (Administrador) en «Por ciudad y zona» con Quito (Norte y Centro); se cambia a «Toda la ciudad», se agrega Ambato y se guarda con motivo |
+| coberturasucursales | Luis Andrade en «Por sucursales» (Quito y Ambato), migrado de sus zonas |
+| coberturalectura | La ficha de Mauricio Endara vista por el Coordinador, en solo lectura |
+| coberturazonainactiva | Sofía Arteaga: su única zona en Quito está inactiva (aviso) y una zona eliminada en Cuenca |
+| cxcobertura | Con la conexión simulada, guardar envía `editarUsuario` con la cobertura (`?cxok=0`: `{ ok: false }`) |
+
+También abrí usuarios, usuarioinvitar, usuarioficha, usuariosuspender, inspdispositivo, roles, roleseditar, rolessolocambios, rolesguardar, rolescomparar, agencias, monitorpermiso, agenciatarifas, cuentaagencia, cuentamascara, agenciaopcion, cxusuarios, cxusuariocrear, cxusuarioeditar, cxusuarioestado, agendasemana, agendadia, agendamover, agendaok, inicio, iniciocoo, inicioadm, coordinacion, portalhoras, portalredok, enlaceagenda, enlaceagendamodalidad, portalporagenda, inspofertas, inspaceptar, insptomada, inspofertaagencia, inspofertaindep e inspyo.
+
+Tiempo de la etapa: inicio 14/11/2026 11:56 · fin 14/11/2026 12:39 · 43 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2a
 
 Publiqué la etapa G-2a (Versión 210 con los archivos; la Versión 211 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Hay una pantalla nueva, «Ciudades y zonas», con las 223 ciudades del INEC y las zonas de Quito, Guayaquil y Cuenca sobre un mapa Leaflet local. Solo el Administrador edita y publica, siempre con motivo. Se retiró «Ciudad → sucursal».

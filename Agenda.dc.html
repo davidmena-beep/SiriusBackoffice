@@ -10,7 +10,7 @@
 <helmet>
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
-<script src="datos-compania.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-agenda.js"></script><script src="sirius-modal.js"></script>
+<script src="datos-compania.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="sirius-agenda.js"></script><script src="sirius-cobertura.js"></script><script src="sirius-modal.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}
 .ag-sel{height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:140px}
 .ag-sel:focus-visible,.ag-in:focus-visible{border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)}
@@ -40,6 +40,8 @@
 // «Sin asignar»; bloqueos y fuera de jornada; autoinspección como «Enlace vigente». Reagendar arrastrando (o con «Mover») valida
 // con SiriusAgenda.validar y pide motivo; el Back-office aplica el cambio y lo deja en el Historial del caso.
 class Component extends DCLogic {
+  // Etapa G-2b · DEC-223: ¿la cobertura del inspector incluye la sucursal? (sin SiriusCobertura, sus zonas como antes)
+  cubreSuc(n, suc) { const A = window.SiriusAgenda, d = A ? A.disp(n) : null, C = window.SiriusCobertura; if (!d) return false; return C ? !!C.cubre(d, { sucursal: suc }).nivel : (d.zonas || []).indexOf(suc) >= 0; }
   state = (() => { const d = this.props.datos || {}; return { vista: d.vista0 || 'Semana', fecha: d.fecha0 || '2026-10-19', fSuc: 'all', fIns: 'all', fTipo: 'all', fMod: 'all', fConf: 'all', fk: 0, sel: null, mov: null, form: null, drag: null, over: null, snack: '' }; })();
   A() { return window.SiriusAgenda; }
   NS() { return window.AseguradoraDelSurDesignSystem_4fbf29 || {}; }
@@ -63,7 +65,7 @@ class Component extends DCLogic {
     if (st.fTipo !== 'all' && this.tipoDe(v.inspector) !== st.fTipo) return false; if (st.fMod !== 'all' && v.mod !== st.fMod) return false;
     if (st.fConf !== 'all' && (v.confirmacion || '—') !== st.fConf) return false; return true; }
   filas() { const st = this.state, d = this.props.datos || {}, A = this.A();
-    return this.insps().filter(i => (!d.soloYo || i.n === d.soloYo) && (st.fIns === 'all' || i.n === st.fIns) && (st.fTipo === 'all' || i.tipo === st.fTipo) && (st.fSuc === 'all' || ((A.disp(i.n) || {}).zonas || []).indexOf(st.fSuc) >= 0 || this.vis().some(v => v.inspector === i.n && v.sucursal === st.fSuc))); }
+    return this.insps().filter(i => (!d.soloYo || i.n === d.soloYo) && (st.fIns === 'all' || i.n === st.fIns) && (st.fTipo === 'all' || i.tipo === st.fTipo) && (st.fSuc === 'all' || this.cubreSuc(i.n, st.fSuc) || this.vis().some(v => v.inspector === i.n && v.sucursal === st.fSuc))); }
   rango() { const A = this.A(), st = this.state; if (st.vista === 'Día') return [st.fecha]; const l = A.lunes(st.fecha); return [0, 1, 2, 3, 4, 5, 6].map(k => A.sumaDias(l, k)); }
   mover(dir) { const A = this.A(), st = this.state; this.setState({ fecha: A.sumaDias(st.fecha, dir * (st.vista === 'Día' ? 1 : 7)) }); }
   // ---------- Reagendar ----------
@@ -93,7 +95,7 @@ class Component extends DCLogic {
       h('span', { 'aria-hidden': 'true', style: { flex: 1, height: 6, borderRadius: 999, background: '#EEF1F5', overflow: 'hidden', minWidth: 40 } }, h('span', { style: { display: 'block', height: '100%', width: Math.min(100, k / cap * 100) + '%', background: sobre ? 'var(--color-warning)' : 'var(--color-brand)' } })),
       h('span', { className: 'ag-nw', style: { fontSize: 12, fontWeight: 700, color: sobre ? '#8A5A00' : 'var(--text-muted)' } }, k + ' / ' + cap + (sobre ? ' · sobre la capacidad' : ''))); }
   celdaNombre(i) { const h = React.createElement, A = this.A(), d = A.disp(i.n);
-    return h('th', { key: 'n', scope: 'row', className: 'ag-c0' }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2 } }, h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, i.n), h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, i.tipo + (i.ag ? ' · ' + i.ag : '')), d ? h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, d.jornada[0] + '–' + d.jornada[1] + ' · ' + d.zonas.join(', ')) : null)); }
+    return h('th', { key: 'n', scope: 'row', className: 'ag-c0' }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2 } }, h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, i.n), h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, i.tipo + (i.ag ? ' · ' + i.ag : '')), d ? h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, d.jornada[0] + '–' + d.jornada[1] + ' · ' + (window.SiriusCobertura ? window.SiriusCobertura.corto(d) : d.zonas.join(', '))) : null)); }
   // ---------- Vista Semana ----------
   semana(dias, V) { const h = React.createElement, A = this.A(), st = this.state, d = this.props.datos || {}, filas = this.filas();
     const head = h('thead', null, h('tr', null, h('th', { className: 'ag-c0', scope: 'col' }, 'Inspector'), dias.map(f => { const fer = A.feriado(f); return h('th', { key: f, scope: 'col', style: { minWidth: 150 } }, h('span', { style: { display: 'flex', flexDirection: 'column' } }, h('span', { className: 'ag-nw' }, A.diaLargo(f)), fer ? h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, 'Feriado: ' + fer) : f === d.hoyIso ? h('span', { style: { fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' } }, 'Hoy') : null)); })));
