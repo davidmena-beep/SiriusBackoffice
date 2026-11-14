@@ -4,6 +4,100 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c
+
+Publiqué la etapa G-2c (Versión 216 con los archivos; la Versión 217 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Al agendar o reagendar una visita presencial, Coordinación ahora tiene «Lugar de la inspección»: la dirección o el punto en el mapa, la zona calculada o confirmada, y las sugerencias de inspectores agrupadas por cobertura. También se puede asignar a alguien fuera de cobertura, con un motivo obligatorio que queda en el historial (DEC-222, DEC-224 y DEC-225).
+
+**Qué cambió**
+- **«Lugar de la inspección» (`SiriusLugar.Editor`, nuevo `sirius-lugar.js`):** reemplaza la dirección, la intersección y el mapa de referencia en agendar, reagendar y dividir visitas presenciales.
+  - **Provincia y ciudad:** listas que dependen una de otra, con SIRIUS_GEOGRAFIA.
+  - **Dirección:** campo con «Buscar» y sugerencias desde 3 letras (`SiriusUbicacion.buscar`; flechas y Enter eligen). Al elegir una dirección se ubica el punto, y la ciudad puede cambiar. Si no se encuentra: «No se pudo ubicar la dirección. Marca el punto en el mapa o elige la zona.».
+  - **Referencia.**
+  - **Mapa (`SiriusMapa`):** muestra las zonas de la ciudad y el punto, que se puede arrastrar; un clic marca el punto.
+  - **Zona:** el nombre y el estado («Calculada», «Calculada · lejos del centro», «Confirmada», «Zona por confirmar» o «Ciudad sin zonas»), con su nota, «Cambiar la zona» (las zonas activas) y «Confirmar zona X».
+- **El lugar (DEC-222):**
+  - Forma: `{ provincia, ciudad, direccion, referencia, punto, zona { id, nombre }, estadoZona, lejos, origen }`.
+  - La zona se calcula con lo publicado y se guarda como copia del momento: si después se renombra o se elimina, la visita conserva la que tenía.
+  - **Lugar por defecto:** el de la visita (al reagendar o dividir); en Ramos Generales no móviles, el del riesgo; si no, el de la visita anterior o la dirección del riesgo con la ciudad del caso.
+- **Ramos Generales no móviles:** el lugar sale de la dirección del riesgo. Si no trae punto, se busca al abrir; si no se encuentra, queda «Zona por confirmar». El Coordinador lo puede modificar.
+- **Sugerencias (DEC-224):** la lista de inspectores se agrupa en «Cubren la zona», «Cubren toda la ciudad o la sucursal» (incluye a los de «Todas») y «Fuera de cobertura (N)», plegado.
+  - Usa `SiriusCobertura.cubre(inspector, { sucursal del caso, ciudad, zonaId })`. Con la zona por confirmar, se sugiere a quienes cubren toda la ciudad.
+  - Dentro de cada grupo, el orden es por menos visitas del día.
+  - Cada fila muestra el nombre, el tipo o la agencia, la jornada, «N visitas el dd/mm» y la razón («Atiende la zona Norte», «Atiende toda Quito»… o «No cubre este lugar. <resumen de su cobertura>»).
+- **Fuera de cobertura (DEC-225):**
+  - Al elegir a alguien de ese grupo, aparecen la alerta «X no cubre este lugar. Puedes asignarlo igual: escribe el motivo; la alerta y el motivo quedan en el historial.», su cobertura y el campo «Motivo» (10 caracteres o más).
+  - «Agendar visita» o «Guardar cambios» no se habilitan sin el motivo. Vale también para «Cambiar inspector».
+  - La tarjeta lleva la etiqueta discreta «Fuera de cobertura», con el motivo en el título.
+  - El historial guarda «· Alerta de cobertura: X no cubre este lugar. … Motivo: …».
+- **Tarjeta de la visita:** «Ciudad y zona» («Quito · Zona Norte», o «Zona por confirmar» en ámbar) y la dirección.
+- **Con la conexión:**
+  - `agendarVisita` lleva `lugar { provincia, ciudad, direccion, referencia, punto, zona: { id, nombre } | null, estadoZona, lejos, origen }` y `fueraCobertura: { motivo } | null`.
+  - El lugar se lee de `casos[].visitasBase[].lugar`; si no viene, se arma con la dirección de texto y la ciudad del caso, con «Zona por confirmar».
+  - Con `{ ok: false }`, todo vuelve atrás y se muestra el mensaje.
+- **Agenda y red:** `cubre` recibe también la ciudad y la zona del lugar de la visita cuando existen, así que un inspector «Por ciudad y zona» ya cubre las visitas con lugar en su zona.
+
+**Verificado**
+- **Las 6 escenas nuevas a 1280 × 720 y 1920 × 1080:** sin errores, sin scroll horizontal y sin errores de consola.
+- **Escenas de Coordinación ya existentes**, comparadas con la versión publicada antes (215): coord, coordchoque, coordauto, coordvis, coordrg, coordmodalidades, coordcxmoto, envioenlace, enlaceagenda, enlaceagendamodalidad, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos y cxnumerocruce.
+  - Solo cambian el lugar en los formularios presenciales, «Ciudad y zona» en las tarjetas («Quito · Zona por confirmar»; en coordrg «Manta · Ciudad sin zonas») y la carga, que pasa de «hoy» a «el dd/mm».
+  - Sin errores a las dos medidas (enlaceagenda, solo a 1280).
+- **Agenda, red y portal:** agendasemana, agendamover, agendaok, portalhoras, inspofertas, inspaceptar y enlaceagendamodalidad quedan con el mismo texto. En portalredok, la tarjeta de Coordinación suma «Guayaquil · Zona por confirmar».
+- **Zona y grupos de sugerencias:**
+
+  | Escena | Zona | Cubren la zona | Cubren toda la ciudad o la sucursal | Fuera de cobertura |
+  |---|---|---|---|---|
+  | lugarbuscar («Av. Amazonas y Naciones Unidas») | Zona Norte · Calculada (a 4,6 km) | Mauricio Endara | Marco Tapia (0 visitas), Luis Andrade (1), Gabriela Toapanta (2) | Cristian Vaca (Sur), Paola Vinueza (Guayaquil) |
+  | lugarlejos (Mitad del Mundo) | Zona Norte · Calculada · lejos del centro (15,1 km, radio 15) → Confirmada con `?lconf=1` | Mauricio Endara | Marco Tapia, Luis Andrade, Gabriela Toapanta | Cristian Vaca, Paola Vinueza |
+  | lugarmapa («calle 123») | Zona por confirmar, con «No se pudo ubicar…» | — | Marco Tapia, Luis Andrade, Gabriela Toapanta | Cristian Vaca, Paola Vinueza, Mauricio Endara |
+  | lugarmapa `?lpunto=1` (punto en Quitumbe) | Zona Sur · Calculada | Cristian Vaca | Marco Tapia, Luis Andrade, Gabriela Toapanta | Paola Vinueza, Mauricio Endara |
+
+- **lugarfuera:** con Paola Vinueza aparecen la alerta y el motivo, y «Agendar visita» queda deshabilitado. Con `?lguardar=1`, la visita queda con «Fuera de cobertura» (el título lleva el motivo) y «Quito · Zona Norte». En el Historial queda «Visita agendada · V1 · Paola Vinueza · Quito · Zona Norte · Alerta de cobertura: Paola Vinueza no cubre este lugar. Motivo: …».
+- **lugarrg:** el lugar sale de `riesgosBase` («Av. de los Shyris y Naciones Unidas, La Carolina», Quito, sin punto). Se busca al abrir y queda en la zona Norte calculada. Con `?lmod=1`, el punto movido por el Coordinador da la zona Centro confirmada y la referencia.
+- **cxlugar:**
+  - `agendarVisita` envía `lugar { provincia: '17', ciudad: '1701', direccion, referencia, punto: [-0.1765, -78.4845], zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona: 'Calculada', lejos: false, origen: 'Búsqueda' }` y `fueraCobertura { motivo }`.
+  - La base simulada lo guarda en `visitasBase[0]`, y la tarjeta lo vuelve a leer.
+  - Con `?cxok=0`, la visita no se crea y se ve «La base rechazó la acción (prueba)».
+- **Agenda y red con un inspector «Por ciudad y zona» (Quito, Norte):**
+  - `SiriusAgenda.validar` no da aviso de cobertura para una visita con lugar en la zona Norte. Para una en la zona Sur da «… no cubre Quito · Zona Sur (su cobertura: Quito: Norte).». Sin lugar, como antes, falta el lugar.
+  - En la red, `redDe` lo incluye para la zona Norte y no para la Sur ni sin lugar.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** probé con la conexión simulada; la búsqueda de direcciones usa el diccionario de prueba.
+- **Mapa base:** el artifact bloquea las teselas, así que lo probé sobre el fondo neutro.
+- **Lector de pantalla:** revisé los nombres y roles en el código, pero no lo probé con un lector real.
+- **Portal:** la red ya usa el lugar si el enlace lo trae, pero el portal todavía no lo define. Lo verifiqué solo llamando a `redDe`.
+
+**Diferencias**
+- **De dónde sale la dirección del riesgo (Ramos Generales no móvil):**
+  - Con la conexión: `casos[].riesgosBase[i]` de composición «Ubicación», con `datos.direccion` y `datos.ciudad` (y, si vienen, `datos.provincia`, `datos.referencia` y `datos.punto` o `datos.latitud`/`datos.longitud`).
+  - Sin la conexión: `riesgos[].dir` del caso o, si no, la dirección del solicitante o asegurado de la solicitud, con la ciudad de la sucursal del caso.
+  - Equipo y maquinaria se trata como móvil.
+- **Solo en visitas presenciales:** el lugar y los grupos aparecen en las visitas presenciales y en «Cambiar inspector» de una visita presencial. En virtual guiada, documental y autoinspección la lista de inspectores sigue como antes.
+- **Intersección:** ya no hay campo propio; va en la dirección o en la referencia.
+- **Carga del día:** dice «N visitas el dd/mm» también cuando es hoy, en todas las listas de inspectores.
+- **Vehículos sin visita anterior:** el lugar empieza con la dirección del riesgo y la ciudad del caso, en «Zona por confirmar», hasta que se busca o se marca el punto (no se busca solo).
+- **Cambiar de provincia o de ciudad:** se borran la dirección y el punto.
+- **Con `{ ok: false }`:** Coordinación vuelve a empezar como en P-6f-0e, sin la visita y con el mensaje de la base.
+- **Historial con la conexión:** la alerta y el motivo los registra la base (en la base simulada, como un evento del caso). Sin la conexión, Coordinación los agrega al historial.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| lugarbuscar | 50012 V1: buscar «Av. Amazonas y Naciones Unidas» → zona Norte calculada; Mauricio Endara cubre la zona y los demás, toda la ciudad o la sucursal |
+| lugarmapa | «calle 123» no se encuentra → zona por confirmar (`?lpunto=1`: punto en el mapa → zona Sur calculada) |
+| lugarlejos | Mitad del Mundo → «Calculada · lejos del centro» (`?lconf=1`: zona confirmada) |
+| lugarfuera | Paola Vinueza fuera de cobertura: alerta y motivo obligatorio (`?lguardar=1`: etiqueta en la tarjeta y línea en el historial) |
+| lugarrg | 50013 de Ramos Generales no móvil: el lugar sale del riesgo y se ubica al abrir (`?lmod=1`: modificado por el Coordinador) |
+| cxlugar | `agendarVisita` con `lugar` y `fueraCobertura` (`?cxok=0`: `{ ok: false }`) |
+
+También abrí coord, coordchoque, coordauto, coordvis, coordrg, coordmodalidades, coordcxmoto, envioenlace, enlaceagenda, enlaceagendamodalidad, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos, cxnumerocruce, agendasemana, agendamover, agendaok, portalhoras, portalredok, inspofertas e inspaceptar.
+
+Tiempo de la etapa: inicio 14/11/2026 14:12 · fin 14/11/2026 14:42 · 30 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2a2
 
 Publiqué la etapa G-2a2 (Versión 214 con los archivos; la Versión 215 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Rehice «Ciudades y zonas» con la disposición de la maqueta G-1b, adaptada al sistema de diseño y con los íconos del proyecto (DEC-235): el mapa ocupa todo el espacio libre y queda un solo panel a la derecha, ajustable y contraíble. Ahora también se pueden eliminar zonas.

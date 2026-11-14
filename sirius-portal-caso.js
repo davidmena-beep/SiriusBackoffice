@@ -56,7 +56,7 @@
     let l = enlace(token), auto = false; if (!l) { l = autoEnlace(token); auto = !!l; } if (!l) return null;
     const c = ctx.caso(l.caso) || {}, v = (EJ().vehiculos || []).find((x) => x.riesgo === l.riesgo) || {};
     return { token: l.token, l, c, auto, caso: l.caso, riesgo: l.riesgo, modalidad: auto ? 'Autoinspección' : (l.modalidad || 'Presencial'), zona: l.zona || c.sucursal || '', contacto: l.contacto || {}, direccion: l.direccion || '', referencia: l.referencia || '',
-      vehiculo: l.vehiculo || [v.marca, v.modelo, v.anio].filter(Boolean).join(' '), placa: v.placa || c.placa || '', bien: c.bien || '', estado: c.estado || '', fecha: c.fecha || '', grupo: grupoAgenda(c), ramo: c.ramo || '', vence: l.vence || '', agencia: l.agencia || null };
+      vehiculo: l.vehiculo || [v.marca, v.modelo, v.anio].filter(Boolean).join(' '), placa: v.placa || c.placa || '', bien: c.bien || '', estado: c.estado || '', fecha: c.fecha || '', grupo: grupoAgenda(c), ramo: c.ramo || '', vence: l.vence || '', agencia: l.agencia || null, lugar: l.lugar && typeof l.lugar === 'object' ? l.lugar : null /* G-2c · DEC-222 */ };
   }
 
   // ---------- Agenda (SIRIUS_PORTAL_CLIENTE.agenda v1.2) ----------
@@ -79,7 +79,8 @@
   const orgDe = (n) => { const x = (EJ().inspectores || []).find((y) => y.n === n) || {}, r = (AGD().red || []).find((y) => y.inspector === n); return r ? r.organizacion : x.tipo === 'Agencia' ? (x.ag || 'Agencia') : x.tipo === 'Externo' ? 'Independiente' : 'Aseguradora del Sur'; };
   // Agenda fija: internos y de agencia con disponibilidad en SIRIUS, de la zona y la modalidad (los externos van por la red).
   // Etapa G-2b · DEC-223: «cubre» usa la cobertura del inspector con la sucursal del caso (d.zona); sin SiriusCobertura, sus zonas como antes.
-  const cubre = (x, d) => { const C = W.SiriusCobertura; return C ? !!C.cubre(x, { sucursal: d.zona }).nivel : (x.zonas || []).indexOf(d.zona) >= 0; };
+  // Etapa G-2c · DEC-222: con el lugar de la visita (d.lugar), también su ciudad y su zona.
+  const cubre = (x, d) => { const C = W.SiriusCobertura, lg = d.lugar && typeof d.lugar === 'object' ? d.lugar : null; return C ? !!C.cubre(x, { sucursal: d.zona, ciudad: lg ? lg.ciudad : '', zonaId: lg && lg.zona ? lg.zona.id : '' }).nivel : (x.zonas || []).indexOf(d.zona) >= 0; };
   function fijos(d) { return (AGD().disponibilidad || []).filter((x) => cubre(x, d) && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
   // Red (DEC-172): externos y agencias habilitados para la zona, el grupo de ramo y la modalidad.
   function redDe(d) { const AP = W.SiriusAppInspectorLogic; return (AGD().red || []).map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && cubre(x, d) && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }

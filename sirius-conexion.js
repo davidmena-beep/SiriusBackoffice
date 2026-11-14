@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
 // 14/11/2026 · G-2a2 · DEC-222: SIRIUS_CONEXION.buscarDireccion(texto, codCiudad) con OpenStreetMap (Nominatim): espera al teclear, 1 consulta por segundo, memoria de búsquedas y respaldo en el diccionario de prueba.
 // 14/11/2026 · G-2b · DEC-223: usuarios[].cobertura e inspectores[].cobertura (datos.cobertura; SQL 37 la guarda con editarUsuario y crearUsuario).
 // 14/11/2026 · G-2a · DEC-221: SIRIUS_ZONAS (Ciudades y zonas) se vigila: lo publicado en la base manda sobre datos-zonas.js.
@@ -155,7 +156,9 @@
                inspector: v.inspector ? v.inspector.nombre : '', enlace: ens[0] || null, enlaces: ens,
                plantilla: v.plantilla && v.plantilla.nombre ? { nombre: v.plantilla.nombre, version: v.plantilla.version == null ? null : v.plantilla.version } : null,   // P-6f-0b · DEC-217 (SQL 36)
                riesgos: Array.isArray(v.riesgo_ids) && v.riesgo_ids.length ? rsOrden.filter(function (o) { return v.riesgo_ids.indexOf(o.uuid) >= 0; }).map(function (o) { return o.id; }) : undefined,
-               direccion: v.direccion && typeof v.direccion === 'object' && v.direccion.direccion ? String(v.direccion.direccion) : undefined }; });   // P-6f-0f · DEC-232
+               direccion: v.direccion && typeof v.direccion === 'object' && v.direccion.direccion ? String(v.direccion.direccion) : undefined,   // P-6f-0f · DEC-232
+               lugar: v.lugar && typeof v.lugar === 'object' ? v.lugar : undefined,   // G-2c · DEC-222 (SQL 38)
+               fueraCobertura: v.fuera_cobertura && v.fuera_cobertura.motivo ? { motivo: v.fuera_cobertura.motivo, inspector: v.fuera_cobertura.inspector || '' } : null }; });   // G-2c · DEC-225
     if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
       if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; var mma = [dd.marca, dd.modelo, dd.anio].filter(function (t) { return t != null && String(t).trim() !== ''; }).join(', ');   // P-6f-0f: placa arriba y «Marca, Modelo, Año» abajo
@@ -214,7 +217,7 @@
 
   function cargarCasos() {
     return Promise.all([
-      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
+      get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,lugar,fuera_cobertura,enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora'),
       get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; }),   // P-6f-0e · DEC-231
       get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,agencia:agencias(nombre)&order=nombre').catch(function (e) { console.warn('[SIRIUS] usuarios:', e.message); return null; }),   // P-6f-0g · DEC-233
