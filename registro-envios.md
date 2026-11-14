@@ -4,6 +4,77 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0e
+
+Publiqué la etapa P-6f-0e (Versión 201). Con la conexión, Coordinación usa los inspectores y el reloj de la base (DEC-230 y DEC-231). Sin la conexión, queda igual.
+
+**Revisión del punto 3:** con la conexión, Reagendar y Cambiar inspector no se guardaban en la base: solo cambiaban en pantalla. Ahora se guardan con `agendarVisita`, como pide DEC-231.
+
+**Qué cambió**
+- **Reloj real (DEC-230):** en los casos de la base, «hoy», la propuesta, la carga del día y las validaciones usan la fecha y hora reales de Ecuador (America/Guayaquil).
+  - **Propuesta:** hoy a la hora mínima si la visita termina antes de las 18:00; si no, mañana a las 08:00.
+  - **Hora mínima:** la actual redondeada a los 15 minutos siguientes. Antes, el error es «La hora ya pasó: hoy se puede agendar desde las HH:MM.».
+  - **Duración:** mínimo 15 minutos («La visita debe durar al menos 15 minutos.») y 45 por defecto. La hora de fin sigue a la de inicio hasta que se cambia, y una videollamada sin hora de fin se envía con 45 minutos.
+  - Los casos de ejemplo y las escenas simuladas anteriores siguen con el reloj de demostración.
+- **Inspectores de la base (DEC-231):**
+  - **Lista:** sale de `SIRIUS_CONEXION.inspectores`, solo con los activos y sin agencias. Debajo del nombre muestra «Agencia Eurosurvey · Quito», «Independiente · Quito», «Interno · Quito» o «Sin zonas».
+  - **Carga y choques:** «N visitas el dd/mm» y los choques salen de las visitas de la base de todos los casos, sin las Cancelada, Enviada ni Terminada.
+  - **Guardado:** agendar, reagendar y cambiar inspector envían `agendarVisita { caso, visita, accion, inicio, minutos, inspector, modalidad, direccion, motivo }`.
+  - **Motivo:** reagendar y cambiar inspector piden un motivo obligatorio (mínimo 10 caracteres). Cambiar inspector conserva la fecha y la hora.
+  - **Rechazo:** con `{ ok: false }` la visita vuelve como estaba y se muestra el mensaje de la base.
+- **Arreglos con la conexión:**
+  - El celular y el correo «—» de la ficha ya no llegan como contacto de la visita; antes impedían agendar y reagendar.
+  - Al reagendar una visita de la base, la tarjeta muestra la cita nueva.
+
+**Verificado**
+- **Escenas a 1280×720 y 1920×1080, desde el selector:** cxcoordins, cxcoordpasado y cxcoordcambiar. Ninguna mostró errores ni scroll horizontal.
+- **Escenas anteriores comparadas con la versión anterior** a las dos medidas: coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlaceagendamodalidad, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar y cxnumerocruce.
+  - Quedan iguales.
+  - En enlaceagenda solo cambia el código del enlace, que se genera al azar en cada carga.
+- **cxcoordins** (reloj real 13/11/2026 23:19; propone 14/11 de 08:00 a 08:45):
+  - La lista muestra «Mauricio Endara · Agencia Eurosurvey · Quito · 2 visitas el 14/11», «Luis Andrade · Independiente · Quito · 0 visitas el 14/11» y «Gabriela Toapanta · Interno · Quito · 0 visitas el 14/11». No aparecen la agencia Eurosurvey como inspector ni Diego Salinas (inactivo).
+  - Las visitas Cancelada y Terminada de Mauricio no cuentan.
+  - Al elegirlo aparece «Mauricio Endara tiene otra visita de 08:00 a 08:45».
+  - Con Luis Andrade se agenda y la base simulada guarda la visita de 08:00 a 08:45.
+- **cxcoordpasado:** el formulario abre con hoy 13/11/2026 de 22:15 a 23:00 (45 minutos) y el error en línea «La hora ya pasó: hoy se puede agendar desde las 23:30.».
+- **cxcoordcambiar:**
+  - Abre con Luis Andrade y el motivo escrito. Al confirmar, la tarjeta pasa a Luis Andrade con la misma cita.
+  - Con `?cxrech=1` la tarjeta vuelve a Mauricio Endara y aparece «El inspector Luis Andrade no existe en la base».
+  - Un motivo de 5 caracteres muestra «Escribe el motivo (mínimo 10 caracteres).».
+  - Al reagendar: la hora de fin sigue a la de inicio (10:00 → 10:45), 10 minutos dan «La visita debe durar al menos 15 minutos.» y, con el motivo, la tarjeta muestra «Cita 14/11/26 · 10:00».
+- **Conexión temporal** (copia aparte, no simulada): `agendarVisita` llegó con esta forma:
+  - Agendar: `accion: 'agendar'`, `visita: 1`, `inicio: '2026-11-14T08:00:00-05:00'`, `minutos: 45`, `inspector: 'Luis Andrade'`, la modalidad, la dirección y `motivo: ''`.
+  - Cambiar inspector: `accion: 'cambiarInspector'` con la misma `inicio` y el motivo.
+  - Reagendar: `accion: 'reagendar'`, `inicio: '2026-11-14T11:00:00-05:00'` y el motivo.
+  - Con `{ ok: false }` la visita volvió y se vio «El inspector Gabriela Toapanta no existe en la base». También probé «La hora elegida ya pasó».
+  - Un inspector interno sin zonas aparece como «Interno · Sin zonas».
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: contrato con `SIRIUS_CONEXION.inspectores` y `agendarVisita`, 590 escenas en datos-escenas y KNOWN_ESC 547.
+
+**No verificado**
+- La base real: se probó contra una conexión simulada y una temporal.
+- La propuesta en otro horario del día: la probé a las 23:19 y 23:34 (propone mañana a las 08:00). La regla de hoy a la hora mínima la revisé con cálculos, no en pantalla a media jornada.
+- El caso 50012 de la base: no lo tengo. Con el reloj real y la duración mínima ya no se puede agendar una visita como la del 18/10 de 20:30 a 20:32.
+
+**Diferencias**
+- **Escenas simuladas anteriores** (cxvisitaenlace, cxvisitacancelar, cxnumerocruce y las de autoinspección): siguen con la lista y el reloj de demostración, porque su conexión simulada no trae `inspectores`. Con una conexión real que no envíe `inspectores`, la lista queda vacía.
+- **Solo para las tres escenas nuevas:** la conexión simulada usa el reloj real (`relojReal`), y las visitas de Mauricio Endara se calculan para el día que propone Coordinación al abrir la escena.
+- **Escenas nuevas en presencial:** cxcoordins y cxcoordpasado abren en Presencial, para que se vea la hora de fin y los 45 minutos. La recomendación del sistema sigue siendo Virtual guiada.
+- **Inspector interno en las escenas:** se llama Gabriela Toapanta, inventado para la base simulada. «Sin zonas» se probó con la conexión temporal.
+- **Duración por defecto:** antes, una visita sin hora de fin se enviaba con 60 minutos; ahora va con 45.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| cxcoordins | Inspectores de la base con su línea y la carga del día; Mauricio Endara con 2 visitas el día propuesto |
+| cxcoordpasado | Hora ya pasada del día real, con el error en línea y la duración propuesta de 45 minutos |
+| cxcoordcambiar | Cambiar inspector con motivo; con `?cxrech=1`, «El inspector Luis Andrade no existe en la base» |
+
+También abrí coord, coordchoque, coordauto, coordvis, envioenlace, enlaceagenda, enlaceagendamodalidad, enlacesincorreo, coordcxmoto, cxvisitaenlace, cxvisitacancelar y cxnumerocruce.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0b
 
 Publiqué la etapa P-6f-0b (Versión 200). La primera publicación quedó como Versión 199 con el registro diciendo 197; la Versión 200 solo corrige el número en el registro y no cambia nada más.

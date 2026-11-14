@@ -141,5 +141,18 @@
       showErr && !props.hideError ? h('span', { id: errId, role: 'alert', style: { fontSize: 13, color: 'var(--color-danger)' } }, err) : null, pnl);
   }
   SiriusFecha.validar = validar; SiriusFecha.parse = parse;
+  // Etapa P-6f-0e · DEC-230: reloj real de Ecuador (America/Guayaquil, UTC−5 sin horario de verano) para los casos de la base. Devuelve { hoy: 'AAAA-MM-DD', hora: 'HH:MM', min } (min = minutos del día).
+  SiriusFecha.relojEcuador = function (fecha) { var d = fecha || new Date(), p = null;
+    try { var f = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d), o = {}; f.forEach(function (x) { o[x.type] = x.value; }); p = { y: o.year, m: o.month, d: o.day, h: o.hour === '24' ? '00' : o.hour, mi: o.minute }; } catch (e) { p = null; }
+    if (!p) { var u = new Date(d.getTime() - 5 * 3600000); p = { y: String(u.getUTCFullYear()), m: z(u.getUTCMonth() + 1), d: z(u.getUTCDate()), h: z(u.getUTCHours()), mi: z(u.getUTCMinutes()) }; }
+    return { hoy: p.y + '-' + p.m + '-' + p.d, hora: p.h + ':' + p.mi, min: Number(p.h) * 60 + Number(p.mi) }; };
+  // Hora mínima para agendar hoy: la actual redondeada a los 15 minutos siguientes. «HH:MM» → minutos y al revés.
+  SiriusFecha.aMin = function (t) { var q = String(t || '').split(':').map(Number); return (q[0] || 0) * 60 + (q[1] || 0); };
+  SiriusFecha.aHora = function (m) { m = Math.max(0, Math.min(23 * 60 + 59, m)); return z(Math.floor(m / 60)) + ':' + z(m % 60); };
+  SiriusFecha.minimaHoy = function (r) { return SiriusFecha.aHora(Math.ceil(((r && r.min) || 0) / 15) * 15 + (((r && r.min) || 0) % 15 === 0 ? 15 : 0)); };
+  // Propuesta de visita (DEC-230): hoy a la hora mínima si termina antes de las 18:00; si no, mañana a las 08:00. Duración por defecto: 45 minutos.
+  SiriusFecha.propuestaVisita = function (r, dur) { dur = dur || 45; var ini = SiriusFecha.aMin(SiriusFecha.minimaHoy(r)), fecha = r.hoy;
+    if (ini + dur > 18 * 60) { var t = new Date(r.hoy + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + 1); fecha = t.getUTCFullYear() + '-' + z(t.getUTCMonth() + 1) + '-' + z(t.getUTCDate()); ini = 8 * 60; }
+    return { fecha: fecha, hIni: SiriusFecha.aHora(ini), hFin: SiriusFecha.aHora(ini + dur) }; };
   window.SiriusFecha = SiriusFecha;
 })();

@@ -309,7 +309,11 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20196&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tipo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Vehículos&quot;,&quot;Ramos Generales&quot;],&quot;default&quot;:&quot;Vehículos&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;riesgos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;visitas&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;rec&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;contacto&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(type:string,payload:object)=&gt;void&quot;},&quot;enlaceRev&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;canalesEnlace&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(contacto:object)=&gt;object&quot;}}">
 class Component extends DCLogic {
   // El tipo de inspector sale de datos-ejemplo.js cuando está cargado.
-  get INS() { const D = window.SIRIUS_EJEMPLO; return !D || !D.inspectores ? this.INS0 : this.INS0.map(i => { const d = D.inspectores.find(x => x.n === i.n); return d ? Object.assign({}, i, { tipo: d.tipo }) : i; }); }
+  // Etapa P-6f-0e · DEC-231: con la conexión, en los casos de la base, los inspectores salen de SIRIUS_CONEXION.inspectores (prop «base», armada por el Back-office):
+  // solo activos, sin agencias; debajo del nombre «Agencia Eurosurvey · Quito», «Independiente · Quito» o «Interno · Quito» («Sin zonas» si no tiene).
+  cxBase() { const b = this.props.base; return b && typeof b === 'object' ? b : null; }
+  get INS() { const B = this.cxBase(); if (B && Array.isArray(B.inspectores)) return B.inspectores.map(i => ({ n: i.n, tipo: i.tipo, zona: i.zona, meta: i.meta, agenda: {} }));
+    const D = window.SIRIUS_EJEMPLO; return !D || !D.inspectores ? this.INS0 : this.INS0.map(i => { const d = D.inspectores.find(x => x.n === i.n); return d ? Object.assign({}, i, { tipo: d.tipo }) : i; }); }
   INS0 = [
     { n: 'Marco Tapia', tipo: 'Interno', zona: 'Quito', agenda: { '2026-10-16': [['08:00', '09:00'], ['10:30', '11:30'], ['15:00', '16:00']], '2026-10-17': [['09:00', '10:00'], ['14:00', '15:00']] } },
     { n: 'Cristian Vaca', tipo: 'Interno', zona: 'Quito y valles', agenda: { '2026-10-16': [['09:00', '10:00'], ['11:00', '12:00']], '2026-10-17': [['10:00', '11:00']] } },
@@ -319,8 +323,11 @@ class Component extends DCLogic {
     { n: 'Patricia Rosero', tipo: 'Externo · especialista en equipo electrónico', zona: 'Manabí y Guayas', agenda: { '2026-10-17': [['15:00', '16:00']] } },
   ];
   MODS = [['Presencial', 'El inspector visita la dirección'], ['Virtual guiada', 'Videollamada con el inspector'], ['Autoinspección', 'El contacto envía fotos guiadas'], ['Documental', 'Revisión de documentos y fotos'], ['No requiere inspección', 'Pasa directo a calificación']];
-  today = '2026-10-16';
-  nowIso = '2026-10-16T13:40';
+  // Etapa P-6f-0e · DEC-230: con la conexión, en los casos de la base, «hoy» y «ahora» son los reales de Ecuador (prop base.reloj); si no, el reloj de demostración.
+  reloj() { const B = this.cxBase(); return B && B.reloj && B.reloj.hoy ? B.reloj : null; }
+  get today() { const r = this.reloj(); return r ? r.hoy : '2026-10-16'; }
+  get nowIso() { const r = this.reloj(); return r ? r.hoy + 'T' + r.hora : '2026-10-16T13:40'; }
+  pideMotivoCx(p) { return !!this.cxBase() && !!p && (p.mode === 'reagendar' || p.mode === 'inspector'); } // DEC-231: reagendar y cambiar inspector con motivo
   addHours(val) { const h = /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 48; const d = window.SIRIUS_EJEMPLO.ahora(); d.setHours(d.getHours() + h); const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
   fmtDT(iso) { const [dd, tt] = iso.split('T'); return this.fmtD(dd) + ' · ' + tt; }
   state = this.initial();
@@ -332,7 +339,11 @@ class Component extends DCLogic {
     if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; }
     else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; }
     else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección' });   // etapa 12b · envioenlace (20186)
-    else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false) s.pnl = this.newForm(rs.map(r => r.id));
+    else if (pr === 'cxcoordcambiar') { const E = (this.cxBase() || {}).escena || {}, v = this.visits().find(x => x.inspector && x.estado === 'Agendada'); if (v) { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: E.inspector || '', motivoCx: E.motivo || '' })); s.insQ = E.inspector || ''; } } // P-6f-0e · DEC-231
+    else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false) { s.pnl = this.newForm(rs.map(r => r.id));
+      if ((pr === 'cxcoordins' || pr === 'cxcoordpasado') && this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0e: presencial, con hora de fin (45 minutos)
+      if (pr === 'cxcoordins') s.insOpen = true; // P-6f-0e · DEC-231: la lista de inspectores de la base abierta
+      if (pr === 'cxcoordpasado') { const r = this.reloj(), SF = window.SiriusFecha, E = (this.cxBase() || {}).escena || {}; if (r && SF) { const ini = Math.max(0, Math.floor(r.min / 15) * 15 - 60); Object.assign(s.pnl, { fecha: r.hoy, hIni: SF.aHora(ini), hFin: SF.aHora(ini + 45), hFinAuto: true, inspector: E.inspector || '' }); s.insQ = E.inspector || ''; s.touched = { hIni: true }; } } } // DEC-230: una hora ya pasada de hoy
     return s;
   }
   componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey) this.setState(this.initial()); }
@@ -372,13 +383,21 @@ class Component extends DCLogic {
   recFor(ids) { const ms = ids.map(id => this.rById(id).recMod).filter(Boolean).filter(m => this.modOk(m)); const r = ms.includes('Presencial') ? 'Presencial' : ms[0] || (this.props.rec || {}).modalidad || 'Presencial'; return this.modOk(r) ? r : 'Presencial'; }
   newForm(ids, extra) {
     const c = this.props.contacto || {}, dirs = ids.map(id => this.rById(id).dir).filter(Boolean);
-    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: '', hIni: '', hFin: '', dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
+    const r = this.reloj(), SF = window.SiriusFecha, pr = r && SF && SF.propuestaVisita ? SF.propuestaVisita(r, 45) : null; // DEC-230: con el reloj real, propone fecha y hora (45 minutos)
+    return Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: pr ? pr.fecha : '', hIni: pr ? pr.hIni : '', hFin: pr ? pr.hFin : '', hFinAuto: !!pr, dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', motivoCx: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '' }, extra || {});
   }
-  setP(k, v) { this.setState(st => ({ pnl: Object.assign({}, st.pnl, { [k]: v }) })); }
+  setP(k, v) { this.setState(st => { const o = { [k]: v }, SF = window.SiriusFecha;
+    if (this.reloj() && SF && SF.aMin) { if (k === 'hFin') o.hFinAuto = false; if (k === 'hIni' && /^\d\d:\d\d$/.test(v) && (!st.pnl.hFin || st.pnl.hFinAuto)) { o.hFin = SF.aHora(SF.aMin(v) + 45); o.hFinAuto = true; } } // DEC-230: duración por defecto 45 minutos
+    return { pnl: Object.assign({}, st.pnl, o) }; }); }
   touch(k) { if (!this.state.touched[k]) this.setState(st => ({ touched: Object.assign({}, st.touched, { [k]: true }) })); }
   fmtD(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y.slice(2); }
   needsIns(p) { return p.mode === 'inspector' || ['Presencial', 'Virtual guiada', 'Documental'].includes(p.mod); }
   slots(name, fecha, exceptId) {
+    const B = this.cxBase();
+    if (B && Array.isArray(B.agenda)) { // DEC-231: la carga y los choques salen de las visitas de la base (todas las de los casos, sin Cancelada, Enviada ni Terminada) y de las de esta sesión que la base aún no tiene
+      const mismo = (x) => String(x.caso) === String(this.props.caseId), out = B.agenda.filter(x => x.inspector === name && x.fecha === fecha && !(mismo(x) && 'V' + x.n === exceptId)).map(x => ({ a: x.a, b: x.b }));
+      this.visits().filter(v => v.estado !== 'Cancelada' && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
+      return out; }
     const i = this.INS.find(x => x.n === name); const out = ((i && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1] }));
     this.visits().filter(v => v.estado !== 'Cancelada' && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
     return out;
@@ -398,12 +417,16 @@ class Component extends DCLogic {
     if (p.mode !== 'inspector' && !p.riesgos.length) e.riesgos = 1;
     if (p.mode === 'dividir' && !p.split) e.split = 'Elige el ramo.';
     if (this.needsIns(p) && !p.inspector) e.inspector = 'Selecciona el inspector.';
+    if (this.pideMotivoCx(p) && String(p.motivoCx || '').trim().length < 10) e.motivoCx = 'Escribe el motivo (mínimo 10 caracteres).'; // DEC-231
     if (p.mode === 'inspector') return e;
     if (['Presencial', 'Virtual guiada', 'Documental'].includes(p.mod) && !p.fecha) e.fecha = p.mod === 'Documental' ? 'Indica la fecha límite de revisión.' : 'Indica la fecha.';
     if (p.mod === 'No requiere inspección') { if (!p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (!String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.'; return e; }
     if (p.fecha && p.fecha < this.today) e.fecha = 'La fecha no puede ser anterior a hoy.';
     if (['Presencial', 'Virtual guiada'].includes(p.mod) && !p.hIni) e.hIni = 'Indica la hora de inicio.';
     if (p.mod === 'Presencial') { if (!p.hFin) e.hFin = 'Indica la hora de fin.'; else if (p.hIni && p.hFin <= p.hIni) e.hFin = 'La hora de fin debe ser posterior al inicio.'; if (!p.dir.trim()) e.dir = 'Ingresa la dirección.'; }
+    { const r = this.reloj(), SF = window.SiriusFecha; if (r && SF && SF.minimaHoy && ['Presencial', 'Virtual guiada'].includes(p.mod)) { // DEC-230: no en el pasado (hora mínima: la actual redondeada a los 15 minutos siguientes) y al menos 15 minutos
+      const mn = SF.minimaHoy(r); if (p.fecha === this.today && p.hIni && !e.hIni && p.hIni < mn) e.hIni = 'La hora ya pasó: hoy se puede agendar desde las ' + mn + '.';
+      if (p.mod === 'Presencial' && p.hIni && p.hFin && !e.hFin && SF.aMin(p.hFin) - SF.aMin(p.hIni) < 15) e.hFin = 'La visita debe durar al menos 15 minutos.'; } }
     if (p.mod === 'No requiere inspección' && !p.motivo.trim()) e.motivo = 'Elige el motivo.'; if (p.mod === 'No requiere inspección' && !String(p.nrObs || '').trim()) e.nrObs = 'Escribe la observación.';
     if (!p.cName.trim()) e.cName = 'Ingresa el nombre del contacto.';
     if (!/^09\d{8}$/.test(p.cCel.replace(/\s/g, ''))) e.cCel = 'Ingresa un celular de 10 dígitos que empiece con 09.';
@@ -456,30 +479,32 @@ class Component extends DCLogic {
     const loadDate = (p && p.fecha) || this.today;
     const loadOf = (n) => { const k = this.slots(n, loadDate, p && p.visitId).length; return (k === 1 ? '1 visita' : k + ' visitas') + (loadDate === this.today ? ' hoy' : ' el ' + this.fmtD(loadDate).slice(0, 5)); };
     const q = s.insQ.trim().toLowerCase();
-    const insList = this.INS.filter(i => !q || (ins && s.insQ === ins.n) || (i.n + ' ' + i.tipo + ' ' + i.zona).toLowerCase().includes(q));
+    const insList = this.INS.filter(i => !q || (ins && s.insQ === ins.n) || (i.n + ' ' + (i.meta || (i.tipo + ' ' + i.zona))).toLowerCase().includes(q));
     const cl = this.clash(p);
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
     const nextId = 'V' + (vis.length + 1);
     const tone = { Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
-    const fields = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
+    const fMot = this.pideMotivoCx(p) ? [this.F('motivoCx', p.mode === 'inspector' ? 'Motivo del cambio de inspector' : 'Motivo del cambio de fecha', 'textarea', { req: true, span: '1 / -1', ph: 'Mínimo 10 caracteres. Queda en el historial y se envía a la base.' })] : []; // DEC-231
+    const fields0 = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
       this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
       this.F('dir', 'Dirección', 'input', { req: true, span: '1 / -1' }), this.F('inter', 'Intersección', 'input', { ph: 'Ej. De los Juncos' }), this.F('ref', 'Referencias', 'input', { span: 'span 2', ph: 'Ej. Portón verde junto a la gasolinera' })]
       : p.mod === 'Virtual guiada' ? [this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora', 'input', { req: true, type: 'time' })]
       : p.mod === 'Documental' ? [this.F('fecha', 'Fecha límite de revisión', 'input', { req: true, type: 'date', min: this.today })]
       : p.mod === 'Autoinspección' ? [this.F('validez', 'Validez del enlace', 'select', { options: this.vigOpts() })]
       : [this.F('motivo', 'Motivo', 'select', { req: true, span: '1 / -1', options: [{ v: '', l: 'Selecciona el motivo' }].concat((((window.SIRIUS_EJEMPLO || {}).catalogos || {}).motivosNoInspeccion || []).map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean)) }), this.F('nrObs', 'Observación', 'textarea', { req: true, span: '1 / -1', ph: 'Ej. Factura del concesionario y fotos de entrega revisadas.' })];
+    const fields = fields0.concat(fMot);
     const cF = (k, label, o) => { o = o || {}; const show = !!(s.touched[k] && errs[k]); return { id: 'co-' + k, label, star: o.req ? 'inline' : 'none', isInput: true, isFecha: false, type: o.type || 'text', inputMode: o.inputMode || 'text', ph: o.ph || '', value: p ? p[k] : '', onChange: (ev) => this.setP(k, ev.target.value), onBlur: () => this.touch(k), errShow: show, err: errs[k] || '', invalid: show ? 'true' : undefined, border: show ? 'var(--color-danger)' : 'var(--input-outlined-border)' }; };
     const submit = () => {
       if (eKeys.length) { const t = Object.assign({}, s.touched); eKeys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); return; }
       if (s.enviando) return; // etapa P-6c2: esperando la respuesta de la conexión
       const mode = p.mode, onA = P.onAction || (() => {});
-      if (mode === 'inspector') { onA('inspector', { id: p.visitId, inspector: p.inspector }); this.setState({ pnl: null }); return; }
+      if (mode === 'inspector') { onA('inspector', { id: p.visitId, inspector: p.inspector, motivo: String(p.motivoCx || '').trim() }); this.setState({ pnl: null }); return; } // DEC-231: el motivo va a la base
       if (this.cpPide(p)) { const C = window.SIRIUS_CAMPOS, cambios = []; this.cpCampos().forEach(x => { const nv = String(this.cpVal(p, x)).trim(), old = C.valor(P.caseId, x.clave); if (nv !== (old === null ? '' : String(old))) { if (!C.valores[P.caseId]) C.valores[P.caseId] = {}; C.valores[P.caseId][x.clave] = nv; cambios.push({ etiqueta: x.etiqueta, de: C.mostrar(x, old), a: nv }); } }); if (cambios.length) onA('campos', { cambios }); }
       if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); const rN = onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.trasEnvio(rN, (x) => { const nx = this.conCx(nv, x); this.setState({ pnl: null, touched: {}, wa: { title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nx), ins: '', enlace: this.enlaceCopia(nx) } }); /* etapa C2-5: «Copiar enlace» también en demostración */ }); return; }
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
       let v, rA = null;
-      if (mode === 'reagendar') { v = Object.assign({}, src, base); onA('reagendar', { id: p.visitId, patch: base }); }
+      if (mode === 'reagendar') { v = Object.assign({}, src, base); onA('reagendar', { id: p.visitId, patch: base, motivo: String(p.motivoCx || '').trim() }); }
       else { const id = nextId; v = Object.assign({ id, riesgos: mode === 'dividir' ? [p.split] : p.riesgos.slice(), estado: 'Agendada' }, base);
         if (p.mod === 'Virtual guiada') v.enlace = 'meet.sirius.ec/' + P.caseId + '-' + id.toLowerCase();
         if (p.mod === 'Autoinspección') { v.enlace = 'sirius.ec/ai/' + P.caseId + '-' + id; v.vence = this.addHours(p.validez); }
@@ -618,8 +643,8 @@ class Component extends DCLogic {
       needsIns: !!p && this.needsIns(p),
       insQ: s.insQ, insOpen: s.insOpen, onInsQ: (e) => this.setState({ insQ: e.target.value, insOpen: true }), openIns: () => this.setState({ insOpen: true }),
       insBlur: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { this.setState({ insOpen: false, insQ: p && p.inspector ? p.inspector : s.insQ }); this.touch('inspector'); } },
-      insOpts: insList.map(i => { const k = this.slots(i.n, loadDate, p && p.visitId).length; return { n: i.n, meta: i.tipo + ' · ' + i.zona, load: loadOf(i.n), loadColor: k >= 4 ? 'var(--color-danger)' : 'var(--text-body)', sel: p && p.inspector === i.n ? 'true' : 'false', bg: p && p.inspector === i.n ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.setP('inspector', i.n); this.setState({ insQ: i.n, insOpen: false }); } }; }),
-      insNoMatch: !insList.length, hasIns: !!ins, insSummary: ins ? ins.tipo + ' · ' + ins.zona + ' · ' + loadOf(ins.n) : '',
+      insOpts: insList.map(i => { const k = this.slots(i.n, loadDate, p && p.visitId).length; return { n: i.n, meta: i.meta || (i.tipo + ' · ' + i.zona), load: loadOf(i.n), loadColor: k >= 4 ? 'var(--color-danger)' : 'var(--text-body)', sel: p && p.inspector === i.n ? 'true' : 'false', bg: p && p.inspector === i.n ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.setP('inspector', i.n); this.setState({ insQ: i.n, insOpen: false }); } }; }),
+      insNoMatch: !insList.length, hasIns: !!ins, insSummary: ins ? (ins.meta || (ins.tipo + ' · ' + ins.zona)) + ' · ' + loadOf(ins.n) : '',
       insErrShow: !!(p && s.touched.inspector && errs.inspector), insInvalid: p && s.touched.inspector && errs.inspector ? 'true' : undefined, insBorder: p && s.touched.inspector && errs.inspector ? 'var(--color-danger)' : 'var(--input-outlined-border)',
       hasClash: !!cl, clashText: cl ? p.inspector + ' tiene otra visita de ' + cl.a + ' a ' + cl.b : '',
       hasFields: fields.length > 0, fFields: fields,
