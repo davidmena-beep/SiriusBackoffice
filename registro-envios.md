@@ -4,6 +4,78 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-0d
+
+Publiqué la etapa P-6f-0d (Versión 196). La primera publicación quedó como Versión 195 con el registro diciendo 194; la Versión 196 solo corrige el número en el registro y no cambia nada más.
+
+Con varios riesgos, el Resumen muestra cada riesgo en su propia tarjeta con contorno y cabecera, y los valores en una tabla con «Total del caso» (DEC-226). Con un solo riesgo no cambia nada.
+
+**Qué cambió**
+- **Título:** «Objeto a asegurar · 3 vehículos» («· 2 equipos», «· N ubicaciones», «· N ramos»).
+- **Tarjeta por riesgo:** borde de 1 px (`--border-default`), esquinas de 8 px y 12 px entre tarjetas.
+- **Cabecera** (fondo `--surface-subtle`, 12 × 16 px de relleno), en una línea:
+  - el número en un círculo;
+  - el bien con su identificación en negrita: «Kia Rio 2022 · PRB1212», «Excavadora Caterpillar 320 GC · CAT0320GCJ5H01234» o la dirección;
+  - el estado con el mismo chip de la bandeja;
+  - el valor total a la derecha;
+  - la flecha.
+- **Abrir y cerrar:** toda la cabecera abre y cierra con clic, Enter o Espacio, con `aria-expanded` y `aria-controls`. Bajo 720 px, el estado y el valor bajan a una segunda línea.
+- **Cuerpo:** los campos de DEC-219 en dos columnas (una bajo 720 px). Al final, los valores del riesgo: Casco, Extras y Total, o Suma asegurada.
+- **Abiertas o cerradas:**
+  - Con hasta 3 riesgos, todas abiertas. Con 4 o más, cerradas, con «Expandir todo» / «Contraer todo».
+  - Lo abierto se mantiene al navegar por el caso y no se guarda.
+- **Tabla de valores:**
+  - «Vehículo | Casco | Extras | Total»; para equipos, ubicaciones y ramos, «Riesgo | Suma asegurada».
+  - Cifras a la derecha, separador fino entre filas y «Total del caso» en negrita con borde superior de 2 px.
+- **Dónde aplica:** con la conexión (`cxObjeto`) y en los casos de ejemplo de varios riesgos.
+- **Componente nuevo:** `sirius-riesgos.js` (`SiriusRiesgos.Tarjetas`).
+
+**Verificado**
+- **Escenas a 1280×720, 1920×1080 y 700×800:** abrí resumenflotabase, resumenflota5, resumenequipos2, resumenvehsol y el caso de ejemplo 20196. Ninguna mostró errores, «[object Object]» ni scroll horizontal. resumenflota5 y resumenequipos2 también abren desde el selector.
+- **Totales calculados:**
+
+| Escena o caso | Riesgos | Total del caso |
+|---|---|---|
+| resumenflotabase | 15.000 + 2.400 + 33.200 | USD 50.600,00 |
+| resumenflota5 | 15.000 + 2.400 + 33.200 + 29.300 + 28.400 | USD 108.300,00 |
+| resumenequipos2 | 31.500 + 185.000 | USD 216.500,00 |
+| resumenvehsol (un riesgo) | 18.500 + 650 | USD 19.150,00, sin cambios |
+| 20196 (ejemplo) | 30.900 + 21.000 + 35.840 | USD 87.740,00 |
+| 20198 (ejemplo) | 31.200 + 18.900 | USD 50.100,00 |
+| 20204 (ejemplo, equipos) | 100.000 + 180.000 + 28.000 | USD 308.000,00 |
+
+  Los tres casos de ejemplo dan el mismo total que en la versión anterior.
+- **Estado inicial:** resumenflota5 abre con las 5 tarjetas cerradas y «Expandir todo». resumenflotabase, resumenequipos2 y 20196 abren con todas las tarjetas abiertas.
+- **Teclado:** Tab llega a «Expandir todo» y luego a cada cabecera, y cada `aria-controls` apunta a su cuerpo. Enter y Espacio la abren y la cierran, y el foco queda en la cabecera. «Expandir todo» abre las 5 y cambia a «Contraer todo».
+- **Navegación por el caso:** después de cerrar la tarjeta 2 y pasar a Historial y volver al Resumen, sigue cerrada.
+- **Con un solo riesgo:** resumenvehsol, veh, resumenequipo, resumenubicacion y svflota quedan idénticas a la versión anterior.
+- `sirius-conexion.js` quedó con su línea mínima (comparación byte a byte).
+- Inventario y registro actualizados: 583 escenas en datos-escenas y KNOWN_ESC 540.
+
+**No verificado**
+- Ubicaciones múltiples con la conexión: el código las arma, pero no hay escena.
+- Casos de ejemplo de varios ramos de Ramos Generales: no encontré uno con más de un riesgo para abrirlo.
+- Lectores de pantalla: revisé los atributos, no la lectura con un lector real.
+
+**Diferencias**
+- **Ancho de 720 px:** se mide sobre la ventana, no sobre la tarjeta. A 1280 la tarjeta mide 678 px y usa el diseño ancho; a 700 px usa el angosto.
+- **Tabla bajo 720 px:** con vehículos queda «Vehículo | Total», con casco y extras debajo del nombre, porque las cuatro columnas no entraban en unos 290 px.
+- **Montos que no vienen:** aparecen como «—», por ejemplo los extras de la Kia y la Suzuki en las escenas simuladas.
+- **Cabecera:** es un elemento con `role="button"`, porque contiene el chip de estado.
+- **Equipos del caso 20204:** el título sale del tipo, la marca, el modelo y la serie (PIN) de `SIRIUS_EQUIPOS.ejemplo`. El cuerpo muestra campos de equipo; antes decía «Ramo» y «Línea de negocio».
+- **Estado en las escenas simuladas:** cada riesgo muestra el estado del caso simulado («Por completar»), mientras la cabecera del caso dice «Agendado». Viene de la simulación de P-6f-0a; no lo cambié.
+
+**Escenas** (desde el selector):
+
+| Escena | Qué muestra |
+|---|---|
+| resumenflota5 | 5 vehículos con las tarjetas cerradas, «Expandir todo» y la tabla con Total del caso USD 108.300 |
+| resumenequipos2 | 2 equipos móviles con las tarjetas abiertas y Total del caso USD 216.500 |
+
+También abrí resumenflotabase, resumenvehsol y el caso de ejemplo 20196.
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-0c
 
 Publiqué la etapa P-6f-0c (Versión 193). Aplica el catálogo de sucursales de Aseguradora del Sur (DEC-220) y publica Provincias en la forma del archivo (DEC-187).

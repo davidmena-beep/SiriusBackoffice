@@ -24,6 +24,12 @@
       veh({ placa: 'PRB1212', marca: 'Kia', modelo: 'Rio', anio: 2022, vin: 'KNADN512BN6418830', motor: 'G4LC-NW418830', carroceria: 'sedan', uso: 'Particular', suma: 15000 }),
       veh({ placa: 'PR121A', marca: 'Suzuki', modelo: 'GN125', anio: 2023, vin: 'LC6PCJK14P0301127', motor: 'F408-0301127', carroceria: 'moto', uso: 'Particular', cilindraje: 125, suma: 2400 }),
       veh({ placa: 'PRB1213', marca: 'Toyota', modelo: 'Hilux', anio: 2022, vin: 'MR0FB8CD8N0817716', motor: '2GD-FTV-817716', carroceria: 'camioneta', uso: 'Comercial', extras: ['Barra antivuelco', 'Estribos'], valorExtras: 1200, suma: 32000 })],
+    // P-6f-0d · DEC-226: flota de 5 (los 3 de resumenflotabase y dos con todos los datos): con 4 o más, las tarjetas empiezan cerradas.
+    resumenflota5: null,
+    // P-6f-0d · DEC-226: dos equipos móviles (con hasta 3 riesgos, las tarjetas empiezan abiertas).
+    resumenequipos2: [
+      { descripcion: 'Montacargas Toyota 8FGCU25 · serie 8FGCU25-71844', composicion: 'Equipo móvil', suma: 31500, datos: { tipoEquipo: 'Montacargas', marca: 'Toyota', modelo: '8FGCU25', anio: 2021, serie: '8FGCU25-71844', h: 4320, ubicacion: 'Bodega Carcelén, Quito' } },
+      { descripcion: 'Excavadora Caterpillar 320 GC · serie CAT0320GCJ5H01234', composicion: 'Equipo móvil', suma: 185000, datos: { tipoEquipo: 'Excavadora', marca: 'Caterpillar', modelo: '320 GC', anio: 2022, serie: 'CAT0320GCJ5H01234', h: 2150, ubicacion: 'Patio de maquinaria, Pifo' } }],
     // Equipo móvil (montacargas) con su suma asegurada.
     resumenequipo: [{ descripcion: 'Montacargas Toyota 8FGCU25 · serie 8FGCU25-71844', composicion: 'Equipo móvil', suma: 31500, datos: { tipoEquipo: 'Montacargas', marca: 'Toyota', modelo: '8FGCU25', anio: 2021, serie: '8FGCU25-71844', h: 4320, ubicacion: 'Bodega Carcelén, Quito' } }],
     // Ubicación (local comercial) con edificio y contenidos.
@@ -34,19 +40,24 @@
     // Moto de 50009 para avance y «Enviar a calificación».
     moto: [veh({ placa: 'IB123C', marca: 'Honda', modelo: 'XR150L', anio: 2024, vin: '9C2KD0810RR012345', motor: 'KD08E-1012345', carroceria: 'moto', uso: 'Particular', cc: 149, pasajeros: 2, paisOrigen: 'Brasil', cobertura: 'Todo riesgo', suma: 3900 })],
   };
+  R.resumenflota5 = R.resumenflotabase.concat([
+    veh({ placa: 'PRB1214', marca: 'Mazda', modelo: 'CX-5', anio: 2024, vin: 'JM3KFBCM8R0412287', motor: 'PY-412287', version: 'Grand Touring 2.5 AWD AT', color: 'Rojo cristal', carroceria: 'suv', clase: 'Jeep', uso: 'Particular', cc: 2488, pasajeros: 5, paisOrigen: 'Japón', extras: ['Portaequipaje de techo'], cobertura: 'Todo riesgo', valorExtras: 800, suma: 28500 }),
+    veh({ placa: 'PRB1215', marca: 'Hyundai', modelo: 'Tucson', anio: 2023, vin: 'KM8J3CAL5PU198344', motor: 'G4NL-PU198344', version: 'GLS 2.0 4x2 AT', color: 'Azul', carroceria: 'suv', clase: 'Jeep', uso: 'Particular', cc: 1999, pasajeros: 5, paisOrigen: 'Corea del Sur', extras: ['Cámara de retro', 'Sensores de parqueo'], cobertura: 'Todo riesgo', valorExtras: 1500, suma: 26900 })]);
   // escena → [caso, quien completa, rol, riesgos, ramo, caso de la base]
   const ESC = {
     avanceaplicables: ['50009', 'agencia', 'cc', 'moto'],
     resumenvehsol: ['50007', 'interno', 'ejecutivo', 'resumenvehsol'],
     resumenflota: ['50021', 'interno', 'ejecutivo', 'resumenflota'],
     resumenflotabase: ['50012', 'interno', 'ejecutivo', 'resumenflotabase'],
+    resumenflota5: ['50015', 'interno', 'ejecutivo', 'resumenflota5'],
+    resumenequipos2: ['50032', 'interno', 'ejecutivo', 'resumenequipos2'],
     resumenequipo: ['50031', 'interno', 'ejecutivo', 'resumenequipo'],
     resumenubicacion: ['50041', 'interno', 'ejecutivo', 'resumenubicacion'],
     autoenviarcalif: ['50009', 'agencia', 'cc', 'moto'],
     facultadtope: ['50009', 'agencia', 'cc', 'facultadtope'],
     facultadtopefuera: ['50009', 'agencia', 'cc', 'facultadtopefuera'],
   };
-  const PER = { '50012': ['Transportes del Austro Cía. Ltda.', '0190512346001', 'Flota PRB1212, PR121A y PRB1213', 'PRB1212'], '50021': ['Transportes Cañar Cía. Ltda.', '0190381127001', 'Flota PDT1180, PDT1181 y PDT2290', 'PDT1180'], '50031': ['Logística Norte Andina S.A.', '1792233814001', 'Montacargas Toyota 8FGCU25, 2021', ''], '50041': ['Comercial Austro Hogar S.A.', '0190445519001', 'Local comercial · Av. Remigio Crespo 4-21, Cuenca', ''] };
+  const PER = { '50015': ['Transportes del Austro Cía. Ltda.', '0190512346001', 'Flota PRB1212, PR121A, PRB1213, PRB1214 y PRB1215', 'PRB1212'], '50032': ['Logística Norte Andina S.A.', '1792233814001', 'Montacargas Toyota 8FGCU25 y excavadora Caterpillar 320 GC', ''], '50012': ['Transportes del Austro Cía. Ltda.', '0190512346001', 'Flota PRB1212, PR121A y PRB1213', 'PRB1212'], '50021': ['Transportes Cañar Cía. Ltda.', '0190381127001', 'Flota PDT1180, PDT1181 y PDT2290', 'PDT1180'], '50031': ['Logística Norte Andina S.A.', '1792233814001', 'Montacargas Toyota 8FGCU25, 2021', ''], '50041': ['Comercial Austro Hogar S.A.', '0190445519001', 'Local comercial · Av. Remigio Crespo 4-21, Cuenca', ''] };
   const base = A.cxSim.bind(A);
   Object.keys(ESC).forEach((k) => { A.cxEscenas[k] = ESC[k].slice(0, 3); });
   A.cxSim = function (escena) { const e = ESC[escena]; if (!e) return base(escena);
@@ -56,7 +67,7 @@
       Object.assign(c, { id: id, orden: 'EMI-2026-1190' + id.slice(-2), asegurado: p[0], ident: p[1], bien: p[2], placa: p[3], solicitud: { formularios: [rb[0].composicion === 'Vehículo' ? 'Vehículos livianos' : rb[0].composicion] }, sucursal: id === '50041' ? 'Cuenca' : 'Quito' });
       if (rb[0].composicion !== 'Vehículo') Object.assign(c, { ramo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria', tipoRiesgo: rb[0].composicion === 'Ubicación' ? 'Ramos Generales' : 'Equipo y maquinaria' }); }
     // P-6f-0a: la lista de riesgos de la bandeja («3 vehículos», «PRB1212 +2») sale de casos[].riesgos, como en la base.
-    if (escena === 'resumenflotabase') { c.tipoRiesgo = 'Vehículos'; c.riesgos = rb.map((r, i) => ({ id: id + '-V' + (i + 1), label: r.datos.placa, nowrap: true, detalle: r.datos.marca + ', ' + r.datos.modelo + ', ' + r.datos.anio, cobertura: 'Todo riesgo', total: r.suma + (r.datos.valorExtras || 0), estado: c.estado })); }
+    if (escena === 'resumenflotabase' || escena === 'resumenflota5') { c.tipoRiesgo = 'Vehículos'; c.riesgos = rb.map((r, i) => ({ id: id + '-V' + (i + 1), label: r.datos.placa, nowrap: true, detalle: r.datos.marca + ', ' + r.datos.modelo + ', ' + r.datos.anio, cobertura: 'Todo riesgo', total: r.suma + (r.datos.valorExtras || 0), estado: c.estado })); }
     const inf = (X.informes[id] || [])[0];
     if (inf && escena === 'resumenvehsol') { delete inf.respuestas.veh_valor_asegurado_casco; delete inf.respuestas.veh_valor_asegurado_extras; }
     if (inf && /^facultadtope/.test(escena)) { const d = rb[0].datos; c.solicitud = { marca: d.marca, modelo: d.modelo, anio: d.anio, placa: d.placa }; c.bien = 'Placa ' + d.placa + ', ' + d.anio; Object.assign(inf.respuestas, { veh_marca: { valor: d.marca, org: 'solicitud' }, veh_modelo: { valor: d.modelo, org: 'solicitud' } }); }
