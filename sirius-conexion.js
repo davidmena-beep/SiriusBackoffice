@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 15/11/2026 · Corrección: el riesgo de una visita realizada (Enviada o Terminada) queda «Inspeccionado», no «Por coordinar».
 // 15/11/2026 · G-2c8 · DEC-238: casos[].riesgos[].estado (coordinación) y .visita { n, estado, inicio, inspector }; el estado y subestado del caso los calcula la base (SQL 41).
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
@@ -143,7 +144,7 @@
     var abierta = con.filter(function (x) { return !/cancel|termin|enviada/i.test(x.v.estado || ''); }).pop(), ult = abierta || con.slice().pop();
     var vis = ult ? { n: ult.n, estado: ult.v.estado || '', inicio: ult.v.inicio || null, inspector: ult.v.inspector ? String(ult.v.inspector.nombre || '') : '' } : null;
     if (FASE_COORD.indexOf(k.estado) < 0) return { estado: k.estado, visita: vis };
-    if (!abierta) return { estado: 'Por coordinar', visita: vis };
+    if (!abierta) return { estado: con.some(function (x) { return /enviada|termin|realizada/i.test(x.v.estado || ''); }) ? 'Inspeccionado' : 'Por coordinar', visita: vis };   // 15/11: un riesgo de una visita ya realizada no vuelve a «Por coordinar»
     var v = abierta.v, e = v.estado || '', vig = function (en, tipo) { return en.tipo === tipo && /enviado|entregado|abierto|curso/i.test(en.estado || '') && (!en.vence || new Date(en.vence) > ahora); };
     if (/agendada|en camino/i.test(e)) return { estado: 'Agendado', visita: vis };
     if (/en curso|por sincronizar/i.test(e)) return { estado: 'En curso', visita: vis };
