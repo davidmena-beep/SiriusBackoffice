@@ -1,4 +1,4 @@
-// SIRIUS · Estado de coordinación de cada riesgo y del caso (v1.2 · etapa G-2c11 · DEC-239, que amplía DEC-238 · 18/10/2026)
+// SIRIUS · Estado de coordinación de cada riesgo y del caso (v1.3 · etapa R-0 · DEC-245, que amplía DEC-238 y DEC-239 · 18/10/2026)
 // Una sola regla para la sesión, la bandeja, la pestaña Coordinación y la base simulada.
 //
 // Un riesgo está «coordinado» si tiene una visita abierta con cita (Agendada o En camino), está en curso, o está en una visita de Autoinspección con el enlace
@@ -20,12 +20,15 @@
 // Contrato con la conexión (casos[]): estado y subestado ya calculados por la base; riesgos[].estado (su estado de coordinación) y riesgos[].visita { n, estado, inicio, inspector } | null.
 // Si un riesgo no trae visita, se calcula con visitasBase.
 //
+// R-0 · DEC-245 · Varios vehículos en una visita, lo que ve el back-office. Cada riesgo puede traer (casos[].riesgos[]): tipoConfirmado, plantilla, tipoAnterior (el tipo y la plantilla que usó la app, DEC-212),
+// noInspeccionado { motivo, detalle, por, hora, origen: 'inspector' | 'cliente' } | null (el vehículo sale de su visita y vuelve a «Por coordinar») y revisarDatos { motivo, hora } | null («El vehículo no es mío»).
+// Una visita puede venir «Cerrada sin inspección» (motivoCierre): no cuenta como abierta y sus vehículos vuelven a «Por coordinar». Textos para mostrarlos: tipoTexto, noInspTexto, revisarTexto y cierreTexto.
 // G-2c11 · Una sola fuente por riesgo: la pestaña Riesgos del caso, la pestaña Coordinación, la bandeja (filas de cada riesgo) y la cabecera leen lo mismo. Para mostrarlo:
 // estado → k.estado (con tono(estado)); inspector → inspectorDe(k) (el de su visita, o «Por asignar»); visita asignada → visitaTexto(k) («V6 · 17/10 10:00», «V6 · realizada 17/10» o «Sin visita»).
 (function () {
   const COORD = ['Registrado', 'En coordinación', 'Reaperturado', 'Enlace caducado', 'Agendado'];
   const ETIQ = ['Por coordinar', 'Oferta enviada', 'Enlace enviado', 'Agendado', 'En curso'];
-  const FIN = /cancel|termin|realiz|finaliz|complet/i;
+  const FIN = /cancel|termin|realiz|finaliz|complet|cerrad/i; // R-0 · DEC-245: «Cerrada sin inspección» tampoco es una visita abierta
   const num = (v) => (v && v.n != null ? Number(v.n) : parseInt(String((v && v.id) || '').replace(/\D/g, ''), 10) || 0);
   const txt = (v) => { if (v == null) return ''; if (typeof v === 'string') return v.trim(); if (typeof v === 'object' && typeof v.nombre === 'string') return v.nombre.trim(); return ''; };
   const dos = (n) => (n < 10 ? '0' : '') + n;
@@ -110,6 +113,16 @@
   }
   // Inspector de un riesgo: el de su visita (no cancelada), o «Por asignar».
   function inspectorDe(k) { const v = k && k.visita; return v && v.inspector && !/cancel/i.test(String(v.estado || '')) ? v.inspector : 'Por asignar'; }
+  // R-0 · DEC-245: textos de los datos que llegan de las apps.
+  const fh = (iso) => (iso && String(iso).length >= 16 ? fecha(iso) + ' ' + hora(iso) : fecha(iso));
+  // «Moto · plantilla Motocicletas · confirmado en la app» y, si cambió, «antes: Sedán». Sin tipo confirmado: null.
+  function tipoTexto(r) { if (!r || !r.tipoConfirmado) return null; return { linea: r.tipoConfirmado + (r.plantilla ? ' · plantilla ' + r.plantilla : '') + ' · confirmado en la app', antes: r.tipoAnterior ? 'antes: ' + r.tipoAnterior : '' }; }
+  // «No inspeccionado · El vehículo no está en el sitio · Mauricio Endara · 17/11 11:40» (con detalle: «Otro · detalle»). Sin dato: ''.
+  function noInspTexto(r) { const n = r && r.noInspeccionado; if (!n || typeof n !== 'object') return ''; return ['No inspeccionado', n.motivo ? n.motivo + (n.detalle ? ' · ' + n.detalle : '') : (n.detalle || ''), n.por, n.hora ? fh(n.hora) : ''].filter(Boolean).join(' · '); }
+  // «Revisar datos de la solicitud · El vehículo no es mío · 17/11 12:05». Sin dato: ''.
+  function revisarTexto(r) { const v = r && r.revisarDatos; if (!v || typeof v !== 'object') return ''; return ['Revisar datos de la solicitud', v.motivo, v.hora ? fh(v.hora) : ''].filter(Boolean).join(' · '); }
+  // «Cerrada sin inspección · El vehículo no está en el sitio» (la visita trae estado y motivoCierre).
+  function cierreTexto(v) { return v && /cerrad/i.test(String(v.estado || '')) ? 'Cerrada sin inspección' + (v.motivoCierre || v.motivoCancel ? ' · ' + (v.motivoCierre || v.motivoCancel) : '') : ''; }
   // Calcula y deja en el caso (objeto de la base) estado, subestado, responsable e, en cada riesgo, estado de coordinación y visita. Lo usa la base simulada.
   function aplicarBase(c, coordinador) {
     if (!c || !Array.isArray(c.riesgos) || !Array.isArray(c.visitasBase)) return c;
@@ -120,5 +133,5 @@
       const ins = c.riesgos.filter((r) => r.visita && r.visita.inspector && /curso/i.test(String(r.estado))).concat(c.riesgos.filter((r) => r.visita && r.visita.inspector)).map((r) => r.visita.inspector)[0]; c.responsable = (c.estado === 'Agendado' || c.estado === 'En curso') && ins ? ins : (coordinador || c.responsable); }
     return c;
   }
-  window.SiriusCoordEstado = { version: '1.2', COORD: COORD, ETIQUETAS: ETIQ, riesgo: riesgo, riesgos: riesgos, caso: casoDe, fase: fase, cuenta: cuenta, texto: texto, tono: tono, visitaTexto: visitaTexto, inspectorDe: inspectorDe, aplicarBase: aplicarBase };
+  window.SiriusCoordEstado = { version: '1.3', COORD: COORD, ETIQUETAS: ETIQ, riesgo: riesgo, riesgos: riesgos, caso: casoDe, fase: fase, cuenta: cuenta, texto: texto, tono: tono, tipoTexto: tipoTexto, noInspTexto: noInspTexto, revisarTexto: revisarTexto, cierreTexto: cierreTexto, visitaTexto: visitaTexto, inspectorDe: inspectorDe, aplicarBase: aplicarBase };
 })();

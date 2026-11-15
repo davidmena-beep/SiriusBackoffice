@@ -4,6 +4,59 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-0
+
+El back-office ya muestra lo que pasa cuando una visita lleva varios vehículos: el tipo y la plantilla de cada uno, los que no se pudieron inspeccionar y por qué, las fotos por vehículo y el informe y la calificación por vehículo. Quedó publicado en la **Versión 245**; la Versión 246 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Tipo y plantilla por riesgo (Riesgos):** columna «Tipo y plantilla» con «Moto · plantilla Motocicletas · confirmado en la app» y, si cambió, «antes: Sedán». Aparece solo cuando algún vehículo trae el tipo confirmado en la app.
+- **Vehículo no inspeccionado:** sale de su visita y vuelve a «Por coordinar» con la nota «No inspeccionado · El vehículo no está en el sitio · Mauricio Endara · 17/11 11:40». Se ve en Riesgos, en la fila de «Vehículos por coordinar» de Coordinación y en el Historial.
+- **«El vehículo no es mío» (cliente):** además queda «Revisar datos de la solicitud», con un aviso en el caso para el Coordinador de inspecciones, el Administrador, el Ejecutivo comercial y el Ejecutivo de inspecciones. Se cierra con «Datos revisados» y una nota de al menos 10 caracteres; si la base rechaza la acción, el aviso queda abierto con su mensaje.
+- **Visita cerrada sin inspección:** si ningún vehículo se pudo inspeccionar, la visita queda «Cerrada sin inspección» con el motivo, no cuenta como abierta ni asignada y su tarjeta no tiene acciones; sus vehículos vuelven a «Por coordinar».
+- **Evidencias por vehículo:** cada foto muestra su vehículo (placa o bien) y hay chips para filtrar por vehículo, con «Todos», combinables con los de canal. El visor agrega la fila «Vehículo».
+- **Informe y calificación por vehículo:** el selector de vehículo queda arriba del informe y de la calificación, y Riesgos cuenta «N de M con informe». En `r0informes`, el vehículo sin informe aparece «Sin informe» en el selector.
+- **Catálogo «Motivos de no inspección de un vehículo»** (Catálogos › Vehículos): lista Inspector (El vehículo no está en el sitio; El cliente no lo autoriza; El vehículo está, pero no está disponible; Otro) y lista Cliente (No tengo el vehículo conmigo; El vehículo no es mío; Otro); «Otro» exige detalle.
+- **Con la conexión:** `casos[].riesgos[]` con `tipoConfirmado`, `plantilla`, `tipoAnterior`, `noInspeccionado { motivo, detalle, por, hora, origen }` y `revisarDatos { motivo, hora }`; `casos[].visitasBase[]` con «Cerrada sin inspección» y `motivoCierre`; evidencias con su riesgo («50012-V1»); acción nueva `datosRevisados { caso, riesgo, nota }` → `{ ok, mensaje }`. `sirius-coordestado.js` pasa a v1.3.
+
+**Verificado**
+- Abrí las 7 escenas nuevas y `estadofasecurso`, `riesgosestados` y `cabeceracoordinar` a 1280 × 720 y 1920 × 1080 (`r0informes` en las pestañas Informe y Riesgos): sin errores en la consola. Ajusté el ancho de «Tipo y plantilla» porque en 1920 se cortaba «confirmado en la app».
+- `r0tipo`: PR121A «Moto · plantilla Motocicletas · confirmado en la app» y PRB1213 «Camioneta · plantilla Camionetas y pesados livianos · confirmado en la app» con «antes: Sedán».
+- `r0noinsp`, `r0nomio` y `r0sininsp`: motivo, quién y cuándo en Riesgos y Coordinación; en `r0sininsp` la visita queda «Cerrada sin inspección» sin acciones.
+- «Datos revisados» en `r0nomio` y `cxr0`: sin nota muestra «Escribe una nota de al menos 10 caracteres.»; con nota cierra el aviso, muestra «Datos revisados · PRB1213» y deja el evento en el Historial; con `?cxok=0` el aviso queda abierto con «La base rechazó la acción (prueba)».
+- `r0evidencias`: 12 fotos, chips por vehículo y `?fveh=` filtrado. `r0informes`: «2 de 3 con informe» y «0 de 3 vehículos calificados». Catálogos: los 7 motivos, con «Otro» en las dos listas.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** probé con la base simulada; si la real entrega los campos con otro formato, se verá según lo que reciba.
+- **Informe por vehículo con la conexión:** con la conexión el informe sigue siendo el único del caso; `r0informes` es una escena de sesión (20196) que reutiliza el selector que ya existía.
+- **Aviso sin conexión:** el aviso y «Datos revisados» solo se ven con la conexión (en `r0nomio` y `cxr0`).
+- **Duplicados en Catálogos:** no probé qué pasa al repetir un motivo con el mismo nombre en la misma lista.
+- **Reglas de visibilidad del aviso por rol:** los cuatro roles son mi definición; no probé cada uno.
+
+**Diferencias**
+- **Historial:** sus eventos salen de los `eventos` de la base; el back-office no inventa el texto.
+- **Catálogo:** las apps lo leen; el back-office muestra lo que la base guarda.
+- **Chips de Evidencias:** salen de los vehículos que tienen fotos.
+- **Nombre del catálogo:** «Motivos de no inspección de un vehículo», para no confundirlo con el catálogo «Motivos de no inspección» de los casos que no requieren inspección, que sigue aparte.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `r0tipo` | 50012 con tipo y plantilla confirmados en la app (Moto; Camioneta, «antes: Sedán»); abre Riesgos |
+| `r0noinsp` | PRB1213 no inspeccionado («El vehículo no está en el sitio»), de vuelta en «Por coordinar»; abre Coordinación |
+| `r0nomio` | «El vehículo no es mío»: «Revisar datos de la solicitud», aviso y «Datos revisados» |
+| `r0sininsp` | Visita «Cerrada sin inspección» con motivo y sin acciones |
+| `r0evidencias` | 12 fotos con su vehículo y filtro por vehículo (`?fveh=`) |
+| `r0informes` | 20196 con informe por vehículo: 2 con informe y 1 sin informe; abre Informe (`?ptab=cal` Calificación) |
+| `cxr0` | Los tres casos juntos con la conexión simulada (`?cxok=0`: la base rechaza «Datos revisados») |
+
+También abrí `estadofasecurso`, `riesgosestados` y `cabeceracoordinar` (1280 × 720 y 1920 × 1080) sin errores.
+
+Tiempo de la etapa: inicio 15/11/2026 16:55 · fin 15/11/2026 17:13 · 18 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c11
 
 La pestaña Riesgos del caso ahora muestra, para cada vehículo (y cada ramo), el mismo estado, el mismo inspector y la misma visita que la pestaña Coordinación y la bandeja. Antes mostraba «En curso» / «En coordinación», «Por asignar» y «En coordinación» aunque la visita ya estuviera realizada. Quedó publicado en la **Versión 243**; la Versión 244 solo completa en el registro la hora de fin.

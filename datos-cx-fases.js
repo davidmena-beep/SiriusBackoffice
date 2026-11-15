@@ -69,6 +69,10 @@
     cxestadofases: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true, curso: true, curso2: true }],
     // G-2c11 · DEC-238/239: cxriesgosestados — 50012 con PRB1212 y PR121A inspeccionados en la V6 (realizada) y PRB1213 en curso en la V8; la base entrega casos[].riesgos[].estado y .visita { n, estado, inicio, inspector } de cada riesgo.
     cxriesgosestados: [false, () => ({ cerrado: true }), { insp: true }],
+    // R-0 · DEC-245: varios vehículos en una visita, lo que ve el back-office (50012). La base entrega en casos[].riesgos[]: tipoConfirmado, plantilla, tipoAnterior, noInspeccionado { motivo, detalle, por, hora, origen } y revisarDatos { motivo, hora };
+    // en visitasBase[], estado «Cerrada sin inspección» con motivoCierre; en evidencias[], cada una con su riesgo; y la acción datosRevisados { caso, riesgo, nota } → { ok, mensaje }.
+    r0tipo: [false, () => ({ cerrado: true }), { r0: 'tipo' }], r0noinsp: [false, () => ({ cerrado: true }), { r0: 'noinsp' }], r0nomio: [false, () => ({ cerrado: true }), { r0: 'nomio' }],
+    r0sininsp: [false, () => ({ cerrado: true }), { r0: 'sininsp' }], r0evidencias: [false, () => ({ cerrado: true }), { r0: 'evid' }], cxr0: [false, () => ({ cerrado: true }), { r0: 'todo' }],
     cxcabecera: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }], // G-2e2 · DEC-238: el mismo caso 50012; la cabecera trae «Coordinar visita» (PRB1213 por coordinar)
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
     migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
@@ -104,6 +108,28 @@
       const lug = () => ({ direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) });
       c.visitasBase = [vis(6, 'Mauricio Endara', dia(-1), '09:00', '09:45', Object.assign({ estado: 'Realizada', riesgos: ['50012-V1', '50012-V2'] }, lug())), vis(8, 'Diana Cárdenas', dia(0), '13:00', '13:45', Object.assign({ estado: 'En curso', riesgos: ['50012-V3'] }, lug()))];
       c.riesgos.forEach((r) => { if (r.id !== '50012-V3') { r.estado = 'Inspeccionado'; r.visita = { n: 6, estado: 'Realizada', inicio: dia(-1) + 'T09:00', inspector: 'Mauricio Endara' }; } }); }
+    let r0x = null; const R0 = e[2] && e[2].r0; /* R-0 · DEC-245 */
+    if (R0) { const D7 = '2026-11-17', lug = () => ({ direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) }), mk = (n, ins, st, rs, ex) => vis(n, ins, D7, '10:00', '10:45', Object.assign({ estado: st, riesgos: rs }, lug(), ex || {}));
+      const insp = (r, n, quien) => { r.estado = 'Inspeccionado'; r.visita = { n: n, estado: 'Realizada', inicio: D7 + 'T10:00', inspector: quien }; }, [R1, R2, R3] = c.riesgos, ev = [];
+      c.estado = 'En curso'; c.riesgos.forEach((r) => { r.estado = 'En coordinación'; r.visita = null; });
+      const tipos = () => { R2.tipoConfirmado = 'Moto'; R2.plantilla = 'Motocicletas'; R2.tipoAnterior = null; R3.tipoConfirmado = 'Camioneta'; R3.plantilla = 'Camionetas y pesados livianos'; R3.tipoAnterior = 'Sedán'; };
+      const noIns = (r, motivo, por, origen, detalle) => { r.noInspeccionado = { motivo: motivo, detalle: detalle || '', por: por, hora: D7 + (origen === 'cliente' ? 'T12:05' : 'T11:40'), origen: origen }; };
+      if (R0 === 'tipo') { c.visitasBase = [mk(1, 'Mauricio Endara', 'En curso', [R1.id, R2.id, R3.id])]; tipos(); }
+      if (R0 === 'noinsp' || R0 === 'todo') { c.visitasBase = [mk(1, 'Mauricio Endara', 'Realizada', [R1.id, R2.id])]; insp(R1, 1, 'Mauricio Endara'); insp(R2, 1, 'Mauricio Endara');
+        if (R0 === 'todo') { tipos(); R3.tipoAnterior = 'Sedán'; noIns(R3, 'El vehículo no es mío', 'Fernanda Prueba', 'cliente'); R3.revisarDatos = { motivo: 'El vehículo no es mío', hora: D7 + 'T12:05' };
+          ev.push({ hora: D7 + 'T12:05', accion: 'Revisar datos de la solicitud', detalle: 'PRB1213 · El vehículo no es mío · el cliente lo marcó en la autoinspección', actor: 'Fernanda Prueba', rol: 'Cliente' }); }
+        else noIns(R3, 'El vehículo no está en el sitio', 'Mauricio Endara', 'inspector');
+        ev.push({ hora: D7 + (R0 === 'todo' ? 'T12:05' : 'T11:40'), accion: 'Vehículo no inspeccionado', detalle: 'PRB1213 · ' + R3.noInspeccionado.motivo + ' · ' + R3.noInspeccionado.por + ' · vuelve a «Por coordinar»', actor: R3.noInspeccionado.por, rol: R0 === 'todo' ? 'Cliente' : 'Inspector' }); }
+      if (R0 === 'nomio') { c.visitasBase = [mk(1, '', 'Terminada', [R1.id, R2.id], { modalidad: 'Autoinspección', enlace: { tipo: 'Autoinspección', estado: 'Terminado', vence: D7 + 'T18:00', url: '' } })]; insp(R1, 1, ''); insp(R2, 1, '');
+        noIns(R3, 'El vehículo no es mío', 'Fernanda Prueba', 'cliente'); R3.revisarDatos = { motivo: 'El vehículo no es mío', hora: D7 + 'T12:05' };
+        ev.push({ hora: D7 + 'T12:05', accion: 'Revisar datos de la solicitud', detalle: 'PRB1213 · El vehículo no es mío · el cliente lo marcó en la autoinspección', actor: 'Fernanda Prueba', rol: 'Cliente' }, { hora: D7 + 'T12:05', accion: 'Vehículo no inspeccionado', detalle: 'PRB1213 · El vehículo no es mío · Fernanda Prueba · vuelve a «Por coordinar»', actor: 'Fernanda Prueba', rol: 'Cliente' }); }
+      if (R0 === 'sininsp') { c.visitasBase = [mk(1, 'Mauricio Endara', 'Cerrada sin inspección', [R1.id, R2.id], { motivoCierre: 'El vehículo no está en el sitio' }), vis(2, 'Diana Cárdenas', '2026-11-19', '14:00', '14:45', Object.assign({ riesgos: [R3.id] }, lug()))];
+        noIns(R1, 'El vehículo no está en el sitio', 'Mauricio Endara', 'inspector'); noIns(R2, 'El vehículo no está en el sitio', 'Mauricio Endara', 'inspector');
+        ev.push({ hora: D7 + 'T11:40', accion: 'Visita cerrada sin inspección', detalle: 'V1 · El vehículo no está en el sitio · PRB1212 y PR121A vuelven a «Por coordinar»', actor: 'Mauricio Endara', rol: 'Inspector' }); }
+      if (R0 === 'evid') { c.visitasBase = [mk(6, 'Mauricio Endara', 'Realizada', [R1.id, R2.id]), mk(8, 'Diana Cárdenas', 'En curso', [R3.id], { inicio: D7 + 'T13:00', fin: D7 + 'T13:45' })]; insp(R1, 6, 'Mauricio Endara'); insp(R2, 6, 'Mauricio Endara');
+        const pasos = [['exteriores_frontal', 'Frontal'], ['exteriores_lateral_izquierdo', 'Lateral izquierdo'], ['exteriores_posterior', 'Posterior'], ['interiores_tablero', 'Tablero y odómetro']];
+        c.riesgos.forEach((r, k) => pasos.forEach((p0, i) => ev.push({ _foto: true, id: '50012-ev-' + (k + 1) + '-' + (i + 1), riesgo: r.id, paso: p0[0], canal: 'App del inspector', hora: D7 + 'T' + (k === 2 ? '13:' : '10:') + (10 + i * 3), dispositivo: 'Samsung Galaxy A54 · App del inspector 3.2', estado: 'Asignada' }))); }
+      r0x = ev; }
     if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); // G-2c8 · DEC-238: la base calcula estado, subestado, responsable y el estado y la visita de cada riesgo
     const cfg = e[1](); if (cfg.ofertaIns) cfg.ofertaIns = cfg.ofertaIns.slice();
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)),
@@ -113,6 +139,7 @@
     X.eventos['50012'] = [{ hora: '2026-10-15T16:40', accion: 'Intento de contacto', detalle: 'Llamada · Buzón de voz · a Fernanda Prueba (contacto para la coordinación) · 0990000012 · 0:48 · «Dejé mensaje de voz»', actor: U.nombre, rol: U.rol },
       { hora: '2026-10-15T10:12', accion: 'Intento de contacto', detalle: 'Llamada · No contestó · a Fernanda Prueba (contacto para la coordinación) · 0990000012 · 0:35', actor: U.nombre, rol: U.rol }].concat(e[0] ? [{ hora: '2026-10-14T11:20', accion: 'Visita agendada', detalle: 'V1 · PRB1213 · Mauricio Endara · Quito · Zona Norte', actor: U.nombre, rol: U.rol }] : [])
       .concat([{ hora: '2026-10-13T09:05', accion: 'Caso asignado a coordinación', detalle: 'Responsable: Andrea Salazar', actor: 'SIRIUS', rol: 'Sistema' }, { hora: '2026-10-13T09:02', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]);
+    if (r0x) { X.evidencias['50012'] = r0x.filter((x) => x._foto).map((x) => { const o = Object.assign({}, x); delete o._foto; return o; }); X.eventos['50012'] = r0x.filter((x) => !x._foto).concat(X.eventos['50012']); } /* R-0 */
     return X; };
   // Base simulada: ofertarVisita y anularOferta (agendarVisita sigue en datos-cx-inspectores y datos-cx-lugar).
   // G-2c4: una visita abierta es toda la que no está Cancelada ni terminada; «Buscando inspector» es la que tiene la oferta enviada.
@@ -120,7 +147,11 @@
   const dupVeh = (c, d) => { const L = Array.isArray(c.visitasBase) ? c.visitasBase : [], ids = Array.isArray(d.riesgos) ? d.riesgos : [];
     for (let i = 0; i < ids.length; i++) { const o = L.find((x) => x && x.n !== d.visita && !FIN.test(String(x.estado || '')) && Array.isArray(x.riesgos) && x.riesgos.indexOf(ids[i]) >= 0);
       if (o) { const r = (c.riesgos || []).find((y) => y.id === ids[i]); return (r ? r.label : ids[i]) + ' ya está en la visita V' + o.n + ' (' + estV(o) + ')'; } } return ''; };
-  CC.aplicar = function (X, tipo, d) { if (!X || !X.coordEscena || !X.coordEscena.fases || ['ofertarVisita', 'anularOferta', 'agendarVisita', 'intentoContacto', 'cancelarSolicitud'].indexOf(tipo) < 0) return baseAp(X, tipo, d);
+  CC.aplicar = function (X, tipo, d) { if (!X || !X.coordEscena || !X.coordEscena.fases || ['ofertarVisita', 'anularOferta', 'agendarVisita', 'intentoContacto', 'cancelarSolicitud', 'datosRevisados'].indexOf(tipo) < 0) return baseAp(X, tipo, d);
+    if (tipo === 'datosRevisados') { /* R-0 · DEC-245: datosRevisados { caso, riesgo, nota } → { ok, mensaje }; la base quita la marca y deja el evento */
+      const c0 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c0) return { ok: false, mensaje: 'El caso no existe en la base' }; const r0 = (c0.riesgos || []).find((x) => x && String(x.id) === String(d.riesgo)); if (!r0) return { ok: false, mensaje: 'El vehículo no existe en el caso' };
+      if (!r0.revisarDatos) return { ok: false, mensaje: 'Ese vehículo no tiene datos por revisar' }; if (String(d.nota || '').trim().length < 10) return { ok: false, mensaje: 'Falta la nota de la revisión (mínimo 10 caracteres)' };
+      r0.revisarDatos = null; (X.eventos[c0.id] = X.eventos[c0.id] || []).unshift({ hora: '2026-11-17T12:30', accion: 'Datos revisados', detalle: r0.label + ' · ' + String(d.nota).trim(), actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Datos revisados · ' + r0.label }; }
     if (tipo === 'intentoContacto' || tipo === 'cancelarSolicitud') { const c1 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c1) return { ok: false, mensaje: 'El caso no existe en la base' }; const E1 = (X.eventos[c1.id] = X.eventos[c1.id] || []); // G-2c3 · DEC-237
       if (tipo === 'intentoContacto') { if (!d.resultado) return { ok: false, mensaje: 'Falta el resultado del intento' }; c1.intentos = (c1.intentos || []).concat([{ fecha: '2026-10-16T13:40', medio: d.medio, resultado: d.resultado, obs: d.obs || '', by: U.nombre, destino: d.destino || null, duracionSeg: d.duracionSeg || 0 }]);
         E1.unshift({ hora: '2026-10-16T13:40', accion: 'Intento de contacto', detalle: d.medio + ' · ' + d.resultado + (d.destino ? ' · a ' + d.destino.nombre + ' · ' + d.destino.numero : '') + (d.duracionSeg ? ' · ' + d.duracionSeg + ' s' : ''), actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Intento registrado en la base' }; }

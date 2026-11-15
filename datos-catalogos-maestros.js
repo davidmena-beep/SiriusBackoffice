@@ -1,4 +1,4 @@
-// SIRIUS · Catálogos maestros (etapa 10a) · v1.2 · PROVISIONAL (v1.1: Sail, Soluto y CX-30, etapa 16g · v1.2: catálogo Colores, etapa C2-7b)
+// SIRIUS · Catálogos maestros (etapa 10a) · v1.3 · PROVISIONAL (v1.3: motivos de no inspección de un vehículo, etapa R-0 · v1.1: Sail, Soluto y CX-30, etapa 16g · v1.2: catálogo Colores, etapa C2-7b)
 // Preparado en asesoría el 31/10/26. Solo datos: la interfaz los lee de aquí. Fuente única de cada catálogo; nada se duplica en otro archivo.
 // Todo el contenido es provisional (insumos del negocio por conseguir: Suscripción, ANT, catálogo WMI completo, fuentes oficiales de mapas).
 // Decisiones: DEC-077 a DEC-082. Los resultados ya guardados de los casos no se recalculan.
@@ -111,6 +111,19 @@ window.SIRIUS_CATALOGOS_MAESTROS = {
   //     ya usaba el prototipo (antes en datos-llenado.js). Catálogo de origen del campo veh_color.
   colores: ["Blanco", "Negro", "Gris", "Plata", "Rojo", "Azul", "Verde", "Amarillo", "Naranja", "Café", "Beige", "Vino", "Dorado", "Celeste", "Otro"],
   historialColores: { fecha: "18/10/2026 20:30", persona: "Andrea Salazar", motivo: "Color con catálogo maestro (etapa C2-7b): los 15 colores que ya usaba la plantilla" },
+
+  // 8 · Motivos de no inspección de un vehículo en una visita (etapa R-0 · DEC-245, 18/10/2026 20:30, Andrea Salazar, motivo: «Varios vehículos en una visita»). Dos listas: la del inspector (app del inspector)
+  //     y la del cliente (autoinspección). «Otro» exige detalle. Las apps leen este catálogo; el back-office muestra el motivo que guarda la base en casos[].riesgos[].noInspeccionado.
+  motivosnoinsp: [
+    {lista: "Inspector", nombre: "El vehículo no está en el sitio", detalle: "No"},
+    {lista: "Inspector", nombre: "El cliente no lo autoriza", detalle: "No"},
+    {lista: "Inspector", nombre: "El vehículo está, pero no está disponible", detalle: "No"},
+    {lista: "Inspector", nombre: "Otro", detalle: "Sí"},
+    {lista: "Cliente", nombre: "No tengo el vehículo conmigo", detalle: "No"},
+    {lista: "Cliente", nombre: "El vehículo no es mío", detalle: "No"},
+    {lista: "Cliente", nombre: "Otro", detalle: "Sí"}
+  ],
+  historialMotivosnoinsp: { fecha: "18/10/2026 20:30", persona: "Andrea Salazar", motivo: "Motivos de no inspección de un vehículo en una visita (etapa R-0 · DEC-245)" },
 
   // 6 · Ajuste VL-F1 de la plantilla "Vehículos livianos" v1 (mismo mecanismo que F1 a F3 de RG). Solo cambia de dónde salen las opciones:
   //     no cambia campos, obligatoriedad ni etiquetas. "Elegible para IA" y "Cédula o RUC" siguen en el backlog.
