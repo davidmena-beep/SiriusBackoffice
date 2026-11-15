@@ -65,6 +65,7 @@
     // G-2c6 · DEC-237: Coordinar visita dentro del marco del sistema (barra superior, migas y menú contraído) y confirmación al salir
     // G-2c8 · DEC-238: cxestadoparcial — 50012 con V1 (PRB1212) y V2 (PR121A) agendadas y PRB1213 por coordinar; la base entrega casos[].estado «En coordinación» y subestado «2 de 3 agendados», y en cada riesgo estado y visita { n, estado, inicio, inspector } o null.
     cxestadoparcial: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }],
+    cxcabecera: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }], // G-2e2 · DEC-238: el mismo caso 50012; la cabecera trae «Coordinar visita» (PRB1213 por coordinar)
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
     migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
     coordsalir: [true, () => { const s = qp('fsalir'), NOTA = 'Confirmó que recibe el lunes a las 10:00; pedir el ingreso por la puerta de carga.'; return s === 'limpio' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { salir: true } }

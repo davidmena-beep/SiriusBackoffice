@@ -4,6 +4,56 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2e2
+
+La acción principal de la cabecera del caso ahora sale de lo que falta por hacer. Si el caso está en la fase de coordinación y algún riesgo está «Por coordinar», dice «Coordinar visita» y abre Coordinar visita con esos riesgos ya marcados; «Ver visita» pasa al menú «⋮». Si no queda nada por coordinar, sigue siendo «Ver visita» y abre la visita en curso o la próxima por hora. Rige con y sin la conexión. Quedó publicada en la **Versión 235** (la Versión 236 solo completa en este registro la hora de fin).
+
+**Qué cambió**
+- **Cabecera del caso (`SIRIUS Back-office.dc.html`):**
+  - **Regla:** «Coordinar visita» si el caso está en Registrado, En coordinación, Reaperturado o Enlace caducado, tiene visitas y algún riesgo «Por coordinar» (misma regla de DEC-238 que la pestaña y la bandeja: `SiriusCoordEstado`; con la conexión sale de `casos[].riesgos[].estado`). Si no, «Ver visita» (visita con cita o en curso) y, en las demás fases, lo que había (informe, calificación…).
+  - **Roles:** solo Coordinador de inspecciones y Administrador. Los demás roles ven la cabecera como antes; con el Ejecutivo comercial no sale ni «Coordinar visita» ni «Ver visita».
+  - **Permiso:** «Coordinar visita» se pide con el mismo permiso de la matriz que «Ver visita» («Coordinar visitas, reagendar, cambiar inspector, dividir, cancelar»).
+- **Al pulsar «Coordinar visita»:** abre la pestaña Coordinación y Coordinar visita en la fase Contacto, con los vehículos por coordinar marcados y sin tocar los que ya tienen visita (preset `porcoordinar` en `Coordinacion.dc.html`; sigue el mismo camino de «Abrir Coordinar visita» de la Agenda).
+- **Menú «⋮»:** con «Coordinar visita» como principal y alguna visita, el menú trae «Ver visita» (ícono de ojo, antes de «Duplicar»).
+- **«Ver visita» abre la visita justa:** la que está en curso o, si no, la siguiente por hora (la última si todas pasaron). Lleva a «Visitas del caso» y deja esa visita enfocada y resaltada (`data-visita` en cada visita de Coordinación). Usa el reloj de la conexión (hora real de Ecuador) o el del prototipo.
+- **Escenas:** `cabeceracoordinar`, `cabeceraver` y `cxcabecera` (en `datos-escenas.js`, `KNOWN_ESC`, `datos-cx-fases.js` y `SIRIUS Back-office.dc.html`).
+- **Registro:** `datos-escenas.js` (651) y `KNOWN_ESC` (608).
+
+**Verificado**
+- **cabeceracoordinar** (caso 20196, 3 vehículos: V1 y V2 agendados, Kia Sportage por coordinar), a 1280 × 720 y 1920 × 1080, con el Coordinador: botón «Coordinar visita»; al pulsarlo se abre «Coordinar visita V3» con el Kia Sportage marcado (los otros dos «en V1» y «en V2» sin marcar); el menú «⋮» trae «Ver visita», que enfoca V1 (19/10, la próxima).
+- **cabeceraver** (los 3 agendados), a los dos tamaños: botón «Ver visita» y el menú sin «Ver visita» repetido; el botón enfoca V1.
+- **cxcabecera** (conexión simulada, caso 50012, PRB1213 por coordinar), a los dos tamaños, como Coordinador y como Administrador: «Coordinar visita»; abre «Coordinar visita V3» con PRB1213 marcado; «Ver visita» está en el menú y enfoca V1.
+- **Ejecutivo comercial** (`?rol=Ejecutivo%20comercial`), cabeceracoordinar y cabeceraver a los dos tamaños: la cabecera no tiene botón principal y el menú solo trae «Duplicar», «Ver bitácora» y «Cancelar caso».
+- **Escenas existentes con acción en la cabecera**, a 1280 × 720 y comparadas una por una con la versión anterior: envioenlace, coord, coordchoque, enlaceagenda y cxcoordins («Coordinar inspección»), y coordvis, cxvisitaenlace y cxcoordjornada («Ver visita») quedan igual. Solo cambian las que tienen un vehículo por coordinar y ya tienen visitas, como se pide: cxestadoparcial, coordfases y coordvehiculoduplicado pasan de «Ver visita» a «Coordinar visita». estadoparcial, estadooferta y estadocompleto abren la bandeja y no muestran cabecera.
+- Sin errores de consola ni desplazamiento lateral en ninguna escena. `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- Con la base real; solo probé la simulada.
+- Una escena con la visita «En curso» como destino de «Ver visita»: la elección de la visita en curso está en el código, pero ninguna escena la muestra junto a un riesgo por coordinar.
+- Casos en «Enlace caducado» y «Reaperturado» con visitas: probados por el código, sin escena.
+- Con la conexión simulada el usuario solo puede ser Coordinador o Administrador, así que el Ejecutivo comercial solo se probó sin conexión.
+- Las escenas existentes de arriba, a 1920 × 1080.
+
+**Diferencias**
+- **Sin visitas todavía:** si el caso aún no tiene ninguna visita, la acción sigue siendo «Coordinar inspección» (o «Agendar visita» con el contacto hecho), como dice DEC-163. «Coordinar visita» reemplaza a «Ver visita» solo cuando ya hay visitas y queda algo por coordinar.
+- **Riesgo por coordinar dentro de una visita sin cita** (por ejemplo, una visita «Por agendar» o con el enlace caducado): ahí no hay un vehículo libre que marcar. «Coordinar visita» lleva a «Visitas del caso» en vez de abrir el panel.
+- **Fase «Enlace caducado»:** antes mostraba «Ver visita» como acción secundaria; ahora, si hay un riesgo por coordinar, muestra «Coordinar visita» como principal.
+- **Fase de apertura:** «Coordinar visita» abre en Contacto (como «Llamar y registrar intento»), no en Inspector y horario.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cabeceracoordinar` | Caso 20196 con V1 y V2 agendados y el tercer vehículo por coordinar: botón «Coordinar visita» (abre Coordinar visita V3 con ese vehículo marcado) y «Ver visita» en el menú «⋮» |
+| `cabeceraver` | El mismo caso con los 3 vehículos agendados: botón «Ver visita», que enfoca la próxima visita |
+| `cxcabecera` | Conexión simulada: caso 50012 con PRB1213 por coordinar; «Coordinar visita» abre Coordinar visita V3 con PRB1213 marcado |
+
+También abrí envioenlace, coord, coordvis, coordchoque, estadoparcial, estadooferta, estadocompleto, cxestadoparcial, cxvisitaenlace, coordfases, enlaceagenda, cxcoordins, cxcoordjornada y coordvehiculoduplicado a 1280 × 720, para comparar con la versión anterior.
+
+Tiempo de la etapa: inicio 15/11/2026 08:54 · fin 15/11/2026 09:10 · 16 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2e
 
 Con la conexión, la Agenda de inspecciones ya usa solo datos de la base: los inspectores activos con su jornada y su cobertura, las visitas de cada caso, las ofertas y las visitas por agendar en «Sin asignar», y la hora real de Ecuador. Mover una visita es reagendarla en la base con `agendarVisita`. Ya no sale la banda «Datos de demostración». Sin la conexión, la Agenda queda igual que antes. Quedó publicada en la **Versión 233** (la Versión 234 solo completa en este registro la hora de fin).
