@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 15/11/2026 · Corrección: el responsable del caso es siempre texto (inspector de la visita abierta más reciente si la base no trae responsable).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
 // 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
@@ -129,9 +130,13 @@
   // Forma del prototipo. Los 14 casos de ejemplo toman como base su ficha del prototipo (riesgos, informe, ramos…) y la base manda en estado,
   // responsable, contacto e intentos; los casos nuevos se arman solo con la base. Con varios riesgos se arma «riesgos» con id (lo exige la Bandeja).
   function fichaEjemplo(id) { var E = window.SIRIUS_EJEMPLO; return E && Array.isArray(E.casos) ? E.casos.filter(function (x) { return String(x.id) === id; })[0] : null; }
+  // Visitas de la más reciente a la más antigua; el inspector vigente es el de la visita abierta más reciente (texto, nunca objeto)
+  function visitasPorReciente(k) { return (k.visitas || []).slice().sort(function (a, b) { return String(b.creado || '').localeCompare(String(a.creado || '')); }); }
+  function inspectorVigente(k) { var L = visitasPorReciente(k), abierta = L.filter(function (v) { return v.inspector && v.inspector.nombre && !/cancel|termin|enviada/i.test(v.estado || ''); })[0],
+      cualquiera = L.filter(function (v) { return v.inspector && v.inspector.nombre; })[0]; return String(((abierta || cualquiera || {}).inspector || {}).nombre || ''); }
   function aCaso(k, evs) {
     var id = String(k.numero), a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} },
-        placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || (k.visitas && k.visitas[0] && k.visitas[0].inspector && k.visitas[0].inspector.nombre) || '';
+        placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || inspectorVigente(k) || '';   // corrección 15/11: el inspector de la visita abierta más reciente (antes: la primera visita, en cualquier orden)
     var x = base ? JSON.parse(JSON.stringify(base)) : {};
     x.id = id; x.ramo = k.ramo; x.estado = k.estado; x.asegurado = a.nombre || x.asegurado || ''; x.ident = a.identificacion || x.ident || '';
     x.orden = d.orden || x.orden || ''; x.fecha = (k.creado ? fechaIso(k.creado) : '') || x.fecha; x.registrado = isoLocal(k.creado); x.responsable = resp || x.responsable || '';   // C2-21: la fecha del caso sale de la base (corregido 12/11: este comentario tapaba la asignación del responsable)
@@ -143,7 +148,7 @@
     x.formularios = rs.map(function (r) { return (r.datos || {}).formulario || ''; }); x.carrocerias = rs.map(function (r) { return (r.datos || {}).carroceria || ''; });
     x.sumaAsegurada = rs.reduce(function (t, r) { return t + (Number(r.suma_asegurada) || 0); }, 0) || x.sumaAsegurada; x.anios = rs.map(function (r) { return (r.datos || {}).anio || null; }); x.placas = rs.map(function (r) { return (r.datos || {}).placa || r.descripcion || ''; }); x.riesgosBase = rs.map(function (r) { return { descripcion: r.descripcion || '', composicion: r.composicion || '', suma: Number(r.suma_asegurada) || null, datos: r.datos || {} }; });   // detalle de la solicitud por riesgo (marca, modelo, versión, año, color, VIN, motor, clase, uso, extras)
     // C2-3 · inspector del caso (para la bandeja «Informes por completar» del Control de calidad) y plazo de 24 h hábiles
-    var vi = (k.visitas || []).filter(function (v) { return v.inspector; })[0];
+    var vi = visitasPorReciente(k).filter(function (v) { return v.inspector && !/cancel/i.test(v.estado || ''); })[0] || visitasPorReciente(k).filter(function (v) { return v.inspector; })[0];
     if (vi) x.inspector = { nombre: vi.inspector.nombre, tipo: vi.inspector.tipo_inspector || '', agencia: vi.inspector.agencia ? vi.inspector.agencia.nombre : '' };
     if (k.sla_vence) x.vence = isoLocal(k.sla_vence);
     // C2-7 · solicitud (precargados) y visita (automáticos del informe)
