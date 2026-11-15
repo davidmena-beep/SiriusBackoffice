@@ -4,6 +4,53 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c11
+
+La pestaña Riesgos del caso ahora muestra, para cada vehículo (y cada ramo), el mismo estado, el mismo inspector y la misma visita que la pestaña Coordinación y la bandeja. Antes mostraba «En curso» / «En coordinación», «Por asignar» y «En coordinación» aunque la visita ya estuviera realizada. Quedó publicado en la **Versión 243**; la Versión 244 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Una sola fuente por riesgo (`sirius-coordestado.js`, v1.2):** con la conexión, `casos[].riesgos[].estado` y `casos[].riesgos[].visita { n, estado, inicio, inspector }`; sin ella, el mismo cálculo con las visitas de la sesión. Las funciones nuevas `tono`, `inspectorDe` y `visitaTexto` dicen cómo se muestra un riesgo, y `riesgoVista(r)` del back-office las entrega a las pantallas.
+- **Pestaña Riesgos (Vehículos, Equipo móvil y Ramos Generales):**
+  - **Estado:** Por coordinar, Oferta enviada, Enlace enviado, Agendado, En curso, Inspeccionado, o el estado del riesgo en Informe y Calificación. En Ramos Generales la columna ya no se llama «Informe».
+  - **Inspector:** el de su visita o «Por asignar».
+  - **Visita asignada:** «V6 · 17/10 10:00», «V6 · realizada 17/10», «V3» (sin cita) o «Sin visita» (sin visita o con la visita cancelada).
+  - Asegurabilidad, Emisión y «N de M con informe» no cambian.
+- **Revisión de las demás pantallas:** la pestaña Coordinación y la cabecera ya leían la regla. La bandeja la usaba solo con el caso en Coordinación o en Inspección y, en una fase posterior, mostraba el texto de la sesión («Visita 17/10/26 · 08:00»); ahora usa la misma fuente en cualquier fase y dice «Visita V6 · realizada 17/10». Ningún otro lugar calcula el estado de un riesgo por su cuenta.
+- **Escenas nuevas:** `riesgosestados` y `cxriesgosestados` (base simulada). Registro e inventario actualizados.
+
+**Verificado**
+- **Escenas nuevas** a 1280 × 720 y 1920 × 1080, en la pestaña Riesgos, en Coordinación y en la bandeja: sin errores en la consola. En `riesgosestados`, PBA4521 y GSE1098 «Inspeccionado · Diana Cárdenas · V6 · realizada 17/10» y Kia Sportage «En curso · Marco Tapia · V8 · 18/10 20:00»; en `cxriesgosestados`, PRB1212 y PR121A «Inspeccionado · Mauricio Endara · V6 · realizada 15/10» y PRB1213 «En curso · Diana Cárdenas · V8 · 16/10 13:00». Las tres pantallas dicen lo mismo en cada vehículo.
+- **Escenas existentes**, en las tres pantallas y en los dos tamaños: `estadofasecurso` (2 en curso en la V1 y 1 «Por coordinar · Por asignar · Sin visita»), `estadofaseinspeccion` (el tercero «Agendado · V2 · 21/10 09:00»), `estadoparcial` y `cabeceracoordinar` (2 «Agendado» con V1 y V2 y 1 por coordinar). También con la conexión simulada: `cxestadofases`, `cxestadoparcial` y `cxcabecera` (1280 × 720).
+- **Ramos Generales:** `riesgos` (20195) muestra «En calificación», el inspector y «V1 · realizada 16/10»; `riesgosexc` (con Emisión) conserva sus columnas.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** probé con la base simulada, que entrega los campos del contrato; si la real los entrega con otro formato de fecha, la visita se verá según lo que reciba.
+- **Equipo móvil con varios equipos:** la columna usa el mismo código que Vehículos, pero no abrí una escena de Equipo móvil con varias visitas.
+- **Riesgos cancelados o excluidos en la pestaña:** `visitaTexto` e `inspectorDe` tratan la visita cancelada como «Sin visita» y «Por asignar»; no armé una escena con un riesgo así.
+- **Orden por columna** (Estado y Visita asignada) en la pestaña Riesgos: lo dejé definido, pero no lo probé con el clic.
+
+**Diferencias**
+- **Bandeja en fases posteriores:** las filas de riesgo de un caso en Informe o Calificación ahora dicen «Visita V6 · realizada 17/10» y «Inspector: …» según la visita, y no el texto de la sesión.
+- **Ramos Generales:** la columna «Informe» pasa a «Estado» y muestra el estado del riesgo («En calificación», «Inspeccionado») en lugar de «Informe registrado» / «Pendiente de informe».
+- **Visita sin cita** (enlace enviado): «V3» sin fecha, no «Enlace enviado».
+- **Responsable en `riesgosestados`:** el caso queda «En curso» con el inspector de la visita en curso (Marco Tapia).
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `riesgosestados` | Nueva: 20196 con 2 vehículos inspeccionados (V6 realizada) y 1 en curso (V8); abre la pestaña Riesgos (`?ptab=coord` abre Coordinación, `?fvista=bandeja` la bandeja) |
+| `cxriesgosestados` | Nueva, con la conexión simulada: 50012 con `riesgos[].estado` y `.visita` de la base |
+| `estadofasecurso`, `estadofaseinspeccion`, `estadoparcial`, `cabeceracoordinar` | Revisadas: mismo estado por riesgo en las tres pantallas |
+| `riesgos`, `riesgosexc` | Revisadas: Ramos Generales con «Estado» |
+
+También abrí `cxestadofases`, `cxestadoparcial`, `cxcabecera` y `coordcancelavisitas` (sin errores).
+
+Tiempo de la etapa: inicio 15/11/2026 15:21 · fin 15/11/2026 15:37 · 16 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c10
 
 El estado de un caso con varios vehículos ahora lo manda el riesgo más atrasado (DEC-239): mientras uno siga por coordinar, el caso sigue «En coordinación», aunque otros ya estén en curso, y la tarea de coordinación no desaparece de la bandeja. Quedó publicado en la **Versión 241**; la Versión 242 solo completa en el registro la hora de fin.

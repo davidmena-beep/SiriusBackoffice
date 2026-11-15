@@ -67,6 +67,8 @@
     cxestadoparcial: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }],
     // G-2c10 · DEC-239: cxestadofases — 50012 con V1 (PRB1212) y V2 (PR121A) «En curso» (llegada registrada en la app) y PRB1213 por coordinar; la base entrega «En coordinación · 2 de 3 agendados · 2 en curso», responsable el coordinador y cada riesgo con su estado y su visita. ?ffase=inspeccion: PRB1213 agendada en la V3 → «En curso · 1 de 3 agendado», responsable el inspector.
     cxestadofases: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true, curso: true, curso2: true }],
+    // G-2c11 · DEC-238/239: cxriesgosestados — 50012 con PRB1212 y PR121A inspeccionados en la V6 (realizada) y PRB1213 en curso en la V8; la base entrega casos[].riesgos[].estado y .visita { n, estado, inicio, inspector } de cada riesgo.
+    cxriesgosestados: [false, () => ({ cerrado: true }), { insp: true }],
     cxcabecera: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }], // G-2e2 · DEC-238: el mismo caso 50012; la cabecera trae «Coordinar visita» (PRB1213 por coordinar)
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
     migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
@@ -98,6 +100,10 @@
     const casos = [c, otro('50007', 'Sofía Moreno Paz', [vis(1, 'Mauricio Endara', dia(0), '09:00', '09:45'), vis(2, 'Mauricio Endara', dia(0), '14:00', '15:00')]), otro('30001', 'Panadería La Ronda', [vis(1, 'Diana Cárdenas', dia(0), '15:00', '16:30')]),
       otro('20200', 'Talleres Andinos', [vis(1, 'Luis Andrade', dia(0), '15:00', '15:45'), vis(2, 'Luis Andrade', dia(1), '10:00', '10:45')]), otro('20189', 'Mónica Ruiz', [vis(1, 'Marco Tapia', dia(0), '16:00', '16:45'), vis(2, 'Marco Tapia', dia(3), '08:00', '12:00')]),
       otro('20170', 'Ferretería El Sol', [vis(1, 'Diana Cárdenas', dia(1), '13:00', '14:00'), vis(2, 'Diana Cárdenas', dia(3), '13:00', '14:00')]), otro('20186', 'Pedro Alarcón', [vis(1, 'Cristian Vaca', dia(3), '10:30', '11:15')])];
+    if (e[2] && e[2].insp) { /* G-2c11: V6 realizada (PRB1212 y PR121A, inspeccionados) y V8 en curso (PRB1213) */
+      const lug = () => ({ direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) });
+      c.visitasBase = [vis(6, 'Mauricio Endara', dia(-1), '09:00', '09:45', Object.assign({ estado: 'Realizada', riesgos: ['50012-V1', '50012-V2'] }, lug())), vis(8, 'Diana Cárdenas', dia(0), '13:00', '13:45', Object.assign({ estado: 'En curso', riesgos: ['50012-V3'] }, lug()))];
+      c.riesgos.forEach((r) => { if (r.id !== '50012-V3') { r.estado = 'Inspeccionado'; r.visita = { n: 6, estado: 'Realizada', inicio: dia(-1) + 'T09:00', inspector: 'Mauricio Endara' }; } }); }
     if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); // G-2c8 · DEC-238: la base calcula estado, subestado, responsable y el estado y la visita de cada riesgo
     const cfg = e[1](); if (cfg.ofertaIns) cfg.ofertaIns = cfg.ofertaIns.slice();
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)),

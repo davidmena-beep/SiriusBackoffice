@@ -1,4 +1,4 @@
-// SIRIUS · Estado de coordinación de cada riesgo y del caso (v1.1 · etapa G-2c10 · DEC-239, que amplía DEC-238 · 18/10/2026)
+// SIRIUS · Estado de coordinación de cada riesgo y del caso (v1.2 · etapa G-2c11 · DEC-239, que amplía DEC-238 · 18/10/2026)
 // Una sola regla para la sesión, la bandeja, la pestaña Coordinación y la base simulada.
 //
 // Un riesgo está «coordinado» si tiene una visita abierta con cita (Agendada o En camino), está en curso, o está en una visita de Autoinspección con el enlace
@@ -19,6 +19,9 @@
 //
 // Contrato con la conexión (casos[]): estado y subestado ya calculados por la base; riesgos[].estado (su estado de coordinación) y riesgos[].visita { n, estado, inicio, inspector } | null.
 // Si un riesgo no trae visita, se calcula con visitasBase.
+//
+// G-2c11 · Una sola fuente por riesgo: la pestaña Riesgos del caso, la pestaña Coordinación, la bandeja (filas de cada riesgo) y la cabecera leen lo mismo. Para mostrarlo:
+// estado → k.estado (con tono(estado)); inspector → inspectorDe(k) (el de su visita, o «Por asignar»); visita asignada → visitaTexto(k) («V6 · 17/10 10:00», «V6 · realizada 17/10» o «Sin visita»).
 (function () {
   const COORD = ['Registrado', 'En coordinación', 'Reaperturado', 'Enlace caducado', 'Agendado'];
   const ETIQ = ['Por coordinar', 'Oferta enviada', 'Enlace enviado', 'Agendado', 'En curso'];
@@ -93,6 +96,20 @@
     if (k.estado === 'Por coordinar') return 'Por coordinar';
     return k.estado + (v && v.n ? ' · V' + v.n : '') + (k.estado === 'Agendado' || k.estado === 'En curso' ? (f ? ' · ' + f : '') + (v && v.inspector ? ' · ' + v.inspector : '') : '');
   }
+  // Tono del estado de un riesgo en las etiquetas de coordinación (los demás estados usan los tonos de siempre del flujo).
+  const TONOS = { 'Por coordinar': 'neutral', 'Oferta enviada': 'warning', 'Enlace enviado': 'warning', 'Agendado': 'brand', 'En curso': 'teal' };
+  function tono(estado) { return TONOS[estado] || null; }
+  const fecha = (iso) => (iso ? String(iso).slice(8, 10) + '/' + String(iso).slice(5, 7) : '');
+  const hora = (iso) => (iso && String(iso).length >= 16 ? String(iso).slice(11, 16) : '');
+  // Visita asignada de un riesgo: «V6 · 17/10 10:00» (abierta con cita), «V6 · realizada 17/10», «V3» (abierta sin cita, p. ej. enlace enviado) o «Sin visita» (sin visita, o con la visita cancelada).
+  function visitaTexto(k) {
+    const v = k && k.visita;
+    if (!v || !v.n || /cancel/i.test(String(v.estado || ''))) return 'Sin visita';
+    if (/realiz|finaliz|complet|termin/i.test(String(v.estado || ''))) return 'V' + v.n + ' · realizada' + (v.inicio ? ' ' + fecha(v.inicio) : '');
+    return 'V' + v.n + (v.inicio ? ' · ' + fecha(v.inicio) + (hora(v.inicio) ? ' ' + hora(v.inicio) : '') : '');
+  }
+  // Inspector de un riesgo: el de su visita (no cancelada), o «Por asignar».
+  function inspectorDe(k) { const v = k && k.visita; return v && v.inspector && !/cancel/i.test(String(v.estado || '')) ? v.inspector : 'Por asignar'; }
   // Calcula y deja en el caso (objeto de la base) estado, subestado, responsable e, en cada riesgo, estado de coordinación y visita. Lo usa la base simulada.
   function aplicarBase(c, coordinador) {
     if (!c || !Array.isArray(c.riesgos) || !Array.isArray(c.visitasBase)) return c;
@@ -103,5 +120,5 @@
       const ins = c.riesgos.filter((r) => r.visita && r.visita.inspector && /curso/i.test(String(r.estado))).concat(c.riesgos.filter((r) => r.visita && r.visita.inspector)).map((r) => r.visita.inspector)[0]; c.responsable = (c.estado === 'Agendado' || c.estado === 'En curso') && ins ? ins : (coordinador || c.responsable); }
     return c;
   }
-  window.SiriusCoordEstado = { version: '1.1', COORD: COORD, ETIQUETAS: ETIQ, riesgo: riesgo, riesgos: riesgos, caso: casoDe, fase: fase, cuenta: cuenta, texto: texto, aplicarBase: aplicarBase };
+  window.SiriusCoordEstado = { version: '1.2', COORD: COORD, ETIQUETAS: ETIQ, riesgo: riesgo, riesgos: riesgos, caso: casoDe, fase: fase, cuenta: cuenta, texto: texto, tono: tono, visitaTexto: visitaTexto, inspectorDe: inspectorDe, aplicarBase: aplicarBase };
 })();
