@@ -28,7 +28,7 @@
   const nomCiudad = (cod) => { const Z = W.SiriusZonas, c = Z && Z.ciudad ? Z.ciudad(cod) : null; return c ? c.nombre : ''; };
   // Búsqueda en el diccionario (sin promesa): la frase completa o todas sus palabras de 3 letras o más.
   U.buscarLocal = (texto, cod) => { const n = norm(texto); if (n.length < 3) return [];
-    const pal = n.split(/\s+/).filter((w) => w.length > 2);
+    const pal = n.split(/[\s,;]+/).filter((w) => w.length > 2); // G-2c2: sin comas ni punto y coma pegados a las palabras
     return U.DIRECCIONES.filter((d) => { const t = norm(d.texto + ' ' + nomCiudad(d.ciudad)); return t.includes(n) || (pal.length && pal.every((w) => t.includes(w))); })
       .sort((a, b) => (b.ciudad === cod ? 1 : 0) - (a.ciudad === cod ? 1 : 0)).slice(0, 6).map((d) => ({ texto: d.texto, ciudad: d.ciudad, punto: d.punto ? d.punto.slice() : null })); };
   U.conServicio = () => !!(W.SIRIUS_CONEXION && typeof W.SIRIUS_CONEXION.buscarDireccion === 'function');

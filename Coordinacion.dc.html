@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
-<script src="sirius-fecha.js"></script><script src="sirius-jornada.js"></script>
+<script src="sirius-fecha.js"></script><script src="sirius-jornada.js"></script><script src="sirius-coordinar.js"></script>
 </helmet>
 <div data-screen-label="BO-06 Coordinar inspección" style="display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)">
 <section aria-labelledby="co-rec-h" style="display:grid;grid-template-columns:auto minmax(0,1.6fr) minmax(0,1fr);gap:24px;align-items:start;padding:24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
@@ -120,6 +120,10 @@
 </sc-if>
 </section>
 </sc-if>
+<sc-if value="{{ ctaShow }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="co-cta-h" data-coord-cta="" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;padding:20px 24px;border:1px dashed var(--cyan-500);border-radius:var(--radius-md);background:var(--color-brand-wash)"><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h2 id="co-cta-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Coordinar inspección</h2><span style="font-size:14px;color:var(--text-body)">{{ ctaTxt }}</span></div><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" on-click="{{ ctaOpen }}" hint-size="170px,40px">Coordinar visita</x-import></section>
+</sc-if>
+<sc-if value="{{ fasesOn }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusCoordinar" from="./sirius-coordinar.js" key="{{ fasesKey }}" ctx="{{ fasesCtx }}" hint-size="0px,0px"></x-import></sc-if><!-- G-2c2 · DEC-237: Coordinar visita por fases -->
 <sc-if value="{{ showVisits }}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="co-vis-h" style="display:flex;flex-direction:column;gap:14px">
 <div style="display:flex;align-items:center;gap:10px"><h2 id="co-vis-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Visitas del caso</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ visitCount }}</x-import></div>
@@ -340,6 +344,53 @@ class Component extends DCLogic {
       for (; a + 45 <= m(J.fin); a += 15) { const A = SF.aHora(a), B = SF.aHora(a + 45); if (!libre.some(x => x.a < B && A < x.b)) return { fecha: f, hIni: A, hFin: B }; } }
     return null; }
   pideMotivoCx(p) { return !!this.cxBase() && !!p && (p.mode === 'reagendar' || p.mode === 'inspector'); } // DEC-231: reagendar y cambiar inspector con motivo
+  // Etapa G-2c2 · DEC-237: Coordinar visita por fases (SiriusCoordinar). Fases que abre cada escena y datos que entrega a la vista.
+  FASES_MODOS = ['nueva', 'reagendar', 'inspector'];
+  // Visitas ocupadas de un inspector en un día, con el caso (para el tablero): las de la base o las de ejemplo y las de este caso.
+  slotsInfo(name, fecha, exceptId) { const B = this.cxBase(), cid = String(this.props.caseId);
+    if (B && Array.isArray(B.agenda)) { const mismo = (x) => String(x.caso) === cid, out = B.agenda.filter(x => x.inspector === name && x.fecha === fecha && !(mismo(x) && 'V' + x.n === exceptId)).map(x => ({ a: x.a, b: x.b, caso: String(x.caso) }));
+      this.visits().filter(v => v.estado !== 'Cancelada' && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
+      return out.sort((a, b) => a.a < b.a ? -1 : 1); }
+    const i = this.INS.find(x => x.n === name), out = ((i && i.agenda && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1], caso: '' }));
+    this.visits().filter(v => v.estado !== 'Cancelada' && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
+    return out.sort((a, b) => a.a < b.a ? -1 : 1); }
+  capacidad(n) { const A = window.SIRIUS_AGENDA || {}, B = this.cxBase(), E = B && B.escena && Array.isArray(B.escena.disponibilidad) ? B.escena.disponibilidad : [], d = E.concat(A.disponibilidad || []).find(x => x && x.inspector === n); return d && d.capacidadDia ? d.capacidadDia : null; }
+  // DEC-237: modalidades según las reglas parametrizadas, evaluadas con los riesgos elegidos (props.modalidadesPara del Back-office: SiriusModalidades.ofrecerPara).
+  modsLista(ids) { const P = this.props, c = typeof P.modalidadesPara === 'function' ? P.modalidadesPara(ids) : this.modCfg();
+    return this.MODS.filter(([label]) => this.modCfg() || this.modOk(label)).map(([label, hint]) => { const it = c && c.items ? c.items[label] : null, ok = it ? it.ok !== false : this.modOk(label);
+      return { label, hint, ok, motivo: ok ? '' : ((it && it.motivo) || 'No disponible para este ramo') }; }); }
+  // DEC-237: oferta a inspectores. La visita queda «Oferta enviada» hasta que alguien acepta en la app (G-3) o se anula.
+  ofertar(p, o, id) { const onA = this.props.onAction || (() => {}), n = new Date(this.nowIso.replace('T', ' ').replace(/-/g, '/')), z = (k) => String(k).padStart(2, '0'); n.setHours(n.getHours() + (o.vigenciaHoras || 2));
+    const vence = n.getFullYear() + '-' + z(n.getMonth() + 1) + '-' + z(n.getDate()) + 'T' + z(n.getHours()) + ':' + z(n.getMinutes());
+    const v = { id, mod: p.mod, riesgos: p.riesgos.slice(), estado: 'Oferta enviada', inspector: '', fecha: '', hIni: '', hFin: '', dir: p.dir, inter: '', ref: p.ref, lugar: p.mod === 'Presencial' && p.lugar ? Object.assign({}, p.lugar) : null, obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail,
+      oferta: { inspectores: o.inspectores.slice(), desde: o.desde, hasta: o.hasta, vigenciaHoras: o.vigenciaHoras, nota: o.nota || '', minutos: o.minutos || 45, vence } };
+    this.setState(st => st.pnl ? { pnl: Object.assign({}, st.pnl, { ofertaId: id }) } : null); return onA('ofertar', { visit: v }); }
+  // Lo que recibe SiriusCoordinar (la vista por fases): el formulario, sus errores y las acciones de Coordinación.
+  fasesCtx(p, o) { const P = this.props, s = this.state, SLg = this.SL(), LC = this.lugarCaso(), onA = P.onAction || (() => {}), rs = P.riesgos || [], E = o.errs;
+    const ids = p.riesgos || [], vid = p.mode === 'nueva' ? (p.ofertaId || o.nextId) : p.visitId, srcIds = o.src ? (o.src.riesgos || []) : [];
+    const opc = p.mode === 'nueva' ? rs.filter(r => o.pend.some(x => x.id === r.id) || ids.includes(r.id)) : rs.filter(r => srcIds.includes(r.id) || ids.includes(r.id));
+    const r0 = this.rById(ids[0] || (rs[0] || {}).id), prev = o.vis.filter(v => v.estado !== 'Cancelada' && v.id !== p.visitId && v.mod === 'Presencial' && (v.lugar || v.dir)).slice(-1)[0];
+    const ofV = p.ofertaId ? o.vis.find(v => v.id === p.ofertaId && v.oferta && v.estado === 'Oferta enviada') : null;
+    const r = this.reloj(), nowM = r ? (r.min != null ? r.min : (window.SiriusFecha ? window.SiriusFecha.aMin(r.hora) : 0)) : (() => { const m = /T(\d\d):(\d\d)/.exec(this.nowIso); return m ? +m[1] * 60 + +m[2] : 0; })();
+    const cpL = this.cpPide(p) ? this.cpCampos().map(x => ({ k: 'cp_' + x.clave, label: x.etiqueta, ph: x.ayuda, value: this.cpVal(p, x) })) : [];
+    const ints = (P.intentos || []).slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1).map(x => ({ when: this.fmtDT(x.fecha), medio: x.medio, resultado: x.resultado, obs: x.obs || '', by: x.by || '' }));
+    const fz = this.fueraDe(p);
+    return {
+      titulo: p.mode === 'nueva' ? 'Coordinar visita ' + vid : p.mode === 'reagendar' ? 'Reagendar visita ' + vid : 'Cambiar inspector · ' + vid, casoId: P.caseId, asegurado: LC.asegurado || '', sucursal: LC.sucursal || '', sla: LC.sla || '', slaTono: LC.slaTono || '',
+      modo: p.mode, p, patch: (q) => this.setState(st => st.pnl ? { pnl: Object.assign({}, st.pnl, q) } : null), touch: (k) => this.touch(k), touched: s.touched, errs: E, errMsg: (k) => typeof E[k] === 'string' ? E[k] : k === 'riesgos' ? 'Incluye al menos un riesgo.' : 'Revisa el dato.',
+      mods: this.modsLista(ids), modsPara: (q) => this.modsLista(q), riesgosOpc: opc.map(x => ({ id: x.id, label: x.label, sub: x.sub })), vehEditable: !!o.single ? false : (p.mode === 'nueva' || (p.mode === 'reagendar' && !!this.cxBase())), vehNombre: o.veh ? 'Vehículos' : 'Riesgos', vehTxt: ids.map(id => this.rById(id).label).join(', '),
+      intentos: ints, acc: { registrar: o.intVals.openInt, enviarAgenda: o.intVals.enviarAgenda, agMotivo: o.intVals.agMotivo, cancelarCaso: P.canCancel !== false && o.intVals.canCancelCase ? o.intVals.openCc : null }, cp: cpL,
+      lugarSolicitud: SLg ? ((LC.fijo && (LC.porRiesgo || {})[ids[0]]) || SLg.desdeTexto(r0.dir || '', LC.ciudad, '')) : null, lugarAnterior: prev && SLg ? { id: prev.id, lugar: this.lugarDeVisita(prev) } : null, ciudad: LC.ciudad || '',
+      INS: this.INS.filter(i => i.n !== o.actual), jornada: (n) => this.jornada(n), slots: (n, f, ex) => this.slotsInfo(n, f, ex), capacidad: (n) => this.capacidad(n), hoy: this.today, ahoraMin: nowM, durDef: 45,
+      fuera: fz, pideMotivoCx: this.pideMotivoCx(p),
+      submit: (q) => { o.submit(); if (q && q.siguiente) setTimeout(() => onA('siguienteCaso', {}), 0); },
+      ofertar: p.mode === 'nueva' ? (q) => this.ofertar(p, q, vid) : null, anularOferta: () => { if (!p.ofertaId) return; onA('anularOferta', { id: p.ofertaId }); this.setState(st => st.pnl ? { pnl: Object.assign({}, st.pnl, { ofertaId: null }) } : null); },
+      oferta: ofV ? { inspectores: ofV.oferta.inspectores, desde: ofV.oferta.desde, hasta: ofV.oferta.hasta, vigenciaHoras: ofV.oferta.vigenciaHoras, venceTxt: ofV.oferta.vence ? 'el ' + this.fmtDT(ofV.oferta.vence) : '' } : null,
+      siguiente: () => { this.setState({ pnl: null }); onA('siguienteCaso', {}); }, salir: () => this.setState({ pnl: null, touched: {} }),
+      previa: (q) => this.waMessage(Object.assign({}, q, { id: vid, riesgos: ids, enlace: 'clientes.asur.ec/a/…', vence: this.addHours(q.validez || '48 horas') })),
+      motivosNR: (((window.SIRIUS_EJEMPLO || {}).catalogos || {}).motivosNoInspeccion || []).map(x => typeof x === 'string' ? x : (x && (x.nombre || x.n)) || '').filter(Boolean),
+      preset: { fase: p.fase, enviar: p.enviar, verFuera: p.verFuera, panelOferta: p.panelOferta, ofertaIns: p.ofertaIns || null, dia: p.diaVista } };
+  }
   // Etapa G-2c · DEC-222: lugar de la inspección (SiriusLugar). prop lugarCaso = { sucursal, ciudad (COD_CANTON del caso), fijo (Ramos Generales no móvil), porRiesgo { id: lugar del riesgo } }.
   SL() { return window.SiriusLugar || null; }
   lugarCaso() { const x = this.props.lugarCaso; return x && typeof x === 'object' ? x : {}; }
@@ -350,6 +401,7 @@ class Component extends DCLogic {
     if (x.lugar) return { l: SL.normalizar(x.lugar) };
     if (x.mode === 'reagendar' || x.mode === 'dividir') return { l: SL.desdeTexto(x.dir, LC.ciudad, x.ref) };
     const pr = (LC.porRiesgo || {})[ids[0]]; if (LC.fijo && pr) { const l = SL.normalizar(pr); return { l, fijo: true }; }
+    if (String(x.dir || '').trim()) return { l: SL.desdeTexto(x.dir, LC.ciudad, x.ref || ''), sol: true }; // G-2c2 · DEC-237: por defecto, la dirección de la solicitud (se busca al abrir y queda «por revisar»)
     const prev = this.visits().filter(v => v.estado !== 'Cancelada' && v.lugar).slice(-1)[0]; if (prev) return { l: SL.normalizar(prev.lugar) };
     return { l: SL.desdeTexto(x.dir || '', LC.ciudad, x.ref || '') }; }
   usaLugar(p) { return !!p && !!this.SL() && p.mod === 'Presencial' && ['nueva', 'reagendar', 'dividir'].includes(p.mode); }
@@ -366,14 +418,14 @@ class Component extends DCLogic {
     const s = { sel: [], grouped: pr === 'agrupar', pnl: null, touched: {}, insQ: '', insOpen: false, wa: null, cancel: null, intF: null, cc: null };
     if (pr === 'cxcancelar') { const v0 = (p.visitas || []).find(v => v && v.cxBase && !['Cancelada', 'Realizada'].includes(v.estado)); if (v0) s.cancel = { id: v0.id, motivo: '', touched: false }; } // etapa P-6e-3 · escena cxvisitacancelar
     const rs = p.riesgos || [];
-    if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; }
-    else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; }
-    else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección' });   // etapa 12b · envioenlace (20186)
+    if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; s.pnl.fase = 'horario'; }
+    else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; s.pnl.fase = s.pnl.mod === 'Autoinspección' ? 'enlace' : 'contacto'; }
+    else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección', fase: 'enlace' });   // etapa 12b · envioenlace (20186)
     else if ((pr === 'cxcoordmismo' || pr === 'cxcoordjornada') && this.visits().some(x => x.inspector && x.estado === 'Agendada')) { const E = (this.cxBase() || {}).escena || {}, v = this.visits().find(x => x.inspector && x.estado === 'Agendada'); // P-6f-0f · DEC-232
       if (v && pr === 'cxcoordmismo') { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })); s.insQ = E.inspector || ''; s.insOpen = true; }
       if (v && pr === 'cxcoordjornada') { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'reagendar', visitId: v.id, hIni: E.hIni || '00:00', hFin: E.hFin || '00:45', motivoCx: E.motivo || '' })); s.insQ = v.inspector; s.touched = { hIni: true, hFin: true }; } }
     else if (pr === 'cxvisitariesgos' && rs.length > 1) { const E = (this.cxBase() || {}).escena || {}; s.pnl = this.newForm([rs[0].id], { dir: E.dir || '' }); if (this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0f · DEC-232: un vehículo de tres
-      if (E.inspector) { const pr2 = this.proponer(E.inspector); Object.assign(s.pnl, { inspector: E.inspector }, pr2 || {}); s.insQ = E.inspector; } }
+      if (E.inspector) { const pr2 = this.proponer(E.inspector); Object.assign(s.pnl, { inspector: E.inspector }, pr2 || {}); s.insQ = E.inspector; } s.pnl.fase = 'horario'; }
     else if (pr === 'cxcoordcambiar') { const E = (this.cxBase() || {}).escena || {}, v = this.visits().find(x => x.inspector && x.estado === 'Agendada'); if (v) { s.pnl = this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: E.inspector || '', motivoCx: E.motivo || '' })); s.insQ = E.inspector || ''; } } // P-6f-0e · DEC-231
     else if (pr === 'lugar' && rs.length && !this.activeVisit()) { const E = ((this.cxBase() || {}).escena || {}).lugar || {}, SL = this.SL(), U = window.SiriusUbicacion; // G-2c: escenas lugarbuscar, lugarmapa, lugarlejos, lugarfuera, lugarrg y cxlugar
       s.pnl = this.newForm([rs[0].id]); if (this.modOk('Presencial')) s.pnl.mod = 'Presencial'; let l = s.pnl.lugar;
@@ -385,8 +437,14 @@ class Component extends DCLogic {
         if (E.ref) l = Object.assign({}, l, { referencia: E.ref });
         Object.assign(s.pnl, { lugar: l, dir: l.direccion, ref: l.referencia }); if (l.punto) s.pnl.lugarBuscar = false; }
       if (E.inspector) { const pr2 = this.proponer(E.inspector); Object.assign(s.pnl, { inspector: E.inspector }, pr2 || {}); s.insQ = E.inspector; s.touched = { inspector: true }; }
-      if (E.motivo) s.pnl.fueraMot = E.motivo; if (E.abrir) s.insOpen = true; if (E.fueraAbierto) s.insFuera = true; }
-    else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false) { s.pnl = this.newForm(rs.map(r => r.id));
+      if (E.motivo) s.pnl.fueraMot = E.motivo; if (E.abrir) s.insOpen = true; if (E.fueraAbierto) s.insFuera = true; s.pnl.fase = E.fase || (E.inspector || E.enviar ? 'horario' : 'lugar'); if (E.enviar) s.pnl.enviar = 'principal'; }
+    else if (pr === 'fases' && rs.length) { const E = ((this.cxBase() || {}).escena || {}).fases || {}, SL = this.SL(), U = window.SiriusUbicacion; // G-2c2: escenas coordfases, coordmodalidades, coordfechahora, coordoferta, coordautoinsp, coordvirtual y cxcoordfases
+      const ids = Array.isArray(E.riesgos) && E.riesgos.length ? rs.filter(r => E.riesgos.includes(r.label)).map(r => r.id) : [rs[0].id]; s.pnl = this.newForm(ids.length ? ids : [rs[0].id]); { const ml = this.modsLista(s.pnl.riesgos), ok = (m) => ml.some(x => x.label === m && x.ok); s.pnl.mod = E.mod && ok(E.mod) ? E.mod : ok('Presencial') ? 'Presencial' : s.pnl.mod; } // DEC-237: con las reglas evaluadas para los riesgos elegidos
+      if (E.texto && SL && U && s.pnl.lugar) { const r = U.buscarLocal(E.texto, s.pnl.lugar.ciudad); if (r.length && r[0].punto) { const l = SL.calcular(Object.assign({}, s.pnl.lugar, { direccion: r[0].texto, ciudad: r[0].ciudad, provincia: SL.provDe(r[0].ciudad), punto: r[0].punto, zona: null, estadoZona: '', origen: 'Búsqueda' })); Object.assign(s.pnl, { lugar: l, dir: l.direccion, ref: l.referencia, lugarBuscar: false }); } }
+      const dia = (k) => { const d = new Date(this.today + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); };
+      if (E.fecha != null) s.pnl.fecha = typeof E.fecha === 'number' ? dia(E.fecha) : E.fecha; if (E.hIni) s.pnl.hIni = E.hIni; if (E.hFin) s.pnl.hFin = E.hFin; if (E.inspector) s.pnl.inspector = E.inspector; if (E.fueraMot) s.pnl.fueraMot = E.fueraMot;
+      Object.assign(s.pnl, { fase: E.fase || 'contacto', enviar: E.enviar || '', verFuera: !!E.verFuera, panelOferta: !!E.panelOferta, ofertaIns: E.ofertaIns || null, propAuto: false, hFinAuto: false }); if (E.fecha == null && E.diaVista != null) s.pnl.diaVista = dia(E.diaVista); }
+    else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false && ['cxcoordins', 'cxcoordpasado'].includes(pr)) { s.pnl = this.newForm(rs.map(r => r.id)); s.pnl.fase = 'horario';
       if ((pr === 'cxcoordins' || pr === 'cxcoordpasado') && this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0e: presencial, con hora de fin (45 minutos)
       if (pr === 'cxcoordins') s.insOpen = true; // P-6f-0e · DEC-231: la lista de inspectores de la base abierta
       if (pr === 'cxcoordpasado') { const r = this.reloj(), SF = window.SiriusFecha, E = (this.cxBase() || {}).escena || {}; if (r && SF) { const ini = Math.max(0, Math.floor(r.min / 15) * 15 - 60); Object.assign(s.pnl, { fecha: r.hoy, hIni: SF.aHora(ini), hFin: SF.aHora(ini + 45), hFinAuto: true, inspector: E.inspector || '' }); s.insQ = E.inspector || ''; s.touched = { hIni: true }; } } } // DEC-230: una hora ya pasada de hoy
@@ -431,7 +489,7 @@ class Component extends DCLogic {
     const c = this.props.contacto || {}, dirs = ids.map(id => this.rById(id).dir).filter(Boolean);
     const r = this.reloj(), SF = window.SiriusFecha, pr = r && SF ? (this.proponer('') || (SF.propuestaVisita ? SF.propuestaVisita(r, 45) : null)) : null; // DEC-230 y DEC-232: con el reloj real, propone el primer horario dentro de la jornada (45 minutos)
     const f = Object.assign({ mode: 'nueva', visitId: null, riesgos: ids, mod: this.recFor(ids), /* DEC-182 en recFor */ inspector: '', fecha: pr ? pr.fecha : '', hIni: pr ? pr.hIni : '', hFin: pr ? pr.hFin : '', hFinAuto: !!pr, propAuto: !!pr, dir: dirs[0] || '', inter: '', ref: '', validez: this.vigDef(), motivo: '', motivoCx: '', nrObs: '', obs: '', cName: c.nombre || '', cCel: c.cel || '', cMail: c.correo || '', split: '', fueraMot: '' }, extra || {});
-    const li = this.lugarInicial(ids, f); if (li) { f.lugar = li.l; f.dir = li.l.direccion; f.ref = li.l.referencia; f.inter = ''; f.lugarBuscar = !!(li.fijo && !li.l.punto && li.l.direccion); f.lugarNoUbica = false; } // G-2c · DEC-222
+    const li = this.lugarInicial(ids, f); if (li) { f.lugar = li.l; f.dir = li.l.direccion; f.ref = li.l.referencia; f.inter = ''; f.lugarBuscar = !!((li.fijo || li.sol) && !li.l.punto && li.l.direccion); f.lugarNoUbica = false; } // G-2c · DEC-222
     if (f.mode === 'inspector' || f.mode === 'reagendar') f.fueraMot = ''; // DEC-225: el motivo se escribe de nuevo en cada asignación
     return f;
   }
@@ -477,7 +535,7 @@ class Component extends DCLogic {
     if (['Presencial', 'Virtual guiada'].includes(p.mod) && !p.hIni) e.hIni = 'Indica la hora de inicio.';
     if (p.mod === 'Presencial') { if (!p.hFin) e.hFin = 'Indica la hora de fin.'; else if (p.hIni && p.hFin <= p.hIni) e.hFin = 'La hora de fin debe ser posterior al inicio.'; if (!String(p.dir || '').trim()) e.dir = 'Ingresa la dirección.'; else if (this.usaLugar(p) && p.lugar && !p.lugar.ciudad) e.dir = 'Elige la ciudad.'; }
     { const r = this.reloj(), SF = window.SiriusFecha; if (r && SF && SF.minimaHoy && ['Presencial', 'Virtual guiada'].includes(p.mod)) { // DEC-230: no en el pasado (hora mínima: la actual redondeada a los 15 minutos siguientes) y al menos 15 minutos
-      const mn = SF.minimaHoy(r); if (p.fecha === this.today && p.hIni && !e.hIni && p.hIni < mn) e.hIni = 'La hora ya pasó: hoy se puede agendar desde las ' + mn + '.';
+      const mn = r.hora || SF.aHora(r.min || 0); if (p.fecha === this.today && p.hIni && !e.hIni && p.hIni < mn) e.hIni = 'La hora ya pasó: hoy son las ' + mn + '.'; // G-2c2 · DEC-237: mismo texto que el tablero
       if (p.mod === 'Presencial' && p.hIni && p.hFin && !e.hFin && SF.aMin(p.hFin) - SF.aMin(p.hIni) < 15) e.hFin = 'La visita debe durar al menos 15 minutos.';
       if (p.fecha && p.hIni && !e.hIni && !e.fecha) { const J = this.jornada(p.inspector), m = SF.aMin, fj = this.jTit(p.inspector, J); // DEC-232 y P-6f-0f2
         if (!J.dias.includes(this.diaSemana(p.fecha)) || m(p.hIni) < m(J.ini) || m(p.hIni) >= m(J.fin)) e.hIni = fj; else if (p.mod === 'Presencial' && p.hFin && !e.hFin && m(p.hFin) > m(J.fin)) e.hFin = fj; } } }
@@ -528,8 +586,9 @@ class Component extends DCLogic {
     const proposals = veh ? (s.grouped ? Object.keys(groups).map((dir, i) => ({ dir, list: groups[dir], title: 'Visita propuesta ' + (i + 1) })) : []) : (pend.length ? [{ dir: pend[0].dir || '', list: pend, title: 'Una sola visita para ' + (pend.length === 1 ? 'el ramo' : 'los ' + pend.length + ' ramos') }] : []);
     const openNew = (ids) => this.setState({ pnl: this.newForm(ids), touched: {}, insQ: '', insOpen: false });
     const errs = this.errors(p), eKeys = Object.keys(errs);
-    const inline = !!p && single && !this.activeVisit() && p.mode === 'nueva';
-    const drawer = !!p && !inline;
+    const fasesOn = !!p && !!window.SiriusCoordinar && this.FASES_MODOS.includes(p.mode); // G-2c2 · DEC-237: agendar, reagendar y cambiar inspector van por fases
+    const inline = !!p && !fasesOn && single && !this.activeVisit() && p.mode === 'nueva';
+    const drawer = !!p && !fasesOn && !inline;
     const ins = p && p.inspector ? this.INS.find(x => x.n === p.inspector) : null;
     const loadDate = (p && p.fecha) || this.today;
     const loadOf = (n) => { const k = this.slots(n, loadDate, p && p.visitId).length; return (k === 1 ? '1 visita' : k + ' visitas') + ' el ' + this.fmtD(loadDate).slice(0, 5); }; // G-2c · DEC-224: «N visitas el dd/mm»
@@ -552,7 +611,7 @@ class Component extends DCLogic {
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
     const nextId = 'V' + (vis.length + 1);
-    const tone = { Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
+    const tone = { 'Oferta enviada': 'brand', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
     const fMot = this.pideMotivoCx(p) ? [this.F('motivoCx', p.mode === 'inspector' ? 'Motivo del cambio de inspector' : 'Motivo del cambio de fecha', 'textarea', { req: true, span: '1 / -1', ph: 'Mínimo 10 caracteres. Queda en el historial y se envía a la base.' })] : []; // DEC-231
     const fields0 = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
       this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
@@ -574,6 +633,7 @@ class Component extends DCLogic {
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
       if (this.usaLugar(p) && p.lugar) Object.assign(base, { lugar: Object.assign({}, p.lugar), dir: p.lugar.direccion, ref: p.lugar.referencia, inter: '' }); // G-2c · DEC-222
       if (this.needsIns(p)) base.fueraCobertura = fueraC; // G-2c · DEC-225 (null si cubre)
+      if (p.mod === 'Autoinspección') base.canal = p.canal || 'WhatsApp'; // G-2c2 · DEC-237: canal del enlace de autoinspección
       let v, rA = null;
       if (mode === 'reagendar') { const pt = this.cxBase() ? Object.assign({}, base, { riesgos: p.riesgos.slice() }) : base; /* DEC-232: los vehículos de la visita van a la base */ v = Object.assign({}, src, pt); onA('reagendar', { id: p.visitId, patch: pt, motivo: String(p.motivoCx || '').trim() }); }
       else { const id = nextId; v = Object.assign({ id, riesgos: mode === 'dividir' ? [p.split] : p.riesgos.slice(), estado: 'Agendada' }, base);
@@ -583,7 +643,7 @@ class Component extends DCLogic {
       this.trasEnvio(rA, (x) => { const vx = this.conCx(v, x), txt = this.waMessage(vx);
       this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), to: v.cName + ' · ' + v.cCel, text: txt, enlace: this.enlaceCopia(vx), ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null }); });
     };
-    this._submit = submit; { const E = ((this.cxBase() || {}).escena || {}).lugar || {}; if (P.preset === 'lugar' && E.enviar && p && !this._lugEnv) { this._lugEnv = true; setTimeout(() => this._submit && this._submit(), 700); } } // G-2c: escenas que guardan solas
+    this._submit = submit; { const E = ((this.cxBase() || {}).escena || {}).lugar || {}; if (P.preset === 'lugar' && E.enviar && p && !this._lugEnv && !window.SiriusCoordinar) { this._lugEnv = true; setTimeout(() => this._submit && this._submit(), 700); } } // G-2c: escenas que guardan solas
     const fieldN = eKeys.filter(k => k !== 'riesgos').length;
     const cancel = s.cancel;
     const ints = P.intentos || [], nInt = ints.length, it = s.intF, cc = s.cc, onAct = P.onAction || (() => {});
@@ -654,7 +714,8 @@ class Component extends DCLogic {
       showVisits: !inline || vis.length > 0, noVisits: !vis.length, visitCount: String(vis.filter(v => v.estado !== 'Cancelada').length),
       visits: vis.map(v => {
         const live = v.estado === 'Agendada' || v.estado === 'En curso', pendRamos = v.riesgos.filter(id => !['Pendiente calificación', 'Pendiente calificación de suscripción', 'Inspeccionado: aprobado', 'Inspeccionado: no aprobado'].includes(this.rById(id).estado));
-        const when = v.cuandoTxt ? v.cuandoTxt /* C2-21: con la conexión, cita, llegada y fin de la base */ : v.mod === 'Presencial' ? this.fmtD(v.fecha) + ' · ' + v.hIni + '–' + v.hFin : v.mod === 'Virtual guiada' ? this.fmtD(v.fecha) + ' · ' + v.hIni : v.mod === 'Documental' ? 'Revisión hasta ' + this.fmtD(v.fecha) : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? this.fmtDT(v.envio) : v.vence ? 'Vence el ' + this.fmtDT(v.vence) : 'Enlace válido por ' + v.validez) : 'No aplica';
+        const ofe = v.oferta && v.estado === 'Oferta enviada' ? v.oferta : null; // G-2c2 · DEC-237: visita ofertada a inspectores
+        const when = ofe ? 'Del ' + this.fmtD(ofe.desde) + ' al ' + this.fmtD(ofe.hasta) + (ofe.vence ? ' · la oferta vence el ' + this.fmtDT(ofe.vence) : '') : v.cuandoTxt ? v.cuandoTxt /* C2-21: con la conexión, cita, llegada y fin de la base */ : v.mod === 'Presencial' ? this.fmtD(v.fecha) + ' · ' + v.hIni + '–' + v.hFin : v.mod === 'Virtual guiada' ? this.fmtD(v.fecha) + ' · ' + v.hIni : v.mod === 'Documental' ? 'Revisión hasta ' + this.fmtD(v.fecha) : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? this.fmtDT(v.envio) : v.vence ? 'Vence el ' + this.fmtDT(v.vence) : 'Enlace válido por ' + v.validez) : 'No aplica';
         const place = v.mod === 'Presencial' ? v.dir + (v.inter ? ' y ' + v.inter : '') : this.enlaceVer(v) || (v.mod === 'Autoinspección' ? 'WhatsApp ' + v.cCel : '—');
         const Eo = window.SiriusEnlace, tkE = Eo && v.mod === 'Autoinspección' ? Eo.tokenDe(v.enlace) : '', stE = tkE ? Eo.estado(tkE) : null, conTarjeta = !!stE && v.estado !== 'Cancelada'; // etapa 13: estado del enlace calculado por el motor
         const cxB = v.cxBase || null; // etapa P-6e-3 · DEC-209: visita de la base (visitasBase) con su enlace; el estado ya viene resuelto
@@ -672,7 +733,7 @@ class Component extends DCLogic {
           { label: 'Enviar enlace de autoinspección', variant: 'secondary', onClick: () => onA('cxEnviar', { id: v.id, tipo: 'Autoinspección', modalidad: 'Autoinspección' }), why: okA ? '' : porqueA },
           { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
         ] : null;
-        const acts = actsCx ? actsCx : est === 'Agendada' ? [
+        const acts = ofe ? [{ label: 'Anular oferta', variant: 'secondary', onClick: () => onA('anularOferta', { id: v.id }) }] : actsCx ? actsCx : est === 'Agendada' ? [
           { label: 'Reagendar', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'reagendar', visitId: v.id, riesgos: v.riesgos })), touched: {}, insQ: v.inspector || '', insOpen: false }) },
           v.inspector && { label: 'Cambiar inspector', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })), touched: {}, insQ: '', insOpen: true }) },
           !veh && v.riesgos.length > 1 && pendRamos.length > 0 && { label: 'Dividir visita', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm([], Object.assign({}, { mod: v.mod, dir: v.dir, inter: v.inter, ref: v.ref, lugar: v.lugar || null, cName: v.cName, cCel: v.cCel, cMail: v.cMail, fecha: v.fecha }, { mode: 'dividir', visitId: v.id, riesgos: pendRamos, split: '' })), touched: {}, insQ: '', insOpen: false }) },
@@ -693,7 +754,7 @@ class Component extends DCLogic {
         ] : [];
         const acts2 = acts.filter(Boolean).filter(a => !ro || a.label === 'Ver informe').filter(a => cxB || !conTarjeta || !['Generar uno nuevo', 'Reenviar enlace', 'Generar nuevo enlace'].includes(a.label)).map(a => Object.assign({ aria: a.label + ' ' + v.id }, a, a.why ? { onClick: () => {} } : { why: undefined }));
         return { id: v.id, mod: v.mod, porCliente: !!v.porCliente && v.estado !== 'Cancelada', porClienteTxt: 'Agendada por el cliente · ' + (v.origenCita === 'red' ? 'red' : 'agenda fija'), estado: cxB && cxB.vence && ['Enlace enviado', 'Autoinspección enviada'].includes(est) ? est + ' · vence ' + cxB.vence : est, tone: tone[est] || 'neutral', aria: 'Visita ' + v.id + ' · ' + v.mod + ' · ' + est + (cxB && cxB.vence ? ' · vence ' + cxB.vence : ''), bg: v.estado === 'Cancelada' ? 'var(--surface-subtle)' : '#FFFFFF',
-          fields: this.camposVisita(v, [{ label: 'Inspector', value: v.inspector || 'Sin inspector', ws: 'normal', span: 'auto' }, { label: v.cuandoLbl ? v.cuandoLbl : v.mod === 'Documental' ? 'Plazo' : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? 'Enviada por el cliente' : 'Vencimiento') : 'Fecha y hora', value: when, ws: 'normal', span: 'auto' }, { label: v.lugarLbl ? v.lugarLbl : v.mod === 'Presencial' ? 'Dirección' : v.mod === 'Autoinspección' ? 'Enlace enviado' : 'Enlace', value: v.lugarLbl ? v.lugarTxt : place, ws: 'normal', span: '1 / -1' }].concat(cxB && cxB.enviado ? [{ label: 'Último envío', value: cxB.enviado, ws: 'normal', span: 'auto' }] : []).concat(v.porCliente ? [{ label: 'Agendada por el cliente', value: 'Desde el portal' + (v.agendadaEn ? ' el ' + v.agendadaEn.slice(8, 10) + '/' + v.agendadaEn.slice(5, 7) + '/' + v.agendadaEn.slice(2, 4) + ' · ' + v.agendadaEn.slice(11, 16) : '') + (v.cName ? ' · recibe ' + v.cName + (v.cCel ? ' (' + v.cCel + ')' : '') : '') + (v.ref ? ' · ' + v.ref : '') + (v.origenCita === 'red' ? ' · la aceptó ' + v.inspector + ' (' + (v.organizacion || '—') + (v.credencial ? ' · credencial ' + v.credencial : '') + ') en la red de inspectores' : ' · inspector de agenda fija con el horario libre' + (v.organizacion ? ' (' + v.organizacion + ')' : '')), ws: 'normal', span: '1 / -1' }] : []).concat((v.anteriores || []).length ? [{ label: 'Enlaces anteriores', value: v.anteriores.map(x => x.enlace + ' · ' + x.estado + (x.at ? ' el ' + x.at : '')).join(' | '), ws: 'normal', span: '1 / -1' }] : [])), // G-2c · DEC-222: «Ciudad y zona» (en ámbar si está por confirmar)
+          fields: this.camposVisita(v, [{ label: ofe ? 'Oferta a inspectores' : 'Inspector', value: ofe ? ofe.inspectores.length + ': ' + ofe.inspectores.join(', ') : (v.inspector || 'Sin inspector'), ws: 'normal', span: 'auto' }, { label: ofe ? 'Rango de la oferta' : v.cuandoLbl ? v.cuandoLbl : v.mod === 'Documental' ? 'Plazo' : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? 'Enviada por el cliente' : 'Vencimiento') : 'Fecha y hora', value: when, ws: 'normal', span: 'auto' }, { label: v.lugarLbl ? v.lugarLbl : v.mod === 'Presencial' ? 'Dirección' : v.mod === 'Autoinspección' ? 'Enlace enviado' : 'Enlace', value: v.lugarLbl ? v.lugarTxt : place, ws: 'normal', span: '1 / -1' }].concat(cxB && cxB.enviado ? [{ label: 'Último envío', value: cxB.enviado, ws: 'normal', span: 'auto' }] : []).concat(v.porCliente ? [{ label: 'Agendada por el cliente', value: 'Desde el portal' + (v.agendadaEn ? ' el ' + v.agendadaEn.slice(8, 10) + '/' + v.agendadaEn.slice(5, 7) + '/' + v.agendadaEn.slice(2, 4) + ' · ' + v.agendadaEn.slice(11, 16) : '') + (v.cName ? ' · recibe ' + v.cName + (v.cCel ? ' (' + v.cCel + ')' : '') : '') + (v.ref ? ' · ' + v.ref : '') + (v.origenCita === 'red' ? ' · la aceptó ' + v.inspector + ' (' + (v.organizacion || '—') + (v.credencial ? ' · credencial ' + v.credencial : '') + ') en la red de inspectores' : ' · inspector de agenda fija con el horario libre' + (v.organizacion ? ' (' + v.organizacion + ')' : '')), ws: 'normal', span: '1 / -1' }] : []).concat((v.anteriores || []).length ? [{ label: 'Enlaces anteriores', value: v.anteriores.map(x => x.enlace + ' · ' + x.estado + (x.at ? ' el ' + x.at : '')).join(' | '), ws: 'normal', span: '1 / -1' }] : [])), // G-2c · DEC-222: «Ciudad y zona» (en ámbar si está por confirmar)
           fuera: !!(v.fueraCobertura && v.fueraCobertura.motivo) && v.estado !== 'Cancelada', fueraTit: v.fueraCobertura && v.fueraCobertura.motivo ? 'Asignada fuera de cobertura' + (v.fueraCobertura.inspector ? ' a ' + v.fueraCobertura.inspector : '') + ' · Motivo: ' + v.fueraCobertura.motivo : '',
           riesgosLabel: v.riesgos.length === 1 ? 'Riesgo incluido' : v.riesgos.length + ' riesgos incluidos', riesgos: v.riesgos.map(id => this.rById(id).label),
           hasNote: !!(v.estado === 'Cancelada' && v.motivoCancel) || v.mod === 'No requiere inspección', note: v.estado === 'Cancelada' ? 'Cancelada · ' + (v.motivoCancel || '') : 'Motivo: ' + (v.motivo || '') + (v.nrObs ? ' · ' + v.nrObs : '') + (v.by ? ' · ' + v.by + ' · ' + v.at : ''),
@@ -702,7 +763,8 @@ class Component extends DCLogic {
           onReenviar: () => this.trasEnvio(onA('reenviar', { id: v.id }), (x) => showWa(this.conCx(v, x), 'Enlace de ' + v.id + ' reenviado')),
           onNuevo: () => { const sn = Eo ? Eo.estado(tkE) : null; if (sn && sn.terminal) this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }); else this.setState({ regen: { id: v.id, motivo: '', touched: false } }); } };
       }),
-      hasForm: !!p, drawer,
+      hasForm: !!p && !fasesOn, drawer, fasesOn, fasesKey: 'fases-' + (P.formKey || '') + '-' + (p ? p.mode + (p.visitId || '') : ''), fasesCtx: fasesOn ? this.fasesCtx(p, { errs, submit, intVals, pend, nextId, single, veh, vis, actual, src }) : null,
+      ctaShow: !ro && single && !this.activeVisit() && !p && !!pend.length, ctaTxt: 'Agenda la visita por fases: contacto, lugar e inspector y horario.', ctaOpen: () => openNew(pend.map(r => r.id)),
       fc: inline ? { role: 'region', modal: undefined, pos: 'relative', z: 'auto', h: 'auto', w: '100%', border: '1px solid var(--border-subtle)', radius: 'var(--radius-md)', shadow: 'none', scroll: 'visible' } : { role: 'dialog', modal: 'true', pos: 'fixed', z: '1501', h: '100vh', w: '640px', border: 'none', radius: '0', shadow: 'var(--shadow-modal)', scroll: 'auto' },
       fKicker: p ? (p.mode === 'nueva' ? 'Caso ' + P.caseId : p.mode === 'dividir' ? 'Dividir visita ' + p.visitId : 'Visita ' + p.visitId) : '',
       fTitle: p ? (p.mode === 'nueva' ? (single ? 'Coordinar inspección' : 'Nueva visita · ' + nextId) : p.mode === 'reagendar' ? 'Reagendar visita' : p.mode === 'inspector' ? 'Cambiar inspector' : p.mode === 'enlace' ? 'Generar nuevo enlace' : 'Nueva visita para un especialista · ' + nextId) : '',

@@ -22,7 +22,7 @@
   const MOT = 'El cliente pidió a Paola Vinueza, que ya inspeccionó el local el año pasado.';
   // escena → [caso, configuración del lugar (la lee Coordinación en base.escena.lugar)]
   const ESC = {
-    lugarbuscar: ['50012', () => ({ texto: 'Av. Amazonas y Naciones Unidas', abrir: true })],
+    lugarbuscar: ['50012', () => ({ texto: 'Av. Amazonas y Naciones Unidas', abrir: true, fase: 'horario' })],
     lugarmapa: ['50012', () => Object.assign({ texto: 'calle 123', abrir: true }, qp('lpunto') === '1' ? { punto: [-0.2950, -78.5500] } : {})],
     lugarlejos: ['50012', () => ({ texto: 'Mitad del Mundo', abrir: true, confirmar: qp('lconf') === '1' })],
     lugarfuera: ['50012', () => Object.assign({ texto: 'Av. Amazonas y Naciones Unidas', inspector: 'Paola Vinueza' }, qp('lguardar') === '1' ? { motivo: MOT, enviar: true } : {})],

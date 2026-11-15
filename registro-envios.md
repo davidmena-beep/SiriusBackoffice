@@ -4,6 +4,144 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c2
+
+Publiqué la etapa G-2c2 (Versión 218 con los archivos; la Versión 219 solo completa en este registro la hora de fin). Agendar, reagendar y cambiar inspector ahora se hacen en «Coordinar visita», una pantalla completa por fases según la modalidad. Las modalidades se evalúan con las reglas parametrizadas y los vehículos elegidos. Incluye la fase Inspector y horario con fecha y hora validadas y la oferta a inspectores (DEC-237).
+
+**Qué cambió**
+- **«Coordinar visita» (nuevo `sirius-coordinar.js`, `SiriusCoordinar`):** se abre al agendar, reagendar o cambiar inspector, y desde «Coordinar visita» en la tarjeta «Coordinar inspección» de un caso de un solo riesgo.
+  - **Cabecera:** caso, asegurado, sucursal y SLA.
+  - **Una línea compacta:** modalidad y vehículos.
+  - **Barra de fases:** número o ✓ y el resumen de lo decidido. Se visitan con un clic o con Alt+← / Alt+→. El lugar que viene de la solicitud dice «de la solicitud, por revisar» hasta pasar por Lugar.
+  - **Fases por modalidad:**
+    - Presencial: Contacto · Lugar · Inspector y horario.
+    - Virtual guiada: Contacto · Inspector y horario.
+    - Autoinspección: Contacto · Enlace de autoinspección.
+    - Documental y No requiere inspección: Contacto más su fase.
+  - **Pie con orden fijo:** Salir · ← fase anterior · secundaria · principal (azul, la última), y «N de M». Ctrl+Enter ejecuta la principal. Las principales son:
+    - «Siguiente: <fase> →».
+    - «Agendar visita», con la secundaria «Agendar y siguiente».
+    - Con una oferta: «Listo · siguiente caso», con la secundaria «Anular oferta».
+    - «Enviar enlace de autoinspección».
+  - **Siguiente caso:** abre el siguiente caso del usuario en coordinación (Registrado, En coordinación, Reaperturado o Enlace caducado), ordenado por SLA.
+- **Modalidades según las reglas (`SiriusModalidades.ofrecerPara`):**
+  - Se evalúan con los vehículos elegidos. Una modalidad bloqueada muestra 🔒, no se puede elegir y su título da el motivo, por ejemplo «PRB1213: suma asegurada USD 33.200 supera USD 30.000 (regla «Autoinspección hasta USD 30.000» de la plantilla Vehículos livianos)».
+  - Si la modalidad elegida queda bloqueada al cambiar los vehículos, vuelve a Presencial con el aviso «La modalidad Autoinspección quedó bloqueada (…): se cambió a Presencial.».
+- **Contacto:** los intentos de contacto de siempre (Registrar intento, Enviar enlace de autoagendamiento —no con Autoinspección—, Cancelar por coordinación) y los datos de contacto.
+- **Lugar:**
+  - A la izquierda, el formulario; a la derecha, el mapa grande.
+  - Una sola búsqueda llena «Dirección para el inspector», que se puede editar.
+  - Atajos «Dirección de la solicitud» e «Igual que la V1».
+  - Zona con su estado y «Cambiar zona».
+  - Referencia, y ciudad y contacto en sitio plegados.
+  - Se conserva todo lo de G-2c: zona calculada como copia, «Zona por confirmar», lejos del centro y Ramos Generales.
+- **Inspector y horario:**
+  - Días rápidos (hoy y los 5 siguientes) y duración calculada con el inicio y el fin.
+  - Fecha, Hora de inicio y Hora de fin con `SiriusFecha`: máscara, calendario, selector de hora, Hoy/Ahora, fecha de hoy a +60 días y fin propuesto con la duración por defecto (45 min).
+  - Los campos se aplican al salir del grupo, con Enter o al elegir en el calendario o el selector; campos y tablero quedan sincronizados.
+  - **Validaciones:**
+    - Fecha u hora pasadas: «La hora ya pasó: hoy son las HH:MM.».
+    - Fin anterior al inicio y menos de 15 minutos.
+    - Jornada (días y horas) y choques: «Choca con su visita de 10:30 a 11:15 (caso 20186).». El choque ahora bloquea.
+  - «Primer libre» y «Ofrecer al cliente» (3 horarios libres y distintos de quienes cubren el lugar).
+  - **Tablero por cobertura:** ocupados con su caso, fuera de jornada rayado, pasado sombreado con la línea de la hora actual, fantasma (rojo con el motivo cuando no se puede), bloque elegido, «Libre HH:MM →» y «Fuera de cobertura» plegado, con el motivo en el pie.
+- **Oferta a inspectores:**
+  - Panel con los inspectores (por defecto, los que cubren el lugar), rango de fechas, vigencia (1, 2, 4 u 8 h) y nota.
+  - Al enviar, el pie dice «Oferta enviada a N inspectores · del … al …» con «Anular oferta».
+  - La visita queda «Oferta enviada» en la tarjeta, también con «Anular oferta».
+- **Enlace de autoinspección:**
+  - Canal (WhatsApp, SMS o correo), vigencia 24/48/72 h, vehículos y vista previa.
+  - Usa la acción de enlaces que ya existía. Con Autoinspección no se ofrece el autoagendamiento.
+- **Reagendar y Cambiar inspector:** abren el mismo flujo en Inspector y horario. En Cambiar inspector, la fecha y la hora quedan fijas.
+- **Con la conexión:**
+  - `agendarVisita`, como en G-2c.
+  - Nuevo `ofertarVisita { caso, visita, modalidad, inspectores [nombres], desde (AAAA-MM-DD), hasta, minutos, vigenciaHoras, nota, lugar } → { ok, mensaje, ofertas, vence }`.
+  - Nuevo `anularOferta { caso, visita } → { ok, mensaje }`.
+  - Con `{ ok: false }` todo vuelve atrás y se muestra el mensaje.
+  - `visitasBase[].oferta` se lee como «Oferta enviada».
+  - `enviarEnlace` lleva el canal elegido.
+  - Las reglas se leen de la configuración publicada.
+
+**Verificado**
+- **Sin scroll de la página y sin errores, a 1280 × 720 y 1920 × 1080:**
+  - Las 7 escenas nuevas y sus variantes, en cada fase. La pantalla mide lo mismo que la ventana y el pie queda al borde inferior.
+  - Las escenas de Coordinación que ya existían: coord, coordchoque, coordauto, coordvis, coordrg, coordcxmoto, envioenlace, enlaceagenda, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos y cxnumerocruce.
+  - Las de G-2c: lugarbuscar, lugarmapa, lugarlejos, lugarfuera, lugarrg y cxlugar.
+- **Teclado:**
+  - Ctrl+Enter pasa de Contacto a Lugar y agenda en Inspector y horario.
+  - Alt+← y Alt+→ cambian de fase.
+  - Escribir una fecha y pasar con Tab dentro del grupo no aplica; Enter aplica.
+  - De 09:00 a 10:00 da 60 min, y Ctrl+Enter crea la V2 con la vista previa de WhatsApp.
+- **Calendario y selector:** el día 20 del calendario se aplica; el selector en 11:30 deja el fin en 12:15; un clic en el tablero a las 15:00 elige ese horario.
+  - «Primer libre» con Luis Andrade da 09:00.
+  - Un fin anterior al inicio da su error.
+- **coordfechahora** (reloj de demostración, 16/10/2026 13:40):
+  - Hoy 09:00 → «La hora ya pasó: hoy son las 13:40.».
+  - `?fh=manana` → mañana de 14:00 a 15:00 = 60 min con Diana Cárdenas.
+  - `?fh=choque` → «Choca con su visita de 10:00 a 10:45 (caso 20200).».
+- **coordmodalidades:** con PRB1213 aparece el aviso y la modalidad pasa a Presencial. Qué reglas bloquean cada modalidad:
+
+  | Modalidad | Regla | Con PRB1213 |
+  |---|---|---|
+  | Presencial | ninguna (siempre disponible) | disponible |
+  | Virtual guiada | solo activa o no en la plantilla | disponible |
+  | Autoinspección | criterios de la plantilla: suma asegurada ≤ USD 30.000 y año ≥ 2015 | 🔒 «PRB1213: suma asegurada USD 33.200 supera USD 30.000 (regla «Autoinspección hasta USD 30.000» de la plantilla Vehículos livianos)» |
+  | Documental | apagada en la plantilla | 🔒 «Documental no activa en la plantilla Vehículos livianos» |
+  | No requiere inspección | ninguna | disponible |
+
+  Con Virtual guiada no aparece la fase Lugar.
+- **Grupos del tablero** (coordfases `?ffase=horario`): «Cubren la zona Sur» (Cristian Vaca); «Cubren toda la ciudad o la sucursal» (Luis Andrade, Diana Cárdenas, Marco Tapia); «Fuera de cobertura (2)».
+  - «Ofrecer al cliente» propone lun 19/10 08:00 con Cristian, 09:30 con Cristian y 11:00 con Luis.
+  - En lugarfuera, el motivo se pide en el pie y el grupo «Fuera de cobertura» queda abierto.
+- **coordoferta:** la oferta se envía a 3 inspectores (vence 16/10/26 15:40) y luego se anula.
+- **coordautoinsp:** el enlace se envía una sola vez, con el canal y el texto de la vista previa correctos.
+- **cxcoordfases:**
+  - `agendarVisita` lleva `riesgos ['50012-V1', '50012-V2']`, `inicio '2026-10-17T14:00'`, `minutos 60`, `lugar` (zona z1701-3 Sur) y `fueraCobertura null`.
+  - `ofertarVisita` lleva `inspectores ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade']`, `desde '2026-10-19'`, `hasta '2026-10-21'`, `vigenciaHoras 2` y `lugar`; después, `anularOferta { caso, visita: 2 }`.
+  - Con `?cxok=0`, todo vuelve atrás y se ve «La base rechazó la acción (prueba)».
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** probé con la conexión simulada.
+- **Mapa base:** el artifact bloquea las teselas, así que lo probé sobre el fondo neutro.
+- **Aceptación de la oferta en la app del inspector:** se construye en G-3.
+- **Lector de pantalla:** revisé roles y nombres en el código, sin un lector real.
+
+**Diferencias**
+- **De dónde salen las reglas de cada modalidad:** de la plantilla vigente del ramo en la configuración publicada.
+  - El interruptor de cada modalidad (`modalidades`, DEC-204) decide si está activa.
+  - La autoinspección tiene además sus criterios por vehículo (`criteriosA`: suma asegurada máxima, año mínimo, carrocerías y sucursales, DEC-206).
+  - En las escenas, la plantilla es «Vehículos livianos» simulada (Documental apagada; autoinspección hasta USD 30.000 y desde 2015).
+  - **Falta:** Virtual guiada y Documental no tienen reglas por vehículo parametrizables. La maqueta usa Virtual hasta USD 50.000 y Documental solo para 0 km; habría que agregarlas a la plantilla.
+- **coordmodalidades:** la escena de P-6e-1 se reemplazó por la de esta etapa.
+- **El choque bloquea:** antes era una advertencia.
+- **Un solo riesgo:** el formulario en línea se cambió por la tarjeta «Coordinar inspección» con «Coordinar visita».
+- **Formulario anterior:** se mantiene en «Dividir visita» y «Generar nuevo enlace».
+- **Documental y No requiere inspección:** tienen su propia fase (no están en la maqueta).
+- **Vigencia del enlace de autoinspección:** 24/48/72 h, en lugar de los «10 días» configurados. Por defecto, 48 h.
+- **Lugar por defecto:** la dirección de la solicitud, que se busca al abrir.
+- **Reloj:** las escenas simuladas usan el de demostración (16/10/2026 13:40); con la conexión se usa la hora real del Ecuador (DEC-230). El botón «Hoy» de `SiriusFecha` sigue con `SIRIUS_EJEMPLO.ahora` (18/10/2026 20:30), una diferencia que ya existía.
+- **Intersección:** ya no se muestra, como en G-2c.
+- **Cambiar inspector:** la fecha y la hora quedan fijas.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| coordfases | Presencial: Contacto → Lugar → Inspector y horario → Agendar (`?ffase=lugar|horario`) |
+| coordmodalidades | PRB1213 bloquea Autoinspección con su motivo y la elegida vuelve a Presencial con el aviso; Documental bloqueada (`?fveh=3`) |
+| coordfechahora | Hoy 09:00 da el error; mañana de 14:00 a 15:00 = 60 min; calendario y selector (`?fh=manana`, `?fh=choque`) |
+| coordoferta | Oferta a 3 inspectores y anular (`?fof=enviada`) |
+| coordautoinsp | Fases Contacto · Enlace; enviar el enlace (`?fenviar=1`) |
+| coordvirtual | Virtual guiada, sin la fase Lugar |
+| cxcoordfases | Datos que reciben `agendarVisita` y `ofertarVisita` (`?fof=1`); `?cxok=0`: `{ ok: false }` |
+
+También abrí coord, coordchoque, coordauto, coordvis, coordrg, coordcxmoto, envioenlace, enlaceagenda, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos, cxnumerocruce, lugarbuscar, lugarmapa, lugarlejos, lugarfuera, lugarrg y cxlugar.
+
+Tiempo de la etapa: inicio 14/11/2026 18:42 · fin 14/11/2026 19:21 · 39 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c
 
 Publiqué la etapa G-2c (Versión 216 con los archivos; la Versión 217 solo completa en este registro la hora de fin, que se toma al terminar de publicar). Al agendar o reagendar una visita presencial, Coordinación ahora tiene «Lugar de la inspección»: la dirección o el punto en el mapa, la zona calculada o confirmada, y las sugerencias de inspectores agrupadas por cobertura. También se puede asignar a alguien fuera de cobertura, con un motivo obligatorio que queda en el historial (DEC-222, DEC-224 y DEC-225).

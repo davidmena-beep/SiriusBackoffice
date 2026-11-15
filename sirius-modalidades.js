@@ -86,13 +86,26 @@
     M.forEach((k) => { const on = !!cfg.modalidades[k]; let motivo = on ? '' : NOM[k] + ' no activa en la plantilla' + (pi.fuente === 'caso' ? ' ' + nombre : ''); if (on && k === 'A') motivo = motivoA(cfg.criteriosA, datosCaso(c)); items[NOM[k]] = { ok: !motivo, motivo }; });
     items['No requiere inspección'] = { ok: true, motivo: '' };
     return { plantilla: nombre, fuente: pi.fuente, version: cfg.n, origen: cfg.origen, criterios: !!(cfg.criteriosA && cfg.criteriosA.activo), items }; }
+  // Etapa G-2c2 · DEC-237: las reglas se evalúan con los riesgos elegidos para la visita (ids de c.riesgos). Hoy solo la autoinspección tiene reglas por vehículo
+  // (criteriosA de la plantilla vigente: suma asegurada máxima, año mínimo, carrocerías y sucursales); las demás modalidades solo se activan o no en la plantilla.
+  function motivoAVeh(cr, d, plantilla) { if (!cr || !cr.activo) return ''; const L = d.vehiculos || [], de = plantilla ? ' de la plantilla ' + plantilla : '';
+    for (const v of L) { const et = v.etiqueta || 'El vehículo';
+      if (cr.sumaMax != null && cr.sumaMax !== '' && v.suma != null && v.suma > Number(cr.sumaMax)) return et + ': suma asegurada USD ' + num(v.suma) + ' supera USD ' + num(cr.sumaMax) + ' (regla «Autoinspección hasta USD ' + num(cr.sumaMax) + '»' + de + ')';
+      if (cr.anioMin != null && cr.anioMin !== '' && v.anio != null && v.anio < Number(cr.anioMin)) return et + ': año ' + v.anio + ', anterior a ' + cr.anioMin + ' (regla «Autoinspección desde el año ' + cr.anioMin + '»' + de + ')';
+      if ((cr.carrocerias || []).length && v.carroceria && !cr.carrocerias.some((x) => carrOk(x, v.carroceria, v.deCaso))) return et + ': la carrocería ' + (v.deCaso ? carrInfo(v.carroceria).nombre : v.carroceria) + ' no está en la regla «Carrocerías de la autoinspección»' + de; }
+    if ((cr.sucursales || []).length && d.sucursal && !cr.sucursales.some((x) => norm(x) === norm(d.sucursal))) return 'La sucursal ' + d.sucursal + ' no está en la regla «Sucursales de la autoinspección»' + de;
+    return ''; }
+  function ofrecerPara(c, ids) { const base = ofrecer(c); if (!c || !Array.isArray(ids) || !ids.length) return base; const pi = plantillaInfo(c), cfg = vigente(pi.nombre);
+    if (!cfg.modalidades || !cfg.modalidades.A) return base; const d = datosCaso(c), RS = Array.isArray(c.riesgos) && c.riesgos.length ? c.riesgos : null; let vs = d.vehiculos;
+    if (RS && vs.length >= RS.length) { const idx = ids.map((id) => RS.findIndex((r) => String(r.id) === String(id))).filter((i) => i >= 0); if (idx.length) vs = idx.map((i) => vs[i]).filter(Boolean); }
+    const m = motivoAVeh(cfg.criteriosA, { vehiculos: vs, sucursal: d.sucursal }, pi.nombre); base.items['Autoinspección'] = { ok: !m, motivo: m }; base.porRiesgos = ids.slice(); return base; }
   // Catálogo publicado (el que usan las plantillas y los portales).
   function catalogo() { const C = W.SIRIUS_DOCUMENTOS_CLIENTE || { version: 0, documentos: [] }; return C; }
   // Pasos de la plantilla que pueden recibir las fotos de un documento (grupos Documentos y Extras de las plantillas por pasos).
   function pasosDoc() { const E = W.SIRIUS_EJEMPLO || {}, T = E.plantillas || {}, out = [], ya = {};
     Object.keys(T).forEach((k) => (T[k].pasos || []).forEach((s) => { if (ya[s.id] || !/^(Documentos|Extras)$/.test(s.group)) return; ya[s.id] = 1; out.push({ id: s.id, label: k.replace(/\s+v\d+$/, '') + ' · ' + s.name }); }));
     return out; }
-  W.SiriusModalidades = { M, NOM, DE, USOS, inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, plantillaInfo, datosCaso, motivoA, ofrecer, catalogo, pasosDoc, suscribir, avisar, num };
+  W.SiriusModalidades = { M, NOM, DE, USOS, inicial, cfgV, completar, vigente, publicarLocal, plantillaDeCaso, plantillaInfo, datosCaso, motivoA, ofrecer, ofrecerPara, motivoAVeh, catalogo, pasosDoc, suscribir, avisar, num }; // G-2c2: ofrecerPara y motivoAVeh
 
   // ---------- Piezas ----------
   const T = { strong: 'var(--text-strong)', body: 'var(--text-body)', muted: 'var(--text-muted)', borde: 'var(--border-subtle)', link: 'var(--text-link, #0B5CAD)', brand: 'var(--color-brand)' };
