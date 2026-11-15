@@ -11,7 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 15/11/2026 · G-2c8 · DEC-238: casos[].riesgos[].estado (coordinación) y .visita { n, estado, inicio, inspector }; el estado y subestado del caso los calcula la base (SQL 41).
-// 15/11/2026 · Corrección: el responsable del caso es siempre texto (inspector de la visita abierta más reciente si la base no trae responsable).
+// 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
 // 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
@@ -154,7 +154,7 @@
   }
   function aCaso(k, evs) {
     var id = String(k.numero), a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} },
-        placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || inspectorVigente(k) || '';   // corrección 15/11: el inspector de la visita abierta más reciente (antes: la primera visita, en cualquier orden)
+        placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || '';   // 15/11: solo el responsable de la base; si no hay, el prototipo aplica la regla del flujo según el estado (en coordinación, el coordinador; agendado, el inspector)
     var x = base ? JSON.parse(JSON.stringify(base)) : {};
     x.id = id; x.ramo = k.ramo; x.estado = k.estado; x.asegurado = a.nombre || x.asegurado || ''; x.ident = a.identificacion || x.ident || '';
     x.orden = d.orden || x.orden || ''; x.fecha = (k.creado ? fechaIso(k.creado) : '') || x.fecha; x.registrado = isoLocal(k.creado); x.responsable = resp || x.responsable || '';   // C2-21: la fecha del caso sale de la base (corregido 12/11: este comentario tapaba la asignación del responsable)

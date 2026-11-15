@@ -4,6 +4,83 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2e
+
+Con la conexión, la Agenda de inspecciones ya usa solo datos de la base: los inspectores activos con su jornada y su cobertura, las visitas de cada caso, las ofertas y las visitas por agendar en «Sin asignar», y la hora real de Ecuador. Mover una visita es reagendarla en la base con `agendarVisita`. Ya no sale la banda «Datos de demostración». Sin la conexión, la Agenda queda igual que antes. Quedó publicada en la **Versión 233** (la Versión 234 solo completa en este registro la hora de fin).
+
+**Qué cambió**
+- **Datos de la base (`SIRIUS Back-office.dc.html`, `agendaCx`):**
+  - **Inspectores:** los activos de `SIRIUS_CONEXION.inspectores`, con su cobertura (`SiriusCobertura`) y su jornada. La jornada sale de `SIRIUS_AGENDA.disponibilidad` por nombre o, si no tiene, de `SIRIUS_AGENDA.jornadaDefecto`; la capacidad del día es la de su disponibilidad o 6.
+  - **Visitas:** las de `casos[].visitasBase` con fecha y hora (Agendada, En camino, En curso y las realizadas de hoy), con el caso, los riesgos, el lugar «Ciudad · Zona», la modalidad, el estado y la etiqueta «Fuera de cobertura».
+  - **Fila «Sin asignar»:** las visitas con «Oferta enviada» (en cada día de su rango, con el vencimiento y a cuántos inspectores se envió) y las «Por agendar».
+- **Reloj real de Ecuador (DEC-230):** «Hora de Ecuador: dd/mm/aaaa · hh:mm», la columna «Hoy · hh:mm», la marca «Ahora · hh:mm» entre las visitas de hoy (Semana), la línea roja de la hora actual (Día) y lo ya pasado sombreado. «Hoy» va al día real.
+- **Filtro «Ciudad y zona»:** se suma a los de hoy. Lista las ciudades (`SIRIUS_GEOGRAFIA`) con sus zonas (`SIRIUS_ZONAS`) y las de las visitas y las coberturas; filtra las visitas por su lugar y los inspectores por su cobertura. Con un inspector elegido, también se ven las ofertas que se le enviaron.
+- **Mover = reagendar:**
+  - Se arrastra la visita o se usa «Mover» en su resumen, con un motivo de al menos 10 caracteres.
+  - Se valida como en Coordinar visita (`SiriusAgenda.validarCx`): jornada y días del inspector, choques y hora pasada bloquean. Fuera de cobertura no bloquea: lo avisa y el botón dice «Mover fuera de cobertura».
+  - Se envía `agendarVisita { caso, visita, accion: 'reagendar', inicio, minutos, inspector, riesgos, lugar, motivo, fueraCobertura }`.
+  - Mientras la base responde, la visita se ve en su nuevo lugar con «Guardando…». Con `{ ok: false }` vuelve a su lugar y sale «La base no guardó el cambio» con el mensaje de la base.
+- **Resumen de la visita:** muestra la visita (Vn), la ciudad y zona, la dirección y el motivo de «Fuera de cobertura». Su botón «Abrir Coordinar visita» abre el caso en «Reagendar visita Vn», fase Inspector y horario (preset `agenda:Vn` en `Coordinacion.dc.html`).
+- **Lo que aún no está en la base** sigue con datos de ejemplo y lleva «(demostración)»: «Pedidos de los inspectores (demostración)», «Duración de las visitas (demostración)», «Bloqueo (demostración)» en la leyenda y los cupos apartados («Cupo apartado (demostración)»).
+- **Archivos nuevos y escenas:**
+  - **`datos-cx-agenda.js` (nuevo):** la base simulada y las escenas `cxagenda`, `cxagendamover` y `cxagendafiltros`.
+  - **Registro:** `datos-escenas.js` (648) y `KNOWN_ESC` (605).
+  - **`sirius-agenda.js`:** `validarCx` y `CHECKS_CX`.
+
+**Verificado**
+- **cxagenda (1280 × 720 y 1920 × 1080):**
+  - Mauricio Endara «Agencia · Eurosurvey · 08:30–17:30» (jornada por defecto) tiene 2 visitas: 60101 «Quito · Norte» y 60102 «Quito · Sur» con «Fuera de cobertura».
+  - Aparecen Diana Cárdenas, Cristian Vaca, Luis Andrade, Marco Tapia y Paola Vinueza con sus visitas de la base. La visita cancelada no aparece.
+  - «Sin asignar» muestra la oferta del caso 60108 («Oferta enviada · V1 · vence …», del día base a dos días hábiles después, a 3 inspectores) y la visita por agendar del caso 60109.
+  - No sale la banda de demostración.
+- **Hoy y la línea de la hora actual:** con el reloj del navegador en el martes 17/11/2026 a las 10:20 de Ecuador, la columna dice «Hoy · 10:20», «Ahora · 10:20» queda entre la visita de las 09:00 y la de las 11:00, la vista Día dibuja la línea y el lunes dice «Ya pasó». Con la hora real (domingo 15/11, 00:5x) la escena se abre en el lunes 16/11.
+- **cxagendamover:**
+  - **Por defecto:** «Mover la visita» con las 4 comprobaciones en «cumple» y el motivo.
+  - **`?fmov=choque`:** «Choca con la visita V1 del caso 60102 (11:00–11:45)».
+  - **`?fmov=jornada`:** «De 17:30 a 18:15 queda fuera de la jornada de Mauricio Endara (lun a sáb, 08:30–17:30)».
+  - **`?fmov=fuera`:** «Cristian Vaca no cubre Quito · Norte (su cobertura: Quito: Sur)» con «Mover fuera de cobertura».
+  - **`?fmov=enviar`:** la visita queda a las 15:00 en la base.
+  - **`?fmov=base`:** «La base no guardó el cambio» con el mensaje de la base, y la visita sigue a las 09:00.
+- **cxagendafiltros:** «Ciudad y zona» = Quito · Norte e inspector Mauricio Endara: solo su visita del norte (la del sur queda fuera).
+- **Por la pantalla:**
+  - Arrastrar una visita de Mauricio a otro día abre «Mover la visita» con las comprobaciones.
+  - Resumen → «Mover» → 16:00 → «Revisar y mover» abre la misma ventana.
+  - «Abrir Coordinar visita» abre «Reagendar visita V1» del caso 60102 en la fase Inspector y horario.
+  - La vista Lista incluye la realizada de hoy, las agendadas, la oferta y la visita por agendar.
+- **Copia aparte con una conexión temporal** (solo en la copia; `sirius-conexion.js` con `activo: true` y un `accion()` que registra): al mover la visita 70001 V1 a las 14:00 desde el resumen, la conexión recibió `agendarVisita { caso: '70001', visita: 1, accion: 'reagendar', inicio: '2026-11-16T14:00:00-05:00', minutos: 45, inspector: 'Mauricio Endara', riesgos: ['70001-V1'], lugar: { provincia, ciudad: '1701', direccion, referencia, punto, zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona, lejos, origen }, motivo, fueraCobertura: null }`. No salió la banda y el reloj dijo «Hora de Ecuador».
+- **Sin la conexión:** agendasemana, agendadia, agendamover y agendaok a 1280 × 720 y 1920 × 1080 dan capturas idénticas píxel a píxel a las de la versión anterior.
+- **Otras escenas:** coordfases, cxcoordjornada, cxestadoparcial, coordvehiculoduplicado (`?freag=1`) y agendajornada siguen sin errores.
+- En todas las escenas probadas no hubo errores de consola, la página no se desplazó lateralmente y scrollY quedó en 0.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- Con la base real (solo la conexión simulada y la copia con una conexión temporal que no guarda nada).
+- Visitas «En camino» o «En curso» y enlaces de autoinspección vigentes que vengan de la base: no hay una escena con esos datos.
+- La Agenda conectada con el rol Inspector («Mi agenda»).
+- Arrastrar con el teclado o en pantallas táctiles (el arrastre es con el ratón; con el teclado se usa «Mover»).
+
+**Diferencias**
+- **Día de apertura:** la escena se abre en el «día base»: hoy si es hábil y todavía no son las 13:00; si no, el siguiente día hábil. Fuera de ese horario, «Hoy» y la línea quedan fuera de la semana que se ve; se llega con «Hoy». La Agenda conectada se abre, como antes, en hoy o en el siguiente día hábil.
+- **Motivo y cobertura:** fuera de cobertura usa el mismo motivo del reagendamiento y se envía como `fueraCobertura: { motivo }` (en los demás casos, `null`), igual que en Coordinar visita.
+- **Lo que no se valida al mover:** con la conexión no se validan la capacidad del día, la modalidad que hace el inspector ni los bloqueos (que son de demostración). Coordinar visita tampoco los valida.
+- **Visitas que no se mueven:** las «En camino», «En curso», realizadas, ofertas y por agendar no se mueven desde la Agenda («Mover» deshabilitado con su motivo). En una oferta o una visita por agendar, «Abrir Coordinar visita» abre la pestaña Coordinación sin el panel.
+- **Tipo de inspector:** el tipo «Independiente» de la base se muestra como «Externo» (el filtro Tipo ya tenía Interno, Externo y Agencia).
+- **Mensaje de la base:** cuando la base rechaza, el aviso general del sistema muestra también su mensaje, además de la ventana.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxagenda` | Semana con los inspectores y las visitas de la base: Mauricio Endara con 2 visitas (una «Fuera de cobertura»), la oferta y la visita por agendar en «Sin asignar», «Hoy» y la línea de la hora actual |
+| `cxagendamover` | Mover la visita V1 de 60101 a las 15:00 con motivo; `?fmov=choque`, `jornada`, `fuera`, `enviar` y `base` (la base responde `{ ok: false }`) |
+| `cxagendafiltros` | «Ciudad y zona» = Quito · Norte e inspector Mauricio Endara |
+
+También abrí agendasemana, agendadia, agendamover y agendaok (sin la conexión) a los dos tamaños, y coordfases, cxcoordjornada, cxestadoparcial, coordvehiculoduplicado y agendajornada a 1280 × 720.
+
+Tiempo de la etapa: inicio 15/11/2026 00:33 · fin 15/11/2026 00:56 · 23 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c8
 
 Un caso con varios riesgos ya no pasa a «Agendado» cuando se agenda la primera visita: sigue «En coordinación · N de M agendados» hasta que todos los riesgos tengan cita, el responsable sigue siendo el coordinador y el SLA de coordinación del riesgo pendiente sigue corriendo (DEC-238). Cada riesgo muestra su propio estado en la bandeja y en la pestaña Coordinación. Quedó publicada en la **Versión 230** (las Versiones 231 y 232 solo completan en este registro las versiones y la hora de fin). Probé las 4 escenas nuevas y las de bandeja y Coordinación a 1280 × 720 y 1920 × 1080, sin errores de consola, sin desplazamiento de la página y sin desborde horizontal.

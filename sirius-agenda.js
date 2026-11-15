@@ -1,6 +1,7 @@
 // SIRIUS · Lógica de la Agenda de inspecciones (etapa 11 · DEC-135). Lee SIRIUS_AGENDA (disponibilidad, capacidad, bloqueos,
 // confirmación) y SIRIUS_FLUJO (feriados). Las visitas no viven aquí: las entrega el Back-office (visitas de cada caso y
 // SIRIUS_FLUJO.ingresos), sin duplicarlas. validar() revisa un reagendamiento: choque, jornada, bloqueo, zona, modalidad y capacidad.
+// Etapa G-2e: validarCx() revisa mover una visita de la base (Agenda conectada) con las reglas de Coordinar visita: jornada y días, choque, hora pasada y cobertura (con motivo).
 (function () {
   var A = {};
   var pad = function (n) { return String(n).padStart(2, '0'); };
@@ -58,5 +59,23 @@
     return { ok: !out.length, motivos: out, fin: A.hhmm(fin) };
   };
   A.CHECKS = [['choque', 'Sin choque de horario'], ['jornada', 'Dentro de la jornada'], ['bloqueo', 'Sin bloqueos'], ['zona', 'Cobertura del inspector'], ['modalidad', 'Modalidad que hace'], ['capacidad', 'Capacidad del día']];
+  // Etapa G-2e · Agenda conectada: mover una visita de la base = reagendar, con las reglas de Coordinar visita. ctx = { disp(n) → { dias (0 = domingo), jornada [ini, fin], cobertura… } | null,
+  // ahora 'AAAA-MM-DDTHH:MM' (reloj real de Ecuador), jornadaTxt(n) }. Bloquean: jornada y días del inspector, choque y hora pasada. Fuera de cobertura no bloquea: va en avisos y pide motivo.
+  A.CHECKS_CX = [['choque', 'Sin choque de horario'], ['jornada', 'Dentro de la jornada y los días del inspector'], ['pasada', 'No es una hora pasada'], ['zona', 'Cobertura del inspector']];
+  A.validarCx = function (v, dst, visitas, ctx) {
+    ctx = ctx || {}; var out = [], avisos = [], n = dst.inspector, d = n && ctx.disp ? ctx.disp(n) : null, ini = A.min(dst.hIni), fin = ini + A.dur(v), jt = ctx.jornadaTxt ? ctx.jornadaTxt(n) : '';
+    if (!n) return { ok: false, motivos: [{ tipo: 'inspector', texto: 'Elige un inspector: para dejar la visita sin inspector usa Coordinar visita.' }], avisos: [], fin: A.hhmm(fin) };
+    if (!d) return { ok: false, motivos: [{ tipo: 'inspector', texto: n + ' no está entre los inspectores activos de la base.' }], avisos: [], fin: A.hhmm(fin) };
+    var fer = A.feriado(dst.fecha);
+    if (fer) out.push({ tipo: 'jornada', texto: 'El ' + A.diaNombre(dst.fecha) + ' ' + A.corta(dst.fecha) + ' es feriado (' + fer + ').' });
+    else if (d.dias.indexOf(A.parse(dst.fecha).getDay()) < 0) out.push({ tipo: 'jornada', texto: n + ' no trabaja los ' + A.diaNombre(dst.fecha) + ' (' + jt + ').' });
+    else if (ini < A.min(d.jornada[0]) || fin > A.min(d.jornada[1])) out.push({ tipo: 'jornada', texto: 'De ' + A.hhmm(ini) + ' a ' + A.hhmm(fin) + ' queda fuera de la jornada de ' + n + ' (' + jt + ').' });
+    (visitas || []).filter(function (x) { return x.key !== v.key && x.inspector === n && x.fecha === dst.fecha && x.hIni && !/cancel/i.test(String(x.estado || '')) && x.mod !== 'Autoinspección'; }).forEach(function (x) { var a = A.min(x.hIni), b = a + A.dur(x); if (ini < b && fin > a) out.push({ tipo: 'choque', texto: 'Choca con la visita V' + (x.n || '') + ' del caso ' + x.caso + ' (' + A.hhmm(a) + '–' + A.hhmm(b) + ').' }); });
+    if (ctx.ahora && dst.fecha + 'T' + A.hhmm(ini) < String(ctx.ahora).slice(0, 16)) out.push({ tipo: 'pasada', texto: 'Las ' + A.hhmm(ini) + ' del ' + A.diaNombre(dst.fecha) + ' ' + A.corta(dst.fecha) + ' ya pasaron (ahora son las ' + String(ctx.ahora).slice(11, 16) + ' en Ecuador).' });
+    var COB = window.SiriusCobertura, lug = v.lugar && typeof v.lugar === 'object' ? v.lugar : null;
+    if (COB && lug && lug.ciudad) { var cb = COB.cubre(d, { sucursal: v.sucursal || '', ciudad: lug.ciudad, zonaId: lug.zona ? lug.zona.id : '' }); if (!cb.nivel) avisos.push({ tipo: 'zona', texto: n + ' no cubre ' + (v.lugarTxt || 'este lugar') + ' (su cobertura: ' + COB.corto(d) + '). Se puede mover con el motivo: la visita queda con la alerta «Fuera de cobertura».' }); }
+    if (v.fecha === dst.fecha && v.hIni === dst.hIni && v.inspector === n) out.push({ tipo: 'igual', texto: 'Es la misma fecha, hora e inspector: no hay nada que mover.' });
+    return { ok: !out.length, motivos: out, avisos: avisos, fuera: avisos.length > 0, fin: A.hhmm(fin) };
+  };
   window.SiriusAgenda = A;
 })();
