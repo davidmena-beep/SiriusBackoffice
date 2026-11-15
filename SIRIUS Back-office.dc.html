@@ -5243,7 +5243,8 @@ class Component extends DCLogic {
     const tab = tabList[this.state.tab] || tabList[0];
     const bState = this.props.bandejaState ?? 'Con datos';
     const visible = bState === 'Sin resultados' ? [] : base.filter(tab.test);
-    const uniq = (k) => Array.from(new Set(this.cases.map(c => c[k]))).sort((a, b) => a.localeCompare(b, 'es'));
+    const txtF = (v) => typeof v === 'string' ? v : v && typeof v === 'object' ? String(v.nombre || v.label || v.valor || '') : (v == null ? '' : String(v)); /* corrección 15/11: valores que no son texto no rompen la bandeja */ if (!this._avisoTxt) { this._avisoTxt = 1; const raros = this.cases.filter(c => c && c.sucursal != null && typeof c.sucursal !== 'string').map(c => c.id); if (raros.length) console.warn('[SIRIUS] Casos con sucursal que no es texto:', raros); }
+    const uniq = (k) => Array.from(new Set(this.cases.map(c => txtF(c[k])).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
     const isBandeja = this.state.mod === 'solicitudes' && this.state.child === 'bandeja';
     const isGarantias = this.state.mod === 'garantias';
     const isNueva = this.state.mod === 'solicitudes' && this.state.child === 'nueva';
@@ -5333,7 +5334,7 @@ class Component extends DCLogic {
         { key: 'caso', label: '# Caso', placeholder: 'Ej. 20137' },
         { key: 'orden', label: 'Orden de emisión', placeholder: 'Ej. OE-2026-08812' },
         { key: 'sucursal', label: 'Sucursal', type: 'select', options: uniq('sucursal') },
-        { key: 'responsable', label: 'Responsable', type: 'select', options: Array.from(new Set(this.cases.map(c => (this.caseById(c.id) || c).responsable).filter(x => x && x !== '—'))).sort((a, b) => a.localeCompare(b, 'es')) },
+        { key: 'responsable', label: 'Responsable', type: 'select', options: Array.from(new Set(this.cases.map(c => { const r = (this.caseById(c.id) || c).responsable; if (r && typeof r !== 'string' && !this._avisoResp) { this._avisoResp = 1; console.warn('[SIRIUS] Caso con responsable que no es texto:', c.id, r); } return txtF(r); }).filter(x => x && x !== '—'))).sort((a, b) => a.localeCompare(b, 'es')) },
         { key: 'asegurado', label: 'Asegurado', placeholder: 'Nombre o razón social' },
         { key: 'ident', label: 'Identificación', placeholder: 'Cédula, RUC o pasaporte' },
         { key: 'placa', label: 'Placa', placeholder: 'Ej. PBA4521' },
