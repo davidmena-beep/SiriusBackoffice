@@ -4,6 +4,129 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c3
+
+Publiqué la etapa G-2c3 (Versión 220 con los archivos; la Versión 221 solo completa en este registro la hora de fin). La fase Contacto de «Coordinar visita» quedó como en la maqueta G-1f (DEC-237). A la izquierda está «Llamada», con a quién se llama, el cronómetro, la nota y los 6 resultados de un clic; a la derecha, los intentos, el «Historial del caso» y el enlace de autoagendamiento. La cancelación de la solicitud se hace en el mismo lugar y deja el caso bloqueado con una banda roja.
+
+**Qué cambió**
+- **«Llamar a»:** una lista con tres opciones.
+  - **Contacto para la coordinación:** Nombre, Celular (WhatsApp) y Correo, con «Editar contacto». Usa las mismas reglas y se guarda con la visita, como antes, y el formulario incluye los campos de contacto parametrizables.
+  - **Contacto en sitio:** el de la fase Lugar. Ahora es propio: por defecto es el de la coordinación, se guarda en la visita como `sitio` y va a la base en `direccion.quien` y `direccion.cel`.
+  - **Otro número:** celular de 10 dígitos que empieza con 0, nombre y relación. No se guarda como contacto del caso; con un celular mal escrito aparece «El celular debe tener 10 dígitos y empezar con 0.» y «Llamar» queda deshabilitado.
+- **Llamada:**
+  - Debajo de la lista, el número grande y «Llamar» con la etiqueta «vía Genesis».
+  - Durante la llamada hay cronómetro, «Colgar» y el guion. El recuadro del contacto se oculta mientras dura, para que los resultados se vean sin desplazar a 1280 × 720.
+- **«Nota del intento» y «Registrar el resultado»:**
+  - 6 botones de un clic: Contestó, No contestó, Buzón de voz, Número equivocado, Pidió llamar luego y Prefiere agendar solo (teclas 1 a 6).
+  - El intento guarda la nota, a quién se llamó (nombre, relación y número) y la duración, y queda en los intentos y en el historial del caso.
+  - Un resultado distinto de «Contestó» cuelga la llamada. Sin contacto, el pie ofrece también «Siguiente caso».
+  - Se eliminó el formulario aparte «Registrar intento de contacto».
+- **«Cancelar la solicitud…»** (botón con borde rojo; reemplaza «Cancelar por coordinación»):
+  - Abre un recuadro con el aviso «Todo el caso queda Cancelado y se avisa a quien la solicitó.», el motivo y el detalle (10 caracteres o más).
+  - Al confirmar aparece la banda roja «Caso cancelado · motivo. Ya no se puede coordinar.». El resto de la pantalla queda bloqueado e inerte y el pie ofrece «Siguiente caso».
+  - Queda en los intentos y en el historial.
+  - Usa la regla que ya existía: el permiso de cancelar en Registrado, En coordinación, Reaperturado o Enlace caducado; el estado Cancelado; y el aviso al Ejecutivo comercial.
+- **Catálogo «Motivos de cancelación»:** nuevo en Catálogos (grupo Caso, usado en Coordinación), con los valores iniciales El cliente desiste de la póliza, La póliza no se emitirá, Vehículo vendido o dado de baja, Solicitud duplicada, Datos del cliente incorrectos y Otro. No existía un catálogo de motivos de cancelación.
+- **A la derecha:**
+  - «Intentos de contacto (N)», con fecha, resultado, duración, quién, a quién se llamó y la nota.
+  - El botón «Historial del caso».
+  - El recuadro «Enlace de autoagendamiento»: canal (WhatsApp, SMS o correo, «vía Genesis»), «Enviar a» (las mismas tres opciones, o el correo si el canal es Correo), estado del envío y «Enviar de nuevo». Se destaca en ámbar con N intentos sin respuesta (No contestó, Buzón de voz o Número equivocado) o con «Prefiere agendar solo».
+  - Con Autoinspección, en lugar del recuadro: «El enlace de autoinspección se envía en la fase siguiente. No aplica el autoagendamiento.».
+- **Configuración general › Agenda:** nuevo parámetro «Intentos sin respuesta para sugerir el enlace de autoagendamiento», de 1 a 10 y con valor inicial 3. Pide motivo, queda en el historial y, con la conexión, se publica como parte de `SIRIUS_AGENDA` (nuevo `sirius-intentos.js`).
+- **Campos reubicados:**
+  - «Observaciones para el inspector» pasa a la fase Lugar, debajo de la referencia.
+  - «Indicaciones para el contacto» pasa a la fase Enlace de autoinspección, con «Enviar a» igual al de Contacto.
+  - Ambos se ven en la tarjeta de la visita y viajan a la base.
+- **«Historial del caso»:**
+  - Hay un botón en la cabecera de Coordinar visita y otro en Contacto.
+  - Abren un cajón con la misma cronología de la pestaña Historial y los filtros Todo, Contacto, Visitas y Estado, con su cantidad.
+  - Se cierra con Esc o con ✕, y el foco vuelve al botón.
+- **Atajos:** solo en la fase Contacto y fuera de los campos. L llama o cuelga y 1 a 6 registran el resultado. Siguen Ctrl+Enter y Alt+← / Alt+→.
+- **Pestaña Coordinación:** los botones pasan a «Llamar y registrar intento» y «Cancelar la solicitud…» y abren Coordinar visita en Contacto. Si no hay riesgos por coordinar, se abre «Contacto del caso», solo con la fase Contacto. La lista de intentos de la pestaña muestra a quién y la duración.
+- **Con la conexión:**
+  - `intentoContacto { caso, medio: 'Llamada', resultado, obs (la nota), destino: { tipo ('coordinacion' | 'sitio' | 'otro'), nombre, numero, relacion }, duracionSeg } → { ok, mensaje }`.
+  - `enviarEnlace` con `{ canal, destinatario: { tipo, nombre, numero } }` o, por correo, `{ tipo, nombre, correo }`.
+  - Nueva `cancelarSolicitud { caso, motivo, detalle } → { ok, mensaje }`.
+  - Con `{ ok: false }` todo vuelve atrás: el intento, la nota, el enlace o la cancelación; y se muestra el mensaje.
+
+**Verificado**
+- **Sin desplazar la página y sin errores, a 1280 × 720 y 1920 × 1080:**
+  - Las 6 escenas nuevas y sus variantes. Coordinar visita mide lo mismo que la ventana y el pie queda en el borde inferior.
+  - coordfases (Contacto, `?ffase=lugar` y `?ffase=horario`), coordautoinsp y coordvirtual.
+  - También coord, coordchoque, coordauto, coordvis, coordrg, coordcxmoto, envioenlace, enlaceagenda, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos, cxnumerocruce, coordmodalidades, coordfechahora, coordoferta, cxcoordfases, lugarbuscar y lugarfuera.
+- **coordcontacto:**
+  - Llamada al contacto para la coordinación con cronómetro y guion.
+  - Intento «16/10/26 · 13:40 · Contestó · 1:36 · A Fernanda Prueba (contacto para la coordinación) · 0990000012» con la nota.
+  - Con `?fhist=1`, el cajón muestra Todo (7), Contacto (3), Visitas (1) y Estado (3).
+- **coordotronumero:**
+  - Jorge Pillajo (Chofer) · 0991234567: «No contestó · 0:23» cuelga, y el pie ofrece «Siguiente caso».
+  - Con `?fnum=9`, el error del celular aparece y «Llamar» queda deshabilitado.
+- **coordenlaceauto:** con 3 intentos sin respuesta el recuadro queda en ámbar («3 intentos sin respuesta: envía el enlace para que agende solo.»). Con `?fenviar=1` se envía por WhatsApp al chofer («Enviado por WhatsApp a Jorge Pillajo (Chofer) · 0991234567») y deja de estar destacado.
+- **coordcancelar:**
+  - Aparecen la banda roja «Caso cancelado · El cliente desiste de la póliza. Ya no se puede coordinar.» y el pie «Caso cancelado · … · Siguiente caso».
+  - El resto queda bloqueado (`inert`) y la cancelación aparece primera en los intentos.
+  - Con `?fconf=0` se ve el recuadro con el motivo y el detalle.
+- **coordeditarcontacto:** el celular pasa de 0990000012 a 0987654321 en el contacto, en «Llamar a», en «Enviar a» y en el número grande. Con `?fedit=1` se ve el formulario con «Listo».
+- **cxcoordcontacto:**
+  - `intentoContacto { caso: '50012', medio: 'Llamada', resultado: 'Contestó', obs: 'Confirma la visita el lunes en la mañana.', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 62 }`.
+  - Con `?fpaso=enlace`: `enviarEnlace { caso, canal: 'WhatsApp', destinatario: { tipo: 'otro', nombre: 'Jorge Pillajo', numero: '0991234567', relacion: 'Chofer' }, modalidad: 'Presencial', tipo: 'Autoagendamiento' }`.
+  - Con `?fpaso=cancelar`: `cancelarSolicitud { caso: '50012', motivo: 'El cliente desiste de la póliza', detalle: '…' }`.
+  - Con `?cxok=0`, en los tres casos se ve «La base rechazó la acción (prueba)»: el intento no queda y la nota vuelve, el enlace no queda enviado, y la cancelación no se aplica y el recuadro vuelve con lo escrito.
+- **Teclado** (coordfases):
+  - L inicia la llamada.
+  - Un 1 escrito dentro de la nota no registra nada.
+  - Fuera de los campos, 2 registra «No contestó» y cuelga; L y 1 registran «Contestó» sin colgar; L cuelga.
+  - Esc cierra el historial.
+  - Ctrl+Enter pasa a Lugar y, en Inspector y horario, agenda.
+- **Campos reubicados:**
+  - «Observaciones para el inspector» se ve en Lugar; en Virtual guiada, en Inspector y horario. Al agendar sale en `agendarVisita.observaciones` («Llamar 10 minutos antes de llegar; el guardia pide cédula.») y la tarjeta de la visita la muestra después de volver a leer la base.
+  - «Indicaciones para el contacto» se ve en Enlace de autoinspección. Sale en `enviarEnlace.indicaciones` con `destinatario { tipo: 'otro', nombre: 'Carla Ruiz', numero: '0987001122', relacion: 'Hija' }`, y la tarjeta la muestra.
+- **Pestaña Coordinación:** «Llamar y registrar intento» abre Coordinar visita en Contacto; «Cancelar la solicitud…» la abre con el recuadro de cancelación; en coordvis, sin riesgos por coordinar, se abre «Contacto del caso» (1 de 1, «Listo»).
+- **Configuración general › Agenda:** el valor pasó de 3 a 2 con motivo («Vigente: 2 intentos.», `SIRIUS_AGENDA.intentosSinRespuesta` = 2, en el historial).
+- **Catálogos:** «Motivos de cancelación» (6 registros vigentes).
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real y Genesis:** probé con la conexión simulada; no hay una llamada real (el cronómetro lo lleva la pantalla).
+- **Mapa base:** el artifact bloquea las teselas.
+- **Lector de pantalla:** revisé roles y nombres en el código, sin un lector real.
+- **Foco al cerrar el historial:** en la prueba el cajón se abrió por código, así que no comprobé que el foco vuelva al botón.
+
+**Diferencias**
+- **Medio del intento:** el formulario aparte pedía Medio (Llamada, WhatsApp o Correo) y Fecha y hora (se podía registrar un intento pasado). En Contacto el medio es siempre «Llamada» y la fecha es la de ahora.
+  - Propuesta: los mensajes por WhatsApp o SMS ya quedan como envíos de enlace (vía Genesis). Si hace falta registrar un contacto por WhatsApp o correo, que sea un séptimo botón «Otro medio…» debajo de los resultados, con medio y fecha.
+- **Resultados:** los anteriores «No contesta» y «Pidió llamar después» siguen leyéndose. «No contesta» cuenta como sin respuesta.
+- **Cancelación:** el motivo anterior «Cliente no contesta» exigía 3 intentos; ya no está en el catálogo inicial, así que esa condición no se aplica. El evento ahora dice «Solicitud cancelada · motivo · «detalle» · Caso Cancelado · Notificado a … (Ejecutivo comercial)». La fecha de la cancelación usa el reloj de Coordinación.
+- **Contacto en sitio:** antes era el mismo campo que el contacto para la coordinación; ahora es propio. `agendarVisita.direccion.quien` y `cel` son el contacto en sitio.
+- **Contratos:**
+  - `enviarEnlace.destinatario` pasa de texto a objeto, también en los reenvíos.
+  - `agendarVisita` suma `observaciones` y `enviarEnlace` de autoinspección suma `indicaciones`. Antes esos textos no llegaban a la base.
+- **Enlace de autoagendamiento:** desde Contacto va por un solo canal, sin la ventana de modalidad; usa la modalidad elegida (Presencial o Virtual guiada; con Documental o No requiere inspección no está disponible). El botón de la pestaña «Enviar enlace de autoagendamiento» sigue con su ventana. El estado del envío muestra lo enviado en la sesión; con un enlace anterior en los datos, su estado.
+- **Con la conexión:** si el celular sale del contacto del caso, el nombre del contacto para la coordinación sale también de allí (en 50012, «Fernanda Prueba» en lugar del asegurado).
+- **Barra de fases:** Contacto se marca ✓ solo con un resultado registrado en la sesión o con la solicitud cancelada; si no, dice «Último: …».
+- **Ubicación de algunos campos:**
+  - En Virtual guiada, que no tiene fase Lugar, las observaciones van en Inspector y horario.
+  - En Documental, en su fase.
+  - En Autoinspección, el contacto en sitio es por defecto el de la coordinación.
+- **Escenas con la conexión simulada:** usan el reloj de demostración (16/10/2026 13:40). El historial muestra «(registrado 20:30)» porque el Back-office sella con su reloj de ejemplo, una diferencia que ya existía.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| coordcontacto | Llamar al contacto para la coordinación, nota y «Contestó»; el intento con a quién y la duración (`?fhist=1`: «Historial del caso» abierto) |
+| coordotronumero | Otro número (Jorge Pillajo, chofer) y «No contestó» (`?fnum=9`: el error con 9 dígitos) |
+| coordenlaceauto | 3 intentos sin respuesta: el enlace destacado, con el chofer en «Enviar a» (`?fenviar=1`: enviado) |
+| coordcancelar | Cancelar la solicitud con motivo y detalle: banda roja y bloqueo (`?fconf=0`: el recuadro sin confirmar) |
+| coordeditarcontacto | «Editar contacto» cambia el celular a 0987654321 (`?fedit=1`: el formulario abierto) |
+| cxcoordcontacto | `intentoContacto` (`?fpaso=enlace`: `enviarEnlace` con `destinatario`; `?fpaso=cancelar`: `cancelarSolicitud`; `?cxok=0`: `{ ok: false }`) |
+
+También abrí coordfases (con `?ffase=lugar` y `?ffase=horario`), coordautoinsp, coordvirtual, coord, coordchoque, coordauto, coordvis, coordrg, coordcxmoto, envioenlace, enlaceagenda, cxvisitaenlace, cxvisitacancelar, cxcoordins, cxcoordpasado, cxcoordcambiar, cxcoordmismo, cxcoordjornada, cxvisitariesgos, cxnumerocruce, coordmodalidades, coordfechahora, coordoferta, cxcoordfases, lugarbuscar, lugarfuera, agendajornada y catalogos.
+
+Tiempo de la etapa: inicio 14/11/2026 19:37 · fin 14/11/2026 20:21 · 44 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c2
 
 Publiqué la etapa G-2c2 (Versión 218 con los archivos; la Versión 219 solo completa en este registro la hora de fin). Agendar, reagendar y cambiar inspector ahora se hacen en «Coordinar visita», una pantalla completa por fases según la modalidad. Las modalidades se evalúan con las reglas parametrizadas y los vehículos elegidos. Incluye la fase Inspector y horario con fecha y hora validadas y la oferta a inspectores (DEC-237).

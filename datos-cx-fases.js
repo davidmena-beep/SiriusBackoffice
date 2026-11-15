@@ -1,4 +1,7 @@
-// SIRIUS · Coordinar visita por fases con la conexión simulada (v1.0 · provisional · etapa G-2c2 · DEC-237 · 18/10/2026)
+// SIRIUS · Coordinar visita por fases con la conexión simulada (v1.1 · provisional · etapa G-2c3 · DEC-237 · 18/10/2026; v1.0 en G-2c2)
+// G-2c3 · fase Contacto: coordcontacto (?fhist=1 abre el historial), coordotronumero (?fnum=9: celular de 9 dígitos), coordenlaceauto (3 intentos sin respuesta; ?fenviar=1 envía),
+// coordcancelar (?fconf=0: sin confirmar), coordeditarcontacto (?fedit=1: con el formulario abierto) y cxcoordcontacto (?fpaso=enlace|cancelar; ?cxok=0).
+// La base simulada responde además intentoContacto { caso, medio, resultado, obs, destino { tipo, nombre, numero, relacion }, duracionSeg } y cancelarSolicitud { caso, motivo, detalle }.
 // Escenas: coordfases (?ffase=lugar|horario), coordmodalidades (?fveh=3), coordfechahora (?fh=manana|choque), coordoferta (?fof=enviada), coordautoinsp (?fenviar=1),
 // coordvirtual y cxcoordfases (?fof=1; ?cxok=0). Caso 50012 de Vehículos con 3 vehículos (PRB1212 USD 15.000, PR121A USD 2.400 y PRB1213 USD 33.200) y, salvo en
 // coordmodalidades, la visita V1 de PRB1213 ya agendada. Reloj de demostración de Coordinación (viernes 16/10/2026, 13:40): la conexión simulada no usa el reloj real.
@@ -26,6 +29,8 @@
   const VEH = [['PRB1212', 'Kia, Rio, 2022', 15000, 2022, 'sedan'], ['PR121A', 'Suzuki, GN125, 2023', 2400, 2023, 'moto'], ['PRB1213', 'Toyota, Hilux, 2021', 33200, 2021, 'camioneta']];
   const LUG_V1 = { provincia: '17', ciudad: Q, direccion: 'Av. Amazonas N36-152 y Naciones Unidas, Quito', referencia: 'Edificio Torre Azul, piso 3', punto: [-0.1765, -78.4845], zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona: 'Calculada', lejos: false, origen: 'Búsqueda' };
   const SUR = 'Av. Mariscal Sucre S12-45 y Ajaví';
+  const CHOFER = (num) => ({ tipo: 'otro', nombre: 'Jorge Pillajo', relacion: 'Chofer', numero: num || '0991234567' });
+  const DET_CANC = 'La empresa decidió asegurar la flota con otra compañía; lo confirmó Fernanda Prueba por teléfono.';
   // escena → [con la visita V1, configuración de la vista por fases (la lee Coordinación en base.escena.fases)]
   const ESC = {
     coordfases: [true, () => { const f = qp('ffase'); return f === 'horario' ? { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 } : { fase: f === 'lugar' ? 'lugar' : 'contacto', riesgos: ['PRB1212', 'PR121A'] }; }],
@@ -34,6 +39,15 @@
     coordoferta: [true, () => Object.assign({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], diaVista: 3 }, qp('fof') === 'enviada' ? { enviar: 'oferta' } : {})],
     coordautoinsp: [true, () => Object.assign({ fase: 'enlace', mod: 'Autoinspección', riesgos: ['PRB1212', 'PR121A'] }, qp('fenviar') === '1' ? { enviar: 'principal' } : {})],
     coordvirtual: [true, () => ({ fase: 'horario', mod: 'Virtual guiada', riesgos: ['PRB1212'], diaVista: 3 })],
+    coordcontacto: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], llamarHace: 95, contacto: { llamar: true, nota: 'Puede el lunes desde las 10:00 en la oficina de la Av. Mariscal Sucre; preguntar por Fernanda en recepción.', resultado: 'Contestó', historial: qp('fhist') === '1' } })],
+    coordotronumero: [true, () => (qp('fnum') === '9' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], dest: CHOFER('099123456'), contacto: { numT: true } }
+      : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], dest: CHOFER(), llamarHace: 22, contacto: { llamar: true, nota: 'Timbró hasta el final; el chofer maneja la camioneta en las mañanas.', resultado: 'No contestó' } })],
+    coordenlaceauto: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], dest: CHOFER(), contacto: qp('fenviar') === '1' ? { enviarEnlace: true } : {} }), { tercero: true }],
+    coordcancelar: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { cancelar: { motivo: 'El cliente desiste de la póliza', detalle: DET_CANC, confirmar: qp('fconf') !== '0' } } })],
+    coordeditarcontacto: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { editar: { cCel: '0987654321', cerrar: qp('fedit') !== '1' } } })],
+    cxcoordcontacto: [true, () => { const f = qp('fpaso'); return f === 'enlace' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], dest: CHOFER(), contacto: { enviarEnlace: true } }
+      : f === 'cancelar' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { cancelar: { motivo: 'El cliente desiste de la póliza', detalle: DET_CANC, confirmar: true } } }
+      : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], llamarHace: 61, contacto: { llamar: true, nota: 'Confirma la visita el lunes en la mañana.', resultado: 'Contestó' } }; }],
     cxcoordfases: [true, () => (qp('fof') === '1' ? { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 }
       : { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], fecha: 1, hIni: '14:00', hFin: '15:00', inspector: 'Diana Cárdenas', enviar: 'principal' })],
   };
@@ -49,7 +63,8 @@
       formularios: VEH.map(() => 'Vehículos livianos'), sumaAsegurada: VEH.map((v) => v[2]), anios: VEH.map((v) => v[3]), placas: VEH.map((v) => v[0]),
       riesgosBase: VEH.map((v) => ({ descripcion: v[1] + ' · ' + v[0], composicion: 'Vehículo', suma: v[2], datos: { placa: v[0], marca: v[1].split(', ')[0], modelo: v[1].split(', ')[1], anio: v[3] } })),
       solicitud: { formularios: ['Vehículos livianos'] }, dir: SUR + ', Quito', contacto: { nombre: 'Fernanda Prueba', cel: '0990000012', correo: 'flota.50012@prueba.sirius.ec' }, consentimiento: { whatsapp: true, sms: true, correo: true },
-      intentos: [{ fecha: '2026-10-15T10:12', medio: 'Llamada', resultado: 'No contesta', obs: '', by: 'Andrea Salazar' }, { fecha: '2026-10-15T16:40', medio: 'Llamada', resultado: 'No contesta', obs: 'Dejé mensaje de voz', by: 'Andrea Salazar' }],
+      intentos: [{ fecha: '2026-10-15T10:12', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 35 },
+        { fecha: '2026-10-15T16:40', medio: 'Llamada', resultado: 'Buzón de voz', obs: 'Dejé mensaje de voz', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 48 }].concat(e[2] && e[2].tercero ? [{ fecha: '2026-10-16T09:05', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 30 }] : []),
       visitasBase: e[0] ? [vis(1, 'Mauricio Endara', dia(3), '10:00', '10:45', { riesgos: ['50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) })] : [] };
     // Agenda de los inspectores (hoy, mañana sábado y el lunes): bloques ocupados con su caso.
     const casos = [c, otro('50007', 'Sofía Moreno Paz', [vis(1, 'Mauricio Endara', dia(0), '09:00', '09:45'), vis(2, 'Mauricio Endara', dia(0), '14:00', '15:00')]), otro('30001', 'Panadería La Ronda', [vis(1, 'Diana Cárdenas', dia(0), '15:00', '16:30')]),
@@ -59,9 +74,19 @@
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)),
       coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', disponibilidad: JSON.parse(JSON.stringify(DISP)), lugar: {}, fases: cfg } };
     casos.forEach((k) => { X.eventos[k.id] = [{ hora: '2026-10-13T09:02', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[k.id] = []; X.controles[k.id] = []; X.informes[k.id] = []; X.calificaciones[k.id] = []; });
+    // G-2c3: historial del caso 50012 con la asignación, los intentos y la visita V1 (filtros Contacto, Visitas y Estado del cajón «Historial del caso»).
+    X.eventos['50012'] = [{ hora: '2026-10-15T16:40', accion: 'Intento de contacto', detalle: 'Llamada · Buzón de voz · a Fernanda Prueba (contacto para la coordinación) · 0990000012 · 0:48 · «Dejé mensaje de voz»', actor: U.nombre, rol: U.rol },
+      { hora: '2026-10-15T10:12', accion: 'Intento de contacto', detalle: 'Llamada · No contestó · a Fernanda Prueba (contacto para la coordinación) · 0990000012 · 0:35', actor: U.nombre, rol: U.rol }].concat(e[0] ? [{ hora: '2026-10-14T11:20', accion: 'Visita agendada', detalle: 'V1 · PRB1213 · Mauricio Endara · Quito · Zona Norte', actor: U.nombre, rol: U.rol }] : [])
+      .concat([{ hora: '2026-10-13T09:05', accion: 'Caso asignado a coordinación', detalle: 'Responsable: Andrea Salazar', actor: 'SIRIUS', rol: 'Sistema' }, { hora: '2026-10-13T09:02', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]);
     return X; };
   // Base simulada: ofertarVisita y anularOferta (agendarVisita sigue en datos-cx-inspectores y datos-cx-lugar).
-  CC.aplicar = function (X, tipo, d) { if (!X || !X.coordEscena || !X.coordEscena.fases || ['ofertarVisita', 'anularOferta', 'agendarVisita'].indexOf(tipo) < 0) return baseAp(X, tipo, d);
+  CC.aplicar = function (X, tipo, d) { if (!X || !X.coordEscena || !X.coordEscena.fases || ['ofertarVisita', 'anularOferta', 'agendarVisita', 'intentoContacto', 'cancelarSolicitud'].indexOf(tipo) < 0) return baseAp(X, tipo, d);
+    if (tipo === 'intentoContacto' || tipo === 'cancelarSolicitud') { const c1 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c1) return { ok: false, mensaje: 'El caso no existe en la base' }; const E1 = (X.eventos[c1.id] = X.eventos[c1.id] || []); // G-2c3 · DEC-237
+      if (tipo === 'intentoContacto') { if (!d.resultado) return { ok: false, mensaje: 'Falta el resultado del intento' }; c1.intentos = (c1.intentos || []).concat([{ fecha: '2026-10-16T13:40', medio: d.medio, resultado: d.resultado, obs: d.obs || '', by: U.nombre, destino: d.destino || null, duracionSeg: d.duracionSeg || 0 }]);
+        E1.unshift({ hora: '2026-10-16T13:40', accion: 'Intento de contacto', detalle: d.medio + ' · ' + d.resultado + (d.destino ? ' · a ' + d.destino.nombre + ' · ' + d.destino.numero : '') + (d.duracionSeg ? ' · ' + d.duracionSeg + ' s' : ''), actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Intento registrado en la base' }; }
+      if (!d.motivo || String(d.detalle || '').trim().length < 10) return { ok: false, mensaje: 'Falta el motivo o el detalle de la cancelación' }; if (c1.estado === 'Cancelado') return { ok: false, mensaje: 'El caso ya está cancelado' };
+      c1.estado = 'Cancelado'; c1.cancelacion = { motivo: d.motivo, detalle: d.detalle, por: U.nombre, en: '2026-10-16T13:40' }; E1.unshift({ hora: '2026-10-16T13:40', accion: 'Solicitud cancelada', detalle: d.motivo + ' · ' + d.detalle, actor: U.nombre, rol: U.rol });
+      return { ok: true, mensaje: 'Solicitud cancelada en la base' }; }
     if (tipo === 'agendarVisita') { // con el reloj de demostración (viernes 16/10/2026, 13:40): valida el inspector y la hora, y guarda la visita con su lugar y la alerta de cobertura
       const c0 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c0) return { ok: false, mensaje: 'El caso no existe en la base' };
       const act = (X.inspectores || []).filter((i) => /^activ/i.test(i.estado || '') && !(i.tipo === 'Agencia' && !i.agencia)).map((i) => i.nombre);
@@ -70,7 +95,7 @@
       const SF = window.SiriusFecha, fin = ini && SF ? ini.slice(0, 11) + SF.aHora(SF.aMin(ini.slice(11)) + (d.minutos || 0)) : null, V0 = c0.visitasBase = c0.visitasBase || [];
       let v = V0.find((x) => x.n === d.visita); if (!v) { v = { n: d.visita || V0.length + 1, modalidad: d.modalidad || 'Presencial', estado: 'Agendada', origen: 'Coordinador', enlace: null, enlaces: [] }; V0.push(v); }
       if (d.accion === 'cambiarInspector') v.inspector = d.inspector; else Object.assign(v, { estado: 'Agendada', inicio: ini, fin: fin, inspector: d.inspector, agendadoEn: '2026-10-16T13:40', modalidad: d.modalidad || v.modalidad });
-      if (Array.isArray(d.riesgos) && d.riesgos.length) v.riesgos = d.riesgos.slice(); if (d.direccion && d.direccion.direccion) v.direccion = d.direccion.direccion; if (d.lugar) v.lugar = JSON.parse(JSON.stringify(d.lugar)); v.fueraCobertura = d.fueraCobertura && d.fueraCobertura.motivo ? { motivo: d.fueraCobertura.motivo } : null; delete v.oferta; if (d.motivo) v.motivo = d.motivo;
+      if (Array.isArray(d.riesgos) && d.riesgos.length) v.riesgos = d.riesgos.slice(); if (d.direccion && d.direccion.direccion) v.direccion = d.direccion.direccion; if (d.lugar) v.lugar = JSON.parse(JSON.stringify(d.lugar)); v.fueraCobertura = d.fueraCobertura && d.fueraCobertura.motivo ? { motivo: d.fueraCobertura.motivo } : null; delete v.oferta; if (d.motivo) v.motivo = d.motivo; v.observaciones = d.observaciones || ''; /* G-2c3 */
       const SL = window.SiriusLugar; (X.eventos[c0.id] = X.eventos[c0.id] || []).unshift({ hora: '2026-10-16T13:40', accion: d.accion === 'cambiarInspector' ? 'Inspector cambiado' : d.accion === 'reagendar' ? 'Visita reagendada' : 'Visita agendada', detalle: 'V' + d.visita + ' · ' + (d.inspector || 'sin inspector') + (d.lugar && SL ? ' · ' + SL.texto(d.lugar) : '') + (v.fueraCobertura ? ' · Alerta de cobertura: ' + d.inspector + ' no cubre este lugar. Motivo: ' + v.fueraCobertura.motivo : ''), actor: U.nombre, rol: U.rol });
       return { ok: true, mensaje: 'Visita guardada en la base' }; }
     const c = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c) return { ok: false, mensaje: 'El caso no existe en la base' };

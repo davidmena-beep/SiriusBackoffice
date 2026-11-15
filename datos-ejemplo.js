@@ -548,6 +548,7 @@
       sucursales: SUC,
       // Ciudades sin oficina propia: sucursal que las atiende (Administración › Catálogos).
       ciudadSucursal: [{ ciudad: 'Otavalo', prov: 'Imbabura', sucursal: 'Ibarra' }],
+      motivosCancelacion: ['El cliente desiste de la póliza', 'La póliza no se emitirá', 'Vehículo vendido o dado de baja', 'Solicitud duplicada', 'Datos del cliente incorrectos', 'Otro'], // G-2c3 · DEC-237: Coordinar visita › Contacto › Cancelar la solicitud
       motivosNoInspeccion: ['Vehículo 0 km con factura del concesionario', 'Renovación sin cambios con inspección vigente', 'Vehículo inspeccionado en otra póliza en los últimos 30 días', 'Excepción autorizada por suscripción'],
       extras: ['Aros de aleación', 'Láminas de seguridad', 'Neblineros', 'Estribos', 'Barra antivuelco', 'Cubre balde', 'Radio con pantalla', 'Cámara de retro', 'Sensores de parqueo', 'Portaequipaje', 'Sistema de sonido', 'Spoiler'], // C2-14: Spoiler (escena infextras)
       coberturas: ['Todo riesgo', 'Pérdida total', 'Daños propios y RC'],

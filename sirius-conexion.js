@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
 // 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
 // 14/11/2026 · G-2a2 · DEC-222: SIRIUS_CONEXION.buscarDireccion(texto, codCiudad) con OpenStreetMap (Nominatim): espera al teclear, 1 consulta por segundo, memoria de búsquedas y respaldo en el diccionario de prueba.
@@ -150,6 +151,7 @@
     var vv = (k.visitas || []).slice().sort(function (a, b) { return String(b.creado || '').localeCompare(String(a.creado || '')); })[0];
     // P-6e-3 · todas las visitas de la base con su enlace vigente de cada tipo (Coordinación: reenviar, generar nuevo, cancelar, reagendar)
     var rsOrden = rs.map(function (r, i) { return { uuid: r.id, id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1) }; });   // P-6f-0f · DEC-232
+    if (d.cancelacion && typeof d.cancelacion === 'object') x.cancelacion = { motivo: d.cancelacion.motivo || '', detalle: d.cancelacion.detalle || '', por: d.cancelacion.por || '', hora: d.cancelacion.hora || '' };   // G-2c3 · DEC-237 (SQL 40)
     x.visitasBase = (k.visitas || []).slice().sort(function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); }).map(function (v, i) {
       var ens = (v.enlaces || []).filter(function (e) { return ['Vencido','Invalidado','Revocado'].indexOf(e.estado) < 0; }).map(function (e) {
         return { tipo: e.tipo || 'Autoagendamiento', estado: e.estado, vence: isoLocal(e.vence), url: (e.tipo === 'Autoinspección' ? 'https://davidmena-beep.github.io/autoinspecciones_v1/?t=' : 'https://davidmena-beep.github.io/Autoagendamiento/?t=') + e.token }; });
@@ -266,14 +268,15 @@
     return p.length ? p.join(', ') : String(x.display_name || '').split(',').slice(0, 3).join(',').trim(); }
   function geoLocal(texto, cod) { var U = window.SiriusUbicacion; try { return U && typeof U.buscarLocal === 'function' ? U.buscarLocal(texto, cod) : []; } catch (e) { return []; } }
   CX.buscarDireccion = function (texto, cod) { var q = String(texto || '').trim(); if (q.length < 3) return Promise.resolve([]);
-    var G = window.SIRIUS_GEOGRAFIA, ciu = G && G.ciudades && cod ? G.ciudades.filter(function (c) { return c.cod === cod; })[0] : null, nom = ciu ? (ciu.buscador || ciu.nombre) : '';
+    var G = window.SIRIUS_GEOGRAFIA;
     var clave = q.toLowerCase() + '|' + (cod || ''); if (GEO.cache[clave]) return Promise.resolve(GEO.cache[clave]);
     return new Promise(function (res) {
       if (GEO.pend) { clearTimeout(GEO.pend.t); GEO.pend.res(null); }
       var p = { res: res }; GEO.pend = p;
       p.t = setTimeout(function () { GEO.pend = null; GEO.ultimo = Date.now();
-        var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ec&accept-language=es&q=' +
-          encodeURIComponent(q + (nom && geoNorm(q).indexOf(geoNorm(nom)) < 0 ? ', ' + nom : '') + ', Ecuador');
+        var ctr = G && G.centros && cod ? G.centros[cod] : null;   // G-2c4: la ciudad solo da preferencia (viewbox sin límite); la búsqueda es en todo el Ecuador
+        var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=ec&accept-language=es' +
+          (ctr ? '&bounded=0&viewbox=' + [ctr[1] - 0.35, ctr[0] + 0.35, ctr[1] + 0.35, ctr[0] - 0.35].join(',') : '') + '&q=' + encodeURIComponent(q + ', Ecuador');
         fetch(url, { headers: { Accept: 'application/json' } }).then(function (r) { return r.ok ? r.json() : []; }).then(function (a) {
           var out = (Array.isArray(a) ? a : []).map(function (x) { var ad = x.address || {};
             return { texto: geoTexto(x), ciudad: geoCiudad([ad.city, ad.town, ad.municipality, ad.county, ad.village], cod), punto: [+(+x.lat).toFixed(6), +(+x.lon).toFixed(6)] }; })
