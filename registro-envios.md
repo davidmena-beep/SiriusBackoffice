@@ -4,6 +4,57 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c8
+
+Un caso con varios riesgos ya no pasa a «Agendado» cuando se agenda la primera visita: sigue «En coordinación · N de M agendados» hasta que todos los riesgos tengan cita, el responsable sigue siendo el coordinador y el SLA de coordinación del riesgo pendiente sigue corriendo (DEC-238). Cada riesgo muestra su propio estado en la bandeja y en la pestaña Coordinación. Quedó publicada en la **Versión 230** (las Versiones 231 y 232 solo completan en este registro las versiones y la hora de fin). Probé las 4 escenas nuevas y las de bandeja y Coordinación a 1280 × 720 y 1920 × 1080, sin errores de consola, sin desplazamiento de la página y sin desborde horizontal.
+
+**Qué cambió**
+- **Una sola regla (`sirius-coordestado.js`, nuevo, v1.0):** un riesgo está «coordinado» si tiene una visita abierta con cita (Agendada o En camino), está en curso, o está en una visita de Autoinspección con el enlace enviado y vigente. No cuentan un riesgo sin visita, una visita «Por agendar», una oferta («Oferta enviada») ni un enlace de autoagendamiento sin respuesta. El caso en la fase de coordinación (Registrado, En coordinación, Reaperturado, Enlace caducado, Agendado) queda «En coordinación» mientras algún riesgo no esté coordinado, con el subestado «N de M agendados» (+ «Oferta enviada» / «Enlace enviado»); «Agendado» cuando todos lo están, y entonces el responsable pasa a ser el inspector. Con un solo riesgo todo queda igual que antes y las fases posteriores no cambian.
+- **Sesión (`SIRIUS Back-office.dc.html`):** `coordAction` reevalúa todos los riesgos del caso al agendar, reagendar, cambiar el inspector, ofertar, anular una oferta, enviar un enlace y cancelar una visita; el historial agrega «Caso: …» y el aviso dice, por ejemplo, «el caso sigue En coordinación (2 de 3)». `withR` calcula el estado de cada riesgo y el estado y subestado del caso.
+- **Con la conexión:** cada elemento de `casos[].riesgos` trae `estado` (su estado de coordinación) y `visita { n, estado, inicio, inspector }` o `null`; el caso trae `estado` y `subestado` ya calculados por la base. Si un riesgo no trae visita, se calcula con `visitasBase`; si la base no trae `subestado`, la pantalla lo calcula con la misma regla. La base simulada (`datos-cx-fases.js`) entrega ahora esos datos y los recalcula después de agendar, ofertar y anular una oferta.
+- **Bandeja:** las filas de cada riesgo muestran su visita («Visita V1 · 19/10 · 10:00»), el inspector y su estado (Por coordinar, Oferta enviada, Enlace enviado, Agendado, En curso) en lugar del estado del caso; la fila del caso dice «En coordinación» con «2 de 3 agendados» debajo, y la cabecera del caso «En coordinación · 2 de 3 agendados».
+- **Pestaña Coordinación (`Coordinacion.dc.html`):** el contador y la lista de «Vehículos por coordinar» usan la misma regla («1 de 3»); las filas que no se pueden elegir dicen su estado real (Agendado, Oferta enviada) en lugar de solo «en V1».
+- **Escenas nuevas:** `estadoparcial`, `estadocompleto`, `estadooferta` y `cxestadoparcial` (`?fvista=caso` abre la pestaña Coordinación), en `datos-escenas.js` (645), `KNOWN_ESC` (602), `datos-flujo.js` y `datos-cx-fases.js`.
+
+**Verificado**
+- **estadoparcial (caso 20196, 3 vehículos):** la fila del caso dice «En coordinación · 2 de 3 agendados», responsable Andrea Salazar y SLA «6 h»; los riesgos dicen «Visita V1 · 19/10 · 10:00 · Marco Tapia · Agendado», «Visita V2 · 20/10 · 14:00 · Diana Cárdenas · Agendado» y «Sin visita · Inspector por asignar · Por coordinar».
+- **estadocompleto:** al agendarse solo el tercer vehículo (V3, 21/10 11:00) el caso pasa a «Agendado», el responsable es Marco Tapia, el SLA cambia a «2 d» y los tres riesgos quedan Agendado con su visita.
+- **estadooferta:** el caso sigue «En coordinación · 1 de 3 agendados · Oferta enviada»; el vehículo de la oferta dice «Oferta enviada» y la pestaña Coordinación lo muestra deshabilitado con ese estado.
+- **cxestadoparcial (caso 50012 con la conexión simulada):** «En coordinación · 2 de 3 agendados», responsable Andrea Salazar; PRB1212 y PR121A Agendado, PRB1213 Por coordinar («Sin visita»). Con `?fvista=caso`: «Vehículos por coordinar 1 de 3».
+- **Acciones de la sesión por la pantalla:** al cancelar la visita V2 de `estadoparcial`, el caso queda «En coordinación · 1 de 3 agendados» y el contador pasa a «2 de 3»; el aviso dice «Visita V2 cancelada». Agendar el tercer vehículo está cubierto por `estadocompleto`.
+- **Caso de un solo riesgo:** la regla devuelve el estado y el subestado sin cambios (Registrado, En coordinación, Agendado y Reaperturado, con el riesgo coordinado o no); en la bandeja (bandejaexp) los casos de un riesgo (20152, 20186, 20190) siguen con su estado de siempre y sin subestado.
+- **Escenas anteriores** (bandejaexp, bandejaaseg, filtros, cxresponsableobjeto, coord, coordautoinsp, coordmarco, coordfases, coordvehiculoduplicado con `?fpestana=1`, coordcancelavisitas, coordoferta, coordrg, coordvis, cxcoordfases, cxcoordcontacto y coordriesgorg con `?fpestana=1` y `?fdividir=1`) a 1280 × 720 y 1920 × 1080: sin errores de consola, la página no se desplaza y no hay desborde horizontal. Al revisarlas, `cxresponsableobjeto` y `coordriesgorg` arrastraban un subestado que ya no correspondía a su caso; las corregí para que recalculen después de armarlo.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- Con la base y la conexión reales (solo la simulada).
+- Por la pantalla: reagendar, cambiar el inspector, ofertar, anular una oferta y enviar un enlace en un caso con varios riesgos; comparten el mismo bloque de `coordAction` que cancelar y agendar, que sí probé. El cambio de inspector abre su pantalla completa, pero no pude terminar el cambio en la prueba automática.
+- El efecto del estado del caso y de su responsable sobre el SLA con la conexión real (con la simulada se usa el responsable que entrega la base).
+- Un caso con varios riesgos y un enlace de Autoinspección vigente, o con una visita «En curso», más allá de la regla (no hay una escena con esos datos).
+
+**Diferencias**
+- En la fila del caso, el subestado va como una línea debajo de «En coordinación»; la cabecera y la vista rápida lo muestran en la misma línea («En coordinación · 2 de 3 agendados»).
+- El subestado se omite cuando ningún riesgo está agendado y no hay oferta ni enlace; el contador «N de M» de la pestaña Coordinación solo aparece cuando algún riesgo ya está en una visita.
+- Un enlace de autoagendamiento sin respuesta dice «Enlace enviado» pero no cuenta como coordinado; el de Autoinspección vigente sí cuenta.
+- Para no tocar el resto del flujo, los estados nuevos de un riesgo se guardan en la sesión como «En coordinación» o «Agendado»; los nombres nuevos se calculan solo para mostrarlos.
+- Las escenas de fases (coordfases y las que parten de ella) ahora entregan el caso 50012 «En coordinación · 1 de 3 agendados» y no «Agendado» fijo; `cxresponsableobjeto` y `coordriesgorg` conservan su estado.
+- Las escenas nuevas de la sesión usan el caso 20196.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `estadoparcial` | Caso 20196 con V1 y V2 agendados y un vehículo por coordinar: «En coordinación · 2 de 3 agendados», responsable el coordinador y el estado de cada vehículo en la bandeja; `?fvista=caso` abre la pestaña Coordinación |
+| `estadocompleto` | Se agenda el tercer vehículo: el caso pasa a «Agendado» y el responsable es el inspector |
+| `estadooferta` | Un vehículo en oferta: el caso sigue «En coordinación · 1 de 3 agendados · Oferta enviada» |
+| `cxestadoparcial` | Con la conexión simulada: forma de `casos[].riesgos[].estado` y `.visita` y del subestado del caso 50012 |
+
+También abrí bandejaexp, bandejaaseg, filtros, cxresponsableobjeto, coord, coordautoinsp, coordmarco, coordfases, coordvehiculoduplicado, coordcancelavisitas, coordoferta, coordrg, coordvis, cxcoordfases, cxcoordcontacto y coordriesgorg a los dos tamaños.
+
+Tiempo de la etapa: inicio 14/11/2026 23:56 · fin 15/11/2026 00:23 · 27 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c7
 
 Las migas de la barra superior ya nunca se superponen, en ninguna pantalla del sistema: ocupan solo el espacio libre entre el borde izquierdo de la barra y el grupo de la derecha, y cuando falta espacio se recortan en el orden pedido. Quedó publicada en la **Versión 228** (la Versión 229 solo completa en este registro la hora de fin). La causa era que «Caso N» es un botón sin recorte dentro de una miga que sí se encogía: su texto se salía de su caja y se montaba sobre la siguiente miga y sobre la campana.

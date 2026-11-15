@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 15/11/2026 · G-2c8 · DEC-238: casos[].riesgos[].estado (coordinación) y .visita { n, estado, inicio, inspector }; el estado y subestado del caso los calcula la base (SQL 41).
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto (inspector de la visita abierta más reciente si la base no trae responsable).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
@@ -134,6 +135,23 @@
   function visitasPorReciente(k) { return (k.visitas || []).slice().sort(function (a, b) { return String(b.creado || '').localeCompare(String(a.creado || '')); }); }
   function inspectorVigente(k) { var L = visitasPorReciente(k), abierta = L.filter(function (v) { return v.inspector && v.inspector.nombre && !/cancel|termin|enviada/i.test(v.estado || ''); })[0],
       cualquiera = L.filter(function (v) { return v.inspector && v.inspector.nombre; })[0]; return String(((abierta || cualquiera || {}).inspector || {}).nombre || ''); }
+  // G-2c8 · DEC-238: estado de coordinación de un riesgo (Por coordinar, Oferta enviada, Enlace enviado, Agendado, En curso) y su visita
+  var FASE_COORD = ['Registrado', 'En coordinación', 'Reaperturado', 'Enlace caducado', 'Agendado'];
+  function estadoRiesgo(k, r) {
+    var vs = (k.visitas || []).slice().sort(function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); }), ahora = new Date();
+    var con = vs.map(function (v, i) { return { v: v, n: i + 1 }; }).filter(function (x) { return Array.isArray(x.v.riesgo_ids) && x.v.riesgo_ids.indexOf(r.id) >= 0; });
+    var abierta = con.filter(function (x) { return !/cancel|termin|enviada/i.test(x.v.estado || ''); }).pop(), ult = abierta || con.slice().pop();
+    var vis = ult ? { n: ult.n, estado: ult.v.estado || '', inicio: ult.v.inicio || null, inspector: ult.v.inspector ? String(ult.v.inspector.nombre || '') : '' } : null;
+    if (FASE_COORD.indexOf(k.estado) < 0) return { estado: k.estado, visita: vis };
+    if (!abierta) return { estado: 'Por coordinar', visita: vis };
+    var v = abierta.v, e = v.estado || '', vig = function (en, tipo) { return en.tipo === tipo && /enviado|entregado|abierto|curso/i.test(en.estado || '') && (!en.vence || new Date(en.vence) > ahora); };
+    if (/agendada|en camino/i.test(e)) return { estado: 'Agendado', visita: vis };
+    if (/en curso|por sincronizar/i.test(e)) return { estado: 'En curso', visita: vis };
+    if (v.modalidad === 'Autoinspección' && (v.enlaces || []).some(function (en) { return vig(en, 'Autoinspección'); })) return { estado: 'Enlace enviado', visita: vis };
+    if ((v.ofertas_red || []).some(function (o) { return o.estado === 'Abierta' && new Date(o.vence) > ahora; }) || /buscando/i.test(e)) return { estado: 'Oferta enviada', visita: vis };
+    if ((v.enlaces || []).some(function (en) { return vig(en, 'Autoagendamiento'); })) return { estado: 'Enlace enviado', visita: vis };
+    return { estado: 'Por coordinar', visita: vis };
+  }
   function aCaso(k, evs) {
     var id = String(k.numero), a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} },
         placas = rs.map(function (r) { return (r.datos || {}).placa; }).filter(Boolean), base = fichaEjemplo(id), resp = (k.responsable && k.responsable.nombre) || inspectorVigente(k) || '';   // corrección 15/11: el inspector de la visita abierta más reciente (antes: la primera visita, en cualquier orden)
@@ -144,6 +162,7 @@
     x.tipoRiesgo = k.grupo_ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales';   // P-6f-0: la bandeja rotula «3 vehículos» (no «3 ramos») y muestra «PRB1212 +2»
     x.origen = k.origen || x.origen || 'Manual'; x.contacto = c.nombre || x.contacto || ''; x.tel = c.celular || x.tel || ''; x.correo = c.correo || x.correo || '';
     x.nota = d.nota || k.subestado || x.nota || '';
+    x.subestado = k.subestado || '';   // G-2c8 · DEC-238: «N de M agendados», «Oferta enviada», «Enlace enviado» (SQL 41)
     // P-6e · plantilla de cada riesgo (riesgos.datos.formulario, SQL 29) y su carrocería: Coordinación ofrece las modalidades de esa plantilla.
     x.formularios = rs.map(function (r) { return (r.datos || {}).formulario || ''; }); x.carrocerias = rs.map(function (r) { return (r.datos || {}).carroceria || ''; });
     x.sumaAsegurada = rs.reduce(function (t, r) { return t + (Number(r.suma_asegurada) || 0); }, 0) || x.sumaAsegurada; x.anios = rs.map(function (r) { return (r.datos || {}).anio || null; }); x.placas = rs.map(function (r) { return (r.datos || {}).placa || r.descripcion || ''; }); x.riesgosBase = rs.map(function (r) { return { descripcion: r.descripcion || '', composicion: r.composicion || '', suma: Number(r.suma_asegurada) || null, datos: r.datos || {} }; });   // detalle de la solicitud por riesgo (marca, modelo, versión, año, color, VIN, motor, clase, uso, extras)
@@ -173,8 +192,9 @@
                           nota: o0.nota || '', vence: o0.vence, vigenciaHoras: null }; })() }; });
     if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
-      if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; var mma = [dd.marca, dd.modelo, dd.anio].filter(function (t) { return t != null && String(t).trim() !== ''; }).join(', ');   // P-6f-0f: placa arriba y «Marca, Modelo, Año» abajo
-        return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), nowrap: !!dd.placa, detalle: (dd.placa ? (mma || r.descripcion) : r.descripcion) || '', estado: k.estado, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
+      if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; var rEst = estadoRiesgo(k, r);   // G-2c8 · DEC-238: estado de coordinación y visita de cada riesgo
+        var mma = [dd.marca, dd.modelo, dd.anio].filter(function (t) { return t != null && String(t).trim() !== ''; }).join(', ');   // P-6f-0f: placa arriba y «Marca, Modelo, Año» abajo
+        return { id: id + '-' + (r.composicion === 'Vehículo' ? 'V' : 'U') + (i + 1), label: dd.placa || r.descripcion || ('Riesgo ' + (i + 1)), nowrap: !!dd.placa, detalle: (dd.placa ? (mma || r.descripcion) : r.descripcion) || '', estado: rEst.estado, visita: rEst.visita, dir: dd.direccion || '', total: r.suma_asegurada || 0, cobertura: dd.cobertura || '', recMod: dd.modalidad || 'Presencial' }; }); }
     var ints = (evs || []).filter(function (e) { return e.accion === 'Intento de contacto'; }).map(function (e) { var p = (e.detalle || '').split(' · '); return { by: (e.actor && e.actor.nombre) || '', fecha: new Date(e.hora).toISOString().slice(0, 16), medio: p[0] || '', resultado: p[1] || '', obs: p.slice(2).join(' · ') }; });
     if (ints.length || !base) x.intentos = ints;
     return x;

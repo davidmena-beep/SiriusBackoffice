@@ -63,6 +63,8 @@
     coordofertamarcar: [true, () => { const m = qp('fmarcar'); return { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, diaVista: 3, ofertaIns: m === 'ninguno' ? [] : m === 'todos' ? INSPECTORES.map((i) => i.nombre) : null }; }],
     coordlugarotraciudad: [false, () => (qp('fantes') === '1' ? { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'] } : { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'], texto: 'Malecón 2000' })],
     // G-2c6 · DEC-237: Coordinar visita dentro del marco del sistema (barra superior, migas y menú contraído) y confirmación al salir
+    // G-2c8 · DEC-238: cxestadoparcial — 50012 con V1 (PRB1212) y V2 (PR121A) agendadas y PRB1213 por coordinar; la base entrega casos[].estado «En coordinación» y subestado «2 de 3 agendados», y en cada riesgo estado y visita { n, estado, inicio, inspector } o null.
+    cxestadoparcial: [true, () => ({ cerrado: true }), { v1: 'PRB1212', v2ag: true }],
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
     migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
     coordsalir: [true, () => { const s = qp('fsalir'), NOTA = 'Confirmó que recibe el lunes a las 10:00; pedir el ingreso por la puerta de carga.'; return s === 'limpio' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { salir: true } }
@@ -85,12 +87,14 @@
       intentos: [{ fecha: '2026-10-15T10:12', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 35 },
         { fecha: '2026-10-15T16:40', medio: 'Llamada', resultado: 'Buzón de voz', obs: 'Dejé mensaje de voz', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 48 }].concat(e[2] && e[2].tercero ? [{ fecha: '2026-10-16T09:05', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 30 }] : []),
       visitasBase: (e[0] ? [vis(1, 'Mauricio Endara', dia(3), '10:00', '10:45', Object.assign({ riesgos: [e[2] && e[2].v1 === 'PRB1212' ? '50012-V1' : '50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) }, e[2] && e[2].curso ? { estado: 'En curso', inicio: dia(0) + 'T13:00', fin: dia(0) + 'T13:45' } : {}))] : [])
+        .concat(e[2] && e[2].v2ag ? [vis(2, 'Diana Cárdenas', dia(4), '14:00', '14:45', { riesgos: ['50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) })] : [])
         .concat(e[2] && e[2].v2 ? [{ n: 2, modalidad: 'Presencial', estado: 'Buscando inspector', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], riesgos: ['50012-V1', '50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)),
           oferta: { inspectores: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], desde: dia(1), hasta: dia(3), minutos: 45, vigenciaHoras: 2, nota: '', vence: HOY + 'T15:40' } }] : []) };
     // Agenda de los inspectores (hoy, mañana sábado y el lunes): bloques ocupados con su caso.
     const casos = [c, otro('50007', 'Sofía Moreno Paz', [vis(1, 'Mauricio Endara', dia(0), '09:00', '09:45'), vis(2, 'Mauricio Endara', dia(0), '14:00', '15:00')]), otro('30001', 'Panadería La Ronda', [vis(1, 'Diana Cárdenas', dia(0), '15:00', '16:30')]),
       otro('20200', 'Talleres Andinos', [vis(1, 'Luis Andrade', dia(0), '15:00', '15:45'), vis(2, 'Luis Andrade', dia(1), '10:00', '10:45')]), otro('20189', 'Mónica Ruiz', [vis(1, 'Marco Tapia', dia(0), '16:00', '16:45'), vis(2, 'Marco Tapia', dia(3), '08:00', '12:00')]),
       otro('20170', 'Ferretería El Sol', [vis(1, 'Diana Cárdenas', dia(1), '13:00', '14:00'), vis(2, 'Diana Cárdenas', dia(3), '13:00', '14:00')]), otro('20186', 'Pedro Alarcón', [vis(1, 'Cristian Vaca', dia(3), '10:30', '11:15')])];
+    if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); // G-2c8 · DEC-238: la base calcula estado, subestado, responsable y el estado y la visita de cada riesgo
     const cfg = e[1](); if (cfg.ofertaIns) cfg.ofertaIns = cfg.ofertaIns.slice();
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)),
       coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', disponibilidad: JSON.parse(JSON.stringify(DISP)), lugar: {}, fases: cfg } };
@@ -127,16 +131,18 @@
       if (d.accion === 'cambiarInspector') v.inspector = d.inspector; else Object.assign(v, { estado: 'Agendada', inicio: ini, fin: fin, inspector: d.inspector, agendadoEn: '2026-10-16T13:40', modalidad: d.modalidad || v.modalidad });
       if (Array.isArray(d.riesgos) && d.riesgos.length) v.riesgos = d.riesgos.slice(); if (d.direccion && d.direccion.direccion) v.direccion = d.direccion.direccion; if (d.lugar) v.lugar = JSON.parse(JSON.stringify(d.lugar)); v.fueraCobertura = d.fueraCobertura && d.fueraCobertura.motivo ? { motivo: d.fueraCobertura.motivo } : null; delete v.oferta; if (d.motivo) v.motivo = d.motivo; v.observaciones = d.observaciones || ''; /* G-2c3 */
       const SL = window.SiriusLugar; (X.eventos[c0.id] = X.eventos[c0.id] || []).unshift({ hora: '2026-10-16T13:40', accion: d.accion === 'cambiarInspector' ? 'Inspector cambiado' : d.accion === 'reagendar' ? 'Visita reagendada' : 'Visita agendada', detalle: 'V' + d.visita + ' · ' + (d.inspector || 'sin inspector') + (d.lugar && SL ? ' · ' + SL.texto(d.lugar) : '') + (v.fueraCobertura ? ' · Alerta de cobertura: ' + d.inspector + ' no cubre este lugar. Motivo: ' + v.fueraCobertura.motivo : ''), actor: U.nombre, rol: U.rol });
+      if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c0, U.nombre); // G-2c8 · DEC-238
       return { ok: true, mensaje: 'Visita guardada en la base' }; }
     const c = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c) return { ok: false, mensaje: 'El caso no existe en la base' };
     const V = c.visitasBase = c.visitasBase || [], E = (X.eventos[c.id] = X.eventos[c.id] || []), ahora = '2026-10-16T13:40';
-    if (tipo === 'anularOferta') { const i = V.findIndex((x) => x.n === d.visita && x.oferta); if (i < 0) return { ok: false, mensaje: 'La oferta ya no existe' }; V.splice(i, 1); E.unshift({ hora: ahora, accion: 'Oferta anulada', detalle: 'V' + d.visita, actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Oferta anulada' }; }
+    if (tipo === 'anularOferta') { const i = V.findIndex((x) => x.n === d.visita && x.oferta); if (i < 0) return { ok: false, mensaje: 'La oferta ya no existe' }; V.splice(i, 1); E.unshift({ hora: ahora, accion: 'Oferta anulada', detalle: 'V' + d.visita, actor: U.nombre, rol: U.rol }); if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); return { ok: true, mensaje: 'Oferta anulada' }; }
     if (!Array.isArray(d.inspectores) || !d.inspectores.length) return { ok: false, mensaje: 'Elige al menos un inspector' };
     { const dm = dupVeh(c, d); if (dm) return { ok: false, mensaje: dm }; } // G-2c4 · DEC-237
     const t = new Date(2026, 9, 16, 13 + (d.vigenciaHoras || 2), 40), z = (n) => String(n).padStart(2, '0'), vence = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(t.getHours()) + ':' + z(t.getMinutes());
     V.push({ n: d.visita, modalidad: d.modalidad || 'Presencial', estado: 'Buscando inspector', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], riesgos: Array.isArray(d.riesgos) ? d.riesgos.slice() : [], lugar: d.lugar ? JSON.parse(JSON.stringify(d.lugar)) : null, direccion: d.lugar ? d.lugar.direccion : '',
       oferta: { inspectores: d.inspectores.slice(), desde: d.desde, hasta: d.hasta, minutos: d.minutos, vigenciaHoras: d.vigenciaHoras, nota: d.nota || '', vence: vence } });
     E.unshift({ hora: ahora, accion: 'Oferta enviada', detalle: 'V' + d.visita + ' a ' + d.inspectores.join(', ') + ' · del ' + d.desde + ' al ' + d.hasta + (d.nota ? ' · ' + d.nota : ''), actor: U.nombre, rol: U.rol });
+    if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); // G-2c8 · DEC-238
     return { ok: true, mensaje: 'Oferta enviada', ofertas: d.inspectores.length, vence: vence }; };
   CC.cxFases = { escenas: ESC, inspectores: INSPECTORES, disponibilidad: DISP, modSim: MODSIM };
 })();
@@ -154,6 +160,7 @@
     c.estado = 'Agendado'; delete c.responsable; c.inspector = ins();
     (c.riesgos || []).forEach((r) => { r.estado = 'Agendado'; }); // los tres vehículos en la visita V1: el caso queda de verdad en Agendado
     (c.visitasBase || []).forEach((v) => { if (v && /agendad/i.test(String(v.estado || ''))) { v.inspector = ins(); v.riesgos = (c.riesgos || []).map((r) => r.id); } });
+    (c.riesgos || []).forEach((r) => { delete r.visita; }); c.subestado = ''; if (window.SiriusCoordEstado) { window.SiriusCoordEstado.aplicarBase(c, ''); delete c.responsable; } // G-2c8: estado y visita de cada riesgo con la regla (los tres en la V1 = Agendado, sin subestado)
     if (qp('fsuc') === '1') { const o = (X.casos || []).find((x) => x && String(x.id) !== '50012'); if (o) o.sucursal = { nombre: o.sucursal || 'Quito', cod: '1701' }; }
     return X; };
 })();
@@ -175,6 +182,7 @@
     const dividir = qp('fdividir') === '1';
     (c.visitasBase || []).forEach((v) => { if (v && /agendad/i.test(String(v.estado || ''))) v.riesgos = dividir ? ['50012-R1', '50012-R2'] : ['50012-R1']; });
     if (dividir) c.riesgos.forEach((r) => { r.estado = 'Agendado'; });
+    c.subestado = ''; if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, 'Andrea Salazar'); // G-2c8: «N de M agendados» según las ubicaciones y la V1
     X.coordEscena.fases = qp('fpestana') === '1' || dividir ? { cerrado: true } : { fase: 'contacto', riesgos: [RG[1][0]] };
     return X; };
 })();
