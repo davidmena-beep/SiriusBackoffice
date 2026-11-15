@@ -4,6 +4,49 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c7
+
+Las migas de la barra superior ya nunca se superponen, en ninguna pantalla del sistema: ocupan solo el espacio libre entre el borde izquierdo de la barra y el grupo de la derecha, y cuando falta espacio se recortan en el orden pedido. Quedó publicada en la **Versión 228** (la Versión 229 solo completa en este registro la hora de fin). La causa era que «Caso N» es un botón sin recorte dentro de una miga que sí se encogía: su texto se salía de su caja y se montaba sobre la siguiente miga y sobre la campana.
+
+**Qué cambió**
+- **Migas (`SIRIUS Back-office.dc.html`):** el `<nav>` ya no se arma con una lista de la plantilla; `crumbsLayout()` lo dibuja a partir de las migas que calcula `renderVals` y vuelve a medir con la barra (`ResizeObserver`), al cambiar el tamaño de la ventana, al abrir o cerrar el menú lateral y al cargar las fuentes. Orden de recorte: 1) la pantalla actual se recorta con «…» y conserva unos 120 px; 2) los intermedios («Solicitudes», «Bandeja») pasan a un botón «…»; 3) «Caso N» queda completo mientras quepa (si ni así cabe, se recorta con «…» hasta unos 64 px y, después, también pasa al menú); con casi nada de espacio todo va al menú, y si ni el «…» cabe no se dibuja nada. Cada elemento recortado muestra su texto completo como título.
+- **Botón «…»:** abre, con clic, Enter o Espacio, un menú con los elementos ocultos. Los que son enlaces siguen siéndolo (con el marco de Coordinar visita, «Bandeja» pide la confirmación de salir si hay algo pendiente); los que no lo son («Solicitudes») aparecen como texto sin enlace. Esc lo cierra y devuelve el foco al «…»; flechas arriba y abajo, Inicio y Fin mueven el foco; Tab lo cierra y sigue con la miga siguiente; un clic fuera también lo cierra.
+- **Grupo de la derecha:** no se recorta. Si el espacio libre de las migas (con «Prueba conectada» completa) es menor de 300 px, «Prueba conectada» pasa a ser solo el punto de color, con su texto como título y como nombre accesible (`role=img`).
+- **Escena nueva `migasangostas`** (`?fmenu=1` con el menú lateral expandido), en `datos-cx-fases.js`, `datos-escenas.js` (641) y `KNOWN_ESC` (598). `sirius-coordinar.js`: el clic automático sobre «Bandeja» de `coordsalir` busca `nav button[data-mg-i]`, y el preset `contacto.menu` expande el menú lateral.
+
+**Verificado**
+- **Superposición y desplazamiento lateral:** migasangostas, coordmarco, bandejaexp, un caso (coordrg, caso 20195) y Ciudades y zonas (zonas), a 1024 × 720, 1280 × 720, 1330 × 720 y 1920 × 1080, con el menú lateral contraído y expandido (más 1180 × 720 en las dos de Coordinar): 50 combinaciones, sin superposición entre migas ni con el grupo de la derecha, sin que el `<nav>` desborde, sin desplazamiento horizontal y sin errores de consola.
+- **Cómo queda (migasangostas y coordmarco):** a 1024 contraído, «… › Caso 50012 › Coordinar visita V2»; a 1024 expandido, «… › Coordinar visita V2»; a 1180 contraído, las cuatro migas con la pantalla actual recortada; a 1330 contraído, las cuatro completas; a 1330 expandido, las cuatro con «Coordinar visita…» recortada y su texto completo como título. «Prueba conectada» pasa a punto a 1024 y se ve con texto a 1280 y más.
+- **Teclado (1024 contraído):** Tab llega al «…» después del menú lateral; Enter abre el menú con el foco en «Solicitudes» (sin enlace) y «Bandeja»; Esc lo cierra con el foco de vuelta en el «…» sin salir de Coordinar; Espacio lo abre; Tab lo cierra y sigue en «Caso 50012»; el clic fuera lo cierra; Enter en «Bandeja» va a la bandeja.
+- **Confirmación de salir:** con `?fsalir=0` a 1024, «Bandeja» desde el menú «…» pide «Tienes una coordinación sin agendar. ¿Salir?» con el foco en «Seguir coordinando»; Esc se queda y el foco vuelve al «…». A 1330, la escena `coordsalir` sigue abriendo la confirmación sola.
+- **Escenas anteriores** (coordmarco, coordsalir, coordriesgorg, coordfases, coordautoinsp, coordcancelar, coordvehiculoduplicado, coordrg, cxcoordfases, cxcoordcontacto y bandejaexp) a 1280 × 720 y 1920 × 1080: la página no se desplaza, no hay desborde horizontal ni errores, y la capa de Coordinar sigue terminando en el borde inferior de la ventana.
+- Con anchos extremos (900, 760 y 640 px, fuera de lo pedido) las migas siguen sin superponerse: se reducen al «…» y, si no cabe nada, desaparecen.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- Con la base y la conexión reales (solo la simulada).
+- La lectura del menú «…» con un lector de pantalla.
+- Otros usuarios o roles con nombres más largos que «Andrea Salazar · Coordinador de inspecciones» (el cálculo se hace con el ancho real del grupo, pero solo probé ese).
+- Anchos menores de unos 900 px con el menú lateral expandido: la barra completa deja de caber en la ventana (el grupo de la derecha no se recorta, como se pidió) y aparece desplazamiento lateral de la página; es anterior a esta etapa.
+
+**Diferencias**
+- «Solicitudes» no es un enlace en las migas (ya no lo era); en el menú «…» aparece como texto sin enlace, con el título «Indica dónde estás; no tiene enlace».
+- Para que el foco del botón no se recorte, el `<nav>` tiene 6 px de relleno vertical y 4 px lateral compensado con margen; la barra sigue midiendo 48 px.
+- El punto de «Prueba conectada» se decide con el espacio libre de las migas (menos de 300 px), no con el ancho de la ventana.
+- Las migas ya no son una lista de la plantilla: las dibuja código (`crumbsLayout`), y el botón «Bandeja» del marco se busca como `nav button[data-mg-i]`.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `migasangostas` | Coordinar visita de 50012 para probar a 1024, 1180 y 1330 × 720: migas sin superposición y «…» con el menú «Solicitudes» y «Bandeja»; `?fmenu=1` con el menú lateral expandido |
+
+También abrí coordmarco, bandejaexp, coordrg y zonas (Ciudades y zonas) a los cuatro tamaños, con el menú contraído y expandido.
+
+Tiempo de la etapa: inicio 14/11/2026 23:26 · fin 14/11/2026 23:47 · 21 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c6
 
 Coordinar visita ya se muestra dentro del marco del sistema —barra superior, migas y menú lateral— y un riesgo queda en una sola visita abierta también en Ramos Generales (DEC-237). Quedó publicada en la **Versión 226** (la Versión 227 solo completa en este registro la hora de fin). Probé las 3 escenas nuevas y las de Coordinación a 1280 × 720 y 1920 × 1080: con la capa abierta, la página no se desplaza, no hay desborde horizontal y la consola no muestra errores.

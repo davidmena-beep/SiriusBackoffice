@@ -64,6 +64,7 @@
     coordlugarotraciudad: [false, () => (qp('fantes') === '1' ? { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'] } : { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'], texto: 'Malecón 2000' })],
     // G-2c6 · DEC-237: Coordinar visita dentro del marco del sistema (barra superior, migas y menú contraído) y confirmación al salir
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
+    migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
     coordsalir: [true, () => { const s = qp('fsalir'), NOTA = 'Confirmó que recibe el lunes a las 10:00; pedir el ingreso por la puerta de carga.'; return s === 'limpio' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { salir: true } }
       : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: s === '0' ? { nota: NOTA } : { nota: NOTA, salir: true } }; }],
     cxcoordfases: [true, () => (qp('fof') === '1' ? { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 }

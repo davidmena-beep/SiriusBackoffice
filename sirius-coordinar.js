@@ -163,7 +163,8 @@
       if (E.cancelar) F().setCanc({ motivo: E.cancelar.motivo || '', detalle: E.cancelar.detalle || '' });
       if (E.cancelar && !E.cancelar.confirmar) setTimeout(() => { const b = document.querySelector('[data-scv-canc]'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }, 300); // G-2c4: el recuadro a la vista
       if (E.resultado) setTimeout(() => F().registrar(E.resultado), 700);
-      if (E.salir) setTimeout(() => { const b = document.querySelector('[data-barra-app] nav button'); if (b) b.click(); }, 1100); // G-2c6: clic en «Bandeja» de las migas
+      if (E.salir) setTimeout(() => { const b = document.querySelector('[data-barra-app] nav button[data-mg-i]'); if (b) b.click(); }, 1100); // G-2c6: clic en «Bandeja» de las migas
+      if (E.menu) setTimeout(() => { const b = document.querySelector('.ads-sidenav__toggle'); if (b && b.getAttribute('aria-expanded') === 'false') b.click(); }, 900); // G-2c7: menú lateral expandido
       if (E.enviarEnlace) setTimeout(() => F().enviarAG(), 700);
       if (E.cancelar && E.cancelar.confirmar) setTimeout(() => F().confirmarCanc(), 800);
       if (E.cancelar && E.cancelar.cerrarTras) setTimeout(() => x.salir && x.salir(), 1800); // G-2c4: deja ver las tarjetas de las visitas canceladas
