@@ -4,6 +4,108 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c5
+
+La etapa G-2c5 quedó publicada en la **Versión 224**; la Versión 225 solo completa en este registro la hora de fin. El responsable de un caso ya es siempre texto y los filtros de la bandeja no dejan de dibujarse por un valor inesperado: con el 50012 de la conexión simulada (Agendado, sin responsable y con el inspector como objeto) la bandeja se dibuja y dice «Valeria Cevallos». Probé la escena nueva, las que ya existían de la bandeja y las de Coordinación a 1280 × 720 y 1920 × 1080, sin el error de `renderVals`.
+
+**Qué cambió**
+- **`datos-flujo.js` (v1.4):** nueva `F.texto(v)` (texto, o el `nombre` de un objeto, o vacío). `F.responsable` devuelve siempre texto: si el inspector de la visita o `caso.inspector` es un objeto, usa su `nombre`; si no hay nombre, sigue con la regla siguiente («Por asignar»). Lo que el flujo no resuelve queda en «—».
+- **Armado de cada caso:** `finish` (y por eso `caseById`) deja `responsable` siempre como texto; `responsableBase` y `respFlujo` se convierten a su nombre si no eran texto. Esto cubre las reasignaciones, `respFlujo`, la bandeja compartida y el responsable que informa la conexión. Al cargar los casos de la conexión, un responsable que no es texto se convierte a su nombre antes de que nadie lo use; el inspector de `visitasBase` también pasa a texto.
+- **Filtros de la bandeja:** las listas de Sucursal y Responsable convierten cada valor a texto antes de ordenar con `localeCompare` (objeto → su nombre) y descartan los vacíos (y «—» en Responsable). Si encuentran un valor que no era texto, avisan una sola vez en la consola: «[SIRIUS] Casos con sucursal que no es texto: [ids]» o «[SIRIUS] Caso con responsable que no es texto: id, valor».
+- **Otros `localeCompare`:** revisé los 19 del proyecto. Toqué `DataTable` (al ordenar por columna, un objeto se ordena por su nombre y no por «[object Object]») y `sirius-enlace.js` (`proximos` ordenaba `a.at` sin convertir). El resto ordena catálogos, ciudades, marcas, provincias o fechas que ya se pasan por `String(...)` o que no vienen de los casos.
+- **Escena `cxresponsableobjeto`** (`?fsuc=1`).
+
+**Verificado**
+- **Causa reproducida:** con los archivos de antes de esta etapa y la escena nueva, la pantalla queda sin dibujar con «SIRIUS Back-office.renderVals(): a.localeCompare is not a function». Con los archivos nuevos se dibuja.
+- **cxresponsableobjeto (1280 × 720 y 1920 × 1080):** la fila 50012 dice «Agendado · Valeria Cevallos»; el filtro de Sucursal trae Todos y Quito; el de Responsable trae Todos, Andrea Salazar y Valeria Cevallos; la consola muestra «[SIRIUS] Caso con responsable que no es texto: 50012, {"nombre":"Valeria Cevallos","tipo":"agencia","agencia":"Eurosurvey S.A."}» una sola vez, aunque la pantalla se dibuje varias veces. Sin errores de consola y sin desplazamiento horizontal.
+- **Ordenar por la columna Responsable** (clic dos veces): Valeria Cevallos queda al final en ascendente y primero en descendente, sin error.
+- **`?fsuc=1`** (otro caso con la sucursal como objeto): la bandeja se dibuja, el filtro de Sucursal sigue con Todos y Quito, y la consola avisa «[SIRIUS] Casos con sucursal que no es texto: [50007]» una vez, además del aviso del responsable.
+- **Escenas ya existentes, a 1280 × 720 y 1920 × 1080:** bandejaexp, bandejaaseg, filtros, cpersfiltro, flujoportomar, flujoacciones, flujotomar, calrgbandeja, cxlimpio, coordvis, coord, coordcancelavisitas, coordvehiculoduplicado, lugarbuscar, cxcoordfases, cxlugar, autorecibida, reasignar, inicio y coordfases: sin errores de consola, sin avisos nuevos y sin desplazamiento horizontal.
+- `sirius-conexion.js` queda con su línea mínima. La escena nueva está en `datos-escenas.js` (637) y en `KNOWN_ESC` (594).
+
+**No verificado**
+- La conexión real: probé con la simulada. Con la asesoría ya corregida, el responsable llega como nombre y estos avisos no deberían salir.
+- Otras pantallas con un objeto como responsable o inspector (Agenda, Informes por completar, Monitor): no las recorrí con la escena nueva; el responsable que ven ya es texto porque sale de `finish`.
+- El caso de un objeto sin `nombre` (queda «Por asignar» o «—»): lo cubre el código, pero no lo abrí en pantalla.
+
+**Diferencias**
+- **Avisos de la consola:** además de lo pedido, el aviso del responsable sale cuando el flujo tuvo que convertir un inspector que llegó como objeto, aunque la lista del filtro ya vea texto; es el caso del 50012, que si no el aviso nunca saldría. Una visita cancelada no avisa.
+- **Responsable vacío:** si el flujo no encuentra a nadie, ahora dice «—» (antes quedaba vacío) y ese valor no entra en el filtro.
+- **Escena:** abre con los filtros de la bandeja limpios; sin eso el filtro por defecto (Responsable = Andrea Salazar) deja fuera al 50012. Para dejarlo en Agendado, los 3 vehículos van en una sola visita V1.
+- **`localeCompare` tocados:** `SIRIUS Back-office` (listas de Sucursal y Responsable), `DataTable` (orden de columnas) y `sirius-enlace.js` (`proximos`). Revisados sin cambios: `sirius-enlace.js` (otras dos, ya con `String`), `sirius-lugar.js` y `sirius-zonas.js` (provincias y ciudades), `sirius-solicitud-equipos.js` y `NuevaSolicitud` (marcas), `CalificacionRG` e `InformeRG` (ids de fotos, con `String`), `MotoresIA` (alcance del motor), `Formularios` (fecha de la versión) y `ConfiguracionGeneral` (fecha del historial, con `String`).
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| cxresponsableobjeto | Con la conexión simulada, 50012 en Agendado sin responsable y con el inspector como objeto: la bandeja dice «Valeria Cevallos», los filtros de Sucursal y Responsable se abren y la consola avisa una vez (`?fsuc=1`: otro caso con la sucursal como objeto) |
+
+También abrí bandejaexp, bandejaaseg, filtros, cpersfiltro, flujoportomar, flujoacciones, flujotomar, calrgbandeja, cxlimpio, coordvis, coord, coordcancelavisitas, coordvehiculoduplicado, lugarbuscar, cxcoordfases, cxlugar, autorecibida, reasignar, inicio y coordfases.
+
+Tiempo de la etapa: inicio 14/11/2026 21:34 · fin 14/11/2026 21:49 · 15 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa G-2c4
+
+Publiqué la etapa G-2c4 (Versión 222 con los archivos; la Versión 223 solo completa en este registro la hora de fin). Cancelar la solicitud ahora cancela también las visitas, un vehículo ya no puede estar en dos visitas abiertas, la oferta tiene «Marcar todos» y «Desmarcar todos», y revisé que la búsqueda de direcciones no filtre por la ciudad del caso (DEC-237). Las 4 escenas nuevas, coordcancelar, coordoferta y coordfases abren sin errores y sin desplazar la página a 1280 × 720 y 1920 × 1080.
+
+**Qué cambió**
+- **Cancelar la solicitud (sesión y conexión):** cancela todo lo abierto del caso.
+  - Las visitas Por agendar, Buscando inspector, Oferta enviada, Agendada, En camino y Sin respuesta pasan a «Cancelada», con el motivo. La tarjeta dice «Cancelada · motivo» y no tiene acciones.
+  - Las ofertas abiertas se retiran y los enlaces vigentes del caso (autoagendamiento y autoinspección) se anulan.
+  - La banda roja agrega «Visitas canceladas: V1, V2.» y el recuadro avisa, antes de confirmar, qué visitas también se cancelan.
+  - Con una visita En curso o Por sincronizar el recuadro muestra «Hay una visita en curso: espera a que termine o cancélala con el inspector.» y el botón no cancela. La base responde el mismo texto con `{ ok: false }`.
+  - Con la conexión, al confirmar se vuelven a leer las visitas de la base (vienen «Cancelada»). `casos[].cancelacion` trae `{ motivo, detalle, por, hora }` y se ve en la pestaña Coordinación («Cancelado por … · fecha») y en la banda roja. Con `{ ok: false }` todo vuelve atrás.
+- **Un vehículo, una sola visita abierta:**
+  - En la línea de vehículos de Coordinar visita, el que está en otra visita abierta sale deshabilitado como «PRB1212 · en V1», con el título «PRB1212 ya está en la visita V1 (Agendada)». Al reagendar esa visita, sus vehículos sí se eligen.
+  - En «Vehículos por coordinar» aparecen también, deshabilitados, los vehículos que ya están en una visita (el contador sigue contando solo los libres). Sin ninguno libre, «Crear visita con los seleccionados» dice: «Todos los vehículos ya están en una visita: no queda ninguno libre para una visita nueva».
+  - `agendarVisita` y `ofertarVisita` llevan `riesgos` (ids del caso: «50012-V1»…). La base rechaza el duplicado con «PRB1212 ya está en la visita V1 (Agendada)» y se muestra tal cual.
+  - Una causa que encontré: con la conexión, las visitas «Oferta enviada» no contaban como abiertas, y la línea de vehículos no marcaba los ocupados. Ahora cuenta toda visita que no esté Cancelada.
+- **Oferta:** «Marcar todos» y «Desmarcar todos» arriba de los inspectores, con «N de M marcados». Por defecto siguen marcados los que cubren el lugar. «Enviar oferta a N» se deshabilita sin inspectores marcados y su título dice «Marca al menos un inspector».
+- **Lugar:** no encontré nada en el prototipo que filtre las sugerencias por la ciudad del caso (revisé `SiriusUbicacion`, la fase Lugar y `SiriusLugar`): la ciudad solo ordena primero las de esa ciudad. Un resultado de otra ciudad cambia provincia, ciudad y zona sin pedir confirmación. Agregué una salvaguarda: si la conexión devuelve un resultado sin ciudad, se toma la que nombra el texto («…, Guayaquil») y solo al final la del caso.
+
+**Verificado**
+- **coordcancelavisitas:** cancelar deja V1 y V2 «Cancelada · El cliente desiste de la póliza» y la banda dice «Visitas canceladas: V1, V2.». Con `?fconf=0` se ve el recuadro con las visitas abiertas que también se cancelan. Con `?fpaso=tarjetas` la pestaña muestra las dos tarjetas «Cancelada · motivo» sin acciones y la causa en «Intentos de contacto». Con `?fcurso=1` aparece el aviso con «Visita V1 · En curso» y no se envía nada a la base.
+- **Con la conexión simulada:** `cancelarSolicitud` sale con `{ caso, motivo, detalle }`; con `?cxok=0` las visitas vuelven a «Agendada» y «Oferta enviada» y se muestra «La base rechazó la acción (prueba)». Llamé a la base directamente con una visita En curso y responde el aviso sin cambiar nada.
+- **Sesión (sin conexión, caso 20196 con 3 vehículos):** cancelar deja las 2 visitas «Cancelada · Solicitud duplicada», quita la oferta y revoca el enlace vigente. Con una visita En curso responde `{ ok: false }` con el aviso y las visitas no cambian. Agendar u ofertar un vehículo que ya está en otra visita, o reagendar sumándolo, devuelve «PBA4521 ya está en la visita V1 (Agendada)» o el equivalente.
+- **coordvehiculoduplicado:** en una visita nueva, «PRB1212 · en V1» sale deshabilitado (`aria-disabled`) y un clic no lo marca; con `?freag=1` PRB1212 se puede elegir; con `?fpestana=1` la casilla de «Vehículos por coordinar» sale deshabilitada. Con `?frech=1` (agendar) y `?frech=oferta` (ofertar) la base responde «PRB1212 ya está en la visita V1 (Agendada)» con `riesgos` ["50012-V1","50012-V2"] en la solicitud.
+- **coordofertamarcar:** por defecto quedan 4 de 6 marcados (los que cubren); con clics reales, «Desmarcar todos» deja 0 de 6 y «Enviar oferta a 0» deshabilitado; «Marcar todos» marca 6; marcar uno habilita «Enviar oferta a 1». Con los 6 marcados, enviar muestra «Oferta enviada a 6».
+- **coordlugarotraciudad:** con la escena abierta se ve Guayaquil (Guayas), zona Centro y las zonas de Guayaquil. Escribiendo «Kennedy» en la búsqueda de la escena `?fantes=1` (50012, Quito) las sugerencias traen Guayaquil, y buscar «Malecón 2000» cambia provincia, ciudad y zona (Quito · zona Sur → Guayaquil · zona Centro) sin confirmación.
+- **Tamaños:** las 4 escenas (con sus variantes), coordcancelar, coordoferta y coordfases, a 1280 × 720 y 1920 × 1080: la pantalla ocupa exactamente la ventana, sin desplazamiento de página, sin errores de consola y sin «undefined» ni «[object Object]». Además revisé a 1280 × 720 otras 25 escenas relacionadas (Contacto, modalidades, fecha y hora, autoinspección, cxcoordfases con `?fof=1` y `?cxok=0`, lugar, agenda y cxvisitacancelar, entre otras): sin errores.
+- `sirius-conexion.js` queda con su línea mínima. Las 7 escenas existen en `datos-escenas.js` (636 en total) y en `KNOWN_ESC` (593).
+
+**No verificado**
+- Las variantes `?frech=1` y `?frech=oferta` de coordvehiculoduplicado solo a 1280 × 720 (a 1920 × 1080 abrí la escena base, `?freag=1` y `?fpestana=1`).
+- La base real y la búsqueda de direcciones con un servicio real de mapas: usé la conexión simulada y el diccionario de prueba. Revisa a mano, con tu conexión, que `buscarDireccion` devuelva `ciudad` en cada resultado (coordlugarotraciudad).
+- Que el aviso de visita En curso salga igual con estados reales de la base como «Por sincronizar» o una autoinspección que el cliente está haciendo: lo probé con «En curso» (coordcancelavisitas `?fcurso=1`).
+- El tooltip visual al pasar el mouse sobre «PRB1212 · en V1» (comprobé el título, no cómo se pinta el tooltip) y un lector de pantalla (coordvehiculoduplicado).
+- Con la base real, que cancelar anule también los enlaces en la base: el simulador solo cambia el estado del enlace de la visita; en SIRIUS los enlaces se revocan en el motor de enlaces.
+
+**Diferencias**
+- **Lo que cuenta como abierto:** «Oferta enviada» (SIRIUS) equivale a «Buscando inspector» (base). La tarjeta y el título del vehículo dicen «Oferta enviada»; el mensaje de la base simulada dice «Buscando inspector». Mi base simulada ahora guarda así las ofertas nuevas y sus `riesgos`; antes las guardaba «Por agendar» sin riesgos.
+- **Autoinspección en curso:** una autoinspección que el cliente está haciendo («En curso por el cliente») también impide cancelar la solicitud, igual que «En curso» y «Por sincronizar». No venía en tu definición; dime si prefieres que solo bloqueen las dos primeras.
+- **Dividir visitas (solo ramos):** para cumplir la regla, ahora se envía primero la visita de origen con los riesgos que le quedan y luego la nueva; antes iba al revés. Con la conexión, si falla la primera no se envía la segunda.
+- **Un caso cancelado:** su pestaña ya no lista «Vehículos por coordinar» como «Por coordinar» (antes, al quedar sin visitas abiertas, volvían a salir). Dice «Caso cancelado: ya no hay vehículos por coordinar.».
+- **Solo vehículos:** la regla se aplica a casos de Vehículos; en Ramos Generales no cambió nada.
+- **Nombre del campo:** `casos[].cancelacion` usa `hora` (mi simulador usaba `en`); SIRIUS acepta también `obs`, `by` y `at` de la sesión.
+- **Rechazo de la base:** como en etapas anteriores, tras un rechazo al agendar u ofertar la pantalla de Coordinación vuelve a empezar y el mensaje se muestra como aviso; no queda el formulario abierto con el texto.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| coordcancelavisitas | V1 Agendada y V2 con oferta; cancelar la solicitud las deja «Cancelada · motivo» y retira la oferta (`?fconf=0`: el recuadro; `?fpaso=tarjetas`: las tarjetas; `?fcurso=1`: el aviso de visita En curso) |
+| coordvehiculoduplicado | PRB1212 en la V1: «PRB1212 · en V1» deshabilitado (`?freag=1`: reagendar la V1; `?fpestana=1`: la pestaña; `?frech=1` y `?frech=oferta`: el rechazo de la base) |
+| coordofertamarcar | «Marcar todos» y «Desmarcar todos» de la oferta (`?fmarcar=ninguno`: sin marcar; `?fmarcar=todos`: todos) |
+| coordlugarotraciudad | Desde 50012 (Quito), «Malecón 2000» cambia a Guayaquil, provincia, ciudad y zona (`?fantes=1`: el lugar de la solicitud) |
+
+También abrí coordcancelar, coordoferta, coordfases (y sus variantes de Lugar y Horario), coordcontacto, coordotronumero, coordenlaceauto, coordeditarcontacto, cxcoordcontacto (con `?fpaso=cancelar` y `?cxok=0`), coordautoinsp, coordvirtual, coordmodalidades, coordfechahora, cxcoordfases (con `?fof=1` y `?cxok=0`), coordvis, coordauto, coord, coordchoque, cxvisitacancelar, cxcoordcambiar, cxcoordins, cxvisitariesgos, lugarbuscar, lugarfuera y agendajornada.
+
+Tiempo de la etapa: inicio 14/11/2026 20:50 · fin 14/11/2026 21:22 · 32 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c3
 
 Publiqué la etapa G-2c3 (Versión 220 con los archivos; la Versión 221 solo completa en este registro la hora de fin). La fase Contacto de «Coordinar visita» quedó como en la maqueta G-1f (DEC-237). A la izquierda está «Llamada», con a quién se llama, el cronómetro, la nota y los 6 resultados de un clic; a la derecha, los intentos, el «Historial del caso» y el enlace de autoagendamiento. La cancelación de la solicitud se hace en el mismo lugar y deja el caso bloqueado con una banda roja.

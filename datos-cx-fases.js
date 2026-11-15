@@ -1,4 +1,9 @@
-// SIRIUS · Coordinar visita por fases con la conexión simulada (v1.1 · provisional · etapa G-2c3 · DEC-237 · 18/10/2026; v1.0 en G-2c2)
+// SIRIUS · Coordinar visita por fases con la conexión simulada (v1.2 · provisional · etapa G-2c4 · DEC-237 · 18/10/2026; v1.1 en G-2c3; v1.0 en G-2c2)
+// G-2c4: coordcancelavisitas (V1 Agendada y V2 con oferta; cancelar la solicitud las deja «Cancelada · motivo»; ?fpaso=tarjetas cierra el panel para ver las tarjetas; ?fcurso=1: V1 «En curso» y el aviso),
+// coordvehiculoduplicado (PRB1212 en la V1; ?freag=1 reagenda la V1; ?fpestana=1 muestra la pestaña; ?frech=1|oferta: la base rechaza «PRB1212 ya está en la visita V1 (Agendada)»),
+// coordofertamarcar (?fmarcar=ninguno|todos) y coordlugarotraciudad (busca una dirección de Guayaquil desde 50012 de Quito; ?fantes=1: sin buscar).
+// La base simulada: agendarVisita y ofertarVisita rechazan un vehículo que ya está en otra visita abierta; cancelarSolicitud cancela todas las visitas abiertas del caso (motivoCancelacion), retira las
+// ofertas, anula los enlaces vigentes y guarda casos[].cancelacion { motivo, detalle, por, hora }; con una visita «En curso» o «Por sincronizar» responde { ok: false } con el aviso.
 // G-2c3 · fase Contacto: coordcontacto (?fhist=1 abre el historial), coordotronumero (?fnum=9: celular de 9 dígitos), coordenlaceauto (3 intentos sin respuesta; ?fenviar=1 envía),
 // coordcancelar (?fconf=0: sin confirmar), coordeditarcontacto (?fedit=1: con el formulario abierto) y cxcoordcontacto (?fpaso=enlace|cancelar; ?cxok=0).
 // La base simulada responde además intentoContacto { caso, medio, resultado, obs, destino { tipo, nombre, numero, relacion }, duracionSeg } y cancelarSolicitud { caso, motivo, detalle }.
@@ -48,6 +53,15 @@
     cxcoordcontacto: [true, () => { const f = qp('fpaso'); return f === 'enlace' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], dest: CHOFER(), contacto: { enviarEnlace: true } }
       : f === 'cancelar' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { cancelar: { motivo: 'El cliente desiste de la póliza', detalle: DET_CANC, confirmar: true } } }
       : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], llamarHace: 61, contacto: { llamar: true, nota: 'Confirma la visita el lunes en la mañana.', resultado: 'Contestó' } }; }],
+    // G-2c4 · DEC-237: cancelar también las visitas, vehículos en una sola visita abierta, marcar o desmarcar inspectores y dirección de otra ciudad
+    coordcancelavisitas: [true, () => { const canc = { motivo: 'El cliente desiste de la póliza', detalle: DET_CANC }; return qp('fcurso') === '1' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { cancelar: Object.assign({ confirmar: false }, canc) } }
+      : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { cancelar: Object.assign({ confirmar: qp('fconf') !== '0', cerrarTras: qp('fpaso') === 'tarjetas' }, canc) } }; }, { v2: true, get curso() { return qp('fcurso') === '1'; } }],
+    coordvehiculoduplicado: [true, () => { if (qp('freag') === '1') return { fase: 'contacto', reagendar: 'V1' }; if (qp('fpestana') === '1') return { cerrado: true };
+      const r = qp('frech'); if (r === 'oferta') return { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas'], enviar: 'oferta', diaVista: 3 };
+      if (r === '1') return { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], fecha: 1, hIni: '14:00', hFin: '15:00', inspector: 'Diana Cárdenas', enviar: 'principal' };
+      return { fase: 'contacto', riesgos: ['PR121A', 'PRB1213'] }; }, { v1: 'PRB1212' }],
+    coordofertamarcar: [true, () => { const m = qp('fmarcar'); return { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, diaVista: 3, ofertaIns: m === 'ninguno' ? [] : m === 'todos' ? INSPECTORES.map((i) => i.nombre) : null }; }],
+    coordlugarotraciudad: [false, () => (qp('fantes') === '1' ? { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'] } : { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'], texto: 'Malecón 2000' })],
     cxcoordfases: [true, () => (qp('fof') === '1' ? { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 }
       : { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], fecha: 1, hIni: '14:00', hFin: '15:00', inspector: 'Diana Cárdenas', enviar: 'principal' })],
   };
@@ -59,13 +73,15 @@
   CC.cxSim = function (escena) { const e = ESC[escena]; if (!e) return baseCC(escena);
     const c = { id: '50012', orden: 'EMI-2026-119012', origen: 'BPM de Emisión', ramo: 'Vehículos', tipoRiesgo: 'Vehículos', broker: 'Andes Brokers', asegurado: 'Distribuidora de prueba Doce S.A.', ident: '1792233812001', placa: '', bien: 'Flota PRB1212, PR121A y PRB1213',
       fecha: '2026-10-13', registrado: '2026-10-13T09:02', sucursal: 'Quito', backoffice: 'Andrea Salazar', estado: e[0] ? 'Agendado' : 'En coordinación', responsable: 'Andrea Salazar', comercial: 'Carolina Vega', flujoVersion: 2,
-      riesgos: VEH.map((v, i) => ({ id: '50012-V' + (i + 1), label: v[0], detalle: v[1], nowrap: true, cobertura: 'Todo riesgo', estado: e[0] && i === 2 ? 'Agendado' : 'En coordinación' })),
+      riesgos: VEH.map((v, i) => ({ id: '50012-V' + (i + 1), label: v[0], detalle: v[1], nowrap: true, cobertura: 'Todo riesgo', estado: e[0] && i === (e[2] && e[2].v1 === 'PRB1212' ? 0 : 2) ? 'Agendado' : 'En coordinación' })),
       formularios: VEH.map(() => 'Vehículos livianos'), sumaAsegurada: VEH.map((v) => v[2]), anios: VEH.map((v) => v[3]), placas: VEH.map((v) => v[0]),
       riesgosBase: VEH.map((v) => ({ descripcion: v[1] + ' · ' + v[0], composicion: 'Vehículo', suma: v[2], datos: { placa: v[0], marca: v[1].split(', ')[0], modelo: v[1].split(', ')[1], anio: v[3] } })),
       solicitud: { formularios: ['Vehículos livianos'] }, dir: SUR + ', Quito', contacto: { nombre: 'Fernanda Prueba', cel: '0990000012', correo: 'flota.50012@prueba.sirius.ec' }, consentimiento: { whatsapp: true, sms: true, correo: true },
       intentos: [{ fecha: '2026-10-15T10:12', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 35 },
         { fecha: '2026-10-15T16:40', medio: 'Llamada', resultado: 'Buzón de voz', obs: 'Dejé mensaje de voz', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 48 }].concat(e[2] && e[2].tercero ? [{ fecha: '2026-10-16T09:05', medio: 'Llamada', resultado: 'No contestó', obs: '', by: 'Andrea Salazar', destino: { tipo: 'coordinacion', nombre: 'Fernanda Prueba', numero: '0990000012', relacion: '' }, duracionSeg: 30 }] : []),
-      visitasBase: e[0] ? [vis(1, 'Mauricio Endara', dia(3), '10:00', '10:45', { riesgos: ['50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) })] : [] };
+      visitasBase: (e[0] ? [vis(1, 'Mauricio Endara', dia(3), '10:00', '10:45', Object.assign({ riesgos: [e[2] && e[2].v1 === 'PRB1212' ? '50012-V1' : '50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) }, e[2] && e[2].curso ? { estado: 'En curso', inicio: dia(0) + 'T13:00', fin: dia(0) + 'T13:45' } : {}))] : [])
+        .concat(e[2] && e[2].v2 ? [{ n: 2, modalidad: 'Presencial', estado: 'Buscando inspector', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], riesgos: ['50012-V1', '50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)),
+          oferta: { inspectores: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], desde: dia(1), hasta: dia(3), minutos: 45, vigenciaHoras: 2, nota: '', vence: HOY + 'T15:40' } }] : []) };
     // Agenda de los inspectores (hoy, mañana sábado y el lunes): bloques ocupados con su caso.
     const casos = [c, otro('50007', 'Sofía Moreno Paz', [vis(1, 'Mauricio Endara', dia(0), '09:00', '09:45'), vis(2, 'Mauricio Endara', dia(0), '14:00', '15:00')]), otro('30001', 'Panadería La Ronda', [vis(1, 'Diana Cárdenas', dia(0), '15:00', '16:30')]),
       otro('20200', 'Talleres Andinos', [vis(1, 'Luis Andrade', dia(0), '15:00', '15:45'), vis(2, 'Luis Andrade', dia(1), '10:00', '10:45')]), otro('20189', 'Mónica Ruiz', [vis(1, 'Marco Tapia', dia(0), '16:00', '16:45'), vis(2, 'Marco Tapia', dia(3), '08:00', '12:00')]),
@@ -80,15 +96,24 @@
       .concat([{ hora: '2026-10-13T09:05', accion: 'Caso asignado a coordinación', detalle: 'Responsable: Andrea Salazar', actor: 'SIRIUS', rol: 'Sistema' }, { hora: '2026-10-13T09:02', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]);
     return X; };
   // Base simulada: ofertarVisita y anularOferta (agendarVisita sigue en datos-cx-inspectores y datos-cx-lugar).
+  // G-2c4: una visita abierta es toda la que no está Cancelada ni terminada; «Buscando inspector» es la que tiene la oferta enviada.
+  const FIN = /cancel|termin|realiz|finaliz|complet/i, estV = (v) => (v.oferta && /por agendar/i.test(String(v.estado || '')) ? 'Buscando inspector' : v.estado);
+  const dupVeh = (c, d) => { const L = Array.isArray(c.visitasBase) ? c.visitasBase : [], ids = Array.isArray(d.riesgos) ? d.riesgos : [];
+    for (let i = 0; i < ids.length; i++) { const o = L.find((x) => x && x.n !== d.visita && !FIN.test(String(x.estado || '')) && Array.isArray(x.riesgos) && x.riesgos.indexOf(ids[i]) >= 0);
+      if (o) { const r = (c.riesgos || []).find((y) => y.id === ids[i]); return (r ? r.label : ids[i]) + ' ya está en la visita V' + o.n + ' (' + estV(o) + ')'; } } return ''; };
   CC.aplicar = function (X, tipo, d) { if (!X || !X.coordEscena || !X.coordEscena.fases || ['ofertarVisita', 'anularOferta', 'agendarVisita', 'intentoContacto', 'cancelarSolicitud'].indexOf(tipo) < 0) return baseAp(X, tipo, d);
     if (tipo === 'intentoContacto' || tipo === 'cancelarSolicitud') { const c1 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c1) return { ok: false, mensaje: 'El caso no existe en la base' }; const E1 = (X.eventos[c1.id] = X.eventos[c1.id] || []); // G-2c3 · DEC-237
       if (tipo === 'intentoContacto') { if (!d.resultado) return { ok: false, mensaje: 'Falta el resultado del intento' }; c1.intentos = (c1.intentos || []).concat([{ fecha: '2026-10-16T13:40', medio: d.medio, resultado: d.resultado, obs: d.obs || '', by: U.nombre, destino: d.destino || null, duracionSeg: d.duracionSeg || 0 }]);
         E1.unshift({ hora: '2026-10-16T13:40', accion: 'Intento de contacto', detalle: d.medio + ' · ' + d.resultado + (d.destino ? ' · a ' + d.destino.nombre + ' · ' + d.destino.numero : '') + (d.duracionSeg ? ' · ' + d.duracionSeg + ' s' : ''), actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Intento registrado en la base' }; }
       if (!d.motivo || String(d.detalle || '').trim().length < 10) return { ok: false, mensaje: 'Falta el motivo o el detalle de la cancelación' }; if (c1.estado === 'Cancelado') return { ok: false, mensaje: 'El caso ya está cancelado' };
-      c1.estado = 'Cancelado'; c1.cancelacion = { motivo: d.motivo, detalle: d.detalle, por: U.nombre, en: '2026-10-16T13:40' }; E1.unshift({ hora: '2026-10-16T13:40', accion: 'Solicitud cancelada', detalle: d.motivo + ' · ' + d.detalle, actor: U.nombre, rol: U.rol });
+      const V1c = Array.isArray(c1.visitasBase) ? c1.visitasBase : [], enc = V1c.find((x) => x && /curso|sincroniz/i.test(String(x.estado || '')) && !FIN.test(String(x.estado || '')));
+      if (enc) return { ok: false, mensaje: 'Hay una visita en curso: espera a que termine o cancélala con el inspector.' }; // G-2c4 · DEC-237
+      const canceladas = [], retiradas = []; V1c.forEach((x) => { if (!x || FIN.test(String(x.estado || ''))) return; canceladas.push('V' + x.n); if (x.oferta) { retiradas.push('V' + x.n); delete x.oferta; } x.estado = 'Cancelada'; x.motivoCancelacion = d.motivo; if (x.enlace && typeof x.enlace === 'object' && /vigente/i.test(String(x.enlace.estado || ''))) x.enlace.estado = 'Anulado'; });
+      c1.estado = 'Cancelado'; c1.cancelacion = { motivo: d.motivo, detalle: d.detalle, por: U.nombre, hora: '2026-10-16T13:40' }; E1.unshift({ hora: '2026-10-16T13:40', accion: 'Solicitud cancelada', detalle: d.motivo + ' · ' + d.detalle + (canceladas.length ? ' · Visitas canceladas: ' + canceladas.join(', ') : '') + (retiradas.length ? ' · Ofertas retiradas: ' + retiradas.join(', ') : ''), actor: U.nombre, rol: U.rol });
       return { ok: true, mensaje: 'Solicitud cancelada en la base' }; }
     if (tipo === 'agendarVisita') { // con el reloj de demostración (viernes 16/10/2026, 13:40): valida el inspector y la hora, y guarda la visita con su lugar y la alerta de cobertura
       const c0 = (X.casos || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c0) return { ok: false, mensaje: 'El caso no existe en la base' };
+      if (d.accion !== 'cambiarInspector') { const dm = dupVeh(c0, d); if (dm) return { ok: false, mensaje: dm }; } // G-2c4 · DEC-237: un vehículo, una sola visita abierta
       const act = (X.inspectores || []).filter((i) => /^activ/i.test(i.estado || '') && !(i.tipo === 'Agencia' && !i.agencia)).map((i) => i.nombre);
       if (d.inspector && act.indexOf(d.inspector) < 0) return { ok: false, mensaje: 'El inspector ' + d.inspector + ' no existe en la base' };
       const ini = String(d.inicio || '').slice(0, 16); if (ini && ini < '2026-10-16T13:40') return { ok: false, mensaje: 'La hora elegida ya pasó' };
@@ -102,10 +127,28 @@
     const V = c.visitasBase = c.visitasBase || [], E = (X.eventos[c.id] = X.eventos[c.id] || []), ahora = '2026-10-16T13:40';
     if (tipo === 'anularOferta') { const i = V.findIndex((x) => x.n === d.visita && x.oferta); if (i < 0) return { ok: false, mensaje: 'La oferta ya no existe' }; V.splice(i, 1); E.unshift({ hora: ahora, accion: 'Oferta anulada', detalle: 'V' + d.visita, actor: U.nombre, rol: U.rol }); return { ok: true, mensaje: 'Oferta anulada' }; }
     if (!Array.isArray(d.inspectores) || !d.inspectores.length) return { ok: false, mensaje: 'Elige al menos un inspector' };
+    { const dm = dupVeh(c, d); if (dm) return { ok: false, mensaje: dm }; } // G-2c4 · DEC-237
     const t = new Date(2026, 9, 16, 13 + (d.vigenciaHoras || 2), 40), z = (n) => String(n).padStart(2, '0'), vence = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(t.getHours()) + ':' + z(t.getMinutes());
-    V.push({ n: d.visita, modalidad: d.modalidad || 'Presencial', estado: 'Por agendar', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], lugar: d.lugar ? JSON.parse(JSON.stringify(d.lugar)) : null, direccion: d.lugar ? d.lugar.direccion : '',
+    V.push({ n: d.visita, modalidad: d.modalidad || 'Presencial', estado: 'Buscando inspector', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], riesgos: Array.isArray(d.riesgos) ? d.riesgos.slice() : [], lugar: d.lugar ? JSON.parse(JSON.stringify(d.lugar)) : null, direccion: d.lugar ? d.lugar.direccion : '',
       oferta: { inspectores: d.inspectores.slice(), desde: d.desde, hasta: d.hasta, minutos: d.minutos, vigenciaHoras: d.vigenciaHoras, nota: d.nota || '', vence: vence } });
     E.unshift({ hora: ahora, accion: 'Oferta enviada', detalle: 'V' + d.visita + ' a ' + d.inspectores.join(', ') + ' · del ' + d.desde + ' al ' + d.hasta + (d.nota ? ' · ' + d.nota : ''), actor: U.nombre, rol: U.rol });
     return { ok: true, mensaje: 'Oferta enviada', ofertas: d.inspectores.length, vence: vence }; };
   CC.cxFases = { escenas: ESC, inspectores: INSPECTORES, disponibilidad: DISP, modSim: MODSIM };
+})();
+// Etapa G-2c5 · cxresponsableobjeto: la conexión entrega el caso 50012 en Agendado sin responsable y con el inspector como objeto { nombre, tipo, agencia } (también en su visita V1).
+// La bandeja se dibuja, el responsable dice «Valeria Cevallos», los filtros de Sucursal y Responsable se abren y la consola avisa una sola vez. ?fsuc=1: otro caso con la sucursal como objeto.
+(function () {
+  const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxFases || !CC.cxSim) return;
+  const prev = CC.cxSim.bind(CC), qp = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
+  CC.cxEscenas.cxresponsableobjeto = ['50012', 'ninguna'];
+  CC.cxSim = function (escena) {
+    if (escena !== 'cxresponsableobjeto') return prev(escena);
+    const X = prev('coordfases'), ins = () => ({ nombre: 'Valeria Cevallos', tipo: 'agencia', agencia: 'Eurosurvey S.A.' });
+    delete X.coordEscena;
+    const c = (X.casos || []).find((x) => x && String(x.id) === '50012'); if (!c) return X;
+    c.estado = 'Agendado'; delete c.responsable; c.inspector = ins();
+    (c.riesgos || []).forEach((r) => { r.estado = 'Agendado'; }); // los tres vehículos en la visita V1: el caso queda de verdad en Agendado
+    (c.visitasBase || []).forEach((v) => { if (v && /agendad/i.test(String(v.estado || ''))) { v.inspector = ins(); v.riesgos = (c.riesgos || []).map((r) => r.id); } });
+    if (qp('fsuc') === '1') { const o = (X.casos || []).find((x) => x && String(x.id) !== '50012'); if (o) o.sucursal = { nombre: o.sucursal || 'Quito', cod: '1701' }; }
+    return X; };
 })();

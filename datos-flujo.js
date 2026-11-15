@@ -1,4 +1,4 @@
-// SIRIUS · Flujo, SLA y responsables del caso (v1.3 · provisional · etapa C2-3 · 08/11/2026)
+// SIRIUS · Flujo, SLA y responsables del caso (v1.4 · provisional · etapa G-2c5 · 15/11/2026; v1.3 en C2-3)
 // v1.3 (etapa C2-3 · DEC-180): estado «Informe por completar» entre «En curso» y la determinación o la calificación (Vehículos presencial y
 // virtual guiada; Ramos Generales presencial), con su etapa de SLA de 24 h hábiles desde el fin de la visita, alerta al 80 % (alertaPct) y tarea
 // al Coordinador al vencer; responsable «completa» (el inspector o el Control de calidad de su agencia); transiciones nuevas.
@@ -205,19 +205,27 @@
     if (h <= (umbral != null ? umbral : F.porVencerHoras)) return { tono: 'warning', etiqueta: t, titulo: 'Por vencer · quedan ' + exacto + ' · vence el ' + v };
     return { tono: 'success', etiqueta: t, titulo: 'En tiempo · quedan ' + exacto + ' · vence el ' + v };
   };
-  // Responsable actual según el estado. visitaInspector: inspector de la visita más próxima (si la pantalla lo conoce).
+  // Etapa G-2c5: un valor para mostrar u ordenar siempre es texto. Texto → recortado; objeto → su nombre (nombre, name, texto, etiqueta o label); lo demás → ''.
+  // F.noTexto guarda, por caso, el último valor que no era texto y se convirtió (lo lee la bandeja para avisar una sola vez en la consola).
+  F.texto = (v) => { if (v == null) return ''; if (typeof v === 'string') return v.trim(); if (typeof v === 'number') return String(v); if (typeof v !== 'object' || Array.isArray(v)) return ''; const k = ['nombre', 'name', 'texto', 'etiqueta', 'label'].find((x) => typeof v[x] === 'string' && v[x].trim()); return k ? v[k].trim() : ''; };
+  F.noTexto = {};
+  // Responsable actual según el estado (siempre texto: nombre de una persona, de un rol o «—»). visitaInspector: inspector de la visita más próxima (si la pantalla lo conoce).
+  // G-2c5: el inspector del caso o de la visita puede llegar como objeto { nombre, tipo, agencia }: se usa su nombre; sin nombre, sigue la regla siguiente («Por asignar»).
   F.responsable = (caso, visitaInspector) => {
-    const e = F.estado(caso.estado); if (!e) return caso.responsable || '—';
+    const T = F.texto, nota = (v) => { if (v != null && v !== '' && typeof v !== 'string' && caso && caso.id != null) F.noTexto[String(caso.id)] = v; return T(v); };
+    const e = F.estado(caso.estado); if (!e) return nota(caso.responsable) || '—';
+    let r;
     switch (e.resp) {
-      case 'coordinador': return F.coordinadorPorSucursal[caso.sucursal] || F.coordinadorPorSucursal['*'];
-      case 'inspector': return visitaInspector || caso.inspector || caso.responsable || 'Por asignar';
-      case 'completa': { const SC = window.SiriusCompletar; return (SC && SC.quienCompleta ? SC.quienCompleta(caso).nombre : '') || visitaInspector || caso.responsable || 'Por asignar'; }
-      case 'ejecutivo': return caso.backoffice;
-      case 'suscriptor': return F.suscriptorPorGrupo[F.grupoDe(caso)] || 'Por asignar';
-      case 'inspeccionado': return caso.orden ? caso.backoffice : caso.comercial;
-      case 'bpm': return 'BPM de Emisión';
-      default: return '—';
+      case 'coordinador': r = F.coordinadorPorSucursal[T(caso.sucursal)] || F.coordinadorPorSucursal['*']; break;
+      case 'inspector': r = nota(visitaInspector) || nota(caso.inspector) || nota(caso.responsable) || 'Por asignar'; break;
+      case 'completa': { const SC = window.SiriusCompletar; r = (SC && SC.quienCompleta ? T((SC.quienCompleta(caso) || {}).nombre) : '') || nota(visitaInspector) || nota(caso.responsable) || 'Por asignar'; break; }
+      case 'ejecutivo': r = nota(caso.backoffice); break;
+      case 'suscriptor': r = F.suscriptorPorGrupo[F.grupoDe(caso)] || 'Por asignar'; break;
+      case 'inspeccionado': r = nota(caso.orden ? caso.backoffice : caso.comercial); break;
+      case 'bpm': r = 'BPM de Emisión'; break;
+      default: r = '—';
     }
+    return T(r) || '—';
   };
   window.SIRIUS_FLUJO = F;
 })();

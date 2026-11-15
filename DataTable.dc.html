@@ -304,7 +304,8 @@ class Component extends DCLogic {
     let sorted = rows;
     if (sortKey) {
       const cmp = (a, b) => {
-        const x = this.sortVal(a, sortKey), y = this.sortVal(b, sortKey);
+        const nm = (v) => v && typeof v === 'object' && !Array.isArray(v) ? (typeof v.nombre === 'string' ? v.nombre : '') : v; // G-2c5: un valor que llega como objeto se ordena por su nombre
+        const x = nm(this.sortVal(a, sortKey)), y = nm(this.sortVal(b, sortKey));
         if (x == null && y == null) return 0;
         if (x == null) return 1;
         if (y == null) return -1;

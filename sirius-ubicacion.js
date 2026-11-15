@@ -1,4 +1,4 @@
-// SIRIUS · Ubicar direcciones (v1.0 · etapa G-2a2 · DEC-235 · 18/10/2026). Lo usan Ciudades y zonas («Probar una dirección») y, después, Coordinación y el portal.
+// SIRIUS · Ubicar direcciones (v1.1 · etapa G-2c4 · DEC-237; v1.0 en G-2a2 · DEC-235 · 18/10/2026; G-2c4: la ciudad del caso solo da preferencia, la ciudad del resultado manda). Lo usan Ciudades y zonas («Probar una dirección») y, después, Coordinación y el portal.
 // SiriusUbicacion.buscar(texto, codCiudad) → promesa de [{ texto, ciudad (COD_CANTON), punto: [lat, lng] | null }] (punto null: la dirección existe pero no se pudo ubicar).
 // Si existe window.SIRIUS_CONEXION.buscarDireccion(texto, codCiudad), la usa (la asesoría la conectará a un servicio real de mapas); si no, busca en el diccionario
 // de direcciones de prueba (las de la maqueta G-1b). Con menos de 3 letras devuelve []. Primero van las de la ciudad pedida.
@@ -31,10 +31,13 @@
     const pal = n.split(/[\s,;]+/).filter((w) => w.length > 2); // G-2c2: sin comas ni punto y coma pegados a las palabras
     return U.DIRECCIONES.filter((d) => { const t = norm(d.texto + ' ' + nomCiudad(d.ciudad)); return t.includes(n) || (pal.length && pal.every((w) => t.includes(w))); })
       .sort((a, b) => (b.ciudad === cod ? 1 : 0) - (a.ciudad === cod ? 1 : 0)).slice(0, 6).map((d) => ({ texto: d.texto, ciudad: d.ciudad, punto: d.punto ? d.punto.slice() : null })); };
+  // G-2c4: la ciudad del resultado (código INEC o nombre); si la conexión no la trae, la que nombra el texto («…, Guayaquil»); solo al final, la del caso (que solo da preferencia).
+  const ciudadDe = (x, cod) => { const L = W.SiriusLugar, Z = W.SiriusZonas; if (x.ciudad) { const c = L && L.ciudadDe ? L.ciudadDe(x.ciudad) : ''; return String(c || x.ciudad); }
+    if (Z && Z.ciudades) { const n = norm(x.texto), m = Z.ciudades().filter((y) => norm(y.nombre).length > 4 && n.indexOf(norm(y.nombre)) >= 0).sort((a, b) => b.nombre.length - a.nombre.length)[0]; if (m) return m.cod; } return String(cod || ''); };
   U.conServicio = () => !!(W.SIRIUS_CONEXION && typeof W.SIRIUS_CONEXION.buscarDireccion === 'function');
   U.buscar = (texto, cod) => { const X = W.SIRIUS_CONEXION;
     if (X && typeof X.buscarDireccion === 'function') { let pr; try { pr = Promise.resolve(X.buscarDireccion(texto, cod)); } catch (e) { pr = Promise.resolve([]); }
-      return pr.then((r) => (Array.isArray(r) ? r : []).filter((x) => x && x.texto).map((x) => ({ texto: String(x.texto), ciudad: String(x.ciudad || cod || ''), punto: Array.isArray(x.punto) && x.punto.length === 2 ? [+x.punto[0], +x.punto[1]] : null })), () => []); }
+      return pr.then((r) => (Array.isArray(r) ? r : []).filter((x) => x && x.texto).map((x) => ({ texto: String(x.texto), ciudad: ciudadDe(x, cod), punto: Array.isArray(x.punto) && x.punto.length === 2 ? [+x.punto[0], +x.punto[1]] : null })), () => []); }
     return Promise.resolve(U.buscarLocal(texto, cod)); };
   W.SiriusUbicacion = U;
 })();

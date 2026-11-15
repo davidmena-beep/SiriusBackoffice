@@ -94,14 +94,14 @@
 </div>
 <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:var(--radius-sm)">
 <sc-for list="{{ pending }}" as="r" hint-placeholder-count="3">
-<li style="display:grid;grid-template-columns:auto minmax(0,1.2fr) minmax(0,1.6fr) auto;align-items:center;gap:16px;padding:12px 16px;border-top:{{ r.border }};background:{{ r.bg }}">
-<span style="display:inline-flex;width:20px"><sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.toggle }}" aria-label="{{ r.cbLabel }}" style="width:20px;height:20px;margin:0;accent-color:var(--cyan-700);cursor:pointer"></sc-if></span>
+<li data-co-veh-oc="{{ r.oc }}" title="{{ r.tip }}" style="display:grid;grid-template-columns:auto minmax(0,1.2fr) minmax(0,1.6fr) 116px;align-items:center;gap:16px;padding:12px 16px;border-top:{{ r.border }};background:{{ r.bg }}">
+<span style="display:inline-flex;width:20px"><sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}"><input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.toggle }}" aria-label="{{ r.cbLabel }}" aria-disabled="{{ r.ariaDis }}" title="{{ r.tip }}" style="width:20px;height:20px;margin:0;accent-color:var(--cyan-700);cursor:{{ r.cur }}"></sc-if></span>
 <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:15px;font-weight:700;color:var(--text-strong);white-space:{{ r.ws }}">{{ r.label }}</span><span style="font-size:13px;color:var(--text-muted)">{{ r.sub }}</span></span>
 <span style="font-size:14px;color:var(--text-body)">{{ r.dir }}</span>
-<span title="{{ r.estadoFull }}" style="display:inline-flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="90px,22px"><span style="white-space:nowrap">{{ r.estado }}</span></x-import></span>
+<span title="{{ r.estadoFull }}" style="display:inline-flex;justify-self:end"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="90px,22px"><span style="white-space:nowrap">{{ r.estado }}</span></x-import></span>
 </li>
 </sc-for>
-<sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}"><li style="padding:14px 16px;font-size:14px;color:var(--text-muted)">Todos los riesgos tienen una visita asignada.</li></sc-if>
+<sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}"><li style="padding:14px 16px;font-size:14px;color:var(--text-muted)">{{ noPendingTxt }}</li></sc-if>
 </ul>
 <sc-if value="{{ hasProposals }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;flex-direction:column;gap:10px">
@@ -347,7 +347,9 @@ class Component extends DCLogic {
   // Lo que recibe SiriusCoordinar (la vista por fases): el formulario, sus errores y las acciones de Coordinación.
   fasesCtx(p, o) { const P = this.props, s = this.state, SLg = this.SL(), LC = this.lugarCaso(), onA = P.onAction || (() => {}), rs = P.riesgos || [], E = o.errs;
     const ids = p.riesgos || [], vid = p.mode === 'nueva' ? (p.ofertaId || o.nextId) : p.visitId, srcIds = o.src ? (o.src.riesgos || []) : [];
-    const opc = p.mode === 'nueva' ? rs.filter(r => o.pend.some(x => x.id === r.id) || ids.includes(r.id)) : rs.filter(r => srcIds.includes(r.id) || ids.includes(r.id));
+    const conVeh = !!o.veh && !o.single, ocup = (id) => { if (!conVeh) return null; const v = o.vis.find(x => x.estado !== 'Cancelada' && x.id !== p.visitId && x.id !== p.ofertaId && (x.riesgos || []).includes(id)); return v ? { id: v.id, estado: v.estado } : null; }; // G-2c4 · DEC-237: la línea de vehículos muestra todos; el de otra visita abierta queda deshabilitado
+    const opc = p.mode === 'nueva' ? (conVeh ? rs : rs.filter(r => o.pend.some(x => x.id === r.id) || ids.includes(r.id))) : (conVeh && p.mode === 'reagendar' && this.cxBase() ? rs : rs.filter(r => srcIds.includes(r.id) || ids.includes(r.id)));
+    const ENC = ['En curso', 'Por sincronizar', 'En curso por el cliente'], vEnc = o.vis.find(v => ENC.includes(v.estado)), vAbi = o.vis.filter(v => !['Cancelada', 'Realizada'].includes(v.estado) && !ENC.includes(v.estado));
     const r0 = this.rById(ids[0] || (rs[0] || {}).id), prev = o.vis.filter(v => v.estado !== 'Cancelada' && v.id !== p.visitId && v.mod === 'Presencial' && (v.lugar || v.dir)).slice(-1)[0];
     const ofV = p.ofertaId ? o.vis.find(v => v.id === p.ofertaId && v.oferta && v.estado === 'Oferta enviada') : null;
     const r = this.reloj(), nowM = r ? (r.min != null ? r.min : (window.SiriusFecha ? window.SiriusFecha.aMin(r.hora) : 0)) : (() => { const m = /T(\d\d):(\d\d)/.exec(this.nowIso); return m ? +m[1] * 60 + +m[2] : 0; })();
@@ -357,7 +359,7 @@ class Component extends DCLogic {
     return {
       titulo: p.mode === 'contacto' ? 'Contacto del caso' : p.mode === 'nueva' ? 'Coordinar visita ' + vid : p.mode === 'reagendar' ? 'Reagendar visita ' + vid : 'Cambiar inspector · ' + vid, casoId: P.caseId, asegurado: LC.asegurado || '', sucursal: LC.sucursal || '', sla: LC.sla || '', slaTono: LC.slaTono || '',
       modo: p.mode, p, patch: (q) => this.setState(st => st.pnl ? { pnl: Object.assign({}, st.pnl, q) } : null), touch: (k) => this.touch(k), touched: s.touched, errs: E, errMsg: (k) => typeof E[k] === 'string' ? E[k] : k === 'riesgos' ? 'Incluye al menos un riesgo.' : 'Revisa el dato.',
-      mods: this.modsLista(ids), modsPara: (q) => this.modsLista(q), riesgosOpc: opc.map(x => ({ id: x.id, label: x.label, sub: x.sub })), vehEditable: !!o.single ? false : (p.mode === 'nueva' || (p.mode === 'reagendar' && !!this.cxBase())), vehNombre: o.veh ? 'Vehículos' : 'Riesgos', vehTxt: ids.map(id => this.rById(id).label).join(', '),
+      mods: this.modsLista(ids), modsPara: (q) => this.modsLista(q), riesgosOpc: opc.map(x => ({ id: x.id, label: x.label, sub: x.sub, ocupado: ocup(x.id) })), enCurso: vEnc ? { id: vEnc.id, estado: vEnc.estado } : null, abiertas: vAbi.map(v => ({ id: v.id, estado: v.estado })), vehEditable: !!o.single ? false : (p.mode === 'nueva' || (p.mode === 'reagendar' && !!this.cxBase())), vehNombre: o.veh ? 'Vehículos' : 'Riesgos', vehTxt: ids.map(id => this.rById(id).label).join(', '),
       intentos: ints, acc: { registrar: o.intVals.openInt, enviarAgenda: o.intVals.enviarAgenda, agMotivo: o.intVals.agMotivo, cancelarCaso: P.canCancel !== false && o.intVals.canCancelCase ? o.intVals.openCc : null }, cp: cpL,
       lugarSolicitud: SLg ? ((LC.fijo && (LC.porRiesgo || {})[ids[0]]) || SLg.desdeTexto(r0.dir || '', LC.ciudad, '')) : null, lugarAnterior: prev && SLg ? { id: prev.id, lugar: this.lugarDeVisita(prev) } : null, ciudad: LC.ciudad || '',
       INS: this.INS.filter(i => i.n !== o.actual), jornada: (n) => this.jornada(n), slots: (n, f, ex) => this.slotsInfo(n, f, ex), capacidad: (n) => this.capacidad(n), hoy: this.today, ahoraMin: nowM, durDef: 45,
@@ -373,7 +375,7 @@ class Component extends DCLogic {
       registrarIntento: (q) => { const r = this.reloj(); return onA('intento', { intento: { fecha: r ? r.hoy + 'T' + r.hora : this.nowIso, medio: 'Llamada', resultado: q.resultado, obs: q.obs || '', destino: q.destino, duracionSeg: q.duracionSeg || 0 } }); },
       cancelar: (m, d) => { this.setState(st => st.pnl ? { pnl: Object.assign({}, st.pnl, { cancelAqui: true }) } : null); const r = this.reloj(); return onA('cancelarCaso', { motivo: m, obs: d, at: r ? r.hoy + 'T' + r.hora : this.nowIso }); },
       puedeCancelar: P.canCancel !== false && !!o.intVals.canCancelCase && P.canEdit !== false, motivosCanc: this.motivosCanc(),
-      cancelado: P.estadoCaso === 'Cancelado' && P.cancelacion ? { motivo: P.cancelacion.motivo || '', obs: P.cancelacion.obs || '', by: P.cancelacion.by || '', when: P.cancelacion.at ? this.fmtDT(P.cancelacion.at) : '' } : null,
+      cancelado: P.estadoCaso === 'Cancelado' && P.cancelacion ? { motivo: P.cancelacion.motivo || '', obs: P.cancelacion.obs || '', by: P.cancelacion.by || '', when: P.cancelacion.at ? this.fmtDT(P.cancelacion.at) : '', visitas: o.vis.filter(v => v.estado === 'Cancelada' && v.motivoCancel === P.cancelacion.motivo).map(v => v.id) } : null,
       maxIntentos: window.SiriusIntentos && window.SiriusIntentos.maximo ? window.SiriusIntentos.maximo() : 3,
       autoagenda: this.autoagendaCtx(p, o.intVals), enviarAutoagenda: (q) => this.enviarAutoagenda(p, q),
       historial: () => (typeof P.historialCaso === 'function' ? P.historialCaso() : []) };
@@ -452,7 +454,9 @@ class Component extends DCLogic {
       if (E.texto && SL && U && s.pnl.lugar) { const r = U.buscarLocal(E.texto, s.pnl.lugar.ciudad); if (r.length && r[0].punto) { const l = SL.calcular(Object.assign({}, s.pnl.lugar, { direccion: r[0].texto, ciudad: r[0].ciudad, provincia: SL.provDe(r[0].ciudad), punto: r[0].punto, zona: null, estadoZona: '', origen: 'Búsqueda' })); Object.assign(s.pnl, { lugar: l, dir: l.direccion, ref: l.referencia, lugarBuscar: false }); } }
       const dia = (k) => { const d = new Date(this.today + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); };
       if (E.fecha != null) s.pnl.fecha = typeof E.fecha === 'number' ? dia(E.fecha) : E.fecha; if (E.hIni) s.pnl.hIni = E.hIni; if (E.hFin) s.pnl.hFin = E.hFin; if (E.inspector) s.pnl.inspector = E.inspector; if (E.fueraMot) s.pnl.fueraMot = E.fueraMot;
-      Object.assign(s.pnl, { fase: E.fase || 'contacto', enviar: E.enviar || '', verFuera: !!E.verFuera, panelOferta: !!E.panelOferta, ofertaIns: E.ofertaIns || null, propAuto: false, hFinAuto: false }); if (E.contacto) s.pnl.ctoEsc = JSON.parse(JSON.stringify(E.contacto)); if (E.dest) s.pnl.dest = Object.assign({}, s.pnl.dest, E.dest); if (E.llamarHace) s.pnl.llamarHace = E.llamarHace; if (E.obs) s.pnl.obs = E.obs; /* G-2c3: escenas de la fase Contacto */ if (E.fecha == null && E.diaVista != null) s.pnl.diaVista = dia(E.diaVista); }
+      Object.assign(s.pnl, { fase: E.fase || 'contacto', enviar: E.enviar || '', verFuera: !!E.verFuera, panelOferta: !!E.panelOferta, ofertaIns: E.ofertaIns || null, propAuto: false, hFinAuto: false }); if (E.contacto) s.pnl.ctoEsc = JSON.parse(JSON.stringify(E.contacto)); if (E.dest) s.pnl.dest = Object.assign({}, s.pnl.dest, E.dest); if (E.llamarHace) s.pnl.llamarHace = E.llamarHace; if (E.obs) s.pnl.obs = E.obs; /* G-2c3: escenas de la fase Contacto */ if (E.fecha == null && E.diaVista != null) s.pnl.diaVista = dia(E.diaVista);
+      if (E.reagendar) { const v0 = this.visits().find(x => x.id === E.reagendar); if (v0) { s.pnl = this.newForm(v0.riesgos, Object.assign({}, v0, { mode: 'reagendar', visitId: v0.id, riesgos: v0.riesgos })); s.pnl.fase = E.fase || 'contacto'; s.insQ = v0.inspector || ''; } } /* G-2c4: reagendar una visita (sus vehículos sí se pueden elegir) */
+      if (E.cerrado) s.pnl = null; /* G-2c4: sin el panel, para ver la pestaña */ }
     else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false && ['cxcoordins', 'cxcoordpasado'].includes(pr)) { s.pnl = this.newForm(rs.map(r => r.id)); s.pnl.fase = 'horario';
       if ((pr === 'cxcoordins' || pr === 'cxcoordpasado') && this.modOk('Presencial')) s.pnl.mod = 'Presencial'; // P-6f-0e: presencial, con hora de fin (45 minutos)
       if (pr === 'cxcoordins') s.insOpen = true; // P-6f-0e · DEC-231: la lista de inspectores de la base abierta
@@ -479,7 +483,7 @@ class Component extends DCLogic {
   agMostrar(x, pl0, title) { const r = x || {}, P = this.props, pl = Object.assign({}, pl0, r.contacto ? { cName: r.contacto.nombre || pl0.cName, cCel: r.contacto.cel || '', cMail: r.contacto.correo || '' } : {}), sin = !!r.cx && !r.enlace, url = sin ? 'Enlace generado en la base (sin dirección)' : (r.enlace || ''), can = r.canales || ['whatsapp'];
     this.setState({ wa: { title: title || 'Enlace de autoagendamiento enviado', desc: 'Vista previa del mensaje enviado por ' + this.agCanalesTxt(can) + ' · solo lectura', to: (pl.cName || 'Contacto') + ' · ' + (can[0] === 'correo' ? (pl.cMail || 'sin correo') : (pl.cCel || '')), text: this.agTexto({ nombre: pl.cName, caso: P.caseId, bien: r.bien || '', url, vence: r.venceTxt || '', canales: can, modalidad: r.modalidad || pl.modalidad }), enlace: sin ? '' : url, ins: '' } }); }
   // Si el Back-office devuelve una promesa (conexión), se espera su respuesta: con { ok: false } no se marca como enviado.
-  trasEnvio(r, fin) { if (r && typeof r === 'object' && typeof r.then !== 'function') { fin(r); return; } if (r && typeof r.then === 'function') { this.setState({ enviando: true }); r.then(x => { this.setState({ enviando: false }); if (!(x && x.ok === false)) fin(x); }, () => this.setState({ enviando: false })); } else fin(null); }
+  trasEnvio(r, fin) { if (r && typeof r === 'object' && typeof r.then !== 'function') { if (r.ok !== false) fin(r); return; } /* G-2c4: un rechazo inmediato no sigue el flujo */ if (r && typeof r.then === 'function') { this.setState({ enviando: true }); r.then(x => { this.setState({ enviando: false }); if (!(x && x.ok === false)) fin(x); }, () => this.setState({ enviando: false })); } else fin(null); }
   // Etapa 12d-2b · «Copiar enlace» del modal de envío: copia el enlace exacto del mensaje y lo confirma en pantalla.
   copiarEnlace() { const u = (this.state.wa || {}).enlace || '', ok = () => this.setState({ waCopied: true }), viejo = () => { try { const t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.select(); const r = document.execCommand('copy'); document.body.removeChild(t); if (r) ok(); } catch (e) { /* sin portapapeles */ } };
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, viejo); else viejo(); } catch (e) { viejo(); } }
@@ -589,9 +593,8 @@ class Component extends DCLogic {
     const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
     const rs = P.riesgos || [], single = rs.length === 1, veh = P.tipo === 'Vehículos';
     const vis = this.visits();
-    const ABIERTA = ['Agendada', 'Por agendar', 'Enlace enviado', 'Autoinspección enviada', 'En curso por el cliente', 'En curso', 'Realizada']; // DEC-232: con la conexión, cuentan las visitas abiertas (y las ya realizadas)
-    const assigned = new Set(); vis.filter(v => this.cxBase() ? ABIERTA.includes(v.estado) : v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => assigned.add(id)));
-    const pend = rs.filter(r => !assigned.has(r.id));
+    const assigned = new Set(), enVis = {}; vis.filter(v => v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => { assigned.add(id); if (!enVis[id] || ['Cancelada', 'Realizada'].includes(enVis[id].estado)) enVis[id] = { id: v.id, estado: v.estado }; })); // G-2c4 · DEC-237: cuenta toda visita que no esté Cancelada (también «Oferta enviada», «Buscando inspector», «En camino»…): un vehículo, una sola visita abierta
+    const pend = P.estadoCaso === 'Cancelado' ? [] : rs.filter(r => !assigned.has(r.id)); // G-2c4: un caso cancelado ya no tiene nada por coordinar
     const sel = s.sel.filter(id => pend.some(r => r.id === id));
     const rec = P.rec || { score: 80, nivel: 'Riesgo bajo', alertas: [], modalidad: 'Presencial', motivo: '' };
     const groups = {}; pend.forEach(r => { const k = r.dir || 'Sin dirección'; (groups[k] = groups[k] || []).push(r); });
@@ -623,7 +626,7 @@ class Component extends DCLogic {
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
     const nextId = 'V' + (vis.length + 1);
-    const tone = { 'Oferta enviada': 'brand', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
+    const tone = { 'Oferta enviada': 'brand', 'Buscando inspector': 'brand', 'En camino': 'brand', 'Sin respuesta': 'warning', 'Por sincronizar': 'warning', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
     const fMot = this.pideMotivoCx(p) ? [this.F('motivoCx', p.mode === 'inspector' ? 'Motivo del cambio de inspector' : 'Motivo del cambio de fecha', 'textarea', { req: true, span: '1 / -1', ph: 'Mínimo 10 caracteres. Queda en el historial y se envía a la base.' })] : []; // DEC-231
     const fields0 = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
       this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
@@ -718,11 +721,12 @@ class Component extends DCLogic {
       ...intVals,
       rec: { score: String(rec.score), nivel: rec.nivel, tone: rec.score >= 75 ? 'success' : rec.score >= 55 ? 'warning' : 'danger', modalidad: rec.modalidad, motivo: rec.motivo, noAlertas: !(rec.alertas || []).length,
         alertas: (rec.alertas || []).map(a => ({ hasRiesgo: !!a.riesgo, riesgo: (a.riesgo || '') + ' ·', text: a.text })) },
-      showPending: !single, pendTitle: veh ? 'Vehículos por coordinar' : 'Ramos por coordinar', pendCount: String(pend.length), noPending: !pend.length, noPendingWhy: pend.length ? '' : (veh ? 'No hay vehículos por coordinar' : 'No hay ramos por coordinar'), noSelWhy: sel.length ? '' : (veh ? 'Selecciona al menos un vehículo' : 'Selecciona al menos un ramo'),
+      showPending: !single, pendTitle: veh ? 'Vehículos por coordinar' : 'Ramos por coordinar', pendCount: String(pend.length), noPending: !pend.length, noPendingTxt: P.estadoCaso === 'Cancelado' ? 'Caso cancelado: ya no hay ' + (veh ? 'vehículos' : 'riesgos') + ' por coordinar.' : veh && assigned.size ? 'Todos los vehículos están en una visita (' + Array.from(new Set(rs.filter(r => enVis[r.id]).map(r => enVis[r.id].id))).join(', ') + '): no queda ninguno libre para una visita nueva.' : 'Todos los riesgos tienen una visita asignada.', noPendingWhy: pend.length ? '' : (veh ? 'No hay vehículos por coordinar' : 'No hay ramos por coordinar'), noSelWhy: sel.length ? '' : (!pend.length && veh && assigned.size ? 'Todos los vehículos ya están en una visita: no queda ninguno libre para una visita nueva' : veh ? 'Selecciona al menos un vehículo' : 'Selecciona al menos un ramo'),
       canGroup: veh, groupLabel: s.grouped ? 'Quitar agrupación' : 'Agrupar por dirección', toggleGroup: () => this.setState(st => ({ grouped: !st.grouped })),
       noSel: !sel.length, createSelLabel: sel.length ? 'Crear visita con los seleccionados (' + sel.length + ')' : 'Crear visita con los seleccionados', createSel: () => sel.length && openNew(sel),
-      pending: pend.map((r, i) => ({ label: r.label, ws: r.nowrap ? 'nowrap' : 'normal', sub: r.sub || '', dir: r.dir || '—', estado: 'Por coordinar', estadoFull: r.estado, checked: sel.includes(r.id), cbLabel: 'Seleccionar ' + r.label, border: i === 0 ? 'none' : '1px solid var(--border-subtle)', bg: sel.includes(r.id) ? 'var(--table-row-hover)' : '#FFFFFF',
-        toggle: () => this.setState(st => ({ sel: st.sel.includes(r.id) ? st.sel.filter(x => x !== r.id) : st.sel.concat(r.id) })) })),
+      pending: pend.map((r, i) => ({ label: r.label, ws: r.nowrap ? 'nowrap' : 'normal', sub: r.sub || '', dir: r.dir || '—', estado: 'Por coordinar', estadoFull: r.estado, checked: sel.includes(r.id), cbLabel: 'Seleccionar ' + r.label, border: i === 0 ? 'none' : '1px solid var(--border-subtle)', bg: sel.includes(r.id) ? 'var(--table-row-hover)' : '#FFFFFF', ariaDis: 'false', tip: '', cur: 'pointer', oc: '',
+        toggle: () => this.setState(st => ({ sel: st.sel.includes(r.id) ? st.sel.filter(x => x !== r.id) : st.sel.concat(r.id) })) })).concat(!veh ? [] : rs.filter(r => assigned.has(r.id) && enVis[r.id] && enVis[r.id].estado !== 'Cancelada').map((r, i) => { const o = enVis[r.id], tip = r.label + ' ya está en la visita ' + o.id + ' (' + o.estado + ')'; /* G-2c4: deshabilitado, con la visita y su estado */
+          return { label: r.label + ' · en ' + o.id, ws: 'nowrap', sub: r.sub || '', dir: r.dir || '—', estado: 'En ' + o.id, estadoFull: tip, checked: false, cbLabel: tip, border: '1px solid var(--border-subtle)', bg: 'var(--surface-subtle)', ariaDis: 'true', tip, cur: 'not-allowed', oc: o.id, toggle: () => {} }; })),
       hasProposals: proposals.length > 0 && !ro, canEdit: !ro, readOnly: ro, propTitle: veh ? 'Propuesta por dirección' : 'Propuesta del sistema',
       proposals: proposals.map(g => ({ title: g.title, dir: g.dir, count: g.list.length === 1 ? (veh ? '1 vehículo' : '1 ramo') : g.list.length + (veh ? ' vehículos' : ' ramos'), items: g.list.map(r => r.label), mod: this.recFor(g.list.map(r => r.id)), create: () => openNew(g.list.map(r => r.id)) })),
       showVisits: !inline || vis.length > 0, noVisits: !vis.length, visitCount: String(vis.filter(v => v.estado !== 'Cancelada').length),
@@ -745,6 +749,8 @@ class Component extends DCLogic {
         ] : est === 'Por agendar' ? [
           { label: 'Enviar enlace de autoagendamiento', variant: 'secondary', onClick: () => onA('cxEnviar', { id: v.id, tipo: 'Autoagendamiento', modalidad: v.mod === 'Autoinspección' ? 'Presencial' : v.mod }) },
           { label: 'Enviar enlace de autoinspección', variant: 'secondary', onClick: () => onA('cxEnviar', { id: v.id, tipo: 'Autoinspección', modalidad: 'Autoinspección' }), why: okA ? '' : porqueA },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : ['En camino', 'Sin respuesta', 'Buscando inspector'].includes(est) ? [
           { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
         ] : null;
         const acts = ofe ? [{ label: 'Anular oferta', variant: 'secondary', onClick: () => onA('anularOferta', { id: v.id }) }] : actsCx ? actsCx : est === 'Agendada' ? [

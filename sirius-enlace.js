@@ -161,7 +161,7 @@
   function proximos(token) {
     var l = enlace(token), st = estado(token), out = []; if (!l || !st || !st.vigente) return out; var n = now();
     reglasDe(l).forEach(function (rid) { var d = debido(l, rid); if (d && d.at > n && !hecho(token, rid, d.ref)) out.push({ regla: rid, at: iso(d.at), condicion: d.condicion }); });
-    return out.sort(function (a, b) { return a.at.localeCompare(b.at); });
+    return out.sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); }); /* G-2c5 */
   }
 
   // ---------- Acciones del Coordinador y del portal ----------
