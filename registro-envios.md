@@ -4,6 +4,52 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c6
+
+Coordinar visita ya se muestra dentro del marco del sistema —barra superior, migas y menú lateral— y un riesgo queda en una sola visita abierta también en Ramos Generales (DEC-237). Quedó publicada en la **Versión 226** (la Versión 227 solo completa en este registro la hora de fin). Probé las 3 escenas nuevas y las de Coordinación a 1280 × 720 y 1920 × 1080: con la capa abierta, la página no se desplaza, no hay desborde horizontal y la consola no muestra errores.
+
+**Qué cambió**
+- **Marco del sistema (`sirius-coordinar.js` v1.3):** la capa de Coordinar visita y de «Contacto del caso» queda debajo de la barra superior de siempre (notificaciones, «Prueba conectada», usuario y rol; sus paneles se abren por encima) y al lado del menú lateral, que se contrae a íconos al entrar y se vuelve a abrir al salir si estaba abierto. No muestra las pestañas del caso: la barra de fases es su navegación y «Historial del caso» da el contexto. Se agregó la flecha «Volver al caso». La página de atrás queda inerte, de modo que con Tab se llega al menú, las migas, notificaciones, usuario y rol, y luego a la capa.
+- **Migas (`SIRIUS Back-office.dc.html`):** «Solicitudes › Bandeja › Caso N › Coordinar visita VN» (o «… › Contacto del caso»); «Bandeja» y «Caso N» son enlaces.
+- **Salir sin perder trabajo:** por las migas, el menú, la flecha, «Salir» o «Listo», si hay algo pendiente (Lugar o Inspector y horario con cambios desde la primera interacción, una nota sin registrar, una oferta o un enlace a medio preparar) sale «Tienes una coordinación sin agendar. ¿Salir?» con «Seguir coordinando» (foco por defecto; Esc también) y «Salir sin guardar». Los intentos ya registrados se conservan siempre. Sin nada pendiente, sale sin preguntar. La capa informa su estado en `window.SIRIUS_COORD_MARCO`.
+- **Un riesgo, una sola visita abierta, en todos los ramos:** en la fase de riesgos, en «Dividir visita», en la pestaña Coordinación (`Coordinacion.dc.html`) y en la comprobación de la sesión (`agendar`, `ofertar`, `reagendar` y `dividir`), con el mismo texto de Vehículos: «<riesgo> · en V1», deshabilitado, con título «<riesgo> ya está en la visita V1 (Agendada)». La base simulada ya lo rechazaba para todos.
+- **Escenas nuevas:** `coordmarco`, `coordsalir` (`?fsalir=0|limpio`) y `coordriesgorg` (`?fpestana=1`, `?fdividir=1`), en `datos-cx-fases.js`, `datos-escenas.js` (640) y `KNOWN_ESC` (597).
+
+**Verificado**
+- **coordmarco (1280 × 720 y 1920 × 1080):** migas «Solicitudes › Bandeja › Caso 50012 › Coordinar visita V2», menú contraído, capa debajo de la barra (672 de 720 y 1032 de 1080 de alto), sin desplazamiento de la página.
+- **coordsalir:** la escena hace clic en «Bandeja» con una nota sin registrar y sale la confirmación con el foco en «Seguir coordinando»; Esc y Enter en «Seguir» se quedan; Tab cicla entre los dos botones; Enter en «Salir sin guardar» va a la bandeja. Con `?fsalir=limpio` sale directo. Con `?fsalir=0`, el menú «Agenda», «Salir», la flecha y «Caso 50012» piden confirmación y el foco vuelve al botón de origen.
+- **Teclado:** Tab recorre menú (Expandir, Inicio, Solicitudes, Agenda, Reportes, Administración), migas, Notificaciones, Usuario, «Volver al caso», «Historial» y el contenido; la página de atrás no recibe foco.
+- **coordriesgorg:** «Bodega principal · en V1» queda deshabilitada (`aria-disabled`, con título) y «Oficinas administrativas» se puede elegir; en la pestaña se ven las filas deshabilitadas; «Dividir visita» abre el formulario; la base simulada rechaza un duplicado y acepta reagendar V1 y agendar V2; con `onAction`, dividir deja V1 [R1] y V2 [R2]. En el caso de sesión 20195 (coordrg), ofertar un riesgo ya agendado se rechaza con «… ya está en la visita V9 (Agendada)».
+- **Escenas relacionadas a ambos tamaños (40 en cada uno):** coordfases (3 variantes), coordautoinsp, coordcancelar, coordvehiculoduplicado, coordrg, coordcontacto, coordoferta, coordofertamarcar, coordlugarotraciudad, coordmodalidades, coordfechahora, coordvirtual, coordenlaceauto, coordeditarcontacto, coordotronumero, coordcancelavisitas, cxcoordfases, cxcoordcontacto, cxlugar, lugar*, coordvis, coord, cxcoordins, cxcoordcambiar, cxvisitacancelar, cxresponsableobjeto y bandejaexp: página sin desplazar, sin desborde horizontal y sin errores.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- Con la base real y la conexión real (solo la simulada).
+- La lectura de la confirmación con un lector de pantalla.
+- El envío completo de «Dividir visita» desde la pantalla (se probó el formulario, `onAction` y la base).
+
+**Diferencias**
+- La capa pasó de diálogo modal (`role=dialog`) a región; la página de atrás queda inerte.
+- El menú lateral se contrae por programa y se vuelve a abrir al salir.
+- «Pendiente» se calcula desde la primera interacción con la capa (cambios en lugar, inspector, fecha, hora, dirección, observaciones, motivo, canal o validez), más la nota y la oferta; «Listo» también pregunta si hay algo pendiente.
+- Una visita Realizada sigue contando como ocupada en Coordinación («· en V1»), pero no en la comprobación `vehDup` de la sesión.
+- «Reagendar» en Ramos Generales sigue mostrando solo los riesgos de la propia visita.
+- En `coordsalir`, el clic en «Bandeja» es automático.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `coordmarco` | Coordinar visita (Inspector y horario) dentro del marco: barra, migas y menú contraído |
+| `coordsalir` | Nota sin registrar y clic en «Bandeja»: confirmación; `?fsalir=0` solo la nota; `?fsalir=limpio` sale directo |
+| `coordriesgorg` | Ramos Generales con 2 ubicaciones, la «Bodega principal · en V1» deshabilitada; `?fpestana=1` en la pestaña, `?fdividir=1` con «Dividir visita» |
+
+También abrí coordfases, coordautoinsp, coordcancelar, coordvehiculoduplicado y coordrg a ambos tamaños.
+
+Tiempo de la etapa: inicio 14/11/2026 22:03 · fin 14/11/2026 22:24 · 21 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c5
 
 La etapa G-2c5 quedó publicada en la **Versión 224**; la Versión 225 solo completa en este registro la hora de fin. El responsable de un caso ya es siempre texto y los filtros de la bandeja no dejan de dibujarse por un valor inesperado: con el 50012 de la conexión simulada (Agendado, sin responsable y con el inspector como objeto) la bandeja se dibuja y dice «Valeria Cevallos». Probé la escena nueva, las que ya existían de la bandeja y las de Coordinación a 1280 × 720 y 1920 × 1080, sin el error de `renderVals`.

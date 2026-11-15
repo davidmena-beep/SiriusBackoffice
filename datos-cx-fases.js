@@ -62,6 +62,10 @@
       return { fase: 'contacto', riesgos: ['PR121A', 'PRB1213'] }; }, { v1: 'PRB1212' }],
     coordofertamarcar: [true, () => { const m = qp('fmarcar'); return { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, diaVista: 3, ofertaIns: m === 'ninguno' ? [] : m === 'todos' ? INSPECTORES.map((i) => i.nombre) : null }; }],
     coordlugarotraciudad: [false, () => (qp('fantes') === '1' ? { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'] } : { fase: 'lugar', riesgos: ['PRB1212', 'PR121A'], texto: 'Malecón 2000' })],
+    // G-2c6 · DEC-237: Coordinar visita dentro del marco del sistema (barra superior, migas y menú contraído) y confirmación al salir
+    coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
+    coordsalir: [true, () => { const s = qp('fsalir'), NOTA = 'Confirmó que recibe el lunes a las 10:00; pedir el ingreso por la puerta de carga.'; return s === 'limpio' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { salir: true } }
+      : { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: s === '0' ? { nota: NOTA } : { nota: NOTA, salir: true } }; }],
     cxcoordfases: [true, () => (qp('fof') === '1' ? { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 }
       : { fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], fecha: 1, hIni: '14:00', hFin: '15:00', inspector: 'Diana Cárdenas', enviar: 'principal' })],
   };
@@ -150,5 +154,26 @@
     (c.riesgos || []).forEach((r) => { r.estado = 'Agendado'; }); // los tres vehículos en la visita V1: el caso queda de verdad en Agendado
     (c.visitasBase || []).forEach((v) => { if (v && /agendad/i.test(String(v.estado || ''))) { v.inspector = ins(); v.riesgos = (c.riesgos || []).map((r) => r.id); } });
     if (qp('fsuc') === '1') { const o = (X.casos || []).find((x) => x && String(x.id) !== '50012'); if (o) o.sucursal = { nombre: o.sucursal || 'Quito', cod: '1701' }; }
+    return X; };
+})();
+// Etapa G-2c6 · coordriesgorg: caso 50012 de Ramos Generales con 2 ubicaciones; la «Bodega principal» ya está en la V1 (Agendada) y las «Oficinas» siguen por coordinar. En una visita nueva, la bodega sale
+// deshabilitada como «Bodega principal · en V1» (la regla de un riesgo por visita abierta vale para todos los grupos de ramo). ?fpestana=1: la pestaña Coordinación (fila deshabilitada);
+// ?fdividir=1: la V1 con las dos ubicaciones (para probar «Dividir visita»); la base simulada rechaza un duplicado con «Bodega principal ya está en la visita V1 (Agendada)».
+(function () {
+  const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxFases || !CC.cxSim) return;
+  const prev = CC.cxSim.bind(CC), qp = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
+  CC.cxEscenas.coordriesgorg = ['50012', 'ninguna'];
+  const RG = [['Bodega principal', 'Av. Amazonas N36-152, Quito', 380000], ['Oficinas administrativas', 'Av. de los Shyris N35-20, Quito', 220000]];
+  CC.cxSim = function (escena) {
+    if (escena !== 'coordriesgorg') return prev(escena);
+    const X = prev('coordfases'), c = (X.casos || []).find((x) => x && String(x.id) === '50012'); if (!c) return X;
+    Object.assign(c, { ramo: 'Incendio y líneas aliadas', tipoRiesgo: 'Ramos Generales', placa: '', bien: 'Bodega y oficinas · Quito', estado: 'En coordinación', formularios: ['Ubicación – Ramos Generales', 'Ubicación – Ramos Generales'], sumaAsegurada: RG.map((r) => r[2]), dir: RG[0][1] });
+    delete c.anios; delete c.placas;
+    c.riesgos = RG.map((r, i) => ({ id: '50012-R' + (i + 1), label: r[0], detalle: r[1], cobertura: 'Incendio y líneas aliadas', estado: i === 0 ? 'Agendado' : 'En coordinación' }));
+    c.riesgosBase = RG.map((r) => ({ descripcion: r[0] + ' · ' + r[1], composicion: 'Ubicación', suma: r[2], datos: { tipoRiesgo: 'Bodega', direccion: r[1], ciudad: 'Quito' } }));
+    const dividir = qp('fdividir') === '1';
+    (c.visitasBase || []).forEach((v) => { if (v && /agendad/i.test(String(v.estado || ''))) v.riesgos = dividir ? ['50012-R1', '50012-R2'] : ['50012-R1']; });
+    if (dividir) c.riesgos.forEach((r) => { r.estado = 'Agendado'; });
+    X.coordEscena.fases = qp('fpestana') === '1' || dividir ? { cerrado: true } : { fase: 'contacto', riesgos: [RG[1][0]] };
     return X; };
 })();

@@ -1,4 +1,4 @@
-// SIRIUS · Coordinar visita por fases (v1.2 · etapa G-2c4 · DEC-237 · 18/10/2026; v1.1 en G-2c3; v1.0 en G-2c2). G-2c4: vehículos que ya están en otra visita abierta (deshabilitados, «PRB1212 · en V1»), «Marcar todos» y «Desmarcar todos» en la oferta, y el aviso de visita en curso al cancelar la solicitud. Reemplaza la columna larga de «Coordinar inspección» (maqueta G-1f).
+// SIRIUS · Coordinar visita por fases (v1.3 · etapa G-2c6 · DEC-237 · 15/11/2026; v1.2 en G-2c4 · 18/10/2026; v1.1 en G-2c3; v1.0 en G-2c2). G-2c4: vehículos que ya están en otra visita abierta (deshabilitados, «PRB1212 · en V1»), «Marcar todos» y «Desmarcar todos» en la oferta, y el aviso de visita en curso al cancelar la solicitud. Reemplaza la columna larga de «Coordinar inspección» (maqueta G-1f).
 // G-2c3 · fase Contacto como la maqueta: «Llamada» (Llamar a: contacto para la coordinación con «Editar contacto», contacto en sitio u otro número; Llamar/Colgar «vía Genesis»
 // con cronómetro y guion; nota del intento y 6 resultados de un clic, teclas 1 a 6; «Cancelar la solicitud…») y, a la derecha, «Intentos de contacto (N)», «Historial del caso»
 // y el enlace de autoagendamiento (destacado con N intentos sin respuesta o «Prefiere agendar solo»). Atajos de Contacto fuera de los campos: L llama o cuelga; 1 a 6, el resultado.
@@ -27,7 +27,10 @@
   const T0 = 7 * 60, T1 = 19 * 60, SPAN = T1 - T0;
   let css = false;
   const ponerCss = () => { if (css) return; css = true; const s = document.createElement('style');
-    s.textContent = '.scv{position:fixed;inset:0;z-index:1501;display:flex;flex-direction:column;background:var(--surface-subtle,#F5F6F8);font-family:var(--font-brand);color:var(--text-body)}' +
+    s.textContent = '.scv{position:fixed;top:var(--scv-t,0px);left:var(--scv-l,0px);right:0;bottom:0;z-index:1501;display:flex;flex-direction:column;background:var(--surface-subtle,#F5F6F8);font-family:var(--font-brand);color:var(--text-body)}' +
+      'body.scv-marco [data-barra-app]{position:relative;z-index:1600}body.scv-marco [data-bo-nav]{z-index:1600}' +
+      '.scv-atras{border:1px solid var(--border-default);background:#fff;border-radius:8px;width:34px;height:34px;flex:0 0 auto;cursor:pointer;font-size:18px;font-weight:700;line-height:1;color:var(--text-strong);display:inline-flex;align-items:center;justify-content:center;padding:0}.scv-atras:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}' +
+      '.scv-conf-f{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(1,30,65,.45)}.scv-conf{background:#fff;border-radius:14px;padding:20px 22px;width:min(480px,92%);box-shadow:0 12px 40px rgba(1,30,65,.35)}.scv-conf h3{margin:0 0 6px;font-size:18px;color:var(--text-strong)}.scv-conf p{margin:0 0 16px;font-size:14px;line-height:1.4}.scv-conf-bt{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}' +
       '.scv-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border-subtle)}.scv-cab h2{margin:0;font-size:19px;font-weight:700;color:var(--text-strong)}' +
       '.scv-chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;background:var(--surface-subtle,#F3F5F8);font-size:13px;font-weight:600;color:var(--text-strong);white-space:nowrap}' +
       '.scv-chip.warn{background:var(--color-warning-bg,#FFF4D6);color:#7A4F0E}.scv-chip.ok{background:var(--green-100,#E6F4EA);color:var(--green-700,#1E7B3C)}.scv-chip.cy{background:var(--cyan-100);color:var(--text-strong)}' +
@@ -160,6 +163,7 @@
       if (E.cancelar) F().setCanc({ motivo: E.cancelar.motivo || '', detalle: E.cancelar.detalle || '' });
       if (E.cancelar && !E.cancelar.confirmar) setTimeout(() => { const b = document.querySelector('[data-scv-canc]'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }, 300); // G-2c4: el recuadro a la vista
       if (E.resultado) setTimeout(() => F().registrar(E.resultado), 700);
+      if (E.salir) setTimeout(() => { const b = document.querySelector('[data-barra-app] nav button'); if (b) b.click(); }, 1100); // G-2c6: clic en «Bandeja» de las migas
       if (E.enviarEnlace) setTimeout(() => F().enviarAG(), 700);
       if (E.cancelar && E.cancelar.confirmar) setTimeout(() => F().confirmarCanc(), 800);
       if (E.cancelar && E.cancelar.cerrarTras) setTimeout(() => x.salir && x.salir(), 1800); // G-2c4: deja ver las tarjetas de las visitas canceladas
@@ -253,11 +257,11 @@
       res = [h('b', { key: 'b' }, fase === 'contacto' ? 'Contacto' : 'Lugar'), ' · ' + (fase === 'contacto' ? (ultRes || (u ? u.resultado + ' · ' + u.when : 'Registra el resultado del intento')) : lugarTxt()),
         h('small', { key: 's' }, sinC ? 'Sin contacto: puedes pasar al siguiente caso o continuar igual.' : sig ? 'Luego: ' + sig[1] + '.' : 'Los intentos quedan en el caso y en su historial.')];
       if (sinC && x.siguiente) secB = btn('secondary', 'Siguiente caso', () => x.siguiente(), { id: 'scv-sigcaso' }); // G-2c3: sin contacto, como la maqueta
-      priB = sig ? btn('primary', 'Siguiente: ' + sig[1] + ' →', () => irFase(sig[0]), { id: 'scv-principal', title: 'Ctrl+Enter' }) : btn('primary', 'Listo', x.salir, { id: 'scv-principal', title: 'Ctrl+Enter' }); }
+      priB = sig ? btn('primary', 'Siguiente: ' + sig[1] + ' →', () => irFase(sig[0]), { id: 'scv-principal', title: 'Ctrl+Enter' }) : btn('primary', 'Listo', () => salirA(null), { id: 'scv-principal', title: 'Ctrl+Enter' }); }
     // ---------- atajos ----------
     const fx = React.useRef({}); fx.current = { fasesL, kF, irFase, fase, hist, cerrarHist, cancelado: !!cancelado, registrar, alternar: () => (llamada ? colgar() : llamar()) };
-    React.useEffect(() => { const esc = (e) => { if (e.key === 'Escape' && fx.current.hist) { e.preventDefault(); e.stopPropagation(); fx.current.cerrarHist(); } }; document.addEventListener('keydown', esc, true); return () => document.removeEventListener('keydown', esc, true); }, []); // Esc cierra el historial
-    React.useEffect(() => { const k = (e) => { const F = fx.current; const ae = document.activeElement; if (!raiz.current || (ae && ae !== document.body && !raiz.current.contains(ae) && ae.closest && ae.closest('[role="dialog"]'))) return; // con otra ventana abierta (p. ej. registrar un intento), los atajos son de esa ventana
+    React.useEffect(() => { const esc = (e) => { if (e.key === 'Escape' && fx.current.hist && !fx.current.conf) { e.preventDefault(); e.stopPropagation(); fx.current.cerrarHist(); } }; document.addEventListener('keydown', esc, true); return () => document.removeEventListener('keydown', esc, true); }, []); // Esc cierra el historial
+    React.useEffect(() => { const k = (e) => { const F = fx.current; const ae = document.activeElement; if (!raiz.current || F.conf || (ae && ae !== document.body && !raiz.current.contains(ae))) return; /* G-2c6: con el foco en las migas, el menú o la confirmación, los atajos no actúan */ // con otra ventana abierta (p. ej. registrar un intento), los atajos son de esa ventana
         if (e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); if (F.cancelado) return; const n = Math.max(0, Math.min(F.fasesL.length - 1, F.kF + (e.key === 'ArrowRight' ? 1 : -1))); F.irFase(F.fasesL[n][0]); return; }
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); const b = document.getElementById('scv-principal'); if (b && !b.disabled) b.click(); return; }
         // G-2c3: en la fase Contacto y fuera de los campos, L llama o cuelga y 1 a 6 registran el resultado.
@@ -488,9 +492,37 @@
       h('div', { className: 'scv-campo' }, h('label', { className: 'scv-lb', htmlFor: 'scv-nmot' }, 'Motivo *'), h('select', { id: 'scv-nmot', className: 'scv-in', value: p.motivo || '', onChange: (e) => x.patch({ motivo: e.target.value }) }, [h('option', { key: '', value: '' }, 'Selecciona el motivo')].concat((x.motivosNR || []).map((m) => h('option', { key: m, value: m }, m))))),
       h('div', { className: 'scv-campo' }, h('label', { className: 'scv-lb', htmlFor: 'scv-nobs' }, 'Observación *'), h('textarea', { id: 'scv-nobs', className: 'scv-in', rows: 3, value: p.nrObs || '', placeholder: 'Ej. Factura del concesionario y fotos de entrega revisadas.', onChange: (e) => x.patch({ nrObs: e.target.value }) }))));
 
+    // ---------- G-2c6 · marco del sistema: migas, menú contraído y salida sin perder trabajo ----------
+    // Pendiente = nota sin registrar, oferta a medio preparar, o cambios en Lugar / Inspector y horario / Enlace desde la primera interacción (los intentos ya registrados se conservan siempre).
+    const SNAPK = ['lugar', 'inspector', 'fecha', 'hIni', 'hFin', 'dir', 'ref', 'obs', 'motivo', 'nrObs', 'canal', 'validez'];
+    const snapDe = (q0) => { try { return JSON.stringify(SNAPK.map((k) => (q0 || {})[k] === undefined ? null : q0[k])); } catch (e) { return ''; } };
+    const tocadoSnap = React.useRef(null), [conf, setConf] = React.useState(null), confDe = React.useRef(null);
+    const marcarTocado = () => { if (tocadoSnap.current === null) tocadoSnap.current = snapDe(fx.current.p); };
+    const cambios = tocadoSnap.current !== null && snapDe(p) !== tocadoSnap.current;
+    const pend = !cancelado && (nota.trim() !== '' || (panelOf && !x.oferta) || !!ofB || cambios);
+    const soltarFoco = () => { const a = confDe.current; confDe.current = null; setTimeout(() => { if (a && a.isConnected && a.focus) a.focus(); }, 0); };
+    const salirA = (fn) => { if (!fx.current.pend) { x.salir(); if (fn) fn(); return; } confDe.current = document.activeElement; setConf({ fn: fn || null }); };
+    const seguir = () => { setConf(null); soltarFoco(); };
+    const salirSin = () => { const f = conf && conf.fn; setConf(null); confDe.current = null; x.salir(); if (f) f(); };
+    fx.current.p = p; fx.current.pend = pend; fx.current.salirA = salirA; fx.current.conf = !!conf; fx.current.seguir = seguir;
+    React.useEffect(() => { const M = (W.SIRIUS_COORD_MARCO = W.SIRIUS_COORD_MARCO || {}); M.activo = true; document.body.classList.add('scv-marco');
+      const hd = document.querySelector('[data-barra-app]'), nv = document.querySelector('[data-bo-nav]'), y0 = window.pageYOffset || 0; try { window.scrollTo(0, 0); } catch (e) {}
+      const medir = () => { const r = raiz.current; if (!r) return; const tp = hd ? Math.max(0, Math.round(hd.getBoundingClientRect().bottom)) : 0, lf = nv ? Math.round(nv.getBoundingClientRect().right) : 0; r.style.setProperty('--scv-t', tp + 'px'); r.style.setProperty('--scv-l', lf + 'px'); };
+      // la página de atrás (pestañas y contenido del caso) no recibe foco ni lectura; la barra superior y el menú sí
+      const inertados = [], tabs = []; try { const col = hd ? hd.parentElement : null; let n = raiz.current; while (col && n && n !== col && n.parentElement) { const par = n.parentElement; if (n !== raiz.current && n.getAttribute('tabindex') !== null && n.getAttribute('tabindex') !== '-1') { tabs.push([n, n.getAttribute('tabindex')]); n.setAttribute('tabindex', '-1'); } Array.from(par.children).forEach((s) => { if (s !== n && s !== hd && !s.inert && !/^(SCRIPT|STYLE)$/.test(s.tagName)) { s.inert = true; inertados.push(s); } }); n = par; } } catch (e) {}
+      medir(); window.addEventListener('resize', medir); let ro = null; if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(medir); if (hd) ro.observe(hd); if (nv) ro.observe(nv); }
+      const sn = document.querySelector('.ads-sidenav'), tg = document.querySelector('.ads-sidenav__toggle'); let reabrir = false; if (sn && tg && !sn.classList.contains('ads-sidenav--collapsed')) { tg.click(); reabrir = true; } // el menú va contraído a íconos
+      return () => { inertados.forEach((s) => { try { s.inert = false; } catch (e) {} }); tabs.forEach((a) => { try { a[0].setAttribute('tabindex', a[1]); } catch (e) {} }); window.removeEventListener('resize', medir); if (ro) ro.disconnect(); document.body.classList.remove('scv-marco'); M.activo = false; M.etiqueta = ''; M.caso = ''; M.pendiente = null; M.salirA = null; if (M.alCambio) M.alCambio();
+        if (reabrir) { const s2 = document.querySelector('.ads-sidenav'), t2 = document.querySelector('.ads-sidenav__toggle'); if (s2 && t2 && s2.classList.contains('ads-sidenav--collapsed')) t2.click(); } try { window.scrollTo(0, y0); } catch (e) {} }; }, []);
+    React.useEffect(() => { const M = W.SIRIUS_COORD_MARCO; if (!M || !M.activo) return; const ch = M.etiqueta !== x.titulo || M.caso !== String(x.casoId); M.caso = String(x.casoId); M.etiqueta = x.titulo; M.pendiente = () => !!fx.current.pend; M.salirA = (fn) => fx.current.salirA(fn); if (ch && M.alCambio) M.alCambio(); });
+    React.useEffect(() => { const k = (e) => { if (!fx.current.conf) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fx.current.seguir(); return; }
+        if (e.key !== 'Tab') return; const a = document.getElementById('scv-conf-salir'), b = document.getElementById('scv-conf-seguir'); if (!a || !b) return; const ae = document.activeElement;
+        if (e.shiftKey && ae === a) { e.preventDefault(); b.focus(); } else if (!e.shiftKey && ae === b) { e.preventDefault(); a.focus(); } else if (ae !== a && ae !== b) { e.preventDefault(); b.focus(); } };
+      document.addEventListener('keydown', k, true); return () => document.removeEventListener('keydown', k, true); }, []);
+    React.useEffect(() => { if (conf) setTimeout(() => { const b = document.getElementById('scv-conf-seguir'); if (b) b.focus(); }, 30); }, [!!conf]);
     // ================= Cuerpo =================
     const vista = fase === 'contacto' ? vContacto() : fase === 'lugar' ? vLugar() : fase === 'horario' ? vHorario() : fase === 'enlace' ? vEnlace() : fase === 'documental' ? vDocumental() : vNri();
-    const cab = h('header', { className: 'scv-cab' }, h('h2', { id: 'scv-t' }, x.titulo), h('span', { className: 'scv-nota', style: { fontSize: 14 } }, 'Caso ' + x.casoId + (x.asegurado ? ' · ' + x.asegurado : '')),
+    const cab = h('header', { className: 'scv-cab' }, h('button', { type: 'button', className: 'scv-atras', id: 'scv-atras', 'aria-label': 'Volver al caso', title: 'Volver al caso', onClick: () => salirA(null) }, '←'), h('h2', { id: 'scv-t' }, x.titulo), h('span', { className: 'scv-nota', style: { fontSize: 14 } }, 'Caso ' + x.casoId + (x.asegurado ? ' · ' + x.asegurado : '')),
       x.sucursal ? h('span', { className: 'scv-chip' }, 'Sucursal ' + x.sucursal) : null, x.sla ? h('span', { className: 'scv-chip' + (x.slaTono === 'danger' || x.slaTono === 'warning' ? ' warn' : '') }, 'SLA: ' + x.sla) : null,
       h('span', { style: { marginLeft: 'auto' } }, btn('secondary', 'Historial del caso', abrirHist, { size: 'sm', id: 'scv-hist-abrir' }))); // G-2c3
     const vehs = x.riesgosOpc || [], bloqTxt = (mods.find((y) => y.label === p.mod && !y.ok) || {}).motivo;
@@ -505,7 +537,7 @@
       h('span', { className: 'scv-nota', style: { marginLeft: 'auto', alignSelf: 'center' } }, 'Clic en una fase para ir y volver · Alt+← / Alt+→'));
     const pie = h('footer', { className: 'scv-pie', 'data-scv-pie': '' }, h('div', { className: 'scv-res', 'data-scv-res': '' }, res), motivos,
       h('span', { className: 'scv-nota', style: { whiteSpace: 'nowrap' } }, (kF + 1) + ' de ' + fasesL.length),
-      btn('ghost', 'Salir', x.salir, { id: 'scv-salir', title: 'Cierra sin agendar; los intentos registrados se conservan' }),
+      btn('ghost', 'Salir', () => salirA(null), { id: 'scv-salir', title: 'Cierra sin agendar; los intentos registrados se conservan' }),
       ant && !cancelado ? btn('secondary', '← ' + ant[1], () => irFase(ant[0]), { id: 'scv-ant', title: 'Alt+←' }) : null, secB, priB);
     // Historial del caso (G-2c3): la misma cronología de la pestaña Historial, con filtros; se cierra con Esc.
     const tipoH = (t) => /intento de contacto|autoagendamiento|llamad/i.test(t) ? 'Contacto' : /visita|oferta|inspector|autoinspecci|agend/i.test(t) ? 'Visitas' : /cancel|estado|solicitud|reapert|asignad|caso|calific|emiti|recibid/i.test(t) ? 'Estado' : 'Otros';
@@ -517,8 +549,11 @@
       histV.length ? h('ul', { className: 'scv-hist-l', 'data-scv-hist-lista': '' }, histV.map((e, k) => h('li', { key: k, 'data-scv-htipo': e.tipo }, h('span', { style: { display: 'flex', justifyContent: 'space-between', gap: 8 } }, h('span', { style: { color: 'var(--text-strong)', fontWeight: 600 } }, e.evento), h('span', { className: 'scv-nota', style: { whiteSpace: 'nowrap' } }, e.fecha)), h('span', { className: 'scv-nota' }, (e.usuario || '—') + ' · ' + e.tipo))))
         : h('p', { className: 'scv-nota', style: { padding: '0 16px' } }, 'Sin eventos de este tipo.')) : null;
     const banda = cancelado ? h('div', { className: 'scv-banda', role: 'alert', 'data-scv-banda': '' }, 'Caso cancelado · ' + cancelado.motivo + '. Ya no se puede coordinar.' + ((cancelado.visitas || []).length ? ' ' + (cancelado.visitas.length === 1 ? 'Visita cancelada: ' : 'Visitas canceladas: ') + cancelado.visitas.join(', ') + '.' : '')) : null;
-    const cuerpoEl = h('div', { ref: cuerpo, className: 'scv-cuerpo' + (cancelado ? ' bloq' : ''), 'aria-disabled': cancelado ? 'true' : undefined, 'data-scv-cuerpo': '' }, barra, pasos, vista);
-    return h('div', { ref: raiz, className: 'scv', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'scv-t', 'data-scv-fase-actual': fase, 'data-scv-cancelado': cancelado ? '1' : undefined }, cab, banda, cuerpoEl, pie, cajon,
+    const cuerpoEl = h('div', { ref: cuerpo, onPointerDownCapture: marcarTocado, onKeyDownCapture: (e) => { if (e.key !== 'Tab' && !e.altKey && !(e.ctrlKey || e.metaKey)) marcarTocado(); }, className: 'scv-cuerpo' + (cancelado ? ' bloq' : ''), 'aria-disabled': cancelado ? 'true' : undefined, 'data-scv-cuerpo': '' }, barra, pasos, vista);
+    const confEl = conf ? h('div', { className: 'scv-conf-f', 'data-scv-conf-fondo': '' }, h('div', { className: 'scv-conf', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'scv-conf-t', 'aria-describedby': 'scv-conf-d', 'data-scv-conf': '' },
+      h('h3', { id: 'scv-conf-t' }, 'Tienes una coordinación sin agendar. ¿Salir?'), h('p', { id: 'scv-conf-d' }, 'Lo que no has agendado ni enviado se pierde. Los intentos de contacto ya registrados se conservan.'),
+      h('div', { className: 'scv-conf-bt' }, btn('secondary', 'Salir sin guardar', salirSin, { id: 'scv-conf-salir' }), btn('primary', 'Seguir coordinando', seguir, { id: 'scv-conf-seguir' })))) : null;
+    return h('div', { ref: raiz, className: 'scv', role: 'region', 'aria-labelledby': 'scv-t', 'data-scv-marco': '', 'data-scv-pendiente': pend ? '1' : undefined, 'data-scv-fase-actual': fase, 'data-scv-cancelado': cancelado ? '1' : undefined }, cab, banda, cuerpoEl, pie, cajon, confEl,
       aviso ? h('div', { className: 'scv-aviso', role: 'status', 'aria-live': 'polite', 'data-scv-aviso': '' }, aviso) : null);
   }
   W.SiriusCoordinar = SiriusCoordinar;
