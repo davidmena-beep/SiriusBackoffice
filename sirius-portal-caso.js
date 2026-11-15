@@ -34,7 +34,7 @@
 
   // ---------- Reloj: el del prototipo más el tiempo real; una escena puede fijar otro momento (día de la visita, simulado) ----------
   const T0 = Date.now();
-  const S = { apartados: [], docs: {}, red: {}, camino: {}, reloj: null, relojT: 0, durRamo: null, durHist: [] };
+  const S = { apartados: [], docs: {}, red: {}, camino: {}, reloj: null, relojT: 0, durRamo: null, durHist: [], lugar: {}, pedidos: {} }; // G-2d: lugar elegido por el cliente y pedidos sin horarios, por caso
   function now() { if (S.reloj) return new Date(parse(S.reloj).getTime() + (Date.now() - S.relojT)); const b = EJ().ahora ? EJ().ahora() : new Date(2026, 9, 18, 20, 30); return new Date(b.getTime() + (Date.now() - T0)); }
   function fijarReloj(s) { S.reloj = s || null; S.relojT = Date.now(); cambio(); }
 
@@ -55,8 +55,9 @@
   function datosDe(token) {
     let l = enlace(token), auto = false; if (!l) { l = autoEnlace(token); auto = !!l; } if (!l) return null;
     const c = ctx.caso(l.caso) || {}, v = (EJ().vehiculos || []).find((x) => x.riesgo === l.riesgo) || {};
-    return { token: l.token, l, c, auto, caso: l.caso, riesgo: l.riesgo, modalidad: auto ? 'Autoinspección' : (l.modalidad || 'Presencial'), zona: l.zona || c.sucursal || '', contacto: l.contacto || {}, direccion: l.direccion || '', referencia: l.referencia || '',
-      vehiculo: l.vehiculo || [v.marca, v.modelo, v.anio].filter(Boolean).join(' '), placa: v.placa || c.placa || '', bien: c.bien || '', estado: c.estado || '', fecha: c.fecha || '', grupo: grupoAgenda(c), ramo: c.ramo || '', vence: l.vence || '', agencia: l.agencia || null, lugar: l.lugar && typeof l.lugar === 'object' ? l.lugar : null /* G-2c · DEC-222 */ };
+    const lc = S.lugar[l.caso] || null, PLg = W.SiriusPortalLugar, suc0 = l.zona || c.sucursal || ''; // G-2d · DEC-224: con el lugar que eligió el cliente, la cobertura se mira con su ciudad, su zona y la sucursal de esa ciudad
+    return { token: l.token, l, c, auto, caso: l.caso, riesgo: l.riesgo, modalidad: auto ? 'Autoinspección' : (l.modalidad || 'Presencial'), zona: lc && PLg ? PLg.sucursalDe(lc, suc0) : suc0, contacto: l.contacto || {}, direccion: l.direccion || '', referencia: l.referencia || '', lugarCliente: lc, lugarSolicitud: l.lugar && typeof l.lugar === 'object' ? l.lugar : null,
+      vehiculo: l.vehiculo || [v.marca, v.modelo, v.anio].filter(Boolean).join(' '), placa: v.placa || c.placa || '', bien: c.bien || '', estado: c.estado || '', fecha: c.fecha || '', grupo: grupoAgenda(c), ramo: c.ramo || '', vence: l.vence || '', agencia: l.agencia || null, lugar: lc || (l.lugar && typeof l.lugar === 'object' ? l.lugar : null) /* G-2c · DEC-222; G-2d: primero el del cliente */ };
   }
 
   // ---------- Agenda (SIRIUS_PORTAL_CLIENTE.agenda v1.2) ----------
@@ -129,10 +130,19 @@
   function confirmar(token, form) {
     const d = datosDe(token), ap = d ? apartadoDe(d.caso) : null; if (!d || !ap) return { error: 'vencido' };
     const p = { caso: d.caso, riesgo: d.riesgo, modalidad: d.modalidad, zona: d.zona, grupo: d.grupo, fecha: ap.fecha, hIni: ap.ini, hFin: ap.fin, franja: ap.franja, inspector: ap.inspector, organizacion: orgDe(ap.inspector), credencial: credencial(ap.inspector), origen: 'fija',
-      dir: form.dir, ref: form.ref, recibe: form.recibe, cel: form.cel, ubicacion: form.ubicacion || null, reemplaza: form.reemplaza || null, at: iso(now()), por: porDe(d) };
+      dir: form.dir, ref: form.ref, recibe: form.recibe, cel: form.cel, ubicacion: form.ubicacion || null, lugar: form.lugar || S.lugar[d.caso] || null /* G-2d */, reemplaza: form.reemplaza || null, at: iso(now()), por: porDe(d) };
     if (S.red[d.caso] && S.red[d.caso].estado !== 'aceptada') delete S.red[d.caso];
     const r = ctx.confirmar ? ctx.confirmar(p) : p; S.apartados = S.apartados.filter((x) => x.caso !== d.caso); cambio(); return r || p;
   }
+  // ----- Lugar del cliente y pedido sin horarios (etapa G-2d · DEC-222 y DEC-224) -----
+  function fijarLugar(caso, lugar) { if (lugar) S.lugar[caso] = lugar; else delete S.lugar[caso]; cambio(); }
+  function lugarDe(caso) { return S.lugar[caso] || null; }
+  const lugarClave = (l) => (l ? [l.ciudad, l.zona ? l.zona.id : '', l.estadoZona, l.direccion].join('|') : '');
+  // Sin ningún horario (ni agenda fija ni red) para el lugar: se registra el pedido una vez por lugar y el Coordinador lo recibe como tarea.
+  function pedirContacto(token) { const d = datosDe(token); if (!d) return null; const k = lugarClave(d.lugar), prev = S.pedidos[d.caso]; if (prev && prev.clave === k) return prev;
+    const p = { caso: d.caso, token, riesgo: d.riesgo, modalidad: d.modalidad, grupo: d.grupo, zona: d.zona, lugar: d.lugar || null, clave: k, at: iso(now()), por: porDe(d), contacto: d.contacto || {} };
+    S.pedidos[d.caso] = p; if (ctx.pedidoSinHorarios) ctx.pedidoSinHorarios(p); cambio(); return p; }
+  function pedidoDe(caso) { return S.pedidos[caso] || null; }
   // ----- Red (DEC-172) -----
   function redCaso(caso) { return S.red[caso] || null; }
   function pedirRed(token, fecha, ini, form) {
@@ -146,7 +156,7 @@
   function redAceptar(caso, nombre) {
     const r = S.red[caso]; if (!r || r.estado !== 'buscando') return null; const m = (AGD().red || []).find((x) => x.inspector === (nombre || r.miembros[0])); if (!m) return null; const at = iso(now());
     const p = { caso, riesgo: r.riesgo, modalidad: r.modalidad, zona: r.zona, grupo: r.grupo, fecha: r.fecha, hIni: r.ini, hFin: r.fin, franja: r.ini + ' – ' + r.fin, inspector: m.inspector, organizacion: m.organizacion, credencial: m.credencial, origen: 'red', consultados: r.consultados, buscandoDesde: r.desde,
-      dir: r.form.dir, ref: r.form.ref, recibe: r.form.recibe, cel: r.form.cel, ubicacion: r.form.ubicacion || null, reemplaza: r.reemplaza, at, por: r.por };
+      dir: r.form.dir, ref: r.form.ref, recibe: r.form.recibe, cel: r.form.cel, ubicacion: r.form.ubicacion || null, lugar: r.form.lugar || null /* G-2d */, reemplaza: r.reemplaza, at, por: r.por };
     Object.assign(r, { estado: 'aceptada', aceptadoPor: m.inspector, organizacion: m.organizacion, credencial: m.credencial, aceptadoEn: at });
     if (ctx.confirmar) ctx.confirmar(p); cambio(); return p;
   }
@@ -200,7 +210,7 @@
   function specInforme(caso) { const out = {}; docsBase(caso).filter((d) => d.campos && d.estado !== 'Volver a subir').forEach((d) => d.campos.forEach((x) => { if (!x.destino) return; const prev = out[x.destino]; if (prev && prev.conf >= x.conf) return;
     out[x.destino] = { src: 'ext', conf: x.conf, doc: 'Portal del cliente · ' + x.caraNombre, v: x.conf >= 60 ? x.leido : '', nota: x.comparacion === 'No coincide' ? 'No coincide con la solicitud (' + x.solicitud + '): alerta en los controles del calificador' : x.anioSolicitud && x.leido !== x.anioSolicitud ? 'La solicitud dice ' + x.anioSolicitud : '' }; })); return out; }
   function alertasDocs(caso) { return docsBase(caso).filter((d) => d.estado !== 'Volver a subir').reduce((L, d) => L.concat(d.alertas || []), []); }
-  function reset() { S.apartados = []; S.docs = {}; S.red = {}; S.camino = {}; S.reloj = null; S.durRamo = null; S.durHist = []; cambio(); }
+  function reset() { S.apartados = []; S.docs = {}; S.red = {}; S.camino = {}; S.reloj = null; S.durRamo = null; S.durHist = []; S.lugar = {}; S.pedidos = {}; cambio(); }
 
   // ---------- Línea de tiempo del cliente (estadoCliente) ----------
   function pasos(estado) { const L = PC().estadoCliente || [], cur = L.findIndex((p) => (p.desde || []).indexOf(estado) >= 0);
@@ -209,7 +219,7 @@
 
   const Logic = { ctx, on, now, fijarReloj, enlace, datosDe, duracion, duraciones, fijarDuracion, durHist: () => S.durHist, horarios, apartar, soltar, apartadoDe, apartadosActivos, citaDe, puedeCambiar, confirmar, cancelar,
     redCaso, redDe, pedirRed, avisarCamino, caminoDe, redAceptar, redSinRespuesta, redCancelar, procesarRed, redes: () => Object.keys(S.red).map((k) => S.red[k]), enCamino, credencial, orgDe, ics, documentos, pendientes, sembrarDocs, subir, subirCapturas, revisar, validarArchivo,
-    specInforme, alertasDocs, caraNombre, reset, pasos, HCAMBIO, MINAP, MAXMB, fDia, fDiaLargo, fFecha, fCorta, mb, iso, parse, hm, min };
+    specInforme, alertasDocs, caraNombre, reset, pasos, fijarLugar, lugarDe, pedirContacto, pedidoDe, esFijo: (d) => !!d && ['Vehículos', 'Equipo y maquinaria'].indexOf(d.grupo) < 0, HCAMBIO, MINAP, MAXMB, fDia, fDiaLargo, fFecha, fCorta, mb, iso, parse, hm, min };
   W.SiriusPortalCasoLogic = Logic;
 
   // ---------- Piezas visuales ----------
@@ -283,25 +293,31 @@
   // props: token, preset (escena), nonce, modo ('auto' desde la autoinspección), avance { hechas, total }, enviado, onAutoinspeccion, orientacion,
   // simulado + pantalla + T (simulador de Formularios: sin efectos), alto, sinCabecera, sinNav.
   const PRESET = { portalagenda: 'dia', portalhoras: 'dia', portalapartado: 'dia', portallugar: 'lugar', portalagendado: 'ok', portalcita: 'cita', portalcamino: 'camino', portaldocs: 'docs', portalgarantias: 'docs',
-    portalred: 'red', portalredok: 'red', portalsinred: 'red', portalrg: 'dia', portaldoccamara: 'docs', portaldocrevision: 'docs' };
+    portalred: 'red', portalredok: 'red', portalsinred: 'red', portalrg: 'dia', portaldoccamara: 'docs', portaldocrevision: 'docs',
+    portallugargps: 'sitio', portallugarbuscar: 'sitio', portalsinubicar: 'sitio', portalsinhorarios: 'sitio', portalrgconfirmar: 'sitio' }; // G-2d
   const PRE_ESTADOS = ['Registrado', 'En coordinación', 'Reaperturado'];
+  const esFijoD = (d) => !!d && ['Vehículos', 'Equipo y maquinaria'].indexOf(d.grupo) < 0; // G-2d: Ramos Generales no móviles (el lugar viene de la solicitud)
   function SiriusPortalCaso(props) {
     useTick(15000);
     const d = datosDe(props.token), auto = props.modo === 'auto' || (d && d.auto), cita0 = d ? citaDe(d.caso) : null;
     // Agenda: presencial y virtual guiada de todos los grupos de ramo, mientras la inspección no se hizo (o con una cita vigente).
     const conAgenda = !auto && d && ['Presencial', 'Virtual guiada'].indexOf(d.modalidad) >= 0 && (PRE_ESTADOS.concat(['Agendado', 'Enlace caducado']).indexOf(d.estado) >= 0 || (cita0 && cita0.estado === 'Agendada') || !!props.simulado);
-    const ini = (() => { const p = props.pantalla || PRESET[props.preset] || 'estado'; return { sec: p === 'docs' || p === 'cam' ? 'docs' : ['dia', 'lugar', 'ok', 'cita', 'red'].indexOf(p) >= 0 ? 'agenda' : 'estado', paso: p }; })();
-    const s0 = R().useState(Object.assign({ dia: null, sel: null, cambio: false, form: null, tried: false, cancelar: false, err: '', up: {}, cam: props.preset === 'portaldoccamara' ? { id: 'D1', vivo: true } : props.preset === 'portaldocrevision' ? { id: 'D1', rev: true } : null, ubic: '' }, ini)), st = s0[0], setSt = s0[1];
+    const ini = (() => { const p = props.pantalla || PRESET[props.preset] || 'estado'; return { sec: p === 'docs' || p === 'cam' ? 'docs' : ['sitio', 'dia', 'lugar', 'ok', 'cita', 'red'].indexOf(p) >= 0 ? 'agenda' : 'estado', paso: p }; })();
+    const s0 = R().useState(Object.assign({ dia: null, sel: null, cambio: false, form: null, tried: false, cancelar: false, err: '', up: {}, cam: props.preset === 'portaldoccamara' ? { id: 'D1', vivo: true } : props.preset === 'portaldocrevision' ? { id: 'D1', rev: true } : null, ubic: '', rgResp: d && lugarDe(d.caso) && esFijoD(d) ? 'si' : null }, ini)), st = s0[0], setSt = s0[1];
     const set = (o) => setSt((x) => Object.assign({}, x, o));
     const top = R().useRef(null);
     R().useEffect(() => { const el = top.current; if (el && !props.simulado) { try { el.focus({ preventScroll: false }); } catch (e) {} } }, [st.paso, !!st.cam]);
+    // G-2d · DEC-224: sin ningún horario para el lugar, se registra el pedido (una vez por lugar); en las escenas, el paso Lugar avanza solo a Horario.
+    const lugK = d ? lugarClave(d.lugar) : '';
+    R().useEffect(() => { if (!d || props.simulado || st.paso !== 'dia' || !d.lugar) return; const exc = st.cambio && cita0 ? { caso: d.caso, visita: cita0.id } : null, D = horarios(d.token, exc); if (D.length && D.every((x) => !x.total)) pedirContacto(d.token); }, [st.paso, lugK]);
+    R().useEffect(() => { const PLs = (W.SiriusPortalLugar || {}).sim || {}; if (!d || props.simulado || st.paso !== 'sitio' || !PLs.avanzar || !PLs.auto) return; const PLg = W.SiriusPortalLugar; if (!PLg || !PLg.valido(d.lugarCliente, esFijoD(d), st.rgResp)) return; const t = setTimeout(() => { PLs.avanzar = false; set({ paso: 'dia', sec: 'agenda', dia: null, sel: null, tried: false }); }, 1500); return () => clearTimeout(t); }, [st.paso, lugK, st.rgResp]);
     if (!d) return h('div', { style: { padding: 24, fontSize: 16, color: C.body } }, 'No encontramos este enlace.');
     const apar = CFG() ? CFG().aparienciaPara(d.agencia) : null, color = (apar && apar.colorPrincipal) || '#0B5CAD', oscuro = (apar && apar.colorOscuro) || '#0B2E59';
     const sim = !!props.simulado, red = redCaso(d.caso) || (sim && st.paso === 'red' ? redEjemplo(d) : null), cita = citaDe(d.caso) || (sim && ['cita', 'camino', 'ok'].indexOf(st.paso) >= 0 ? citaEjemplo(d) : null);
     const ap = apartadoDe(d.caso), docs = documentos(d.caso), npend = pendientes(d.caso), CC = (EJ().autoinspeccion || {}).contactoCompania || {}, dur = duracion(d);
     const gl = ctx.garLimite ? ctx.garLimite(d.caso) || {} : {}, garL = gl.fecha || '', cam = cita && enCamino(cita, d.caso), ins = red && red.estado === 'aceptada' ? red.aceptadoPor : cita ? cita.inspector : '';
     const V = { 'contacto.nombre': String((d.contacto || {}).nombre || d.c.asegurado || '').split(' ')[0], 'asegurado.nombre': d.c.asegurado || '', 'vehiculo.descripcion': d.vehiculo || '', 'vehiculo.placa': d.placa || '', 'caso.numero': d.caso, 'compania.nombre': 'Aseguradora del Sur', 'compania.telefono': CC.telefono || '',
-      'riesgo.zona': d.zona, 'agenda.apartado': String(MINAP()), 'agenda.horasCambio': String(HCAMBIO()), 'agenda.duracion': dur % 60 ? dur + ' minutos' : (dur / 60) + (dur === 60 ? ' hora' : ' horas'), 'documentos.pendientes': String(npend), 'documentos.maxMB': String(MAXMB()), 'garantias.limite': garL,
+      'riesgo.zona': d.lugarCliente && W.SiriusPortalLugar ? W.SiriusPortalLugar.textoCorto(d.lugarCliente) : d.zona, 'agenda.apartado': String(MINAP()), 'agenda.horasCambio': String(HCAMBIO()), 'agenda.duracion': dur % 60 ? dur + ' minutos' : (dur / 60) + (dur === 60 ? ' hora' : ' horas'), 'documentos.pendientes': String(npend), 'documentos.maxMB': String(MAXMB()), 'garantias.limite': garL,
       'cita.fecha': cita ? fDiaLargo(cita.fecha) : '', 'cita.franja': cita ? cita.hIni + ' – ' + cita.hFin : '', 'inspector.nombre': ins, 'inspector.credencial': ins ? credencial(ins) : '', 'inspector.organizacion': ins ? orgDe(ins) : '', 'red.consultados': String(red ? red.consultados : redDe(d).length),
       'avance.hechas': String((props.avance || {}).hechas || 0), 'avance.total': String((props.avance || {}).total || 0), 'enlace.vence': fFecha(d.vence) };
     const T = (p, b, extra) => { const VV = extra ? Object.assign({}, V, extra) : V; if (props.T) return props.T(p, b, VV); const c = CFG(); if (!c) return ''; return c.texto(p, b, VV, { agencia: d.agencia }); };
@@ -325,6 +341,10 @@
     const icsBtn = (c) => btn(T('agendaListo', 'boton2'), () => { try { const b = new Blob([ics(c, d)], { type: 'text/calendar' }), u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = 'inspeccion-' + d.caso + '.ics'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000); } catch (e) {} }, { sec: true, key: 'ics', id: 'pc-ics' });
     const lugarG = d.grupo === 'Vehículos' ? '' : d.grupo === 'Equipo y maquinaria' ? '3' : '2';
     const minsDesde = (s) => Math.max(0, Math.round((now() - parse(s)) / 60000));
+    // G-2d: «Paso 1 de 3 · Lugar» · «Paso 2 de 3 · Horario» · «Paso 3 de 3 · Confirmación» (solo al agendar; al cambiar la cita no se numeran)
+    const PLg = W.SiriusPortalLugar, lugC = d.lugarCliente, lugTxt = lugC && PLg ? PLg.textoCorto(lugC) : '';
+    const pasoN = (n, nombre) => PLg && !st.cambio ? h('span', { key: 'pn', 'data-pc-pasos': n + '/3', style: { fontSize: 13, fontWeight: 700, color: C.muted } }, PLg.pasoTxt(n, 3, nombre)) : null;
+    const cambiarLugar = (k) => PLg ? link('Cambiar el lugar', () => { soltar(d.caso); ir('agenda', 'sitio', { dia: null, sel: null }); }, k || 'cl') : null;
 
     let cuerpo = null;
     // ===== Mi inspección =====
@@ -336,7 +356,7 @@
       else if (conAgenda && red && red.estado === 'buscando') accion = card([B(T('red', 'titulo'), 't'), P(fDia(red.fecha) + ' · ' + red.ini + ' – ' + red.fin, { fontSize: 14, color: C.muted }, 'x'), btn('Ver la búsqueda', () => ir('agenda', 'red'), { key: 'b', id: 'pc-verred' })], true, 'acc');
       else if (conAgenda && red && red.estado === 'sinred' && !estaAg) accion = card([B(T('red', 'titulo3'), 't'), P(T('red', 'texto3'), { fontSize: 14, color: C.muted }, 'x'), btn(T('red', 'boton'), () => { redCancelar(d.caso); ir('agenda', 'dia'); }, { key: 'b', id: 'pc-otrohorario' })], true, 'acc');
       else if (conAgenda && estaAg) accion = card([B('Inspección agendada', 't'), resumenCita(cita, true), btn(T('miInspeccion', 'boton2'), () => ir('agenda', 'cita'), { sec: true, key: 'b', id: 'pc-vercita' })], true, 'acc');
-      else if (conAgenda && PRE_ESTADOS.indexOf(d.estado) >= 0) accion = card([B(T('agendarAccion', 'titulo'), 't'), P(T('agendarAccion', 'texto'), { color: C.muted, fontSize: 14 }, 'x'), btn(T('agendarAccion', 'boton'), () => ir('agenda', 'dia'), { key: 'b', id: 'pc-agendar' })], true, 'acc');
+      else if (conAgenda && PRE_ESTADOS.indexOf(d.estado) >= 0) accion = card([B(T('agendarAccion', 'titulo'), 't'), P(T('agendarAccion', 'texto'), { color: C.muted, fontSize: 14 }, 'x'), btn(T('agendarAccion', 'boton'), () => ir('agenda', W.SiriusPortalLugar ? 'sitio' : 'dia'), { key: 'b', id: 'pc-agendar' })], true, 'acc'); // G-2d: primero el lugar
       else if (npend) accDocs = true, accion = card([B('Sube tus documentos', 't'), P(T('miInspeccion', 'aviso'), { color: C.muted, fontSize: 14 }, 'x'), btn(T('miInspeccion', 'boton'), () => ir('docs', 'docs'), { key: 'b', id: 'pc-docs1' })], true, 'acc');
       const sub = (p) => { if (p.paso === 'Solicitud recibida') return red && red.estado === 'buscando' ? 'Buscando un inspector para ' + fDia(red.fecha) + ' ' + red.ini : fFecha(d.fecha); if (p.paso === 'Inspección agendada') return cita && cita.fecha && p.st !== 'pend' ? fDia(cita.fecha) + ' · ' + cita.hIni + ' – ' + cita.hFin : p.st === 'cur' && conAgenda ? 'Pendiente: elige una fecha' : ''; if (p.paso === 'Inspección realizada' && cita && cita.estado === 'Realizada') return fDia(cita.fecha); return p.st === 'pend' ? '' : p.texto; };
       const tl = h('ol', { key: 'tl', 'aria-label': 'Estado de tu inspección', style: { listStyle: 'none', margin: 0, padding: 0 } }, L.map((p, i) => h('li', { key: p.paso, 'aria-current': p.st === 'cur' ? 'step' : undefined, style: { display: 'grid', gridTemplateColumns: '26px minmax(0,1fr)', gap: 10, paddingBottom: i < L.length - 1 ? 14 : 0, position: 'relative' } },
@@ -345,6 +365,14 @@
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 } }, h('b', { style: { fontSize: 15, color: p.st === 'pend' ? C.muted : oscuro } }, p.paso, h('span', { className: 'pc-sr', style: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' } }, p.st === 'ok' ? ' (hecho)' : p.st === 'cur' ? ' (paso actual)' : ' (pendiente)')), sub(p) ? h('span', { style: { fontSize: 13, color: C.muted } }, sub(p)) : null))));
       const docsCard = npend && !accDocs ? card([B(T('miInspeccion', 'aviso'), 't', { fontSize: 15 }), btn(T('miInspeccion', 'boton'), () => ir('docs', 'docs'), { sec: true, key: 'b', id: 'pc-docs2' })], false, 'dc') : null;
       cuerpo = [H1(T('miInspeccion', 'titulo')), P(T('miInspeccion', 'texto'), { color: C.muted }, 'sub'), accion, tl, docsCard, P(T('miInspeccion', 'mensaje'), { fontSize: 13, color: C.muted }, 'ayuda')];
+    }
+    // ===== Agenda: 1 · Lugar (etapa G-2d · DEC-222): GPS o dirección; Ramos Generales no móviles confirman la de la solicitud =====
+    else if (st.paso === 'sitio' && PLg) {
+      const fijo = esFijoD(d), sol = PLg.deSolicitud(d), falta = PLg.faltaTxt(lugC, fijo, st.rgResp), Sl = W.SiriusLugar, ciu = (sol && sol.ciudad) || (Sl ? Sl.ciudadDe(d.zona) : '');
+      cuerpo = [volver(st.cambio ? 'agenda' : 'estado', st.cambio ? 'cita' : 'estado'), pasoN(1, 'Lugar'), H1(fijo ? T('agendaLugar', 'titulo' + lugarG) : '¿Dónde será la inspección?'),
+        P(fijo ? 'Los horarios dependen de los inspectores que atienden ese lugar.' : 'Primero el lugar: los horarios dependen de los inspectores que atienden esa zona.', { color: C.muted, fontSize: 14 }, 'sub'),
+        h(PLg.Paso, { key: 'pl', lugar: lugC, onCambio: (nl) => fijarLugar(d.caso, nl), ciudadCaso: ciu, fijo, solicitud: sol, resp: st.rgResp, onResp: (k) => set({ rgResp: k, tried: false }), tried: st.tried, color, oscuro, sim }),
+        btn('Siguiente: Horario', () => { if (falta) return set({ tried: true }); soltar(d.caso); ir('agenda', 'dia', { dia: null, sel: null }); }, { key: 'sig', id: 'pc-sig-horario' })];
     }
     // ===== Agenda: día y horario (cada 30 min; confirmación inmediata o red) =====
     else if (st.paso === 'dia') {
@@ -359,14 +387,38 @@
       const grupo = (titulo, texto, L, tipo, k) => L.length ? h('section', { key: k, 'aria-label': titulo, style: { display: 'flex', flexDirection: 'column', gap: 8 } }, h('h2', { style: { margin: '4px 0 0', fontSize: 16, color: oscuro } }, titulo), P(texto, { fontSize: 13, color: C.muted }, 'x'),
         h('div', { role: 'radiogroup', 'aria-label': titulo + ' · ' + (dia ? fDiaLargo(dia.fecha) : ''), style: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 } }, L.map((x) => chipH(x, tipo)))) : null;
       const apInfo = ap ? h('div', { key: 'ap', role: 'status', 'data-apartado': ap.hasta, style: { padding: '10px 12px', borderRadius: 10, background: C.warnbg, color: C.warn, fontSize: 14, lineHeight: 1.45 } }, h('b', null, ap.ini + ' – ' + ap.fin + ' apartado hasta las ' + ap.hasta.slice(11, 16) + '. '), T('agendaDia', 'aviso')) : st.sel && st.sel.tipo === 'red' ? h('div', { key: 'ap', role: 'status', style: { padding: '10px 12px', borderRadius: 10, background: '#eef5fd', color: oscuro, fontSize: 14, lineHeight: 1.45 } }, h('b', null, st.sel.ini + ' – ' + st.sel.fin + '. '), T('agendaDia', 'texto3')) : null;
-      const form0 = st.form || { dir: (cita && st.cambio ? cita.dir : (red && red.form ? red.form.dir : d.direccion)) || '', ref: (cita && st.cambio ? cita.ref : d.referencia) || '', recibe: (cita && st.cambio ? cita.recibe : (d.contacto || {}).nombre) || '', cel: (cita && st.cambio ? cita.cel : (d.contacto || {}).cel) || '' };
-      cuerpo = [volver(st.cambio ? 'agenda' : 'estado', st.cambio ? (red && red.estado === 'buscando' ? 'red' : 'cita') : 'estado'), H1(st.cambio ? 'Cambiar tu cita' : T('agendaDia', 'titulo')), st.cambio && cita ? P('Tu cita actual: ' + fDia(cita.fecha) + ' · ' + cita.hIni + ' – ' + cita.hFin + '. Elige el nuevo horario.', { fontSize: 14 }, 'act') : null, st.cambio && red && red.estado === 'buscando' ? P('Buscando para ' + fDia(red.fecha) + ' · ' + red.ini + '. Elige el nuevo horario.', { fontSize: 14 }, 'actr') : null,
+      const form0 = st.form || { dir: (lugC ? lugC.direccion : '') || (cita && st.cambio ? cita.dir : (red && red.form ? red.form.dir : d.direccion)) || '', ref: (lugC ? lugC.referencia : '') || (cita && st.cambio ? cita.ref : d.referencia) || '', recibe: (cita && st.cambio ? cita.recibe : (d.contacto || {}).nombre) || '', cel: (cita && st.cambio ? cita.cel : (d.contacto || {}).cel) || '' };
+      const sinNada = !!lugC && D.length > 0 && D.every((x) => !x.total), ped = sinNada ? pedidoDe(d.caso) : null; // G-2d · DEC-224
+      if (sinNada) cuerpo = [volver('agenda', 'sitio'), pasoN(2, 'Horario'), H1('Horarios para ' + lugTxt), h('div', { key: 'sh', role: 'status', id: 'pc-sinhorarios', style: { display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', borderRadius: 12, background: C.warnbg, color: C.warn, fontSize: 15, lineHeight: 1.45 } },
+          h('b', null, 'No hay horarios inmediatos para tu zona: te contactará un coordinador'), h('span', null, 'Ningún inspector atiende ' + lugTxt + ' en los próximos días.')),
+        ped ? card([B('Registramos tu pedido', 't', { fontSize: 15 }), P(fCorta(ped.at) + ' · ' + lugTxt + (lugC.direccion ? ' · ' + lugC.direccion : ''), { fontSize: 14, color: C.muted }, 'x'), P('Un coordinador te escribirá o te llamará para agendar la visita.', { fontSize: 14 }, 'y')], true, 'ped') : null,
+        cambiarLugar('cl2'), btn(T('agendaListo', 'boton'), () => ir('estado', 'estado'), { key: 'vm', id: 'pc-vermi', sec: true })];
+      else cuerpo = [volver(st.cambio ? 'agenda' : PLg ? 'agenda' : 'estado', st.cambio ? (red && red.estado === 'buscando' ? 'red' : 'cita') : PLg ? 'sitio' : 'estado'), pasoN(2, 'Horario'), H1(st.cambio ? 'Cambiar tu cita' : lugTxt ? 'Horarios para ' + lugTxt : T('agendaDia', 'titulo')), lugTxt && !st.cambio ? cambiarLugar('cl') : null, st.cambio && cita ? P('Tu cita actual: ' + fDia(cita.fecha) + ' · ' + cita.hIni + ' – ' + cita.hFin + '. Elige el nuevo horario.', { fontSize: 14 }, 'act') : null, st.cambio && red && red.estado === 'buscando' ? P('Buscando para ' + fDia(red.fecha) + ' · ' + red.ini + '. Elige el nuevo horario.', { fontSize: 14 }, 'actr') : null,
         P(T('agendaDia', 'texto'), { color: C.muted, fontSize: 14 }, 'x'), daysRow, dia ? h('p', { key: 'dl', style: { margin: 0, fontSize: 15, fontWeight: 800, color: C.strong } }, fDiaLargo(dia.fecha).charAt(0).toUpperCase() + fDiaLargo(dia.fecha).slice(1)) : null,
         dia ? grupo(T('agendaDia', 'titulo2'), T('agendaDia', 'texto2'), dia.inmediata, 'fija', 'g1') : null, dia ? grupo(T('agendaDia', 'titulo3'), T('agendaDia', 'texto3'), dia.red, 'red', 'g2') : null,
         dia && !dia.total ? P('No hay horarios ese día: elige otro.', { color: C.muted }, 'sh') : null, st.err ? h('p', { key: 'e', role: 'alert', style: { margin: 0, color: C.bad, fontWeight: 700, fontSize: 14 } }, st.err) : null, apInfo,
-        btn(T('agendaDia', 'boton'), () => ir('agenda', 'lugar', { form: form0 }), { key: 'cont', id: 'pc-continuar', motivo: ap || (st.sel && st.sel.tipo === 'red') ? '' : 'Elige un día y un horario' })];
+        btn(PLg ? 'Siguiente: Confirmación' : T('agendaDia', 'boton'), () => ir('agenda', 'lugar', { form: form0 }), { key: 'cont', id: 'pc-continuar', motivo: ap || (st.sel && st.sel.tipo === 'red') ? '' : 'Elige un día y un horario' })];
     }
-    // ===== Agenda: lugar y contacto =====
+    // ===== Agenda: 3 · Confirmación (etapa G-2d): el lugar ya está elegido; aquí, quién recibe al inspector y su celular =====
+    else if (st.paso === 'lugar' && PLg && lugC) {
+      const f = Object.assign({ recibe: (d.contacto || {}).nombre || '', cel: (d.contacto || {}).cel || '' }, st.form || {}), setF = (o) => set({ form: Object.assign({}, f, o) });
+      const esRed = st.sel && st.sel.tipo === 'red' && !ap;
+      const e = { recibe: String(f.recibe || '').trim().length < 3 ? 'Escribe el nombre de quien recibe al inspector.' : '', cel: !/^09\d{8}$/.test(String(f.cel || '').replace(/\s/g, '')) ? 'Escribe un celular de 10 dígitos que empiece con 09.' : '' };
+      const campo = (id, lab, k, o) => { const err = st.tried ? e[k] : ''; o = o || {}; return h('div', { key: id, style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('label', { htmlFor: id, style: { fontSize: 13, fontWeight: 800, color: C.muted } }, lab),
+        h('input', { id, value: f[k] || '', inputMode: o.mode, autoComplete: 'off', 'aria-invalid': err ? 'true' : 'false', 'aria-describedby': err ? id + '-e' : undefined, onChange: (ev) => setF({ [k]: ev.target.value }), readOnly: sim, style: { width: '100%', minHeight: 46, border: '1.5px solid ' + (err ? C.bad : C.line), borderRadius: 10, padding: '10px', fontFamily: 'var(--font-brand)', fontSize: 16, lineHeight: 1.35, color: C.strong, boxSizing: 'border-box' } }),
+        err ? h('span', { id: id + '-e', role: 'alert', style: { fontSize: 13, color: C.bad, fontWeight: 700 } }, err) : null); };
+      const vencido = !ap && !esRed && !sim, hor = ap ? [B(fDia(ap.fecha) + ' · ' + ap.ini + ' – ' + ap.fin, 'f'), P('Apartado hasta las ' + ap.hasta.slice(11, 16) + '.', { fontSize: 13, color: C.warn, fontWeight: 700 }, 'a')] : esRed ? [B(fDia(st.sel.fecha) + ' · ' + st.sel.ini + ' – ' + st.sel.fin, 'f'), P(T('agendaDia', 'texto3'), { fontSize: 13, color: C.muted }, 'a')] : [];
+      const resumen = card([h('span', { key: 'lt', style: { fontSize: 12, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '.04em' } }, 'Lugar'), B(lugTxt, 'lz'), P(lugC.direccion + (lugC.referencia ? ' · ' + lugC.referencia : ''), { fontSize: 14, color: C.muted }, 'ld'),
+        hor.length ? h('span', { key: 'ht', style: { fontSize: 12, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '.04em', marginTop: 4 } }, 'Horario') : null].concat(hor), true, 'res');
+      cuerpo = [volver('agenda', 'dia'), pasoN(3, 'Confirmación'), H1('Confirma tu cita'), resumen, link('Cambiar el lugar', () => { soltar(d.caso); ir('agenda', 'sitio', { dia: null, sel: null }); }, 'cl3'),
+        campo('pc-recibe', '¿Quién recibe al inspector?', 'recibe'), campo('pc-cel', 'Celular de quien recibe', 'cel', { mode: 'tel' }), P(T('agendaLugar', 'texto' + lugarG), { color: C.muted, fontSize: 14 }, 't'),
+        vencido ? h('div', { key: 'v', role: 'alert', style: { padding: '10px 12px', borderRadius: 10, background: C.badbg, color: C.bad, fontSize: 14, fontWeight: 700 } }, 'El horario que apartaste venció: vuelve a elegir el día y el horario.') : null,
+        st.err ? h('p', { key: 'e', role: 'alert', style: { margin: 0, color: C.bad, fontWeight: 700, fontSize: 14 } }, st.err) : null,
+        btn(T('agendaLugar', 'boton'), () => { if (e.recibe || e.cel) return set({ tried: true }); const form = { dir: lugC.direccion, ref: lugC.referencia || '', recibe: f.recibe, cel: String(f.cel).replace(/\s/g, ''), lugar: lugC, reemplaza: st.cambio && cita ? cita.id : null };
+          if (esRed) { const r = pedirRed(d.token, st.sel.fecha, st.sel.ini, form); if (!r) return set({ err: 'No hay inspectores de la red para ese horario: elige otro.' }); return ir('agenda', 'red', { cambio: false, dia: null, sel: null }); }
+          const r = confirmar(d.token, form); if (r && r.error) return set({ err: 'El horario que apartaste venció: vuelve a elegirlo.' }); ir('agenda', 'ok', { cambio: false, dia: null, sel: null }); }, { key: 'ok', id: 'pc-confirmar', motivo: vencido ? 'El horario apartado venció' : '' })];
+    }
+    // ===== Agenda: lugar y contacto (sin el módulo del lugar, como antes) =====
     else if (st.paso === 'lugar') {
       const f = st.form || { dir: d.direccion || '', ref: d.referencia || '', recibe: (d.contacto || {}).nombre || '', cel: (d.contacto || {}).cel || '' }, setF = (o) => set({ form: Object.assign({}, f, o) });
       const esRed = st.sel && st.sel.tipo === 'red' && !ap;
@@ -413,12 +465,12 @@
     }
     // ===== Ver o cambiar la cita =====
     else if (st.paso === 'cita') {
-      if (!cita || cita.estado !== 'Agendada') cuerpo = [volver('estado', 'estado'), H1(T('cita', 'titulo')), P('Aún no tienes cita.', { color: C.muted }, 'n'), conAgenda && PRE_ESTADOS.indexOf(d.estado) >= 0 ? btn(T('agendarAccion', 'boton'), () => ir('agenda', 'dia'), { key: 'b' }) : null];
+      if (!cita || cita.estado !== 'Agendada') cuerpo = [volver('estado', 'estado'), H1(T('cita', 'titulo')), P('Aún no tienes cita.', { color: C.muted }, 'n'), conAgenda && PRE_ESTADOS.indexOf(d.estado) >= 0 ? btn(T('agendarAccion', 'boton'), () => ir('agenda', W.SiriusPortalLugar ? 'sitio' : 'dia'), { key: 'b' }) : null];
       else { const pc = puedeCambiar(cita), razon = pc.ok ? '' : 'Faltan menos de ' + HCAMBIO() + ' horas hábiles: llámanos para cambiarla';
         cuerpo = [volver('estado', 'estado'), H1(T('cita', 'titulo')), card(resumenCita(cita, true).concat(cita.origen === 'red' ? [P(cita.inspector + ' · ' + orgDe(cita.inspector) + ' · credencial ' + credencial(cita.inspector), { fontSize: 14 }, 'ir')] : []), true, 'c'),
           card([B('El día de la visita', 't', { fontSize: 15 }), P('Verás aquí el nombre de tu inspector, su organización, su credencial y el aviso «va en camino» con la hora estimada.', { fontSize: 14, color: C.muted }, 'x')], false, 'dv'),
           !pc.ok ? h('div', { key: 'blk', role: 'alert', id: 'pc-bloq', style: { padding: '10px 12px', borderRadius: 10, background: C.warnbg, color: C.warn, fontSize: 14, lineHeight: 1.45, fontWeight: 700 } }, T('cita', 'mensaje')) : null,
-          btn(T('cita', 'boton'), () => ir('agenda', 'dia', { cambio: true, dia: null, sel: null }), { sec: true, key: 'cb', id: 'pc-cambiar', motivo: razon, desc: pc.ok ? undefined : 'pc-bloq' }),
+          btn(T('cita', 'boton'), () => { if (cita.lugar && !lugarDe(d.caso)) fijarLugar(d.caso, cita.lugar); ir('agenda', 'dia', { cambio: true, dia: null, sel: null }); }, { sec: true, key: 'cb', id: 'pc-cambiar', motivo: razon, desc: pc.ok ? undefined : 'pc-bloq' }),
           btn(T('cita', 'boton2'), () => set({ cancelar: true }), { sec: true, key: 'cc', id: 'pc-cancelar', motivo: razon, desc: pc.ok ? undefined : 'pc-bloq' }),
           st.cancelar ? h('div', { key: 'conf', role: 'alertdialog', 'aria-labelledby': 'pc-cc-t', style: { display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 14, border: '1.5px solid ' + C.bad, background: C.badbg } }, h('b', { id: 'pc-cc-t', style: { fontSize: 15, color: C.bad } }, T('cita', 'aviso')),
             btn('Sí, cancelar la cita', () => { if (cancelar(d.token)) ir('estado', 'estado'); }, { key: 'si', danger: true, id: 'pc-cancelar-si' }), btn('No, mantenerla', () => set({ cancelar: false }), { key: 'no', sec: true })) : null,

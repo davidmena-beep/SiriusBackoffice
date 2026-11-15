@@ -10,7 +10,7 @@
 (function () {
   if (window.SiriusPortal) return;
   const R = () => window.React, h = (...a) => R().createElement(...a), NS = () => window.AseguradoraDelSurDesignSystem_4fbf29 || {};
-  const EJ = () => window.SIRIUS_EJEMPLO || {}, AI = () => EJ().autoinspeccion || {}, SIL = () => window.SIRIUS_SILUETAS || null, CAP = () => window.SIRIUS_CAPTURA || { validaciones: [], textosPorGuia: {}, danos: {} }, UI = () => window.SiriusSiluetasUI || null;
+  const EJ = () => window.SIRIUS_EJEMPLO || {}, AI = () => EJ().autoinspeccion || {}, SIL = () => window.SIRIUS_SILUETAS || null, CAP = () => window.SIRIUS_CAPTURA || { validaciones: [], textosPorGuia: {}, danos: {} }, UI = () => window.SiriusSiluetasUI || null, LUG = () => (window.SiriusPortalLugar && window.SiriusLugar && window.React ? window.SiriusPortalLugar : null); // G-2d: paso Lugar
   const z2 = (n) => String(n).padStart(2, '0');
   const ahora = () => (EJ().ahora ? EJ().ahora() : new Date(2026, 9, 18, 20, 30));
   // Reloj del portal: el del prototipo más el tiempo real transcurrido desde que se abrió (las fotos y el envío quedan en orden y después del enlace).
@@ -28,7 +28,7 @@
     const e = enlaces().find(x => x.token === t); if (!e) return { estado: 'invalido', token: t };
     const v = (EJ().vehiculos || []).find(x => x.riesgo === e.riesgo) || {}, c = (EJ().casos || []).find(x => x.id === e.caso) || {};
     const vig = String(e.vence || '') > iso(ahora()).slice(0, 16);
-    return { estado: e.anulado ? 'invalido' : vig ? 'vigente' : 'caducado', cierre: e.revocado ? 'revocado' : '', token: t, caso: e.caso, riesgo: e.riesgo, visita: e.visita || '', vence: e.vence, contacto: e.contacto || {}, asegurado: c.asegurado || '', placa: v.placa || c.placa || '', marca: v.marca || '', modelo: v.modelo || '', anio: v.anio || '', carroceria: v.carroceria || v.clase || '', vin: v.vin || '' }; }
+    return { estado: e.anulado ? 'invalido' : vig ? 'vigente' : 'caducado', cierre: e.revocado ? 'revocado' : '', token: t, caso: e.caso, riesgo: e.riesgo, visita: e.visita || '', vence: e.vence, contacto: e.contacto || {}, asegurado: c.asegurado || '', sucursal: e.zona || c.sucursal || '', ciudad: c.ciudad || '', /* G-2d: para el paso Lugar */ placa: v.placa || c.placa || '', marca: v.marca || '', modelo: v.modelo || '', anio: v.anio || '', carroceria: v.carroceria || v.clase || '', vin: v.vin || '' }; }
 
   // ---------- Utilidades ----------
   function dispositivo() { const u = (typeof navigator !== 'undefined' && navigator.userAgent) || ''; const so = /Android/.test(u) ? 'Android' : /iPhone|iPad/.test(u) ? 'iOS' : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'macOS' : /Linux/.test(u) ? 'Linux' : 'Otro'; const nav = /Edg\//.test(u) ? 'Edge' : /Chrome\//.test(u) ? 'Chrome' : /Firefox\//.test(u) ? 'Firefox' : /Safari\//.test(u) ? 'Safari' : 'Navegador';
@@ -147,7 +147,7 @@
     const mV = /^(\d{4})-(\d\d)-(\d\d)/.exec(ctx.vence || ''), C0 = PC();
     const DAT = C0 ? Object.assign(C0.datosEjemplo({ form: R0.form, total: R0.fotos.length, hechas: hechas(R0, st) }), { 'contacto.nombre': String((ctx.contacto || {}).nombre || '').split(' ')[0], 'asegurado.nombre': ctx.asegurado || '', 'vehiculo.descripcion': [ctx.marca, ctx.modelo, ctx.anio].filter(Boolean).join(' '), 'vehiculo.placa': ctx.placa || '', 'caso.numero': ctx.caso || '', 'enlace.vence': mV ? mV[3] + '/' + mV[2] + '/' + mV[1] : '', 'avance.total': String(R0.fotos.length), 'avance.hechas': String(hechas(R0, st)) }) : {};
     const TX = (pid, b, alt, extra) => { if (!C0) return alt; const v = C0.texto(pid, b, Object.assign({}, DAT, extra || {}), { agencia: ctx.agencia }); return (Array.isArray(v) ? v.length : v) ? v : alt; };
-    const nombre = (ctx.contacto.nombre || '').split(' ')[0] || '';
+    const nombre = ((ctx.contacto || {}).nombre || '').split(' ')[0] || ''; // G-2d: un enlace que no existe ya no rompe la pantalla (antes fallaba sin contacto)
     const conSalir = !['bienvenida', 'nosoyyo', 'salir', 'confirmacion', 'envio'].includes(st.paso);
     const marco = (titulo, cuerpo, pie, opts) => h('div', { ref: rootRef, style: { position: 'relative', display: 'flex', flexDirection: 'column', minHeight: props.alto ? props.alto : '100%', flex: '1 1 auto', background: '#FFFFFF' } },
       h('header', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', borderBottom: '2px solid var(--cyan-700, #0090c8)' } },
@@ -173,7 +173,7 @@
           h('div', { 'aria-label': 'Fotos ya tomadas', role: 'list', style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 } }, tomadas.map(p => h('img', { key: p.id, role: 'listitem', alt: p.nombre, src: st.fotos[p.id].mini || thumbSvg(p.nombre), style: { width: 72, height: 48, objectFit: 'cover', borderRadius: 6, flex: 'none', background: '#e3e8ee' } })))),
         [h(Btn, { key: 'c', id: 'pt-continuar', onClick: () => { accion('Retomó la inspección (' + avanceTxt(R0, st) + ')'); ir(st.volverA && st.volverA !== 'bienvenida' ? st.volverA : 'mapa'); } }, 'Continuar donde quedé'), h(Btn, { key: 'n', variant: 'secondary', onClick: () => { accion('Empezó de nuevo: se borraron las fotos tomadas'); upd({ fotos: {}, video: null, extras: {}, retoma: false, paso: 'mapa' }); } }, 'Empezar de nuevo')], { etapa: 'Retomar' }); }
     if (st.paso === 'bienvenida') return marco(TX('eresTu', 'titulo', nombre ? '¿Eres ' + nombre + '?' : '¿Eres tú?'), h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } }, P_(TX('eresTu', 'texto', '')), Lista(TX('eresTu', 'lista', []))),
-      [h(Btn, { key: 's', id: 'pt-soyyo', onClick: () => { accion('Confirmó «Soy yo»'); if (props.onAvance) props.onAvance('inicio', { caso: ctx.caso, riesgo: ctx.riesgo, at: NOW() }); ir(st.consent.datos ? 'tipo' : 'consent'); } }, TX('eresTu', 'boton', 'Sí, soy yo: empezar')),
+      [h(Btn, { key: 's', id: 'pt-soyyo', onClick: () => { accion('Confirmó «Soy yo»'); if (props.onAvance) props.onAvance('inicio', { caso: ctx.caso, riesgo: ctx.riesgo, at: NOW() }); ir(st.consent.datos ? (st.lugar || !LUG() ? 'tipo' : 'lugar') : 'consent'); } }, TX('eresTu', 'boton', 'Sí, soy yo: empezar')),
         h(Btn, { key: 'n', id: 'pt-nosoyyo', variant: 'secondary', onClick: () => { ir('nosoyyo'); if (props.onNoSoyYo) props.onNoSoyYo(ctx); } }, TX('eresTu', 'boton2', 'No soy yo'))], { etapa: 'Bienvenida' });
 
     // ----- Consentimientos -----
@@ -184,7 +184,14 @@
             P_(TX('consentimientos', 'texto', (C.datos || {}).texto || ''), { fontSize: 15 }), h(Check, { id: 'pt-c-1', checked: st.consent.datos, onChange: (v) => upd(p => ({ consent: Object.assign({}, p.consent, { datos: v }) })), label: 'Acepto el tratamiento de mis datos para esta inspección' })),
           h('section', { 'aria-labelledby': 'pt-c-avisos', style: { display: 'flex', flexDirection: 'column', gap: 10 } }, h('h2', { id: 'pt-c-avisos', style: { margin: 0, fontSize: 17, color: T.strong } }, 'Avisos (opcional)'),
             h(Check, { id: 'pt-c-wa', checked: st.consent.whatsapp, onChange: (v) => upd(p => ({ consent: Object.assign({}, p.consent, { whatsapp: v }) })), label: C.whatsapp || 'WhatsApp' }), h(Check, { id: 'pt-c-sms', checked: st.consent.sms, onChange: (v) => upd(p => ({ consent: Object.assign({}, p.consent, { sms: v }) })), label: C.sms || 'SMS' }))),
-        h(Btn, { id: 'pt-consent-ok', motivo: falta, onClick: () => { if (falta) return; accion('Aceptó los consentimientos (datos: sí · WhatsApp: ' + (st.consent.whatsapp ? 'sí' : 'no') + ' · SMS: ' + (st.consent.sms ? 'sí' : 'no') + ')'); pedirUbicacion(); ir('tipo', { consent: Object.assign({}, st.consent, { at: NOW() }) }); } }, TX('consentimientos', 'boton', 'Continuar')), { etapa: 'Paso 1 · Consentimientos' }); }
+        h(Btn, { id: 'pt-consent-ok', motivo: falta, onClick: () => { if (falta) return; accion('Aceptó los consentimientos (datos: sí · WhatsApp: ' + (st.consent.whatsapp ? 'sí' : 'no') + ' · SMS: ' + (st.consent.sms ? 'sí' : 'no') + ')'); pedirUbicacion(); ir(st.lugar || !LUG() ? 'tipo' : 'lugar', { consent: Object.assign({}, st.consent, { at: NOW() }) }); } }, TX('consentimientos', 'boton', 'Continuar')), { etapa: 'Paso 1 · Consentimientos' }); }
+
+    // ----- Lugar de la inspección (etapa G-2d · DEC-222): 1 Lugar · 2 Autoinspección -----
+    if (st.paso === 'lugar' && LUG()) { const PL = LUG(), Sl = window.SiriusLugar, lg = st.lugar || null, falta = PL.faltaTxt(lg, false), ciu = Sl ? (Sl.ciudadDe(ctx.ciudad) || Sl.ciudadDe(ctx.sucursal) || '1701') : '';
+      return marco('¿Dónde está el vehículo?', h('div', { 'data-pl-pasos': '1/2', style: { display: 'flex', flexDirection: 'column', gap: 14 } },
+          P_('Antes de empezar, confirma dónde harás la autoinspección.', { fontSize: 15, color: T.muted }),
+          h(PL.Paso, { lugar: lg, onCambio: (nl) => upd({ lugar: nl, lugarTried: false }), ciudadCaso: ciu, tried: !!st.lugarTried, color: '#0B5CAD', oscuro: T.strong, onGpsError: () => accion('No pudo usar la ubicación del celular (permiso negado o sin señal): escribe la dirección') })),
+        h(Btn, { id: 'pt-lugar-ok', onClick: () => { if (falta) { upd({ lugarTried: true }); return; } accion('Confirmó el lugar de la autoinspección: ' + PL.textoCorto(lg) + ' · ' + lg.direccion + (lg.referencia ? ' (' + lg.referencia + ')' : '') + ' · origen ' + PL.origenTxt(lg), { lugar: lg }); ir('tipo'); } }, 'Siguiente: Autoinspección'), { etapa: 'Paso 1 de 2 · Lugar' }); }
 
     // ----- Elegir el tipo -----
     if (st.paso === 'tipo') { const sol = tipoSolicitud(ctx), n = Object.keys(st.fotos).length + (st.video ? 1 : 0), S = SIL();
@@ -342,6 +349,7 @@
     const decl = extrasDeclarados(ctx, s.tipo);
     if (esc === 'portalconsent' || esc === 'portalidentidad' || esc === 'portalsincedula') { s.paso = 'consent'; if (esc !== 'portalconsent') s.consent = { datos: true, whatsapp: true, sms: false }; }
     if (esc === 'portaltipo' || esc === 'portalvehiculo') { listo(); s.paso = 'tipo'; }
+    if (esc === 'portalautoinsplugar') { listo(); s.paso = 'lugar'; s.lugar = null; } // G-2d · DEC-222: la autoinspección pide el lugar antes de empezar
     if (['portalmapa', 'portalmapa2', 'portalcamara', 'portalcamaraok', 'portalcamaralat', 'portalrotacion', 'portalrechazo', 'portallectura', 'portalavisoocr', 'portalpausa', 'portalsalir', 'portalretomar', 'portalcerca', 'portalextras'].includes(esc)) { listo(); done(R0.mapa.slice(0, 3)); s.paso = 'mapa'; }
     if (['portalcamara', 'portalcamaraok', 'portalcamaralat', 'portalrotacion'].includes(esc)) { s.paso = 'camara'; s.actual = 'exteriores_lateral_izquierdo'; delete s.fotos.exteriores_lateral_izquierdo; }
     if (esc === 'portalrotacion') s.rotBloq = true;

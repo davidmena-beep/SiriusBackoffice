@@ -406,7 +406,7 @@ class Component extends DCLogic {
   SL() { return window.SiriusLugar || null; }
   lugarCaso() { const x = this.props.lugarCaso; return x && typeof x === 'object' ? x : {}; }
   // Visita sin lugar (las de antes): se arma con la dirección de texto y la ciudad del caso, con «Zona por confirmar».
-  lugarDeVisita(v) { const SL = this.SL(); if (!SL || !v || v.mod !== 'Presencial') return null; return v.lugar ? SL.normalizar(v.lugar) : SL.desdeTexto(v.dir, this.lugarCaso().ciudad, v.ref); }
+  lugarDeVisita(v) { const SL = this.SL(); if (!SL || !v || (v.mod !== 'Presencial' && !(v.lugarCliente && v.lugar))) return null; /* G-2d: el lugar que confirmó el cliente se ve en cualquier modalidad */ return v.lugar ? SL.normalizar(v.lugar) : SL.desdeTexto(v.dir, this.lugarCaso().ciudad, v.ref); }
   // Lugar por defecto: el de la visita (reagendar o dividir), el del riesgo (Ramos Generales no móvil), el de la visita anterior o la dirección del riesgo con la ciudad del caso.
   lugarInicial(ids, x) { const SL = this.SL(); if (!SL) return null; const LC = this.lugarCaso();
     if (x.lugar) return { l: SL.normalizar(x.lugar) };
@@ -420,14 +420,16 @@ class Component extends DCLogic {
   // DEC-225: ¿el inspector elegido queda fuera de la cobertura de este lugar? (solo cuando hay lugar: visitas presenciales)
   fueraDe(p) { const SL = this.SL(), l = this.lugarPara(p); if (!SL || !l || !p.inspector || !this.needsIns(p)) return null; const c = SL.cubre(p.inspector, this.lugarCaso().sucursal, l); return c.nivel ? null : c; }
   camposVisita(v, F) { const SL = this.SL(), l = this.lugarDeVisita(v), out = F.map(f => Object.assign({ color: 'var(--text-strong)' }, f));
-    if (l && SL) out.splice(2, 0, { label: 'Ciudad y zona', value: SL.texto(l), ws: 'normal', span: 'auto', color: SL.porConfirmar(l) ? '#7A4F0E' : 'var(--text-strong)' }); return out; }
+    if (l && SL) out.splice(2, 0, { label: 'Ciudad y zona', value: SL.texto(l), ws: 'normal', span: 'auto', color: SL.porConfirmar(l) ? '#7A4F0E' : 'var(--text-strong)' });
+    if (l && v.lugarCliente) { const o = l.origen === 'GPS' ? 'GPS' : l.origen === 'Mapa' ? 'mapa' : l.origen === 'Solicitud' ? 'confirmó la de la solicitud' : 'dirección buscada'; out.splice(3, 0, { label: 'Origen', value: 'cliente (' + o + ')', ws: 'normal', span: 'auto', color: 'var(--text-strong)' }); } // G-2d · DEC-222: «Origen: cliente (GPS)»
+    return out; }
   addHours(val) { const h = /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 48; const d = window.SIRIUS_EJEMPLO.ahora(); d.setHours(d.getHours() + h); const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
   fmtDT(iso) { const [dd, tt] = iso.split('T'); return this.fmtD(dd) + ' · ' + tt; }
   state = this.initial();
   initial() {
     const p = this.props, pr = p.preset || '';
     const s = { sel: [], grouped: pr === 'agrupar', pnl: null, touched: {}, insQ: '', insOpen: false, wa: null, cancel: null, intF: null, cc: null };
-    if (pr === 'cxcancelar') { const v0 = (p.visitas || []).find(v => v && v.cxBase && !['Cancelada', 'Realizada'].includes(v.estado)); if (v0) s.cancel = { id: v0.id, motivo: '', touched: false }; } // etapa P-6e-3 · escena cxvisitacancelar
+    if (/^cxcancelar(:V\d+)?$/.test(pr)) { const v0 = (p.visitas || []).find(v => v && v.cxBase && !['Cancelada', 'Realizada'].includes(v.estado) && (pr === 'cxcancelar' || v.id === pr.slice(11))); /* G-2c9: «cxcancelar:V3» abre la visita elegida */ if (v0) s.cancel = { id: v0.id, motivo: '', touched: false }; } // etapa P-6e-3 · escena cxvisitacancelar
     const rs = p.riesgos || [];
     if (/^agenda:V\d+$/.test(pr)) { const v0 = this.visits().find(x => x.id === pr.slice(7) && !['Cancelada', 'Realizada'].includes(x.estado) && !x.oferta && x.estado !== 'Oferta enviada'); if (v0 && p.canEdit !== false) { s.pnl = this.newForm(v0.riesgos, Object.assign({}, v0, { mode: 'reagendar', visitId: v0.id, riesgos: v0.riesgos })); s.pnl.fase = 'horario'; s.insQ = v0.inspector || ''; } } // G-2e: «Abrir Coordinar visita» desde la Agenda: reagendar esa visita en la fase Inspector y horario
     if (pr === 'porcoordinar') { const vv = this.visits(), tomados = new Set(); vv.filter(v => v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => tomados.add(id))); const KC = window.SiriusCoordEstado ? window.SiriusCoordEstado.riesgos({ riesgos: rs }, vv) : {}, ids = rs.filter(r => !tomados.has(r.id) && (!KC[r.id] || KC[r.id].estado === 'Por coordinar')).map(r => r.id); if (ids.length && p.canEdit !== false) { s.pnl = this.newForm(ids); s.pnl.fase = 'contacto'; } } // G-2e2 · DEC-238: «Coordinar visita» de la cabecera del caso: Coordinar visita con los riesgos por coordinar ya marcados

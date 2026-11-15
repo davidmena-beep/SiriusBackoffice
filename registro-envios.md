@@ -4,6 +4,146 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c9
+
+«Cancelar visita» ahora le dice a la base cuál visita es: V3 manda `visita: 3`, y lo mismo hacen «Reenviar enlace» y «Generar nuevo enlace» desde la tarjeta. Al revisarlo encontré además otra causa, que explica que la base no cambiara: desde G-2c2, esas acciones de la tarjeta no salían del back-office. Las dos cosas están corregidas y publicadas en la **Versión 239**; la Versión 240 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Número en las acciones de una visita (`cxVisitaAccion`):** toma el número de la tarjeta (`cxBase.n`, la «Vn» del caso en el orden en que se crearon) y lo agrega:
+  - `cancelarVisita { caso, visita, modalidad, motivo }`.
+  - `reenviarEnlace { caso, visita, tipo, canal }`.
+  - `enviarEnlace { caso, visita, canal, destinatario, modalidad, tipo }` en «Generar nuevo enlace» y en el envío desde una visita que aún no tiene enlace.
+  - `ofertarVisita`, `anularOferta` y `agendarVisita` ya lo llevaban y no cambian.
+  - «Reenviar» y «Generar enlace nuevo» del enlace de autoinspección desde Coordinación también llevan `visita`.
+- **Causa de que no llegara a la base (`coordAction`):** en la primera línea había un comentario `//` de G-2c2 que, por estar en la misma línea, dejaba comentada la rama que manda las acciones de la tarjeta a la conexión. Con la conexión activa, cancelar una visita solo la marcaba «Cancelada» en la pantalla, y reenviar, generar enlace y copiar tampoco pasaban por `cxVisitaAccion`. Pasó a comentario `/* */`. Busqué el mismo patrón en los demás archivos del proyecto y no encontré otro caso.
+- **Lo de la sesión no contradice a la base (`cxOv`):** lo que se muestra mientras responde la base (`cxVisOv`) ahora guarda la versión de datos con la que se creó y se descarta cuando los datos se recargan. Con `{ ok: true }` se recarga la base y se descarta; con `{ ok: false }` se descarta y la tarjeta vuelve a su estado, con el mensaje de la base. Si la base no cambió la visita que se pidió cancelar, la tarjeta sigue «Agendada».
+- **Base simulada de las escenas:** `cancelarVisita` cancela la visita del número recibido (V3 es V3, aunque V4 sea más reciente). Si la visita no está abierta responde `{ ok: false }` con «La visita V2 está cancelada: no se puede cancelar». Sin `visita`, cancela la abierta más reciente de la modalidad, como hacía la base antes del SQL 43. La última petición queda en `window.__sirCancelUltima`.
+- **Escena nueva `cxcancelarvisitanumero`**, con el preset `cxcancelar:Vn` en Coordinación para abrir el diálogo de la visita elegida.
+- **Archivos:** `SIRIUS Back-office.dc.html`, `Coordinacion.dc.html`, `datos-cx-coordinacion.js` y `datos-escenas.js`; registro e inventario actualizados (`cancelarVisita` con `visita`).
+
+**Verificado**
+- **Escena nueva:** con la conexión simulada, el caso 50012 con V1, V3 y V4 abiertas y V2 cancelada. Al cancelar V3 la conexión recibe `cancelarVisita { caso: '50012', visita: 3, modalidad: 'Presencial', motivo }`. Solo V3 queda «Cancelada»; V1 y V4 siguen «Agendada» en la pantalla y en la base simulada. Sin errores en la consola.
+- **Rechazo:** con `?fvisita=2`, la pantalla ve V2 «Agendada» pero en la base ya está cancelada. Al cancelarla, la base responde `{ ok: false }`, sale «La visita V2 está cancelada: no se puede cancelar» y las cuatro tarjetas quedan como estaban.
+- **Manda la base:** con una conexión que cancela otra visita (V4) en lugar de V3, la pantalla termina con V4 «Cancelada» y V3 «Agendada»; no queda la V3 cancelada de la sesión.
+- **Copia aparte con una conexión temporal** (la copia publicada no se tocó): abrí el caso 50012 desde la bandeja, en Coordinación, y cancelé V3. La conexión recibió exactamente `{"tipo":"cancelarVisita","datos":{"caso":"50012","visita":3,"modalidad":"Presencial","motivo":"Prueba en la copia."}}`. Como esa conexión no cambia datos, la tarjeta volvió a «Agendada»: manda la base.
+- **Tamaños:** `cxcancelarvisitanumero` (con y sin `?fvisita=2`), `coordcancelavisitas` y `cxvisitacancelar` a 1280 × 720 y a 1920 × 1080: sin errores y sin desplazamiento lateral. El diálogo se abre con «Cancelar visita V3» (V2 con `?fvisita=2`, V1 en `cxvisitacancelar`).
+- **`cxvisitacancelar` (30031):** cancelar V1 envía `visita: 1` y deja V1 «Cancelada». Con `?cxok=0` sale «La base rechazó la acción (prueba)» y la tarjeta sigue «Autoinspección enviada».
+- **`cxvisitaenlace` (30031):** «Reenviar enlace» envía `reenviarEnlace { caso: '30031', visita: 1, tipo: 'Autoinspección', canal: 'WhatsApp' }`. «Generar nuevo enlace» envía `enviarEnlace { caso, visita: 1, canal, destinatario, modalidad, tipo }`.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** no probé contra la base real ni el SQL 43. No pude reproducir aquí que la base cancelara la visita equivocada; lo verifiqué con la base simulada, que ahora hace lo que dice el SQL 43.
+- **Recarga en pleno envío:** una recarga por la suscripción mientras la acción sigue pendiente descarta la superposición antes de la respuesta; no la probé con una conexión que notifique cambios.
+- **«Copiar enlace»:** vuelve a pasar por `cxVisitaAccion` con la corrección, pero no lo probé en esta etapa.
+- **Otras acciones sobre una visita:** el envío del enlace desde una visita «Por agendar» sin enlace no lo probé a mano.
+- **Cancelar la solicitud (`coordcancelavisitas`):** la abrí a los dos tamaños, pero no repetí el recorrido completo de cancelar la solicitud.
+
+**Diferencias**
+- **Qué corrige realmente:** la falta del número no era la única causa. Hasta esta versión, con la conexión activa, esas acciones de la tarjeta no salían del back-office. Si en tus pruebas sí llegaba `cancelarVisita` sin número, esa prueba corrió con una copia que no tenía el comentario de G-2c2.
+- **Sin número cuando la visita aún no existe:** el `enviarEnlace` de un envío nuevo desde el formulario de Coordinación (la visita se crea al enviar) no lleva `visita`; la base la crea y la numera.
+- **Envío desde «Enviar enlace» de una modalidad sin visita:** tampoco lleva `visita`, por la misma razón; con visita sí lo lleva.
+- **Recarga:** con `{ ok: true }` el orden es recargar y luego descartar lo de la sesión.
+- **Base simulada:** sin `visita`, cancela la abierta más reciente de la modalidad, como la base antes del SQL 43; solo sirve para pruebas.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxcancelarvisitanumero` | Nueva: 50012 con V1, V3 y V4 abiertas y V2 cancelada; el diálogo «Cancelar visita V3»; al confirmar, `visita: 3` y solo V3 «Cancelada». Con `?fvisita=2`, la V2 desfasada y la respuesta `{ ok: false }` «La visita V2 está cancelada: no se puede cancelar» |
+| `coordcancelavisitas` | Revisada: cancelar la solicitud deja las visitas «Cancelada», sin cambios |
+| `cxvisitacancelar` | Revisada: cancelar V1 de 30031 envía `visita: 1`; con `?cxok=0` la tarjeta vuelve atrás con el mensaje |
+
+También abrí `cxvisitaenlace` (reenviar y generar nuevo enlace, con `visita: 1`) y `cxvisitacancelar` con `?cxok=0`.
+
+Tiempo de la etapa: inicio 15/11/2026 10:36 · fin 15/11/2026 10:48 · 12 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa G-2d
+
+El portal del cliente ahora pide primero el lugar y después muestra los horarios. El cliente usa su ubicación o escribe la dirección y elige una sugerencia. Ve el punto en un mapa pequeño que puede mover y lee en qué ciudad y zona será la inspección. Recién entonces ve los horarios, y solo los de los inspectores que cubren ese lugar. La autoinspección también pide el lugar antes de empezar. El lugar elegido llega a la tarjeta de la visita en Coordinación con su origen y, con la conexión, va en la acción con la que el portal agenda o pide la cita. Quedó publicada en la **Versión 237** (la Versión 238 solo completa en este registro la hora de fin).
+
+**Qué cambió**
+- **Paso Lugar (módulo nuevo `sirius-portal-lugar.js`, `SiriusPortalLugar`):**
+  - **Ubicarse:** «Usar mi ubicación» usa el GPS del celular, con permiso. Si se niega o falla, sale «No pudimos usar tu ubicación: escribe la dirección» y el cursor queda en «Buscar la dirección». La otra vía es escribir la dirección y elegir una sugerencia (`SiriusUbicacion.buscar`), o usarla «tal como la escribí».
+  - **Mapa pequeño (`SiriusMapa`):** el punto se puede arrastrar para ajustarlo. Si la dirección no se ubicó, se toca el mapa para marcar el punto.
+  - **Mensaje de zona (`SiriusLugar` y `SiriusZonas`):** «Tu inspección será en Quito · Zona Norte», con «Si el punto no es correcto, muévelo»; «Tu inspección será en Ambato» en una ciudad sin zonas; o «No pudimos ubicar tu dirección» con «Toca el mapa o continúa; un coordinador confirmará la zona».
+  - **Datos que completa el cliente:** «Dirección exacta» (se llena con lo buscado y se puede editar) y «Referencia».
+  - **Ramos Generales no móviles:** muestra la dirección de la solicitud con su mapa, sin GPS, y pregunta «¿La inspección es en esta dirección?». Si el cliente dice «No», escribe la correcta y queda «Por confirmar» para el Coordinador.
+  - `SiriusLugar` acepta ahora el origen 'GPS'.
+- **Autoagendamiento (`sirius-portal-caso.js`):**
+  - **Pasos:** 1 Lugar · 2 Horario · 3 Confirmación. El botón principal va al final y dice el paso siguiente: «Siguiente: Horario», «Siguiente: Confirmación» y «Confirmar la cita».
+  - **Horarios por cobertura:** el paso Horario se titula «Horarios para Quito · Zona Norte» y tiene «Cambiar el lugar». La agenda fija y la red solo ofrecen a quienes cubren ese lugar (`SiriusCobertura` con la ciudad y la zona). Con «zona por confirmar», solo a quienes cubren toda la ciudad.
+  - **Sin horarios:** si nadie cubre el lugar, sale «No hay horarios inmediatos para tu zona: te contactará un coordinador» y «Registramos tu pedido». En el caso quedan el evento, la tarea y el aviso al Coordinador.
+  - **Paso Confirmación:** muestra el lugar y el horario, y pide quién recibe al inspector y su celular.
+- **Autoinspección (`sirius-portal.js`):** «Paso 1 de 2 · Lugar» va después de los consentimientos y antes de empezar, sin horarios. «Siguiente: Autoinspección» lo registra en el caso y en su visita.
+- **Coordinación:** la tarjeta de la visita agendada por el cliente muestra «Ciudad y zona» y «Origen: cliente (GPS)», o «mapa», «dirección buscada» o «confirmó la de la solicitud», en cualquier modalidad.
+- **Con la conexión:** la cita confirmada se envía con `agendarVisita` y el pedido sin cita se envía con `pedirCita`. Las dos llevan el lugar `{ provincia, ciudad, direccion, referencia, punto, zona: { id, nombre } | null, estadoZona, lejos, origen }`, con la forma de `agendarVisita`. El detalle está en Diferencias.
+- **Archivos:**
+  - **Páginas:** `Portal.dc.html` carga ahora Leaflet y los módulos del lugar.
+  - **Escenas:** `datos-escenas.js` tiene 657 y `KNOWN_ESC` 614.
+  - **Corrección:** el portal ya no falla con un enlace que no existe; muestra «No encontramos este enlace».
+
+**Verificado**
+- **Escenas nuevas a 390 × 844 y 1280 × 720:** las seis, sin errores de consola y sin desplazamiento lateral dentro del portal.
+  - **portallugargps:** GPS simulado en Quito Norte → «Tu inspección será en Quito · Zona Norte», con el pin en el mapa. El punto se ajusta y el paso Horario dice «Horarios para Quito · Zona Norte». La agenda fija ofrece a Marco Tapia y Diana Cárdenas (Diana cubre toda Quito; Cristian Vaca, que cubre el Sur, queda fuera) y la red a Luis Andrade y Mauricio Endara.
+  - **portallugarbuscar:** «Kennedy Norte» → «Guayaquil · Zona Norte», con horarios de Paola Vinueza y Diana Cárdenas.
+  - **portalsinubicar:** «calle 123» → «No pudimos ubicar tu dirección», y el paso Horario dice «Horarios para Quito · zona por confirmar», solo con Diana Cárdenas.
+  - **portalsinhorarios:** Conocoto (Quito · Zona Valle de los Chillos) → el mensaje sin horarios y «Registramos tu pedido». En el caso quedaron el evento en el Historial y el aviso «El cliente del caso 20152 no encontró horarios para Quito · Zona Valle de los Chillos».
+  - **portalrgconfirmar:** muestra la dirección de la solicitud (Quito · Zona Valle de los Chillos), sin «Usar mi ubicación». Al responder «No» y escribir la dirección correcta, queda «Esta dirección queda por confirmar».
+  - **portalautoinsplugar:** «Paso 1 de 2 · Lugar» antes del tipo de vehículo. Al seguir, la tarjeta V1 (Autoinspección) en Coordinación muestra «Quito · Zona Norte» y «Origen: cliente (GPS)».
+- **Permiso de GPS denegado:**
+  - Con `?fgps=denegado`, y en `Portal.dc.html` con el permiso negado del navegador, sale «No pudimos usar tu ubicación: escribe la dirección» y el cursor queda en «Buscar la dirección».
+  - Después se buscó «Malecón», se eligió la sugerencia y se pasó a «Horarios para Guayaquil · Zona Centro».
+  - Con el permiso concedido (GPS de Chromium en Guayaquil), la autoinspección mostró «Guayaquil · Zona Norte».
+- **Recorrido completo:** se eligió el horario, se confirmó la cita y la tarjeta V1 de Coordinación quedó con «Quito · Zona Norte», «Origen cliente (GPS)» y la dirección.
+- **Copia aparte con conexión temporal (caso 70001):**
+  - **Cita con cupo:** la conexión recibió `agendarVisita { caso, visita: 1, accion: 'agendar', inicio: '2026-10-19T10:30:00-05:00', minutos: 45, inspector, modalidad, direccion, observaciones, motivo, riesgos, lugar: { provincia: '17', ciudad: '1701', direccion, referencia, punto, zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona: 'Calculada', lejos: false, origen: 'GPS' }, fueraCobertura: null, canal: 'Portal del cliente', origenCita: 'fija' }`.
+  - **Horario de la red:** recibió `pedirCita { motivo: 'red', fecha, inicio, minutos, lugar, contacto, inspectores, canal }`.
+  - **Sin horarios:** recibió `pedirCita { motivo: 'sinHorarios', …, lugar }`.
+- **Escenas del portal existentes:** las 44 (16 del portal del caso y 28 de la autoinspección y del enlace), a 390 × 844 y 1280 × 720, comparadas una por una con la versión anterior.
+  - **Iguales:** todas menos las de la agenda.
+  - **Cambian como se pide:** portalagenda, portalapartado, portalhoras y portalrg pasan a «Paso 2 de 3 · Horario», con «Horarios para Quito · Zona …» y «Siguiente: Confirmación», y con los mismos horarios de antes. portallugar pasa a «Confirma tu cita», con el lugar y el horario. portalred nombra la zona.
+  - **portalvideo2:** solo cambia el contador del video.
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** no probé con la base real, el servicio de mapas real ni el GPS de un celular real (solo el de Chromium, permitido y negado).
+- **Mapa base:** no carga en esta vista; el mapa funciona sobre el fondo neutro con la nota.
+- **Portal de un caso de la base:** no probé abrirlo con la conexión desde la pantalla. En la copia lo abrí directamente, porque con la conexión los enlaces de ejemplo de los casos de la base se aíslan.
+- **Pantallas táctiles:** no probé arrastrar el punto con el dedo.
+
+**Diferencias**
+- **Acciones con la conexión:** salen de `SIRIUS Back-office.dc.html`.
+  - **`agendarVisita`:** con `accion: 'agendar'`, o `'reagendar'` cuando el cliente cambia la cita, y `canal: 'Portal del cliente'`. La envía `portalCasoAgendar`, por `cxPortal`.
+  - **`pedirCita`, acción nueva que la base debe implementar:** cubre lo que no termina en una cita, sea un horario de la red o la falta de horarios (`motivo: 'red' | 'sinHorarios'`). La envían `redPedida` y `pedidoSinHorarios` de `portalCasoInit`.
+  - **Lugar:** el lugar lleva también `lejos`, como en `agendarVisita`.
+- **Sucursal para la cobertura:** es la de la ciudad del lugar (Guayaquil → sucursal Guayaquil). Si esa ciudad no tiene sucursal, se usa la del caso. Así, los inspectores que atienden por sucursal no reciben un lugar de otra ciudad.
+- **Origen del punto:** ajustar el punto conserva el origen (GPS o búsqueda). «Mapa» queda solo cuando el punto se marca tocando el mapa en una dirección que no se ubicó.
+- **Ciudad del GPS:** sale del centro de ciudad más cercano, a menos de 40 km. La «Dirección exacta» se prellena con la dirección de prueba más cercana, a menos de 1,5 km. En producción lo resolverá el servicio de mapas.
+- **Ramos Generales con «No»:** la dirección escrita va con origen «dirección buscada», sin punto, y queda por confirmar. Sus horarios son de quienes cubren toda la ciudad.
+- **Autoinspección con la conexión:** el lugar queda en la cronología y en la visita, pero no se envía a la base, porque no existe una acción para cambiar solo el lugar de una visita de autoinspección.
+- **Textos:** los del paso Lugar están en el código y todavía no se editan en las Apariencias del portal. Los títulos de los pasos 1 y 3 usan los bloques que ya existían cuando aplican.
+- **Escenas anteriores:** las del autoagendamiento llegan con el lugar de la solicitud ya elegido.
+- **Reloj:** los horarios del portal siguen con el reloj del prototipo, como antes, también con la conexión.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `portallugargps` | GPS simulado en Quito Norte, ajuste del punto y «Horarios para Quito · Zona Norte» (`?fpaso=lugar` se queda en Lugar; `?fgps=denegado`, el permiso negado) |
+| `portallugarbuscar` | «Kennedy Norte» → Guayaquil · Zona Norte y sus horarios |
+| `portalsinubicar` | «calle 123» → zona por confirmar; horarios de quienes cubren toda Quito |
+| `portalsinhorarios` | Ningún inspector cubre la zona: el mensaje y el pedido registrado |
+| `portalrgconfirmar` | Ramos Generales con el lugar de la solicitud; «No» y la dirección correcta (`?fpaso=horario` avanza) |
+| `portalautoinsplugar` | La autoinspección pide el lugar antes de empezar |
+
+También abrí las 44 escenas del portal que ya existían a 390 × 844 y 1280 × 720 contra la versión anterior, y `Portal.dc.html` suelto, con un enlace del portal del caso y otro de autoinspección.
+
+Tiempo de la etapa: inicio 15/11/2026 09:37 · fin 15/11/2026 10:12 · 35 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2e2
 
 La acción principal de la cabecera del caso ahora sale de lo que falta por hacer. Si el caso está en la fase de coordinación y algún riesgo está «Por coordinar», dice «Coordinar visita» y abre Coordinar visita con esos riesgos ya marcados; «Ver visita» pasa al menú «⋮». Si no queda nada por coordinar, sigue siendo «Ver visita» y abre la visita en curso o la próxima por hora. Rige con y sin la conexión. Quedó publicada en la **Versión 235** (la Versión 236 solo completa en este registro la hora de fin).

@@ -1,7 +1,7 @@
 // SIRIUS · Lugar de la inspección (v1.0 · etapa G-2c · DEC-222, DEC-224 y DEC-225 · 18/10/2026). Lo usan Coordinación (agendar, reagendar y cambiar inspector),
 // la tarjeta de la visita, la Agenda y la red de inspectores.
 // Lugar (DEC-222) = { provincia (COD_PROVINCIA), ciudad (COD_CANTON), direccion, referencia, punto [lat, lng] | null, zona { id, nombre } | null,
-//   estadoZona ('Calculada' | 'Confirmada' | 'Por confirmar' | 'Sin zonas'), lejos (booleano), origen ('Búsqueda' | 'Mapa' | 'Solicitud') }.
+//   estadoZona ('Calculada' | 'Confirmada' | 'Por confirmar' | 'Sin zonas'), lejos (booleano), origen ('GPS' | 'Búsqueda' | 'Mapa' | 'Solicitud') } ('GPS' desde la etapa G-2d: el cliente usó su ubicación en el portal).
 //   La zona se calcula con SiriusZonas.zonaDePublicada y el lugar guarda una copia del id y del nombre de la zona del momento: si después la zona se renombra o se
 //   elimina, la visita conserva la que tenía. Vehículos y equipos móviles: el lugar se define al agendar. Ramos Generales no móviles: nace de la dirección del riesgo.
 // Sugerencias (DEC-224 y DEC-225): grupos(inspectores, sucursal, lugar) → { zona: [...], ciudad: [...], fuera: [...] } con SiriusCobertura.cubre(inspector,
@@ -16,7 +16,7 @@
   const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   const L = {};
   L.ESTADOS = ['Calculada', 'Confirmada', 'Por confirmar', 'Sin zonas'];
-  L.ORIGENES = ['Búsqueda', 'Mapa', 'Solicitud'];
+  L.ORIGENES = ['GPS', 'Búsqueda', 'Mapa', 'Solicitud']; // G-2d · DEC-222: 'GPS' cuando el cliente usa su ubicación en el portal
   // ---------- ciudades ----------
   L.ciudadDe = (x) => { const S = Z(); if (!S || x == null || x === '') return ''; const t = String(x).trim();
     if (/^\d{4}$/.test(t) && S.ciudad(t)) return t;
