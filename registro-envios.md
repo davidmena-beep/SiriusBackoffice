@@ -4,6 +4,67 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-2c10
+
+El estado de un caso con varios vehículos ahora lo manda el riesgo más atrasado (DEC-239): mientras uno siga por coordinar, el caso sigue «En coordinación», aunque otros ya estén en curso, y la tarea de coordinación no desaparece de la bandeja. Quedó publicado en la **Versión 241**; la Versión 242 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **La regla por fases (`sirius-coordestado.js`, v1.1):** el caso toma la fase del riesgo más atrasado y, dentro de ella, el estado más activo.
+  - Fases: 1 Coordinación (Por coordinar, Oferta enviada, Enlace enviado), 2 Inspección (Agendado, En curso), 3 Informe y 4 Calificación.
+  - En Inspección, «En curso» si algún riesgo está en curso y, si no, «Agendado».
+  - Subestado, en este orden y solo lo que haya: «N de M agendados», «N en curso», «Oferta enviada», «Enlace enviado».
+  - Con 2 en curso y 1 por coordinar: «En coordinación · 2 de 3 agendados · 2 en curso». Con 2 en curso y 1 agendado: «En curso · 1 de 3 agendado».
+  - No cuentan los riesgos cancelados, excluidos ni con «No requiere inspección». Con un solo riesgo no cambia nada. Las fases 3 y 4 quedan como hoy.
+- **Responsable y acción principal según la fase:** en Coordinación, el coordinador y «Coordinar visita» (con «Ver visita» en el menú «⋮»); en Inspección, el inspector (el de la visita en curso primero) y «Ver visita».
+- **Al registrar la llegada o el estado «En curso» de una visita** (app del inspector, Agenda, autoinspección), el caso se recalcula con la regla: el estado sale de las visitas, y el «En curso» que dejaba la sesión ya no pisa a un caso con un riesgo por coordinar.
+- **Lectura de la base:** si la base entrega `subestado`, se muestra tal cual (ahora también con «En curso»). Si entrega «En curso» sin subestado y algún riesgo sigue en Coordinación, el back-office lo corrige con la regla y el responsable pasa a ser el de la fase.
+- **Pantallas:**
+  - **Cabecera:** el chip dice «En coordinación · 2 de 3 agendados · 2 en curso» o «En curso · 1 de 3 agendado».
+  - **Bandeja:** ubica el caso en la pestaña de su fase y muestra el subestado debajo del estado, también en «En curso»; cada fila de vehículo muestra su propio estado (En curso, Agendado, Por coordinar).
+  - **Coordinación:** cuenta los vehículos por coordinar y marca cada uno con su estado.
+  - **Registro de la coordinación:** la línea «Caso: …» agrega «N en curso».
+- **Escenas nuevas:** `estadofasecurso`, `estadofaseinspeccion` y `cxestadofases` (base simulada; `?ffase=inspeccion` agenda el tercer vehículo). Registro e inventario actualizados (DEC-239).
+
+**Verificado**
+- **Escenas nuevas** a 1280 × 720 y 1920 × 1080, en la bandeja y con `?fvista=caso`: sin errores en la consola y sin desplazamiento lateral.
+  - `estadofasecurso`: «En coordinación · 2 de 3 agendados · 2 en curso», responsable Andrea Salazar y «Coordinar visita».
+  - `estadofaseinspeccion`: «En curso · 1 de 3 agendado», responsable Marco Tapia y «Ver visita»; el caso sale de la pestaña En coordinación.
+  - `cxestadofases`: la base entrega «En coordinación» con «2 de 3 agendados · 2 en curso» (responsable Andrea Salazar, «Coordinar visita»); con `?ffase=inspeccion`, «En curso · 1 de 3 agendado» (responsable Mauricio Endara, «Ver visita»). Cada riesgo trae su estado y su visita.
+- **Recálculo al registrar la llegada** (la misma llamada que hace la app): en `cabeceraver` (3 Agendados) la V1 en curso deja «En curso · 2 de 3 agendados» con el inspector; en `estadoparcial`, «En coordinación · 2 de 3 agendados · 1 en curso» con la coordinadora; en `estadooferta`, «En coordinación · 1 de 3 agendados · 1 en curso · Oferta enviada».
+- **La regla sola, con 18 combinaciones:** las dos de la definición, 3 agendados («Agendado»), 3 en curso, oferta y enlace, autoinspección con enlace vigente, 3 por coordinar («Registrado»), cancelados y «No requiere inspección» que no cuentan, un solo riesgo, Informe y Calificación (como hoy) y un caso emitido (sin cambios).
+- **Escenas existentes, comparadas con la versión anterior** (texto completo de la pantalla): estadoparcial, estadocompleto, estadooferta (también con `?fvista=caso`), cabeceracoordinar, cabeceraver, cxestadoparcial y cxcabecera, a 1280 × 720 y a 1920 × 1080: idénticas. Un solo riesgo igual: coord, coordchoque, coordauto, coordvis, coordrg, riesgos, bandejaexp, calveh, portalagendado, portalencurso, enlacevencidocurso, inspllegada, cxvisitaenlace, cxagenda, coordfases, coordvehiculoduplicado, coordriesgorg y cxcoordfases (1280 × 720): idénticas. `coordcancelavisitas` también es idéntica; su aviso «La solicitud quedó Cancelada» dura unos 6 segundos y aparece igual en las dos versiones (una captura hecha en el borde de ese tiempo lo perdió y no es un cambio).
+- `sirius-conexion.js` queda con su línea mínima.
+
+**No verificado**
+- **Base real:** no probé contra la base real; la base simulada calcula con la misma regla. Si la base real entrega estado y subestado con otra regla, se muestra lo suyo.
+- **Llegada desde un teléfono real** y la sincronización de la app sin señal; solo la llamada que hace la app, en las escenas.
+- **Riesgos excluidos o «No requiere inspección» en pantalla:** la regla los deja fuera (probado sola), pero no armé una escena con uno de ellos.
+- **Informe y Calificación por riesgo (fases 3 y 4):** siguen como hoy, a la espera de DEC-209/212.
+- **Con la conexión, una llegada registrada por la base** mientras la pantalla está abierta (suscripción): no la probé.
+
+**Diferencias**
+- **Singular solo en Inspección:** «1 de 3 agendado» sale en singular únicamente en Inspección, como en el ejemplo; en Coordinación se mantiene «N de M agendados» de DEC-238 («1 de 3 agendados»).
+- **«N de M agendados» en Coordinación cuenta a los que ya van en curso** (están coordinados); por eso «2 de 3 agendados · 2 en curso». En Inspección cuenta solo a los «Agendado».
+- **Riesgos ya en Informe o Calificación junto a otros por coordinar** cuentan como coordinados en «N de M agendados», igual que en DEC-238.
+- **Caso en Inspección con riesgos en fase 3 o 4:** muestra «En curso» o «Agendado» según los que siguen en Inspección, sin subestado de los demás; se completa con DEC-209/212.
+- **Escena `cxestadofases` sin el registro de la base:** el historial es el de 50012 de las escenas de fases.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `estadofasecurso` | Nueva: 20196 con 2 vehículos en una visita En curso y 1 por coordinar: «En coordinación · 2 de 3 agendados · 2 en curso», coordinadora y «Coordinar visita» (`?fvista=caso` abre el caso) |
+| `estadofaseinspeccion` | Nueva: 2 En curso y 1 Agendado: «En curso · 1 de 3 agendado», inspector y «Ver visita» |
+| `cxestadofases` | Nueva, con la conexión simulada: 50012 con el estado y el subestado de la base y cada riesgo con el suyo (`?ffase=inspeccion`: «En curso · 1 de 3 agendado») |
+| `estadoparcial`, `estadocompleto`, `estadooferta` | Revisadas: idénticas |
+| `cabeceracoordinar`, `cabeceraver` | Revisadas: idénticas |
+
+También abrí `cxestadoparcial` y `cxcabecera` (idénticas) y 18 escenas de un solo riesgo y de Coordinación.
+
+Tiempo de la etapa: inicio 15/11/2026 11:16 · fin 15/11/2026 11:36 · 20 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-2c9
 
 «Cancelar visita» ahora le dice a la base cuál visita es: V3 manda `visita: 3`, y lo mismo hacen «Reenviar enlace» y «Generar nuevo enlace» desde la tarjeta. Al revisarlo encontré además otra causa, que explica que la base no cambiara: desde G-2c2, esas acciones de la tarjeta no salían del back-office. Las dos cosas están corregidas y publicadas en la **Versión 239**; la Versión 240 solo completa en el registro la hora de fin.
