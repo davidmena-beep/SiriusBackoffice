@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 15/11/2026 · Corrección: el estado de cada riesgo sale de sus visitas también con el caso «En curso» (DEC-239).
 // 15/11/2026 · Corrección: el riesgo de una visita realizada (Enviada o Terminada) queda «Inspeccionado», no «Por coordinar».
 // 15/11/2026 · G-2c8 · DEC-238: casos[].riesgos[].estado (coordinación) y .visita { n, estado, inicio, inspector }; el estado y subestado del caso los calcula la base (SQL 41).
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
@@ -138,20 +139,24 @@
       cualquiera = L.filter(function (v) { return v.inspector && v.inspector.nombre; })[0]; return String(((abierta || cualquiera || {}).inspector || {}).nombre || ''); }
   // G-2c8 · DEC-238: estado de coordinación de un riesgo (Por coordinar, Oferta enviada, Enlace enviado, Agendado, En curso) y su visita
   var FASE_COORD = ['Registrado', 'En coordinación', 'Reaperturado', 'Enlace caducado', 'Agendado'];
-  function estadoRiesgo(k, r) {
+  function estadoRiesgo(k, r) {   // DEC-238/239: el estado de cada riesgo sale de SUS visitas, no del estado del caso
     var vs = (k.visitas || []).slice().sort(function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); }), ahora = new Date();
     var con = vs.map(function (v, i) { return { v: v, n: i + 1 }; }).filter(function (x) { return Array.isArray(x.v.riesgo_ids) && x.v.riesgo_ids.indexOf(r.id) >= 0; });
-    var abierta = con.filter(function (x) { return !/cancel|termin|enviada/i.test(x.v.estado || ''); }).pop(), ult = abierta || con.slice().pop();
+    var hecha = function (x) { return /enviada|termin|realizada/i.test(x.v.estado || ''); }, cancel = function (x) { return /cancel/i.test(x.v.estado || ''); };
+    var abierta = con.filter(function (x) { return !cancel(x) && !hecha(x); }).pop(), hecho = con.filter(hecha).pop(), ult = abierta || hecho || con.slice().pop();
     var vis = ult ? { n: ult.n, estado: ult.v.estado || '', inicio: ult.v.inicio || null, inspector: ult.v.inspector ? String(ult.v.inspector.nombre || '') : '' } : null;
-    if (FASE_COORD.indexOf(k.estado) < 0) return { estado: k.estado, visita: vis };
-    if (!abierta) return { estado: con.some(function (x) { return /enviada|termin|realizada/i.test(x.v.estado || ''); }) ? 'Inspeccionado' : 'Por coordinar', visita: vis };   // 15/11: un riesgo de una visita ya realizada no vuelve a «Por coordinar»
-    var v = abierta.v, e = v.estado || '', vig = function (en, tipo) { return en.tipo === tipo && /enviado|entregado|abierto|curso/i.test(en.estado || '') && (!en.vence || new Date(en.vence) > ahora); };
-    if (/agendada|en camino/i.test(e)) return { estado: 'Agendado', visita: vis };
-    if (/en curso|por sincronizar/i.test(e)) return { estado: 'En curso', visita: vis };
-    if (v.modalidad === 'Autoinspección' && (v.enlaces || []).some(function (en) { return vig(en, 'Autoinspección'); })) return { estado: 'Enlace enviado', visita: vis };
-    if ((v.ofertas_red || []).some(function (o) { return o.estado === 'Abierta' && new Date(o.vence) > ahora; }) || /buscando/i.test(e)) return { estado: 'Oferta enviada', visita: vis };
-    if ((v.enlaces || []).some(function (en) { return vig(en, 'Autoagendamiento'); })) return { estado: 'Enlace enviado', visita: vis };
-    return { estado: 'Por coordinar', visita: vis };
+    var enFase = FASE_COORD.indexOf(k.estado) >= 0 || k.estado === 'En curso';
+    if (abierta) {
+      var v = abierta.v, e = v.estado || '', vig = function (en, tipo) { return en.tipo === tipo && /enviado|entregado|abierto|curso/i.test(en.estado || '') && (!en.vence || new Date(en.vence) > ahora); };
+      if (/en curso|por sincronizar/i.test(e)) return { estado: 'En curso', visita: vis };
+      if (/agendada|en camino/i.test(e)) return { estado: 'Agendado', visita: vis };
+      if (v.modalidad === 'Autoinspección' && (v.enlaces || []).some(function (en) { return vig(en, 'Autoinspección'); })) return { estado: 'Enlace enviado', visita: vis };
+      if ((v.ofertas_red || []).some(function (o) { return o.estado === 'Abierta' && new Date(o.vence) > ahora; }) || /buscando/i.test(e)) return { estado: 'Oferta enviada', visita: vis };
+      if ((v.enlaces || []).some(function (en) { return vig(en, 'Autoagendamiento'); })) return { estado: 'Enlace enviado', visita: vis };
+      return { estado: 'Por coordinar', visita: vis };
+    }
+    if (hecho) return { estado: enFase ? 'Inspeccionado' : k.estado, visita: vis };   // las fases de informe y calificación por riesgo llegan con DEC-209/212
+    return { estado: enFase ? 'Por coordinar' : k.estado, visita: vis };
   }
   function aCaso(k, evs) {
     var id = String(k.numero), a = k.asegurado || {}, c = a.contacto || {}, d = k.datos || {}, rs = k.riesgos || [], r0 = rs[0] || { datos: {} },
