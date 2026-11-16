@@ -4,6 +4,51 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-0b
+
+Con la conexión, el informe, completar y calificar ya son por vehículo: cada vehículo tiene su propio informe, el selector muestra solo los que lo tienen y las acciones de la base llevan el vehículo. Quedó publicado en la **Versión 247**; la Versión 248 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Selector por vehículo (Informe y Calificación):** con la conexión, `informes[caso]` trae un informe por vehículo (`riesgoId` «50012-V1», `riesgo`, `estado`, `respuestas`, `plantilla`, `criterio`, `decision`). Solo los vehículos con informe están en el selector; los demás salen aparte en «Sin informe todavía (Por coordinar / Agendado / En curso)» según su estado.
+- **Completar, devolver y calificar actúan sobre el vehículo elegido:** la cabecera, la plantilla (PR121A con «Motocicletas»), el inspector, la visita, el criterio del inspector y las respuestas son los de ese vehículo. «Motivo del inspector» sale del comentario de su criterio.
+- **Contadores:** «N de M con informe» (Riesgos) y «N de M vehículos calificados» salen de los informes. Si el caso no trae informes (escenas `cxr0` y `cxriesgosestados`), se cuentan por el estado del riesgo, como antes.
+- **Evidencias por vehículo:** el informe y la calificación muestran solo las fotos del vehículo elegido; las que no traen riesgo se ven en todos y se rotulan «Sin vehículo». Con un solo riesgo todo queda igual.
+- **Acciones con `riesgo`:** `completarInforme { caso, riesgo, respuestas, decision, criterio, motivo }`, `guardarInforme { caso, riesgo, respuestas }`, `devolverCoordinacion { caso, riesgo, motivo }` y `calificar { caso, riesgo, datos, estadoDestino }` con el id del vehículo («50012-V2»). Con `{ ok: false }` vuelve todo atrás, incluido el estado del informe de ese vehículo.
+- **Escenas nuevas:** `cxr0b` (50012 con PRB1212 y PR121A con informe y PRB1213 «Por coordinar») y `cxr0bcompletar` (abre en PR121A «Por completar»; `?cxok=0` hace que la base rechace). Las dos con rol Administrador. `sirius-conexion.js` sigue mínimo.
+
+**Verificado**
+- Abrí `cxr0b` (Informe, Calificación, Evidencias y Riesgos), `cxr0bcompletar` (Informe y Calificación), `r0informes`, `r0evidencias` y las escenas existentes de completar y calificar (`infcompletarcx`, `infcxfotos`, `calcxcalif`, `calveh`, `calvehapply`, `cal20196`, `informecompleto`, `infcompletar`, `calpdfcx`, `cxr0`, `cxriesgosestados`) a 1280 × 720 y 1920 × 1080: sin errores en la consola.
+- `cxr0b`: el selector muestra PRB1212 y PR121A, PRB1213 aparece en «Sin informe todavía (Por coordinar)», «0 de 3 vehículos calificados» y las evidencias del vehículo elegido son 4 fotos y 1 documento «Sin vehículo»; en Evidencias, chips PRB1212 (5) y PR121A (5).
+- Forma exacta de cada acción, con la conexión simulada y un registrador de llamadas puesto desde la prueba (el proyecto no se tocó): `guardarInforme { caso: '50012', riesgo: '50012-V2', respuestas }`, `devolverCoordinacion { caso: '50012', riesgo: '50012-V2', motivo }`, `completarInforme { caso: '50012', riesgo: '50012-V2', respuestas, decision: 'determinar', criterio: 'Asegurable', motivo: '' }` y `calificar { caso: '50012', riesgo: '50012-V2', datos: { veredicto: 'si', cobertura: 'Todo riesgo', motivo: '', observacion, mode: 'veh' }, estadoDestino: 'Inspeccionado' }`. Solo cambió PR121A; PRB1212 y PRB1213 quedaron igual.
+- Con `?cxok=0`, completar PR121A queda revertido (sin estado propio del informe) y sale «La base rechazó la acción (prueba)».
+- Tras calificar PR121A, el contador pasó a «1 de 3 vehículos calificados · 1 asegurable» y su tarjeta dice «Asegurable · Todo riesgo».
+
+**No verificado**
+- Una base real: las respuestas de la base de prueba son de la simulación. Tampoco el plazo (SLA) por vehículo ni casos con más de tres vehículos.
+- Completar con todos los campos obligatorios llenos desde la interfaz: para probar el envío puse el avance en cero desde la prueba; el formulario con 13 pendientes sigue bloqueando «Completar y enviar», como corresponde.
+- El informe del portal del inspector (`completarInforme` y `guardarInforme` de la app) no cambió.
+
+**Diferencias**
+- `completarInforme`, `guardarInforme` y `devolverCoordinacion` **no llevaban `riesgo`**. Propuesta (ya aplicada): agregar `riesgo` con el id del vehículo («50012-V2») solo con la conexión y varios vehículos; con un solo riesgo se omite y todo queda como estaba.
+- `calificar` ya llevaba `riesgo`, pero con la placa; con varios vehículos ahora lleva el id («50012-V2») y con un solo riesgo sigue llevando la placa.
+- Un informe sin `riesgoId` reconocible no se muestra en un caso con varios vehículos.
+- El nombre de plantilla «Motocicletas» se asocia al formulario «Motos v1».
+- Se supone que quien completa y califica en las escenas nuevas es el Administrador; con otro rol el formulario queda en solo lectura como antes.
+- Tras grabar una calificación, la pantalla vuelve al primer vehículo por calificar.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxr0b` | 50012 con la conexión simulada: PRB1212 y PR121A con informe, PRB1213 «Por coordinar»; pestañas Informe, Calificación, Evidencias y Riesgos |
+| `cxr0bcompletar` | Abre en PR121A «Por completar»; completar envía `completarInforme` con riesgo «50012-V2»; `?cxok=0` hace que la base rechace |
+
+También abrí `r0informes`, `r0evidencias` y las escenas de completar y calificar ya existentes.
+
+**Tiempo de la etapa: inicio 15/11/2026 17:31 · fin 15/11/2026 17:59 · 28 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-0
 
 El back-office ya muestra lo que pasa cuando una visita lleva varios vehículos: el tipo y la plantilla de cada uno, los que no se pudieron inspeccionar y por qué, las fotos por vehículo y el informe y la calificación por vehículo. Quedó publicado en la **Versión 245**; la Versión 246 solo completa en el registro la hora de fin.
