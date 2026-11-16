@@ -4,6 +4,101 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-d (con el lugar contraído)
+
+Nueva solicitud muestra el lugar de inspección contraído, con una casilla para abrirlo. Los mensajes de validación junto al campo y las agencias con sus inspectores por RUC ya estaban en la Versión 261; en esta etapa los volví a abrir y probar junto con el lugar contraído. Quedó publicado en la **Versión 263**; la Versión 264 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Lugar de la inspección contraído (Nueva solicitud, vehículos y equipos):**
+  - La sección empieza contraída, con la casilla «Ya tengo la dirección de la inspección» y el texto «Si aún no la tienes, se confirma en el contacto».
+  - Al marcarla se abre con la provincia, el cantón, la dirección, la referencia y el mapa (solo el punto, sin zonas).
+  - Al desmarcarla se contrae y lo escrito no se envía. Si había algo escrito, antes avisa «Se descartará la dirección escrita: …» con los botones «Descartar la dirección» y «Conservarla»; si no había nada, se contrae sin aviso.
+  - En la revisión y envío, sin dirección dice «Lugar de inspección: Se confirmará en el contacto». Con la conexión, `crearCaso` lleva `solicitud` vacía y los riesgos sin dirección ni ciudad.
+  - En Ramos Generales no móviles, cada ubicación sigue con su dirección obligatoria (DEC-222).
+- **Mensajes de validación con la conexión (ya en la Versión 261):** la cédula, el pasaporte y el RUC muestran el mensaje junto al campo al salir de él y al intentar guardar; el botón no envía nada a la base con un error; si la base rechaza la identificación o el RUC, el mensaje también sale junto al campo, además del aviso general.
+- **Agencias por RUC (ya en la Versión 261):** «Inspectores» cuenta y lista comparando `agencias[].ruc` con `usuarios[].agenciaRuc` e `inspectores[].agenciaRuc`; sin RUC, por el nombre. Liquidaciones reconoce a la agencia también por RUC; tarifas, Control de calidad y selectores no leen personas de la conexión y no cambiaron.
+
+**Verificado**
+- `nuevalugarcontraido`: contraída al abrir y sin campos de dirección ni mapa; marcar la casilla abre el editor (dirección, referencia y mapa, sin zonas); desmarcarla con «Av. Amazonas N36-152» escrita muestra «Se descartará la dirección escrita»; «Conservarla» deja la dirección y la casilla marcada; «Descartar la dirección» contrae y, al volver a marcarla, el campo está vacío; desmarcarla sin nada escrito no avisa; el paso 4 dice «Lugar de inspección: Se confirmará en el contacto». Variantes `?fvista=marcado`, `aviso` y `revision` abiertas.
+- `crearCaso`: con el lugar contraído (`nuevalugarcontraido&fvista=revision` y `nuevasindir`) `solicitud` va vacía; con la dirección de Quito (`nuevasinzonas`) lleva provincia, ciudad, dirección, referencia y punto.
+- `cxvalidacedula`: con 1709991260 el mensaje sale junto al campo y no envía `crearUsuario`; con `?cxvalida=1` (1709991267) sí envía. `cxagenciasinspectores`: Eurosurvey con 2 inspectores (Mauricio Endara y Valeria Cevallos), Inspecciones Andinas con 1 y Peritajes del Pacífico «Sin inspectores».
+- Abrí las 3 escenas nuevas y `nuevasindir`, `nuevasinzonas`, `cxnuevaveh`, `maestrosusuarios`, `maestrosagencias`, `cxmaestros`, `cxusuarios` y `liquidaciones` a 1280×720 y 1920×1080, sin errores en la consola. Comparé el texto con la versión anterior: `maestrosusuarios`, `maestrosagencias`, `cxmaestros`, `cxusuarios` y `liquidaciones` salieron iguales; `nuevasindir`, `nuevasinzonas` y `cxnuevaveh` cambian solo por la casilla y por «Lugar de inspección».
+- `sirius-conexion.js` sigue con su línea mínima (70 bytes). KNOWN_ESC 654 y 697 escenas.
+
+**No verificado**
+- Equipos: el lugar contraído usa el mismo código que vehículos, pero solo abrí vehículos.
+- Todo lo de la conexión está probado solo con la base simulada, no con una real.
+- No probé el teclado en la casilla (Tab y Espacio), solo el clic.
+- Control de calidad, tarifas y selectores no los abrí con la conexión: solo revisé el código.
+
+**Diferencias**
+- Con la casilla marcada, la dirección sigue siendo opcional: marcarla y dejarla vacía no da error; es como si no se hubiera escrito.
+- Las escenas que ya traían un lugar escrito (`cxnuevaveh`, `nuevasinzonas`) abren la sección desplegada y con la casilla marcada: la casilla se deduce de lo escrito.
+- En la revisión y envío, la etiqueta pasa de «Lugar de la inspección» a «Lugar de inspección», y sin dirección el valor es «Se confirmará en el contacto» (antes, «Sin dirección: se confirma en el contacto»).
+- Con la casilla, la ayuda del editor ya no repite «Si aún no la tienes, se confirma en el contacto»: dice «Si aún no la tienes, desmarca la casilla».
+- El aviso de descarte sale bajo la casilla como texto, con dos botones; no es una ventana aparte.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `nuevalugarcontraido` | Nueva solicitud de Vehículos, paso 3, con el lugar contraído; marcar la casilla lo abre; `?fvista=aviso` muestra el aviso de descarte; `?fvista=revision` el paso 4 con «se confirmará en el contacto» |
+| `cxvalidacedula` | Crear usuario con la cédula 1709991260: mensaje rojo junto al campo y nada se envía; `?cxvalida=1` envía |
+| `cxagenciasinspectores` | Agencias: Eurosurvey con 2 inspectores (Mauricio Endara y Valeria Cevallos) por RUC |
+
+También abrí `nuevasindir`, `nuevasinzonas`, `cxnuevaveh`, `maestrosusuarios`, `maestrosagencias`, `cxmaestros`, `cxusuarios` y `liquidaciones` para comparar.
+
+**Tiempo de la etapa: inicio 15/11/2026 23:58 · fin 16/11/2026 00:09 · 11 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6f-d
+
+Con la conexión, los mensajes de validación de la identificación y del RUC salen junto al campo, y Agencias cuenta y lista sus inspectores por RUC. Quedó publicado en la **Versión 261**; la Versión 262 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Mensajes junto al campo (Usuarios crear y editar, y Agencias):**
+  - La cédula, el pasaporte y el RUC muestran el mensaje en rojo junto al campo al salir de él y al intentar guardar, igual que sin la conexión («La cédula no es válida (dígito verificador).»).
+  - Si la base responde un error de identificación o de RUC («La identificación 1709991275 ya está registrada (Carlos Mora).»), también sale junto al campo, además del aviso general.
+  - «Crear usuario» y «Guardar cambios» se pueden pulsar aunque haya un error: no envían nada a la base y muestran los mensajes junto a cada campo. Sigue el texto «Para continuar: …».
+- **Agencias por RUC (DEC-214):**
+  - La columna «Inspectores» cuenta y lista a los inspectores comparando `agencias[].ruc` con `usuarios[].agenciaRuc` e `inspectores[].agenciaRuc`. Mauricio Endara y Valeria Cevallos llegan con agencia «Eurosurvey S.A.» y su RUC, y se cuentan en Eurosurvey (nombre comercial).
+  - Sin RUC («Sin identificación»), la relación de transición es por el nombre comercial o la razón social con que llega la persona.
+  - Una persona que está como usuario y como inspector de la base se cuenta una sola vez (por identificación; sin ella, por nombre). La columna «Usuarios» usa la misma relación.
+  - El filtro de agencia de Usuarios, la columna Agencia, la ficha y el usuario conectado (`cxUsuario`) usan la misma relación y muestran el nombre comercial; el formulario de editar no marca un cambio de agencia si solo difiere el nombre.
+- **Otros lugares con agencia e inspector:** Liquidaciones reconoce al proveedor como agencia también por RUC o razón social. Tarifas y cuentas (por identificador interno de la agencia), Control de calidad y los selectores (por nombre del inspector) no leen personas de la conexión; los revisé y no cambié nada.
+
+**Verificado**
+- `cxvalidacedula` con la cédula 1709991260: mensaje rojo junto al campo y «Crear usuario» no envía `crearUsuario`; con `?cxvalida=1` (1709991267) envía `crearUsuario` con `agenciaRuc` «1791456320001»; con `?cxdup=1` la base la rechaza y el mensaje también sale junto al campo.
+- Escribir una cédula inválida (1709991268) en `cxmaestros` y salir del campo muestra el mensaje; en `cxusuarioeditar`, 1709991260 y «Guardar cambios» no envían nada; en la agencia nueva, un RUC de 10 dígitos muestra «El RUC tiene 13 dígitos (escribiste 10)» y no envía `guardarAgencia`; con los datos correctos sí envía.
+- `cxagenciasinspectores`: Eurosurvey «2 inspectores» (Mauricio Endara, Valeria Cevallos), Inspecciones Andinas «1 inspector» (Sofía Arteaga, por RUC), Peritajes del Pacífico «Sin inspectores».
+- Abrí las 2 escenas nuevas y `maestrosusuarios`, `maestrosagencias`, `cxmaestros`, `cxusuarios` y `liquidaciones` a 1280×720 y 1920×1080, sin errores en la consola. Comparé el texto de esas 5 y de `cxusuarioeditar` con la versión anterior: salieron iguales.
+- `sirius-conexion.js` sigue con su línea mínima (70 bytes). KNOWN_ESC 653 y 696 escenas.
+
+**No verificado**
+- Contra una base real: la relación por RUC y el rechazo de identificación solo los probé con la base simulada.
+- Un usuario sin `agenciaRuc` en una agencia con RUC se relaciona por nombre (transición); no probé nombres que se parezcan sin ser iguales.
+- Control de calidad, tarifas y selectores no los abrí con la conexión: solo revisé el código.
+
+**Diferencias**
+- **Qué causaba cada problema:** el mensaje de la identificación dependía de `tried`, y con la conexión el botón estaba deshabilitado mientras había un error, así que `tried` nunca se marcaba. Agencias comparaba `usuario.agencia === agencia.nombre`, y los inspectores llegan con la razón social «Eurosurvey S.A.» mientras la agencia se muestra por su nombre comercial «Eurosurvey».
+- El botón de guardar ya no se deshabilita por falta de datos con la conexión (P-6f-0h): se puede pulsar y muestra qué falta junto a cada campo, como la versión sin la conexión. Sigue deshabilitado sin cambios, con el rol propio de Administrador quitado y mientras envía.
+- En las semillas de las escenas con la conexión, los usuarios de agencia ahora llegan con la razón social y `agenciaRuc`, como los de la base real.
+- La columna «Inspectores» de Agencias ahora muestra los nombres debajo del conteo.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxvalidacedula` | Crear usuario con la cédula 1709991260: mensaje rojo junto al campo y nada se envía; `?cxvalida=1` (1709991267) envía; `?cxdup=1` la base la rechaza |
+| `cxagenciasinspectores` | Agencias: Eurosurvey con 2 inspectores (Mauricio Endara y Valeria Cevallos) por RUC |
+
+También abrí `maestrosusuarios`, `maestrosagencias`, `cxmaestros`, `cxusuarios`, `cxusuarioeditar` y `liquidaciones` para comparar.
+
+**Tiempo de la etapa: inicio 15/11/2026 23:35 · fin 15/11/2026 23:47 · 12 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-c
 
 Nueva solicitud usa ahora provincia y cantón del catálogo INEC (con búsqueda al escribir), la dirección de inspección es opcional en vehículos y equipos, y no muestra zonas. Calificación marca la opción al instante. Quedó publicado en la **Versión 259**; la Versión 260 solo completa en el registro la hora de fin.

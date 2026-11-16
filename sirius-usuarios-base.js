@@ -20,7 +20,7 @@
   S.activo = () => { const c = C(); return !!(c && c.activo === true); };
   const arr = (x) => (Array.isArray(x) ? x.filter((v) => v != null && v !== '').map(String) : []);
   const norm = (u) => { u = u || {}; const roles = arr(u.roles).length ? arr(u.roles) : arr([u.rol]), tipo = S.TIPOS.indexOf(u.tipo) >= 0 ? u.tipo : (u.agencia ? 'Agencia' : 'Interno');
-    return { nombre: String(u.nombre || u.email || ''), tipoIdentificacion: u.identificacion ? (u.tipoIdentificacion || 'Cédula') : '', identificacion: String(u.identificacion || '').trim(), email: String(u.email || '').trim().toLowerCase(), rol: u.rol || roles[0] || '', roles, tipo, tipoInspector: u.tipoInspector || null, agencia: u.agencia || null,
+    return { nombre: String(u.nombre || u.email || ''), tipoIdentificacion: u.identificacion ? (u.tipoIdentificacion || 'Cédula') : '', identificacion: String(u.identificacion || '').trim(), email: String(u.email || '').trim().toLowerCase(), rol: u.rol || roles[0] || '', roles, tipo, tipoInspector: u.tipoInspector || null, agencia: u.agencia || null, agenciaRuc: String(u.agenciaRuc || '').trim(),
       estado: S.ESTADOS.indexOf(u.estado) >= 0 ? u.estado : 'Activo', celular: u.celular || '', alcance: { sucursales: arr((u.alcance || {}).sucursales), grupos: arr((u.alcance || {}).grupos) }, zonas: arr(u.zonas), vinculado: !!u.vinculado,
       activacion: u.activacion || null, cobertura: u.cobertura && typeof u.cobertura === 'object' ? JSON.parse(JSON.stringify(u.cobertura)) : null /* G-2b · DEC-223: si no viene, SiriusCobertura aplica migrar(zonas) */ }; };
   // Lista de la sesión: copia de SIRIUS_CONEXION.usuarios; si la base la reemplaza (otro arreglo), se vuelve a leer.
@@ -28,6 +28,18 @@
   S.agencias = () => { const c = C(), src = c && Array.isArray(c.agencias) ? c.agencias : []; if (src !== S._agSrc || !S._ag) { S._agSrc = src; S._ag = src.map((a) => ({ nombre: String((a && (a.nombreComercial || a.nombre || a.razonSocial)) || ''), razonSocial: String((a && (a.razonSocial || a.nombre)) || ''), nombreComercial: String((a && (a.nombreComercial || a.nombre)) || ''), ruc: String((a && a.ruc) || ''), estado: (a && a.estado) || 'Activa' })).filter((a) => a.nombre); } return S._ag; };
   S.agencia = (ref) => { const r = String(ref || '').trim(); return S.agencias().find((a) => (a.ruc && a.ruc === r) || a.nombre === r || a.razonSocial === r) || null; }; // DEC-214: por RUC o por nombre
   const MX = () => W.SiriusMaestros || null;
+  // P-6f-d · DEC-214: la relación agencia–inspector es por RUC (agencias[].ruc = usuarios[].agenciaRuc = inspectores[].agenciaRuc). Sin RUC en alguno de los
+  // dos lados («Sin identificación»), relación de transición por el nombre (comercial o razón social) con que llega la persona.
+  const bajo = (x) => String(x || '').trim().toLowerCase();
+  S.deAgencia = (p, a) => { if (!p || !a) return false; const pr = String(p.agenciaRuc || '').trim(), ar = String(a.ruc || '').trim();
+    if (pr && ar) return pr === ar;
+    const n = bajo(p.agencia); return !!n && (n === bajo(a.nombre) || n === bajo(a.razonSocial) || n === bajo(a.nombreComercial)); };
+  S.agenciaDe = (p) => { if (!p) return null; const r = String(p.agenciaRuc || '').trim(); return (r && S.agencias().find((a) => a.ruc === r)) || (p.agencia ? S.agencia(p.agencia) : null); };
+  S.baseInspectores = () => { const c = C(), src = c && Array.isArray(c.inspectores) ? c.inspectores : []; return src.filter((i) => i && i.nombre).map((i) => ({ nombre: String(i.nombre), identificacion: String(i.identificacion || '').trim(), agencia: i.agencia || null, agenciaRuc: String(i.agenciaRuc || '').trim(), estado: i.estado || 'Activo', roles: ['Inspector'] })); };
+  // Usuarios de la agencia y sus inspectores (usuarios con rol Inspector + inspectores de la base sin usuario), sin repetir a la misma persona (identificación; sin ella, el nombre).
+  S.usuariosDeAgencia = (a) => S.lista().filter((u) => S.deAgencia(u, a));
+  S.inspectoresDeAgencia = (a) => { const visto = {}, out = [], cl = (p) => (p.identificacion ? 'i:' + p.identificacion.toUpperCase() : 'n:' + bajo(p.nombre));
+    S.lista().filter((u) => S.deAgencia(u, a) && S.esInspector(u.roles)).concat(S.baseInspectores().filter((i) => S.deAgencia(i, a))).forEach((p) => { const k = cl(p); if (!visto[k]) { visto[k] = 1; out.push(p); } }); return out; };
   // DEC-214: identificación obligatoria, válida y única entre los usuarios de la base (excluye al que se edita).
   S.validarIdent = (tipo, ident, excluirEmail) => { const M = MX(); if (!M) return ''; const e = M.ident(tipo, ident); if (e) return e; const v = M.normal(tipo, ident), o = S.lista().find((u) => u.identificacion && u.identificacion.toUpperCase() === v.toUpperCase() && u.email !== String(excluirEmail || '').toLowerCase()); return o ? 'Esa identificación ya está registrada (' + o.nombre + '). La identificación es única en la compañía.' : ''; };
   S.usuario = (email) => S.lista().find((u) => u.email === String(email || '').trim().toLowerCase()) || null;
