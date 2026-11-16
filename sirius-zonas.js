@@ -23,7 +23,7 @@
   S.MAX_ZONAS = 8;
   // ---------- texto y geometría ----------
   S.norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  S.titulo = (s) => String(s || '').toLowerCase().replace(/(^|\s|\()(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\b(De|Del|La|Las|Los|Y)\b/g, (w) => w.toLowerCase());
+  S.titulo = (s) => String(s || '').toLowerCase().replace(/(^|\s|\()(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/(\s)(De|Del|La|Las|Los|Y)(?=\s|$)/g, (m, a, w) => a + w.toLowerCase()); // P-6f-c: la primera palabra siempre con mayúscula («Los Ríos»)
   S.km = (a, b) => { const R = 6371, t = (x) => x * Math.PI / 180, dl = t(b[0] - a[0]), dn = t(b[1] - a[1]); const h = Math.sin(dl / 2) ** 2 + Math.cos(t(a[0])) * Math.cos(t(b[0])) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
   S.fmtKm = (v) => (Math.round(v * 10) / 10).toLocaleString('es-EC', { maximumFractionDigits: 1 }) + ' km';
   S.enPoligono = (pt, poly) => { let d = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const xi = poly[i][1], yi = poly[i][0], xj = poly[j][1], yj = poly[j][0]; if (((yi > pt[0]) !== (yj > pt[0])) && (pt[1] < (xj - xi) * (pt[0] - yi) / (yj - yi) + xi)) d = !d; } return d; };

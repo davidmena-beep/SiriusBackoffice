@@ -440,9 +440,11 @@ class Component extends DCLogic {
       { label: 'Riesgo', value: e.ramo || e.riesgo || p.ramo || '—', ws: 'normal', span: 'auto' }, { label: 'Paso', value: paso, ws: 'normal', span: 'auto' },
     ];
   }
-  emitDraft(ps) { const s = this.state, f = this.props.onDraftChange; if (!f) return; if (ps && ps.veredicto === s.veredicto && ps.cobertura === s.cobertura && ps.motivo === s.motivo && ps.obs === s.obs) return; f({ veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs }); }
+  emitDraft(ps) { const s = this.state, f = this.props.onDraftChange, B = window.SiriusCalBorrador; if (!f && !B) return; if (ps && ps.veredicto === s.veredicto && ps.cobertura === s.cobertura && ps.motivo === s.motivo && ps.obs === s.obs) return; const dd = { veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs };
+    if (B && (this.props.mode || 'n1') === 'veh') B.set(this.props.formKey || '', dd); /* P-6f-c: el borrador va al módulo y no a la pantalla del caso, así la opción se marca al instante */
+    if (f) f(dd); }
   componentDidUpdate(prev, ps) { this.emitDraft(ps);
-    if (prev.formKey !== this.props.formKey) this.setState(this.initial());
+    if (prev.formKey !== this.props.formKey) { if (window.SiriusCalBorrador) window.SiriusCalBorrador.set(this.props.formKey || '', null); this.setState(this.initial()); }
   }
   addDays(n) {
     const [y, m, dd] = String(this.props.baseDate || '2026-10-16').split('-').map(Number);

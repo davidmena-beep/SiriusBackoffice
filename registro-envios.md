@@ -4,6 +4,77 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-c
+
+Nueva solicitud usa ahora provincia y cantón del catálogo INEC (con búsqueda al escribir), la dirección de inspección es opcional en vehículos y equipos, y no muestra zonas. Calificación marca la opción al instante. Quedó publicado en la **Versión 259**; la Versión 260 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Provincia y Cantón (solicitante, asegurado y cada ubicación):** salen de SIRIUS_GEOGRAFIA, solo los activos (24 provincias y 223 cantones; quedan fuera «Zona en estudio» y 2 cantones no activos). Los dos tienen búsqueda al escribir, con el nombre exacto primero («Quito» antes que «Puerto Quito»). El cantón se habilita al elegir la provincia y se vacía si la provincia cambia; si lo escrito no está en la lista, vuelve al valor anterior. Al enviar se pide un valor de la lista.
+- **Dirección de inspección:**
+  - En vehículos y equipos es opcional, con el texto «Si aún no la tienes, se confirma en el contacto».
+  - El resumen dice «Sin dirección: se confirma en el contacto».
+  - Con la conexión, `solicitud` (y los riesgos de esos grupos) puede ir sin dirección, ciudad ni punto: lo vacío no viaja.
+  - En Ramos Generales, cada ubicación asegurada sigue con su cantón y su dirección (DEC-222).
+- **Sin zonas en Nueva solicitud:** el editor de lugar no dibuja la calculadora de zonas ni las áreas o puntos de zonas en el mapa; si la dirección se ubica, se ve solo el punto. Las zonas siguen en Coordinar visita, Agenda, Ciudades y zonas y la app del inspector.
+- **Con la conexión:**
+  - crearCaso lleva `asegurado.provincia` y `asegurado.canton` con los códigos del INEC («17», «1701») y `asegurado.direccion`.
+  - La base simulada acepta la solicitud sin dirección y valida esos códigos.
+  - `sirius-conexion.js` sigue con su línea mínima (70 bytes).
+- **Calificación al instante:** el formulario (Vehículos) ya no avisa a toda la pantalla del caso en cada opción; guarda su borrador en un módulo nuevo (`sirius-cal-borrador.js`) y solo «Aplicar a otros vehículos» se suscribe. En Ramos Generales el borrador dejó de ir al estado de la pantalla.
+
+**Verificado**
+- Abrí las 4 escenas nuevas (con las variantes de `nuevageo`), `cxnuevaveh`, `cxnuevarg`, `cxnuevaflota`, `cxr0dadmin` y `cxr0emodulo` a 1280 × 720 y 1920 × 1080: 22 aperturas sin errores de página.
+- `nuevageo`:
+  - La lista abre con las 24 provincias; al escribir «tungu» queda Tungurahua y el cantón ofrece 9 (Ambato, Baños de Agua Santa, Cevallos, Mocha, Patate, Quero, San Pedro de Pelileo, Santiago de Píllaro y Tisaleo).
+  - Con «pel» queda San Pedro de Pelileo.
+  - Al cambiar a Pichincha el cantón queda vacío y ofrece sus 8; «zzz» da «No hay cantones con ese nombre en la provincia.».
+  - Sin provincia, el cantón está deshabilitado.
+- `nuevasindir`: «Registrar solicitud» envía crearCaso con `solicitud: {}` (sin direccion, ciudad ni punto), `asegurado.provincia` «17», `asegurado.canton` «1701» y `asegurado.direccion`; abre el caso 50013 «En coordinación».
+- `nuevasinzonas`: al escribir «Av. Amazonas» y elegir la sugerencia, el mapa tiene 1 punto, 0 áreas y 0 cajas de zona; no hay textos como «Zona Norte» ni «Cambiar la zona».
+- `cxnuevarg`: crearCaso sigue llevando dirección y ciudad en cada ubicación (Quito y Guayaquil).
+- Tiempo desde el clic hasta pintar la opción (mismo navegador de pruebas, 6 cambios por escena):
+
+| Formulario | Antes | Ahora |
+|---|---|---|
+| Vehículos: «Es asegurable» / «No asegurable» (`calrapida`) | 931 a 1073 ms | 4 a 12 ms (17 a 35 ms hasta el cuadro pintado) |
+| Vehículos: cobertura o motivo (lista) | no medido | 5 ms (12 ms hasta pintar) |
+| Ramos Generales: veredicto por ramo | 46 a 74 ms | 10 a 21 ms |
+| Completar el informe (informe y decisión) | 22 a 47 ms | sin cambio |
+
+- «Aplicar a otros vehículos» sigue el borrador: habilitado con «Es asegurable» y cobertura, deshabilitado con «No asegurable» sin motivo, habilitado al elegir el motivo, y abre la ventana con los otros vehículos.
+- Comparé el texto de 21 escenas existentes con la versión anterior: 17 salieron iguales (`ns1g`, `ns3v`, `ns4`, `nsvacio`, `nsmarca`, `nsbpm`, `coordfases`, `cxnuevaveh`, `cxnuevaerror`, `cxnuevaramos`, `veh`, `calveh`, `calrg`, `calrgveredicto`, `cxr0dadmin`, `cxr0emodulo` y `ciudadesbuscar`); las 4 que cambian (`ns2`, `ns3g`, `cxnuevarg`, `cxnuevaflota`) difieren porque las listas de provincia y cantón ahora son buscables.
+
+**No verificado**
+- Los tiempos son de mi navegador de pruebas. Antes veía cerca de 1 s donde tú ves unos 2 s; no los medí en tu equipo.
+- Completar el informe no lo cambié: su formulario es parte de la pantalla del caso. Mide 22 a 47 ms aquí; en un equipo el doble de lento rondaría 45 a 95 ms, muy cerca del límite de 100 ms.
+- No probé las flechas arriba y abajo de las listas de provincia y cantón, solo escribir, Enter, Tab y el clic.
+- crearCaso con los campos nuevos solo contra la base simulada, no contra una real.
+- El mapa base (las teselas) no carga en mi entorno: vi el punto sobre fondo gris, no el mapa completo.
+
+**Diferencias**
+- **Qué causaba el retraso:** cada opción de Calificación (`onDraftChange`) hacía un `setState` en el Back-office y toda la pantalla del caso (más de 1 MB de plantilla) se volvía a pintar antes de que el navegador marcara la opción. Ahora el borrador va a `SiriusCalBorrador` y solo se vuelve a pintar el botón «Aplicar a otros vehículos», y solo cuando el borrador pasa a completo o incompleto. En Ramos Generales el borrador queda en un campo de la pantalla y no en el estado.
+- En Completar el informe no hubo ese aviso: el formulario del informe vive en la pantalla del caso y ya responde en menos de 100 ms.
+- Con el selector de Nueva solicitud se guarda el nombre (por ejemplo «Tungurahua», «Ambato») y los códigos del INEC se calculan al enviar; en el editor de lugar de cada ubicación se guarda el código.
+- «Ciudad» pasa a llamarse «Cantón» en el lugar de Nueva solicitud; Coordinar visita y el portal conservan «Ciudad».
+- En vehículos y equipos, si el lugar queda vacío, la solicitud no lleva ciudad; la base usa la de la sucursal, como ya hacía Coordinación.
+- Corregí un detalle del catálogo: «Los Ríos» salía como «los Ríos» en las listas de provincias.
+- El orden de las coincidencias («Quito» antes que «Puerto Quito») también aplica a las listas de marca y modelo.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `nuevageo` | Paso 2 con las 24 provincias; `?fvista=tungurahua` (cantón con Ambato…) y `?fvista=pichincha` |
+| `nuevasindir` | Vehículos en «Revisión y envío» sin dirección; crearCaso sin solicitud.direccion y con asegurado.provincia y canton |
+| `nuevasinzonas` | Dirección de Quito ubicada: el mapa muestra solo el punto, sin zonas ni calculadora |
+| `calrapida` | Calificación de 20196 como Ejecutivo: alternar «Es asegurable» y «No asegurable» se marca al instante |
+
+También abrí `cxnuevaveh`, `cxnuevarg`, `cxnuevaflota`, `cxr0dadmin` y `cxr0emodulo`, además de `ns2`, `ns3g`, `calveh`, `calrg`, `calrgveredicto`, `infcompletarcaso`, `infpasoinforme`, `cxr0bcompletar` y `ciudadesbuscar` para comparar y medir.
+
+**Tiempo de la etapa: inicio 15/11/2026 23:05 · fin 15/11/2026 23:32 · 27 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-b
 
 Agencias, inspectores y usuarios ya se identifican por su identificación (DEC-214): el RUC de cada agencia y la cédula o el pasaporte de cada persona, con validación junto al campo, únicos en la compañía y con la etiqueta «Sin identificación» para las fichas anteriores. Quedó publicado en la **Versión 257**; la Versión 258 solo completa en el registro la hora de fin.
