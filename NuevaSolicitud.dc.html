@@ -97,6 +97,7 @@
 <sc-for list="{{ g.fields }}" as="f" hint-placeholder-count="6">
 <div style="grid-column:{{ f.span }};display:flex;flex-direction:column;gap:6px;min-width:0">
 <sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ true }}"><label id="{{ f.lblId }}" for="{{ f.id }}" style="font-size:13px;font-weight:700;color:var(--text-strong)">{{ f.label }} <span aria-hidden="true" style="color:var(--color-danger);display:{{ f.star }}">*</span></label></sc-if>
+<sc-if value="{{ f.isLugar }}" hint-placeholder-val="{{ false }}"><div id="{{ f.id }}" data-ns-lugar="{{ f.id }}" style="min-width:0"><x-import component-from-global-scope="SiriusLugar.Editor" from="./sirius-lugar.js" key="{{ f.id }}" lugar="{{ f.lugar }}" on-cambio="{{ f.onLugar }}" error="{{ f.lugarErr }}" id-base="{{ f.id }}" alto-mapa="{{ 200 }}" hint-size="100%,320px"></x-import></div></sc-if><sc-if value="{{ f.isBoton }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="{{ f.btnVariant }}" size="sm" on-click="{{ f.onBtn }}" hint-size="180px,36px">{{ f.btnLabel }}</x-import></div></sc-if>
 <sc-if value="{{ f.isFecha }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusFecha" id="{{ f.id }}" value="{{ f.value }}" on-change="{{ f.onChange }}" on-blur="{{ f.onBlur }}" modo="fecha" formato="iso" max="{{ f.max }}" max-label="hoy" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" hide-error="{{ true }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isMonto }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusMonto" id="{{ f.id }}" value="{{ f.montoVal }}" on-change="{{ f.onMonto }}" on-blur="{{ f.onBlur }}" invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" alto="{{ 44 }}" hint-size="100%,44px"></x-import></sc-if><sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}"><input id="{{ f.id }}" type="{{ f.type }}" list="{{ f.list }}" inputmode="{{ f.inputMode }}" autocomplete="{{ f.ac }}" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong);text-align:{{ f.align }}" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"></sc-if>
 <sc-if value="{{ f.isInputBtn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;align-items:center"><input id="{{ f.id }}" type="text" placeholder="{{ f.ph }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="flex:1;min-width:0;height:44px;padding:0 12px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ f.onBtn }}" unavailable-reason="{{ f.btnWhy }}" hint-size="160px,44px"><span style="white-space:nowrap">{{ f.btnLabel }}</span></x-import></div></sc-if>
 <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}"><select id="{{ f.id }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onBlur="{{ f.onBlur }}" disabled="{{ f.disabled }}" aria-invalid="{{ f.invalid }}" aria-describedby="{{ f.descId }}" style="width:100%;height:44px;padding:0 10px;border:1.5px solid {{ f.border }};border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:15px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><option value="">Selecciona</option><sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select></sc-if>
@@ -203,8 +204,9 @@
 </sc-if>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid var(--border-subtle);padding:16px 0 0">
 <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="lg" on-click="{{ onBack }}" hint-size="120px,48px">Anterior</x-import></sc-if>
+<sc-if value="{{ cxErrShow }}" hint-placeholder-val="{{ false }}"><div data-ns-cx-error="" role="alert" style="flex:1 1 100%;display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:1.5px solid var(--color-danger);border-radius:var(--radius-sm);background:#FFFFFF"><strong style="font-size:15px;color:var(--color-danger)">No se creó el caso</strong><span style="font-size:15px;color:var(--text-strong)">{{ cxErr }}</span><span style="font-size:13px;color:var(--text-muted)">Lo que escribiste se conserva: corrige y vuelve a registrar.</span></div></sc-if>
 <span style="margin-left:auto;font-size:13px;color:var(--text-muted)">{{ pendingHint }}</span>
-<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onNext }}" hint-size="200px,48px">{{ nextLabel }}</x-import>
+<x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onNext }}" disabled="{{ cxEnviando }}" hint-size="200px,48px">{{ nextLabel }}</x-import>
 </div>
 <input type="file" ref="{{ bulkFileRef }}" accept=".xlsx,.xls,.csv" onChange="{{ onBulkFile }}" aria-hidden="true" tabindex="-1" style="display:none">
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ bulkOpen }}" on-close="{{ closeBulk }}" size="lg" align="left" title="Carga masiva de vehículos" description="{{ bulkDesc }}" footer="{{ bulkFooter }}" hint-size="0px,0px">
@@ -289,7 +291,28 @@ class Component extends DCLogic {
   bulkFileRef = React.createRef();
   seq = 0;
   person() { return { idType: 'Cédula', idNum: '', nombres: '', apellidos: '', nac: '', civil: '', genero: '', prov: '', canton: '', dir: '', correo: '', cel: '', fijo: '' }; }
-  vehBlank() { return { sinPlaca: false, placa: '', marca: '', modelo: '', anio: '', cobertura: '', casco: '', extras: '', ackDup: false, cp: {} }; }
+  vehBlank() { return { sinPlaca: false, placa: '', marca: '', modelo: '', anio: '', cobertura: '', casco: '', extras: '', ackDup: false, cp: {}, tipoVeh: 'Sin tipo' }; }
+  // ---------- Etapa P-6f · con la conexión, «Registrar» crea el caso en la base (crearCaso). Sin la conexión, todo queda como antes. ----------
+  cx() { const X = window.SIRIUS_CONEXION; return !!(X && X.activo); }
+  TIPOS_VEH = ['Sin tipo', 'Sedán', 'SUV o Jeep', 'Camioneta', 'Moto']; // carrocerías de SIRIUS_SILUETAS; «Sin tipo» se confirma en la inspección (DEC-212)
+  TIPOS_BIEN = ['Bodega', 'Galpón industrial', 'Local comercial', 'Oficina', 'Vivienda', 'Hotel', 'Clínica'];
+  MODALIDADES = ['Presencial', 'Virtual guiada', 'Autoinspección'];
+  anioMax() { const E = window.SIRIUS_EJEMPLO || {}, n = E.ahora ? E.ahora() : new Date(); return n.getFullYear() + 1; }
+  lugarOk(l) { return !!(l && l.ciudad && String(l.direccion || '').trim()); }
+  lugarTxt(l) { const SL = window.SiriusLugar; return !l || !l.ciudad ? '' : [String(l.direccion || '').trim(), SL ? SL.ciudadNombre(l.ciudad) : l.ciudad].filter(Boolean).join(', '); }
+  ubicBlank() { return { id: 'u' + (++this.seq) + '-' + Date.now(), tipoBien: '', suma: '', lugar: {} }; }
+  cxLug(l) { const SL = window.SiriusLugar; l = l || {}; const pt = Array.isArray(l.punto) && l.punto.length === 2 && l.punto.every(v => v !== null && v !== '' && isFinite(+v)) ? [+l.punto[0], +l.punto[1]] : null;
+    return { provincia: String(l.provincia || (SL && l.ciudad ? SL.provDe(l.ciudad) : '') || ''), ciudad: String(l.ciudad || ''), direccion: String(l.direccion || '').trim(), referencia: String(l.referencia || '').trim(), punto: pt }; }
+  // crearCaso { grupoRamo, ramo, sucursal, asegurado { tipoIdentificacion, identificacion, nombre, contacto { nombre, celular, correo } }, solicitud { provincia, ciudad, direccion, referencia, punto | null },
+  //   riesgos [{ composicion 'Vehículo' | 'Ubicación' | 'Equipo', placa, marca, modelo, anio, tipo | null, suma, descripcion, direccion, ciudad }], modalidadSugerida, observaciones, origen 'Back-office' }
+  cxPayload() { const d = this.state.d, veh = d.tipoRiesgo === 'Vehículos', em = !veh && this.esEM(d), ase = d.mismo ? d.sol : d.ase, nm = (p) => (p.nombres + ' ' + (p.idType === 'RUC' ? '' : p.apellidos)).trim();
+    const L0 = this.cxLug(veh || em ? d.lugar : (d.ubics[0] || {}).lugar), num = (a) => (/^\d{4}$/.test(String(a || '')) ? Number(a) : null), ESx = window.SiriusEquiposSolicitud;
+    const riesgos = veh ? d.vehs.map(v => ({ composicion: 'Vehículo', placa: v.sinPlaca ? '' : this.pl(v.placa), marca: v.marca || '', modelo: v.modelo || '', anio: num(v.anio), tipo: v.tipoVeh && v.tipoVeh !== 'Sin tipo' ? v.tipoVeh : null, suma: this.vehTotal(v), descripcion: [v.marca, v.modelo, v.anio].filter(Boolean).join(', ') + (v.sinPlaca ? ' · sin placa' : ''), direccion: L0.direccion, ciudad: L0.ciudad }))
+      : em ? d.eqs.map(q => ({ composicion: 'Equipo', placa: '', marca: q.marca || '', modelo: q.modelo || '', anio: num(q.anio), tipo: (ESx ? ESx.tipoTxt(q) : q.tipo) || null, suma: this.eqTotal(q), descripcion: [(ESx ? ESx.tipoTxt(q) : q.tipo), q.serie ? 'serie ' + q.serie : ''].filter(Boolean).join(' · '), direccion: L0.direccion, ciudad: L0.ciudad }))
+      : d.ubics.map(u => { const l = this.cxLug(u.lugar); return { composicion: 'Ubicación', placa: '', marca: '', modelo: '', anio: null, tipo: u.tipoBien || null, suma: this.money(u.suma), descripcion: [u.tipoBien, d.ramosSel.join(', ')].filter(Boolean).join(' · '), direccion: l.direccion, ciudad: l.ciudad }; });
+    const obs = String(d.cxObs || '').trim(), otros = !veh && d.ramosSel.length > 1 ? 'Ramos de la solicitud: ' + d.ramosSel.join(', ') : '';
+    return { grupoRamo: veh ? 'Vehículos' : 'Ramos Generales', ramo: veh ? 'Vehículos' : d.ramosSel[0] || '', sucursal: d.sucursal, asegurado: { tipoIdentificacion: ase.idType, identificacion: String(ase.idNum || '').trim(), nombre: nm(ase), contacto: { nombre: nm(ase), celular: String(ase.cel || '').trim(), correo: String(ase.correo || '').trim() } },
+      solicitud: L0, riesgos, modalidadSugerida: d.cxModalidad || 'Presencial', observaciones: [obs, otros].filter(Boolean).join(' · '), origen: 'Back-office' }; }
   // ---------- Marca y modelo desde el catálogo (etapa 10c-c · DEC-079): SIRIUS_CATALOGOS_MAESTROS.marcas ----------
   mmNorm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
   mmMarcas() { return ((window.SIRIUS_CATALOGOS_MAESTROS || {}).marcas || []); }
@@ -320,12 +343,28 @@ class Component extends DCLogic {
   state = this.initial();
   initial() {
     const d = { broker: '', aps: '', sucursal: '', orden: '', tipoRiesgo: '', lineaVeh: '', ramosSel: [], ramoLinea: {}, tipo: '', garantias: false, casoOrig: '', sol: this.person(), mismo: true, ase: this.person(),
-      vehs: [], eqs: [], vehForm: null, vehEditId: null, manualAdds: 0, ubic: { tipoBien: '', prov: '', canton: '', dir: '' }, ramoData: {}, cp: {} };
-    const s = { step: 1, maxStep: 1, touched: {}, d, c360: { sol: 'idle', ase: 'idle' }, placaSt: 'idle', ramoQ: '', bulk: null, tpl: null, bpmSt: 'idle', bpmDup: '', cb: null };
+      vehs: [], eqs: [], vehForm: null, vehEditId: null, manualAdds: 0, ubic: { tipoBien: '', prov: '', canton: '', dir: '' }, ramoData: {}, cp: {}, lugar: {}, ubics: [this.ubicBlank()], cxObs: '', cxModalidad: 'Presencial' };
+    const s = { step: 1, cxEnv: false, cxErr: '', maxStep: 1, touched: {}, d, c360: { sol: 'idle', ase: 'idle' }, placaSt: 'idle', ramoQ: '', bulk: null, tpl: null, bpmSt: 'idle', bpmDup: '', cb: null };
     const pr = this.props.preset || '';
     if (!pr) return s;
     Object.assign(d, { broker: 'Broker Pacífico', aps: 'emisiones@brokerpacifico.ec', sucursal: 'Manta', tipo: 'Emisión nueva' });
     d.sol = Object.assign(this.person(), { idNum: '1309876543' }, this.c360db['1309876543']); s.c360.sol = 'found';
+    if (/^cxnueva/.test(pr)) { /* Etapa P-6f: escenas con la conexión simulada */
+      const UIO = { provincia: '17', ciudad: '1701', direccion: 'Av. Amazonas N36-152 y Naciones Unidas', referencia: 'Edificio Torre Azul, parqueadero de visitas', punto: [-0.1765, -78.4845], origen: 'Búsqueda' };
+      Object.assign(d, { broker: 'Broker Pacífico', aps: 'emisiones@brokerpacifico.ec', sucursal: 'Quito', tipo: 'Emisión nueva', orden: '' }); d.cp = { canal_venta: 'Agencia' };
+      d.sol = Object.assign(this.person(), { idType: 'Cédula', idNum: '1710034065', nombres: 'Gabriela', apellidos: 'Salazar Ortega', prov: 'Pichincha', canton: 'Quito', dir: 'Av. De los Shyris N36-120 y Suecia', correo: 'gsalazar@gmail.com', cel: '0987766554' }); s.c360.sol = 'idle';
+      const V = (id, placa, marca, modelo, anio, casco, tipoVeh, cob) => ({ id, sinPlaca: false, placa, marca, modelo, anio, cobertura: cob || 'Todo riesgo', casco, extras: '', ackDup: true, cp: { uso_comercial: 'No' }, tipoVeh: tipoVeh || 'Sin tipo' });
+      if (pr === 'cxnuevaramos') { Object.assign(d, { tipoRiesgo: 'Ramos Generales', lineaVeh: 'Corporativos' }); return s; }
+      if (pr === 'cxnuevarg') { Object.assign(d, { tipoRiesgo: 'Ramos Generales', lineaVeh: 'Corporativos', ramosSel: ['Incendio y líneas aliadas'] });
+        d.ramoData = { 'Incendio y líneas aliadas': { detalles: 'Bodega de hormigón con cubierta metálica en Quito y local comercial en Guayaquil; alarma monitoreada en ambos.', valor: 370000, extras: [] } };
+        d.ubics = [{ id: 'u1', tipoBien: 'Bodega', suma: 250000, lugar: { provincia: '17', ciudad: '1701', direccion: 'Av. Mariscal Sucre S12-45 y Ajaví', referencia: 'Galpón 3, junto a la gasolinera', punto: [-0.2620, -78.5340], origen: 'Búsqueda' } },
+          { id: 'u2', tipoBien: 'Local comercial', suma: 120000, lugar: { provincia: '09', ciudad: '0901', direccion: 'Av. Francisco de Orellana, Kennedy Norte', referencia: 'Planta baja del edificio Ejecutivo', punto: [-2.1700, -79.8950], origen: 'Búsqueda' } }];
+        d.cxModalidad = 'Presencial'; s.step = 3; s.maxStep = 4; return s; }
+      Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz' }); d.lugar = Object.assign({}, UIO);
+      if (pr === 'cxnuevaflota') { d.vehs = [V('f1', 'PCK2210', 'Hyundai', 'Tucson', '2021', 24500, 'SUV o Jeep'), V('f2', 'GBA7781', 'Nissan', 'Frontier', '2023', 31800, 'Camioneta'), V('f3', 'PDF3350', 'Mazda', 'CX-30', '2022', 26200, 'SUV o Jeep'), V('f4', 'TBC9087', 'Renault', 'Duster', '2024', 21400)];
+        d.vehForm = Object.assign(this.vehBlank(), { placa: 'GBA7781', marca: 'Toyota', modelo: 'Hilux', anio: '2020', cobertura: 'Todo riesgo', casco: 29900, tipoVeh: 'Camioneta', cp: { uso_comercial: 'No' } }); s.touched = { 'vehForm.placa': true }; s.step = 3; s.maxStep = 3; return s; }
+      d.vehs = pr === 'cxnuevaerror' ? [V('e1', 'PRB1212', 'Kia', 'Rio', '2022', 18900, 'Sedán')] : [V('a1', 'PCK2210', 'Hyundai', 'Tucson', '2021', 24500, 'SUV o Jeep'), V('a2', 'IB456K', 'Suzuki', 'GN125', '2023', 2400, 'Sin tipo')];
+      s.step = 4; s.maxStep = 4; return s; }
     if (pr === 'nsbpm') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'EMI-408332', broker: 'Austro Brokers', aps: 'emisiones@austrobrokers.ec' }); s.bpmSt = 'dup'; s.bpmDup = '20186'; return s; }
     if (pr === 'cpersnueva') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz' }); d.cp = { canal_venta: 'Agencia', numero_cotizacion: 'COT-26-4512' }; s.touched = { 'cp.numero_cotizacion': true }; return s; }
     if (pr === 'nsvacio') { Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'OE-2026-09020' }); s.step = 3; s.maxStep = 3; return s; }
@@ -444,9 +483,10 @@ class Component extends DCLogic {
     const mk = this.mmMarca(v.marca);
     if (!String(v.marca || '').trim()) e.marca = 'Selecciona la marca.'; else if (!mk || mk.marca !== v.marca) e.marca = 'Elige una marca de la lista.';
     if (!String(v.modelo || '').trim()) e.modelo = 'Selecciona el modelo.'; else if (!mk || this.mmModelos(mk.marca).indexOf(v.modelo) < 0) e.modelo = 'Elige un modelo de la lista.';
-    if (!/^\d{4}$/.test(v.anio) || Number(v.anio) < 1980 || Number(v.anio) > 2027) e.anio = 'Ingresa un año entre 1980 y 2027.';
+    const yMin = this.cx() ? 1950 : 1980, yMax = this.cx() ? this.anioMax() : 2027; /* P-6f: con la conexión, entre 1950 y el año próximo */
+    if (!/^\d{4}$/.test(v.anio) || Number(v.anio) < yMin || Number(v.anio) > yMax) e.anio = 'Ingresa un año entre ' + yMin + ' y ' + yMax + '.';
     if (!this.coberturas.includes(v.cobertura)) e.cobertura = 'Selecciona el tipo de cobertura.';
-    if (this.money(v.casco) <= 0) e.casco = 'Ingresa el valor del casco.';
+    if (this.money(v.casco) <= 0) e.casco = this.cx() ? 'Ingresa un valor del casco mayor que 0.' : 'Ingresa el valor del casco.';
     return e;
   }
   vehFormErrors() {
@@ -483,6 +523,7 @@ class Component extends DCLogic {
         if (!/^09\d{8}$/.test((p.cel || '').trim())) e[w + '.cel'] = 'Ingresa un celular de 10 dígitos que empiece con 09.';
         if (p.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.correo.trim())) e[w + '.correo'] = 'Revisa el formato del correo.';
         req(w + '.prov', p.prov, 'Selecciona la provincia.'); req(w + '.canton', p.canton, 'Selecciona el cantón.'); req(w + '.dir', p.dir, 'Ingresa la dirección.');
+        if (this.cx()) { const cel = (p.cel || '').trim(), co = (p.correo || '').trim(); delete e[w + '.cel']; if (!/^0\d{9}$/.test(cel)) e[w + '.cel'] = 'Ingresa un celular de 10 dígitos que empiece con 0.'; if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(co)) e[w + '.correo'] = co ? 'Revisa el formato del correo.' : 'Ingresa el correo: se usa para coordinar.'; } /* P-6f */
         if (this.state.c360[w] === 'loading') e[w + '.loading'] = '!Consultando Cliente 360…';
       });
     }
@@ -491,12 +532,15 @@ class Component extends DCLogic {
         Object.assign(e, this.vehFormErrors());
         if (d.vehForm) e['vehs.form'] = '!Guarda o cancela el vehículo en edición';
         else if (!d.vehs.length) e['vehs.none'] = '!Agrega al menos un vehículo';
+        if (this.cx() && !this.lugarOk(d.lugar)) e.lugar = 'Elige la ciudad y busca la dirección de la inspección.'; /* P-6f */
         Object.assign(e, this.vehsCpErrors());
       } else if (this.esEM(d)) {
         if (this.state.eqEdit) e['eqs.form'] = '!Guarda o cancela el equipo en edición'; else if (!d.eqs.length) e['eqs.none'] = '!Agrega al menos un equipo';
+        if (this.cx() && !this.lugarOk(d.lugar)) e.lugar = 'Elige la ciudad y busca la dirección de la inspección.';
       } else {
         const u = d.ubic;
-        req('ubic.tipoBien', u.tipoBien, 'Selecciona el tipo de bien.'); req('ubic.prov', u.prov, 'Selecciona la provincia.'); req('ubic.canton', u.canton, 'Selecciona el cantón.'); req('ubic.dir', u.dir, 'Ingresa la dirección.');
+        if (this.cx()) { if (!d.ubics.length) e['ubics.none'] = '!Agrega al menos una ubicación'; d.ubics.forEach((x, i) => { req('ubics.' + i + '.tipoBien', x.tipoBien, 'Selecciona el tipo de bien.'); if (this.money(x.suma) <= 0) e['ubics.' + i + '.suma'] = 'Ingresa una suma asegurada mayor que 0.'; if (!this.lugarOk(x.lugar)) e['ubics.' + i + '.lugar'] = 'Elige la ciudad y busca la dirección de esta ubicación.'; }); } /* P-6f · DEC-222: cada ubicación con su lugar */
+        else req('ubic.tipoBien', u.tipoBien, 'Selecciona el tipo de bien.'); if (!this.cx()) { req('ubic.prov', u.prov, 'Selecciona la provincia.'); req('ubic.canton', u.canton, 'Selecciona el cantón.'); req('ubic.dir', u.dir, 'Ingresa la dirección.'); }
         d.ramosSel.forEach(r => { const x = d.ramoData[r] || {}; req('ramoData.' + r + '.detalles', x.detalles, 'Describe los detalles de emisión.'); if (this.money(x.valor) <= 0) e['ramoData.' + r + '.valor'] = 'Ingresa el valor asegurado.'; });
       }
     }
@@ -531,7 +575,8 @@ class Component extends DCLogic {
         noBlur: (ev) => ev.preventDefault() };
     }
     return Object.assign({
-      id, lblId: id + '-lbl', label, hasLabel: kind !== 'check' && kind !== 'switch', star: o.req ? 'inline' : 'none',
+      id, lblId: id + '-lbl', label, hasLabel: kind !== 'check' && kind !== 'switch' && kind !== 'lugar' && kind !== 'boton', star: o.req ? 'inline' : 'none',
+      isLugar: kind === 'lugar', lugar: kind === 'lugar' ? (val || {}) : null, onLugar: (l) => { this.set(path, l); this.touch(path); }, lugarErr: kind === 'lugar' && show ? err : '', isBoton: kind === 'boton', btnVariant: o.variant || 'secondary', /* P-6f */
       isInput: kind === 'input' && o.type !== 'date' && !o.money, isMonto: kind === 'input' && !!o.money, montoVal: o.money && val !== '' && val != null ? this.money(val) : null, onMonto: (n, err) => this.set(path, err || n == null ? '' : n), isFecha: kind === 'input' && o.type === 'date', max: o.max || '', isSelect: kind === 'select', isTextarea: kind === 'textarea', isRO: kind === 'ro', isCheck: kind === 'check', isSwitch: kind === 'switch', isRadio: kind === 'radio', isCombo: false, isInputBtn: kind === 'inputbtn', btnLabel: o.btnLabel || '', onBtn: o.onBtn || (() => {}), btnDisabled: !!o.btnDisabled, btnWhy: o.btnWhy || '',
       radios: kind === 'radio' ? (o.options || []).map(label => ({ label, checked: val === label, border: val === label ? 'var(--cyan-500)' : 'var(--border-default)', bg: val === label ? 'var(--color-brand-wash)' : '#FFFFFF', pick: () => { this.set(path, label); o.after && o.after(label); } })) : [],
       type: o.type || 'text', list: o.list, inputMode: o.inputMode || 'text', ac: o.ac || 'off', ph: o.ph || '', align: o.money ? 'right' : 'left', roSize: o.roSize || '16px', roJustify: o.roJustify || 'flex-start',
@@ -557,9 +602,9 @@ class Component extends DCLogic {
       this.F(w + '.prov', 'Provincia', 'select', { options: Object.keys(this.provs), req: true, after: () => this.set(w + '.canton', '') }),
       this.F(w + '.canton', 'Cantón', 'select', { options: this.provs[p.prov] || [], req: true, disabled: !p.prov }),
       this.F(w + '.dir', 'Dirección', 'input', { req: true, span: '1 / -1', ac: 'street-address' }),
-      this.F(w + '.cel', 'Celular', 'input', { req: true, type: 'tel', inputMode: 'numeric', ph: '09XXXXXXXX', help: 'Se usará para coordinar por WhatsApp.', ac: 'tel' }),
+      this.F(w + '.cel', 'Celular', 'input', { req: true, type: 'tel', inputMode: 'numeric', ph: this.cx() ? '0XXXXXXXXX' : '09XXXXXXXX', help: 'Se usará para coordinar por WhatsApp.', ac: 'tel' }),
       this.F(w + '.fijo', 'Teléfono fijo', 'input', { type: 'tel', inputMode: 'numeric' }),
-      this.F(w + '.correo', 'Correo electrónico', 'input', { type: 'email', inputMode: 'email', ac: 'email' }),
+      this.F(w + '.correo', 'Correo electrónico', 'input', { type: 'email', inputMode: 'email', ac: 'email', req: this.cx() }),
     ].filter(Boolean);
   }
   personGroup(w, title) {
@@ -824,11 +869,12 @@ class Component extends DCLogic {
       ].concat(v.sinPlaca ? [] : [this.F('vehForm.placa', 'Placa', 'input', { req: true, upper: true, ph: 'ABC1234', help: 'Auto ABC1234 o moto AB123C; puedes escribirla con guion o espacios.', onBlur: () => this.lookupPlaca(), after: () => this.set('vehForm.ackDup', false) })], [
         this.F('vehForm.marca', 'Marca', 'combo', { req: true, ph: 'Busca la marca', options: this.mmMarcas().map(m => m.marca), noText: 'No hay marcas con ese nombre.', after: () => this.set('vehForm.modelo', '') }),
         this.F('vehForm.modelo', 'Modelo', 'combo', { req: true, ph: this.mmMarca(v.marca) ? 'Busca el modelo' : 'Elige primero la marca', disabled: !this.mmMarca(v.marca), options: this.mmModelos(v.marca), noText: 'No hay modelos con ese nombre.', help: '¿No está? Pídele al Administrador que lo agregue en Catálogos maestros.' }), this.F('vehForm.anio', 'Año', 'input', { req: true, inputMode: 'numeric', ph: '2025' }),
+        this.cx() ? this.F('vehForm.tipoVeh', 'Tipo de vehículo', 'select', { options: this.TIPOS_VEH, help: '«Sin tipo»: se confirma en la inspección.' }) : null,
         this.F('vehForm.cobertura', 'Tipo de cobertura', 'select', { req: true, options: this.coberturas }),
         this.F('vehForm.casco', 'Valor del casco (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { req: true, money: true, inputMode: 'decimal' }),
         this.F('vehForm.extras', 'Extras (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { money: true, inputMode: 'decimal' }),
         this.F('vtotal', 'Total del vehículo', 'ro', { value: this.usd(this.vehTotal(v)), roSize: '20px' }),
-      ]),
+      ].filter(Boolean)),
         hasStatus: s.placaSt === 'loading', loading: s.placaSt === 'loading', statusText: 'Consultando el servicio de placas…',
         hasAlert: s.placaSt === 'notfound' && !v.sinPlaca, alertText: 'No se encontró la placa; ingresa marca, modelo y año manualmente.',
         hasDup: !!dup, dupText: dup ? 'Ya existe el caso ' + dup.id + ' en curso para esta placa.' : '', dupPending: !!dup && !v.ackDup, dupAcked: !!dup && !!v.ackDup,
@@ -851,6 +897,15 @@ class Component extends DCLogic {
         ] }, extrasFor('ramoData.' + r + '.extras', x.extras || [], r));
       }));
     }
+    if (step === 3 && this.cx()) { /* Etapa P-6f: con la conexión, el lugar de la inspección (SiriusLugar) y, en Ramos Generales no móviles, una ubicación por bien con su ciudad y dirección (DEC-222) */
+      if (rg && !this.esEM(d)) { groups = d.ubics.map((u, i) => ({ hid: 'ns-gub-' + i, title: 'Ubicación ' + (i + 1), fields: [
+          this.F('ubics.' + i + '.tipoBien', 'Tipo de bien', 'select', { req: true, options: this.TIPOS_BIEN }),
+          this.F('ubics.' + i + '.suma', 'Suma asegurada de la ubicación (' + window.SIRIUS_COMPANIA.moneda.codigo + ')', 'input', { req: true, money: true, inputMode: 'decimal' }),
+          d.ubics.length > 1 ? this.F('ubics.' + i + '.quitar', 'Quitar la ubicación ' + (i + 1), 'boton', { variant: 'ghost', onBtn: () => this.patchD(x => { x.ubics = x.ubics.filter(y => y.id !== u.id); }) }) : this.F('ubics.' + i + '.nota', '', 'ro', { value: '' }),
+          this.F('ubics.' + i + '.lugar', 'Lugar de la ubicación ' + (i + 1), 'lugar', { span: '1 / -1' }) ] }))
+          .concat([{ hid: 'ns-gub-mas', title: d.ubics.length === 1 ? '1 ubicación' : d.ubics.length + ' ubicaciones', fields: [this.F('ubics.agregar', 'Agregar otra ubicación', 'boton', { onBtn: () => this.patchD(x => { x.ubics = x.ubics.concat([this.ubicBlank()]); }) })] }], groups.slice(1)); }
+      else groups = groups.concat([{ hid: 'ns-glugar', title: veh ? 'Lugar de la inspección de los vehículos' : 'Lugar de la inspección de los equipos', fields: [this.F('lugar', 'Lugar de la inspección', 'lugar', { span: '1 / -1' })] }]);
+      groups = groups.concat([{ hid: 'ns-gobs', title: 'Para la coordinación', fields: [this.F('cxModalidad', 'Modalidad sugerida', 'select', { options: this.MODALIDADES }), this.F('cxObs', 'Observaciones (opcional)', 'textarea', { span: '2 / -1', ph: 'Horario del cliente, acceso, persona que recibe…' })] }]); }
     groups = groups.map(g => Object.assign({ frame: '1px solid var(--border-subtle)', hasBadge: false, badge: '', hasStatus: false, loading: false, statusText: '', hasAlert: false, alertText: '', hasInfo: false, infoText: '', hasDup: false, dupText: '', dupPending: false, dupAcked: false, onVerCaso: () => {}, onAck: () => {}, hasExtras: false, noExtras: false, extras: [], addExtra: () => {}, addExtraLabel: '', hasRamos: false }, g));
     const q = s.ramoQ.trim().toLowerCase(), opts = this.ramosRG.filter(r => !q || r.toLowerCase().includes(q));
     const toggleRamo = (r) => this.patchD(x => { x.ramosSel = x.ramosSel.includes(r) ? x.ramosSel.filter(y => y !== r) : x.ramosSel.concat(r); });
@@ -867,6 +922,10 @@ class Component extends DCLogic {
         : this.esEM(d) ? d.eqs.map((q, i) => fv('Equipo ' + (i + 1) + ' · ' + q.marca + ' ' + q.modelo, (window.SiriusEquiposSolicitud ? window.SiriusEquiposSolicitud.tipoTxt(q) : q.tipo) + ' · ' + q.anio + ' · Serie ' + q.serie + (q.implementos.length ? ' · ' + q.implementos.length + (q.implementos.length === 1 ? ' implemento' : ' implementos') : '') + ' · ' + this.usd(this.eqTotal(q)))).concat([fv(d.eqs.length === 1 ? 'Total del caso · 1 equipo' : 'Total del caso · ' + d.eqs.length + ' equipos', this.usd(d.eqs.reduce((a, q) => a + this.eqTotal(q), 0)), 1, 1)])
         : [fv('Ubicación del bien', [d.ubic.tipoBien, d.ubic.dir, d.ubic.canton, d.ubic.prov].filter(Boolean).join(', '))].concat(d.ramosSel.map(r => fv(r, this.usd(this.ramoTotal(r)))), [fv(d.ramosSel.length === 1 ? 'Total del caso · 1 ramo' : 'Total del caso · ' + d.ramosSel.length + ' ramos', this.usd(rgTotal), 1, 1)]) },
     ];
+    if (this.cx()) { const o3 = review[2]; /* P-6f: lugar, tipos y ubicaciones con la conexión */
+      if (rg && !this.esEM(d)) o3.fields = d.ubics.map((u, i) => fv('Ubicación ' + (i + 1) + (u.tipoBien ? ' · ' + u.tipoBien : ''), [this.lugarTxt(u.lugar), this.usd(this.money(u.suma))].filter(Boolean).join(' · '))).concat(o3.fields.slice(1));
+      else o3.fields = [fv('Lugar de la inspección', this.lugarTxt(d.lugar))].concat(veh ? [fv('Tipo de vehículo', d.vehs.map(v => this.vehLabel(v) + ': ' + (v.tipoVeh || 'Sin tipo')).join(' · '))] : [], o3.fields);
+      o3.fields = o3.fields.concat([fv('Modalidad sugerida', d.cxModalidad || 'Presencial'), fv('Observaciones', String(d.cxObs || '').trim() || 'Sin observaciones')]); }
     const blocker = keys.map(k => errs[k]).find(m => m[0] === '!');
     const fieldN = keys.filter(k => errs[k][0] !== '!').length;
     const valid = keys.length === 0;
@@ -910,7 +969,8 @@ class Component extends DCLogic {
       caseTotalLabel: veh ? (d.vehs.length === 1 ? '1 vehículo' : d.vehs.length + ' vehículos') : (d.ramosSel.length === 1 ? '1 ramo' : d.ramosSel.length + ' ramos') + ' · ' + (d.ubic.tipoBien || 'Ubicación') + (d.ubic.canton ? ', ' + d.ubic.canton : ''),
       caseTotal: this.usd(veh ? vehTotalAll : rgTotal),
       canBack: step > 1, onBack: () => this.setState({ step: step - 1 }),
-      pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : 'Registrar solicitud',
+      pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : s.cxEnv ? 'Registrando…' : 'Registrar solicitud',
+      cxErrShow: step === 4 && !!s.cxErr, cxErr: s.cxErr || '', cxEnviando: !!s.cxEnv,
       onNext: () => {
         if (!valid) { const t = Object.assign({}, s.touched); keys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); this.jumpErr(keys.find(k => errs[k][0] !== '!')); if (step === 4) { const back = keys.some(k => k.startsWith('cp.')) ? 1 : keys.some(k => k.startsWith('vehs.')) ? 3 : 0; if (back) { this.setState({ step: back }); this.jumpErr(keys.find(k => k.startsWith(back === 1 ? 'cp.' : 'vehs.'))); } } return; }
         if (step < 4) {
@@ -918,6 +978,10 @@ class Component extends DCLogic {
           if (typeof window !== 'undefined') window.scrollTo(0, 0);
           return;
         }
+        if (this.cx()) { if (s.cxEnv) return; /* P-6f: crearCaso; con { ok: false } el formulario conserva lo escrito y muestra el mensaje */
+          const r = this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', cxCrear: this.cxPayload() }));
+          if (r && typeof r.then === 'function') { this.setState({ cxEnv: true, cxErr: '' }); r.then(x => { x = x || {}; if (x.ok === false) { this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no pudo crear el caso.' }); setTimeout(() => { const el = document.querySelector('[data-ns-cx-error]'); if (el) el.scrollIntoView({ block: 'center' }); }, 60); } else this.setState({ cxEnv: false }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' })); }
+          return; }
         this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found' }));
       },
       onDraft: () => { this.props.onDraft && this.props.onDraft(); },

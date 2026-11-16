@@ -84,7 +84,7 @@
       lista.forEach(function (r) { var v = ctx.vehiculo(r.id), ci = multi && ctx.infVeh ? ctx.infVeh(c, r) : null, /* R-0d · DEC-239: con la conexión, el estado del informe de cada vehículo decide, no el del caso */ pend = ci ? ci.pend : multi ? (ctx.listo(r.estado) && !r.aseg) : c.estado === 'Pendiente calificación' && !c.aseg;
         if (!pend || ['Emitida', 'No emitida', 'Cancelado'].indexOf(c.estado) >= 0) return;
         var placa = multi ? ((v && v.placa) || (ci && ci.placa) || 'Sin placa') : (c.placa || (v && v.placa) || 'Sin placa');
-        out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || (ci && ci.sub) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: (ci && ci.llego) || llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1 })); });
+        out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || (ci && ci.sub) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: (ci && ci.llego) || llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1, nivel: 1, cx: !!ci, cola: !!ci && c.estado !== 'Pendiente calificación', responsable: ci && c.estado !== 'Pendiente calificación' ? 'Ejecutivos de inspecciones' : b.responsable, desde: ci ? ci.desde || '' : '' /* R-0e: con la conexión, la fila es un informe de vehículo: su antigüedad corre desde que quedó completo */ })); });
     } else if (c.estado === 'Pendiente calificación') {
       var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean);
       out.push(Object.assign({}, b, { id: c.id, riesgo: c.id, etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: 'Ramos Generales', ramos: ramos, llego: { k: 'sinfac', label: 'Sin facultad', sub: '', title: 'Ramos Generales no se determina en campo: lo califica el Ejecutivo de inspecciones' }, alertas: alertasRG(c, ctx), n: 1 }));
@@ -93,7 +93,7 @@
   }
   function filaSuscripcion(c, ctx) {
     var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean);
-    return Object.assign({}, filaBase(c), { id: c.id, riesgo: c.id, enGrupo: !!(ctx.rolBase === 'Suscriptor' && ctx.enMisGrupos && ctx.enMisGrupos(c)), etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: esVeh(c) ? 'Vehículos' : 'Ramos Generales', ramos: ramos, llego: { k: 'susc', label: 'Calificación de inspección lista', sub: '', title: 'La calificación de inspección terminó: falta la de suscripción' }, alertas: alertasRG(c, ctx), n: 1 });
+    return Object.assign({}, filaBase(c), { id: c.id, riesgo: c.id, enGrupo: !!(ctx.rolBase === 'Suscriptor' && ctx.enMisGrupos && ctx.enMisGrupos(c)), etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: esVeh(c) ? 'Vehículos' : 'Ramos Generales', ramos: ramos, llego: { k: 'susc', label: 'Calificación de inspección lista', sub: '', title: 'La calificación de inspección terminó: falta la de suscripción' }, alertas: alertasRG(c, ctx), n: 1, nivel: 2 });
   }
 
   // Etapa 8b · Equipo y maquinaria: una fila de suscripción por equipo derivado (obligatoria por suma asegurada o requerida por el nivel 1).
@@ -142,7 +142,7 @@
     ctl.sort(function (a, b) { return (a.estadoCtl === 'Pendiente' ? 0 : 1) - (b.estadoCtl === 'Pendiente' ? 0 : 1) || ordenSla(a, b); });
     cal.sort(function (a, b) { return b.fechaD - a.fechaD || (a.riesgo < b.riesgo ? -1 : 1); });
     var yo = ctx.yo;
-    por.forEach(function (x) { x.mio = x.responsable === yo; }); sus.forEach(function (x) { x.mio = x.responsable === yo || x.enGrupo; });
+    por.forEach(function (x) { x.mio = x.responsable === yo || (x.cola && ctx.rolBase === 'Ejecutivo de inspecciones'); /* R-0e: mientras el caso sigue en otra fase, el informe por calificar es de la cola de los Ejecutivos de inspecciones */ }); sus.forEach(function (x) { x.mio = x.responsable === yo || x.enGrupo; });
     ctl.forEach(function (x) { x.mio = x.ejecutivo === yo; }); cal.forEach(function (x) { x.mio = x.user === yo; });
     return { porCalificar: por, suscripcion: sus, control: ctl, calificados: cal };
   };

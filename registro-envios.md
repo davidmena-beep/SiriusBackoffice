@@ -4,6 +4,107 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-0e
+
+El módulo Calificación del menú lateral lista cada informe de vehículo por calificar —«50012 · PR121A»— aunque el caso siga «En coordinación», la pestaña «En calificación» de la bandeja cuenta ese caso y el resumen del inspector de PR121A ya dice «Presencial · Mauricio Endara». Quedó publicado en la **Versión 255**; la Versión 256 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Módulo Calificación:** con la conexión y varios vehículos, cada fila es el informe de un vehículo, con la misma regla de la cola de R-0d (completo y sin veredicto, fuera de facultad o enviado a calificación) y sin mirar el estado del caso. La fila trae el caso, «50012 · PR121A» (con marca, modelo y año debajo), «Llegó por», «Nivel» (1 en Por calificar; 2 en suscripción) y «Antigüedad» (desde que el informe quedó completo). Los indicadores, la frase de la lista y los conteos dicen «informe de vehículo», no «caso». «Calificar» abre la pestaña Calificación del caso con ese vehículo elegido.
+- **Quién lo ve:** mientras el caso sigue en otra fase, el responsable de la fila es «Ejecutivos de inspecciones» (cola compartida): el Ejecutivo la ve en «Mis riesgos» y el Administrador, en «Todos». Si el caso ya está en «Pendiente calificación», manda el responsable del caso, como antes.
+- **Bandeja, pestaña «En calificación»:** el contador y la lista incluyen los casos con al menos un vehículo por calificar, estén en la fase que estén. La fila dice «En coordinación» con la nota «1 por calificar».
+- **Resumen del informe del inspector:** con varios vehículos, modalidad e inspector salen de `riesgos[].visita` y de la plantilla del informe de ese vehículo; la conclusión y los hallazgos, de su informe («Sin daños registrados» si no hay daños). Con un solo vehículo queda igual.
+- **Sin cambios** en el contrato con la conexión (no hay acciones nuevas) ni en `sirius-conexion.js`, que sigue con su línea mínima.
+
+**Verificado**
+- Abrí `cxr0emodulo` (como Ejecutivo y con `?frol=admin`), `cxr0ebandeja`, `cxr0eresumen`, `cxr0dcalificar`, `cxr0dadmin` y 9 escenas del módulo Calificación que ya existían (`calcola`, `calcolatodos`, `calsusc`, `calctl`, `calhonor`, `calhist`, `calreasignar`, `modcal`, `modhist`) a 1280 × 720 y 1920 × 1080: sin errores en la consola.
+- Comparé con la versión anterior el texto de 27 escenas: `calcola`, `calcolatodos`, `calsusc`, `calctl`, `calctlobs`, `calhonor`, `calhist`, `calreasignar`, `calcolaacciones`, `modcal`, `modhist`, `cal20196`, `hist20196`, `bandejaexp`, `bandejaaseg`, `g1cal`, `calveh`, `calvehapply`, `calrgbandeja`, `cxr0dcalidad`, `calcxcalif`, `cxlimpio`, `calpdfcx`, `cxestadoparcial`, `cxcabecera`, `cxr0` y `cxriesgosestados`. Dieron exactamente el mismo texto: los casos de un solo vehículo aparecen en el módulo y en la bandeja igual que antes. Solo cambian `cxr0dcalificar` («1 informe de vehículo» en vez de «1 caso», más Nivel y Antigüedad) y `cxr0dadmin` (conclusión y hallazgos de PR121A).
+- `cxr0emodulo`: Daniela Ruiz (Ejecutivo de inspecciones, «Mis riesgos») y Andrea Salazar (Administrador, «Todos») ven «50012 · PR121A», nivel 1, «Fuera de facultad», con el caso «En coordinación». «Calificar» abre el caso 50012 en Calificación con PR121A elegido.
+- `cxr0ebandeja`: Todos 7, En coordinación 1 y En calificación 1; la fila de 50012 dice «En coordinación» y «1 por calificar».
+- `cxr0eresumen`: con la visita llegando solo en `riesgos[].visita`, la versión anterior decía «Inspector: Autoinspección» y conclusión «—» (lo reproduje). Ahora dice «Presencial · Mauricio Endara», conclusión «Moto en buen estado; el manubrio y las luces funcionan.» y hallazgos «Sin daños registrados».
+- Probé la fórmula de «Antigüedad» con fechas anteriores al reloj: «3 h», «1 día 5 h», «2 días»; sin fecha, «—».
+- `sirius-conexion.js` quedó en 70 bytes.
+
+**No verificado**
+- Una base real: «Nivel» y «Antigüedad» leen `completadoEn` o `enviadoEn` del informe; no pude confirmar que la base real use esos nombres.
+- En pantalla «Antigüedad» dice «Menos de 1 h»: las fechas del informe simulado (17/11) son posteriores al reloj del prototipo (18/10).
+- «Nivel 2» con la conexión: no hay una escena con un vehículo en suscripción, así que no lo vi en pantalla.
+- No abrí el módulo como Suscriptor con la conexión ni reasigné desde el Administrador una fila de la cola compartida.
+
+**Diferencias**
+- El responsable de la fila es «Ejecutivos de inspecciones» (cola compartida) mientras el caso no esté en calificación; el caso trae como responsable a Andrea Salazar y, sin esto, el Ejecutivo no vería nada en «Mis riesgos». Es una decisión mía.
+- La nota de la bandeja dice solo «1 por calificar»; «2 de 3 agendados» pasa al texto del título de la fila.
+- «Nivel» y «Antigüedad» solo salen cuando la lista trae informes con la conexión; sin ella la tabla es la misma de antes.
+- `cxr0ebandeja` se abre como Administrador: la bandeja de Daniela Ruiz no trae el caso 50012 (su responsable es Andrea Salazar) y no lo cambié.
+- `cxr0eresumen` quita `riesgos` y `modalidad` de la visita del caso para que se vea la situación que daba «Autoinspección».
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxr0emodulo` | Calificación como Ejecutivo de inspecciones (`?frol=admin`: como Administrador): «50012 · PR121A», nivel 1, antigüedad, con el caso «En coordinación» |
+| `cxr0ebandeja` | Bandeja, pestaña «En calificación»: cuenta 50012; la fila dice «En coordinación · 1 por calificar» |
+| `cxr0eresumen` | Calificación de PR121A: el resumen del inspector dice «Presencial · Mauricio Endara» |
+
+También abrí `cxr0dcalificar`, `cxr0dadmin`, `calcola`, `calcolatodos`, `calsusc`, `calctl`, `calhonor`, `calhist`, `calreasignar`, `modcal` y `modhist`.
+
+**Tiempo de la etapa: inicio 15/11/2026 21:39 · fin 15/11/2026 21:54 · 15 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6f
+
+Con la conexión, «Nueva solicitud» ya crea el caso en la base (crearCaso), incluidas flotas y Ramos Generales con varias ubicaciones, y el caso nuevo se abre «En coordinación». Quedó publicado en la **Versión 253**; la Versión 254 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **crearCaso:** al registrar con la conexión se envía `{ grupoRamo, ramo, sucursal, asegurado { tipoIdentificacion, identificacion, nombre, contacto { nombre, celular, correo } }, solicitud { provincia, ciudad, direccion, referencia, punto }, riesgos [ { composicion, placa, marca, modelo, anio, tipo, suma, descripcion, direccion, ciudad } ], modalidadSugerida, observaciones, origen: 'Back-office' }`. Con `{ ok: true, caso }` se relee la conexión y se abre el caso. Con `{ ok: false }` el formulario se queda en «Revisión y envío» con lo escrito y muestra «No se creó el caso» con el mensaje de la base.
+- **Lugar e INEC:** Vehículos y Equipo y maquinaria tienen «Lugar de la inspección» con el mismo componente que Coordinar visita (provincia y ciudad del INEC, dirección buscada con SiriusUbicacion, referencia y punto). En Ramos Generales no móviles, cada ubicación lleva su tipo de bien, su suma y su lugar, con «Agregar otra ubicación».
+- **Flotas y tipo:** la flota sigue con un vehículo por fila; cada vehículo tiene «Tipo de vehículo», que puede quedar «Sin tipo» (va `tipo: null`).
+- **Validaciones con la conexión,** con su mensaje junto al campo: identificación (cédula de 10 dígitos, RUC de 13), celular de 10 dígitos que empiece con 0, correo obligatorio y válido, placa ecuatoriana, año entre 1950 y el próximo, suma mayor que 0, al menos un riesgo, placa repetida en la solicitud y lugar con ciudad y dirección. La base simulada además rechaza una placa que ya está en un caso abierto.
+- **«Requiere inspección»:** en Catálogos › Ramos la columna «Inspeccionable» se llama «Requiere inspección». Al guardar, la marca llega a Nueva solicitud en la sesión. Agregué al catálogo, con la marca apagada, Accidentes personales, Riesgos especiales, Fiel cumplimiento, Buen uso de anticipo y Garantía aduanera; Transporte, Responsabilidad civil y Fidelidad ya estaban apagados.
+- **Base simulada:** crea el caso con el número siguiente (50013), «Registrado» y enseguida «En coordinación» con el coordinador de su sucursal, con riesgos, contacto, ciudad, dirección y eventos en el Historial.
+- **Sin la conexión** Nueva solicitud queda igual. `sirius-conexion.js` sigue mínimo.
+
+**Verificado**
+- Abrí las 5 escenas nuevas (más `cxnuevaramos?fvista=catalogo`) y las 13 de Nueva solicitud que ya existían (`ns1g`, `ns2`, `ns3v`, `nsbulk`, `ns3g`, `ns4`, `nsbpm`, `nsmarca`, `nsvacio`, `cpersnueva`, `emsolicitud`, `embulk`, `emotro`) a 1280 × 720 y 1920 × 1080: sin errores en la consola.
+- Sin la conexión, esas 13 escenas muestran exactamente el mismo texto que la versión anterior.
+- `cxnuevaveh`: «Registrar solicitud» envía crearCaso con PCK2210 (`tipo: 'SUV o Jeep'`) e IB456K (`tipo: null`), ambos con ciudad 1701 y la dirección del lugar, y se abre el caso 50013 «En coordinación» con Andrea Salazar.
+- `cxnuevaflota`: junto a la placa sale «Placa repetida: ya está en el vehículo 2 de este caso.». Con GSC4410 se guarda y crearCaso lleva los 5 vehículos.
+- `cxnuevarg`: crearCaso lleva 2 riesgos «Ubicación», Bodega en 1701 (Av. Mariscal Sucre S12-45 y Ajaví) y Local comercial en 0901 (Av. Francisco de Orellana, Kennedy Norte), y se abre el caso.
+- `cxnuevaerror`: la base responde «PRB1212 ya está en el caso 50012 (En coordinación)». El formulario sigue en «Revisión y envío» con lo escrito y el mensaje.
+- `cxnuevaramos`: la lista ofrece Incendio, Robo, Dinero y valores, Equipo electrónico, Rotura de maquinaria, Todo riesgo construcción y Equipo y maquinaria. Catálogos › Ramos muestra «Requiere inspección», y al apagarla en Robo (con motivo) Robo deja de salir en la lista de Nueva solicitud.
+- Validaciones con la conexión: celular 1987766554 da «Ingresa un celular de 10 dígitos que empiece con 0.», correo vacío «Ingresa el correo: se usa para coordinar.», cédula 12345 «La cédula tiene 10 dígitos.», RUC de 11 «El RUC tiene 13 dígitos.», años 1949 y 2028 «Ingresa un año entre 1950 y 2027.» y placa PB4-21 el mensaje del formato.
+- Copia aparte con una conexión temporal (no simulada): llené el formulario a mano y crearCaso salió con la forma exacta de arriba (`provincia: '17'`, `ciudad: '1701'`, `punto: [-0.1765, -78.4845]`, `anio: 2021`, `tipo: 'SUV o Jeep'`, `origen: 'Back-office'`).
+
+**No verificado**
+- Una base real: el número del caso, el estado y el responsable los pone la base. La regla de la sucursal solo la emula la base simulada.
+- El mensaje «Ingresa un valor del casco mayor que 0» con un valor 0 (lo cubre el código; no lo escribí en la prueba).
+- Equipo y maquinaria con crearCaso: el payload usa los equipos y el lugar, pero no abrí una escena conectada de equipos.
+- Cómo responde la base real cuando `ramo` es el primero de varios ramos.
+
+**Diferencias**
+- `ramo` lleva un solo ramo; si la solicitud de Ramos Generales tiene varios, los demás van en `observaciones` («Ramos de la solicitud: …») porque el contrato no tiene lista de ramos.
+- `provincia` va como código INEC de dos dígitos («17»), como la ciudad.
+- Agregué «Modalidad sugerida» (Presencial, Virtual guiada, Autoinspección; por defecto Presencial) y «Observaciones», que el formulario no tenía.
+- El catálogo de marcas no tiene marcas de motos: la moto de `cxnuevaveh` (Suzuki GN125) viene en la escena; a mano solo se puede elegir una marca del catálogo.
+- Con la conexión, la ubicación del paso 2 (provincia, cantón y dirección del solicitante) se sigue pidiendo como antes, pero el lugar que viaja es el del paso 3.
+- Los ramos nuevos del catálogo también aparecen en las listas que ya mostraban todos los ramos (responsables del completado y monitor).
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxnuevaveh` | Vehículos: auto con tipo y moto «Sin tipo»; crearCaso y el caso 50013 abierto |
+| `cxnuevaflota` | Flota de 5 con placa repetida: aviso junto al campo; corregida, se crea |
+| `cxnuevarg` | Incendio con 2 ubicaciones (Quito y Guayaquil), cada una con su dirección |
+| `cxnuevaramos` | Lista de ramos sin los que no se inspeccionan; con `?fvista=catalogo`, Catálogos con «Requiere inspección» |
+| `cxnuevaerror` | La base responde { ok: false } («PRB1212 ya está en el caso 50012…»): se conserva lo escrito |
+
+También abrí `ns1g`, `ns2`, `ns3v`, `nsbulk`, `ns3g`, `ns4`, `nsbpm`, `nsmarca`, `nsvacio`, `cpersnueva`, `emsolicitud`, `embulk` y `emotro`.
+
+**Tiempo de la etapa: inicio 15/11/2026 21:03 · fin 15/11/2026 21:36 · 33 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-0d
 
 Con la conexión, los informes por vehículo aparecen en las bandejas aunque el caso siga «En coordinación», y el Administrador puede completar, devolver y calificar todo avisando en qué rol actúa. Quedó publicado en la **Versión 251**; la Versión 252 solo completa en el registro la hora de fin.
