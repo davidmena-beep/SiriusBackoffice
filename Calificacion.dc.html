@@ -269,6 +269,7 @@
 </div>
 </sc-if>
 <sc-if value="{{ danosShow }}" hint-placeholder-val="{{ false }}"><div id="cal-danos" role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1.5px solid {{ danosBd }};border-radius:var(--radius-sm);background:{{ danosBg }}"><span style="flex:1 1 320px;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;line-height:1.4;color:var(--text-strong)">{{ danosTxt }}</b><span style="font-size:13px;line-height:1.45;color:var(--text-body)">{{ danosSub }}</span></span><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ abrirDanos }}" hint-size="140px,36px">Revisar daños</x-import></div></sc-if>
+<sc-if value="{{ hasAvisoAdmin }}" hint-placeholder-val="{{ false }}"><div data-aviso-admin="" role="status" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border:1.5px solid var(--color-info, #1F6FEB);border-radius:var(--radius-sm);background:var(--surface-subtle);font-size:15px;line-height:1.4;color:var(--text-strong)"><b>{{ avisoAdmin }}</b></div></sc-if>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-top:4px">
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onPrimaryClick }}" hint-size="210px,48px">{{ primaryLabel }}</x-import>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="lg" on-click="{{ onCancel }}" hint-size="120px,48px">Cancelar</x-import>
@@ -654,7 +655,7 @@ class Component extends DCLogic {
       plazoHint: PC ? (PC.mx && !PC.falta.length ? 'Máximo: ' + PC.mx.desc + ' · ' + PC.max + ' días' + (PC.total > PC.max ? '; ampliado por el Suscriptor a ' + PC.total + ' días' : '') + '. Fija la fecha límite y el estado Vencido del conjunto; el plazo de cada garantía es referencia. Contado desde el ' + this.addDays(0) + '. Documentos, preexistencias y recomendaciones no entran en el cálculo.' + (isN2 ? ' Puedes ampliarlo, nunca bajarlo del máximo.' : ' Se recalcula al cambiar el plazo de una garantía.') : PC.g.length ? 'Completa el plazo de cada garantía para calcular el global.' : 'Sin garantías: el caso no tiene plazo.') : 'Un solo plazo para todas las garantías, contado desde el ' + this.addDays(0) + '. Documentos sin plazo; preexistencias informativas.',
       isView: !!p.view, isForm: !p.view,
       canEdit: !!p.canEdit, onEdit: () => p.onEdit && p.onEdit(),
-      hasLock: !!p.lockReason, lockReason: p.lockReason || '', calReg: !!p.calReg,
+      hasLock: !!p.lockReason, lockReason: p.lockReason || '', calReg: !!p.calReg, hasAvisoAdmin: !!p.avisoAdmin, avisoAdmin: p.avisoAdmin || '', /* R-0d · DEC-245: el Administrador avisa en qué rol actúa antes de grabar */
       ...this.viewVals(),
       responsables: isN2 ? this.responsables : this.responsables.filter(n => n !== 'Ricardo Almeida'), responsable: s.responsable,
       onResp: (e) => this.setState({ responsable: e.target.value }), onRespBlur: () => this.touch('resp'),

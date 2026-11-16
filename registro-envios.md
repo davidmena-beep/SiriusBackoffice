@@ -4,6 +4,97 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-0d
+
+Con la conexión, los informes por vehículo aparecen en las bandejas aunque el caso siga «En coordinación», y el Administrador puede completar, devolver y calificar todo avisando en qué rol actúa. Quedó publicado en la **Versión 251**; la Versión 252 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **«Informes por completar» por informe:** con la conexión y un caso de varios vehículos, la bandeja deja de mirar el estado del caso y lista un informe por fila según el estado de ese informe: «Datos de campo» o «Por completar» en «Por completar», «Devuelto» en «Devueltos al inspector» y «Completo» reciente en «Completados». La fila dice «50012 · PR121A» y «Completar» abre el informe con ese vehículo elegido. Quién completa se decide con la visita de cada vehículo (Control de calidad de Eurosurvey si el inspector de esa visita es de Eurosurvey, como Mauricio Endara). Con un solo vehículo, o sin la conexión, la bandeja no cambia.
+- **Calificación por informe:** la cola del Ejecutivo de inspecciones, el Suscriptor y el Administrador decide «por calificar» con el informe de cada vehículo (completo y sin veredicto), muestra la placa de cada uno y en «Llegó por» dice «Fuera de facultad» o «Enviado a calificación». «Calificar» abre ese vehículo.
+- **Administrador con acceso total:** puede completar, devolver y calificar cualquier informe y nivel. Antes de confirmar, el formulario de Calificación y la barra de completar dicen «Actúas como Administrador en lugar de <rol>» (Ejecutivo de inspecciones, Suscriptor, Control de calidad, Ejecutivo de inspecciones o Inspector, según quién corresponda). El Historial termina el evento con «(como Administrador)». Su calificación cuenta en el nivel que corresponde al caso.
+- **Con la conexión:** `completarInforme`, `devolverCoordinacion` y `calificar` llevan el mismo `riesgo` («50012-V2») que con el rol normal y agregan `comoAdmin: true` cuando actúa el Administrador. La base simulada usa el usuario de la escena para anotar quién actuó. `sirius-conexion.js` sigue mínimo.
+- **Escenas nuevas:** `cxr0dcalidad`, `cxr0dadmin` y `cxr0dcalificar`.
+
+**Verificado**
+- Abrí `cxr0dcalidad`, `cxr0dadmin`, `cxr0dcalificar`, `cxr0b`, `cxr0bcompletar`, `infcompletar` y `calcola` a 1280 × 720 y 1920 × 1080: sin errores en la consola.
+- `cxr0dcalidad` (Patricia Andrade): «Por completar (2)» con «50012 · PRB1212» y «50012 · PR121A» aunque el caso dice «En coordinación · 2 de 3 agendados». «Completar» de PR121A abre el caso 50012 en Informe con `infSel` = 50012-V2 y sin aviso de Administrador. Tras devolver PR121A (`devolverCoordinacion` con `riesgo: '50012-V2'`), la fila pasa a «Devueltos al inspector (1)» y en «Por completar» queda solo PRB1212.
+- `cxr0dcalificar` (Daniela Ruiz): «Por calificar (1)» con «50012 · PR121A» y «Llegó por: Fuera de facultad»; PRB1212 no aparece porque su informe sigue en «Datos de campo». «Calificar» abre Calificación con PR121A elegido.
+- `cxr0dadmin`: el formulario de PR121A dice «Actúas como Administrador en lugar de Ejecutivo de inspecciones» antes de «Grabar calificación». Al grabar se envía `calificar` con `riesgo: '50012-V2'` y `comoAdmin: true`, y el Historial anota «Calificación · PR121A: Asegurable · Todo riesgo · Calificado por Andrea Salazar · … (como Administrador)».
+- Completar y devolver como Administrador en `cxr0bcompletar`: la barra dice «Actúas como Administrador en lugar de Control de calidad»; `completarInforme` y `devolverCoordinacion` salen con `riesgo: '50012-V2'` y `comoAdmin: true`, y el Historial termina en «(como Administrador)».
+- Un solo vehículo igual que antes: comparé el texto de pantalla contra la versión anterior en `infcompletar`, `infcompletarcx`, `autotercero`, `calcola`, `calcolatodos`, `calsusc`, `calhist`, `calctl` y `cxr0b`: idénticos. En `cxr0bcompletar` y `cxr0cauto` solo se agrega el aviso del Administrador.
+
+**No verificado**
+- Una base real: `fueraFacultad`, `motivoEnvio`, `completadoEn` y `comoAdmin` son los nombres que supuse para esos datos del informe y de las acciones.
+- El nivel 2 (Suscriptor) como Administrador con la conexión: el aviso dice «en lugar de Suscriptor» pero no lo probé con un caso en suscripción de varios vehículos.
+- Un caso de varios vehículos con un inspector independiente o interno en «Informes por completar» (probé solo Control de calidad de Eurosurvey y el Administrador).
+- Ramos Generales y Equipo y maquinaria: no se tocaron sus bandejas.
+
+**Diferencias**
+- El Historial dice «Calificación · PR121A: Asegurable · Todo riesgo · Calificado por … (como Administrador)» y no «Calificó el riesgo … (como Administrador)»: mantuve el texto que ya usaba la calificación y le agregué el final.
+- «Devuelto» entra en la pestaña «Devueltos al inspector» y no en «Por completar», como ya separaba la bandeja; un informe devuelto a coordinación también queda ahí.
+- En las filas por vehículo la columna «Avance» muestra «—»: el avance se calcula al abrir el informe.
+- Con la conexión, el Administrador (Andrea Salazar) ya no aparece como «Verónica Lema» al calificar: se usa el nombre del usuario real.
+- El aviso del Administrador sale también en los informes de un solo vehículo cuando él completa (por el código; no abrí una escena así).
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxr0dcalidad` | Patricia Andrade (Control de calidad · Eurosurvey): «Informes por completar» con «50012 · PRB1212» y «50012 · PR121A», caso «En coordinación»; «Completar» abre el vehículo |
+| `cxr0dadmin` | Administrador califica PR121A: «Actúas como Administrador en lugar de Ejecutivo de inspecciones» y Historial «(como Administrador)» |
+| `cxr0dcalificar` | Ejecutivo de inspecciones: Calificación lista «50012 · PR121A» (informe completo, fuera de facultad); PRB1212 sigue por completar |
+
+También abrí `cxr0b`, `cxr0bcompletar`, `infcompletar` y `calcola`.
+
+**Tiempo de la etapa: inicio 15/11/2026 20:20 · fin 15/11/2026 20:48 · 28 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa R-0c
+
+Los campos automáticos del informe de cada vehículo ya salen de su propia visita, y un automático que llega vacío se puede registrar a mano. Quedó publicado en la **Versión 249**; la Versión 250 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Automáticos por vehículo:** con varios vehículos y la conexión, el informe de cada uno toma de su visita (`riesgos[].visita` y la de `visitasBase` con ese número) la fecha y hora de inspección (llegada o, si no hay, la cita), la modalidad realizada y el inspector que ejecutó. La persona que atiende y la relación con el asegurado salen de lo que envió la app para ese vehículo o, si no viene, de `quienRecibe` / `relacionQuienRecibe` de la visita. Con un solo vehículo todo queda como antes. La causa era doble: la fecha salía de la primera foto de todo el caso y una línea comentada dejaba sin efecto la modalidad, el inspector y la persona que atiende de la visita.
+- **«Inspector que ejecutó»:** con la conexión, sus opciones son los inspectores activos de `SIRIUS_CONEXION.inspectores` (sin la agencia como registro propio). El valor que trae el informe se muestra siempre, aunque no esté en la lista, y ya no sale «Por confirmar».
+- **Automático vacío (Vehículos y Ramos Generales):** un automático bloqueado que llega sin valor se habilita, con «Sin dato del sistema: regístralo» y sigue obligatorio. Registrado, queda «Editado» (en la conexión, origen «Back-office»), se anota en el historial («Informe editado · 50012-V2 · Persona que atiende: sin dato del sistema → «Jorge Salazar»…») al guardar o completar, y si después llega el dato del sistema se conserva lo registrado y el del sistema sale como «Sistema: …». «Fecha y hora de carga» sigue calculándose al completar.
+- **Neumáticos con la conexión:** `respuestas.veh_neumaticos` acepta filas `{ pos, marca, medida, labrado }` y llena la grilla (lo necesitaba el informe de prueba para poder completarse).
+- **Escenas nuevas:** `cxr0cauto` y `cxr0cvacio`, con rol Administrador. `sirius-conexion.js` sigue mínimo.
+
+**Verificado**
+- Abrí `cxr0cauto`, `cxr0cvacio`, `cxr0b`, `cxr0bcompletar`, `infcompletarcx` y `autonoaplica` (y `cxr0b` en Calificación) a 1280 × 720 y 1920 × 1080: sin errores en la consola.
+- `cxr0cauto`: PR121A muestra «Mauricio Endara», «17/11/2026 · 10:00» (su visita; antes salía la primera foto del caso, 09:10 de PRB1212) y «Jorge Salazar» (persona que atiende de su visita); los tres campos siguen bloqueados.
+- `cxr0cvacio`: «Inspector que ejecutó» y «Persona que atiende» quedan habilitados con «Sin dato del sistema: regístralo» y «Obligatorio pendiente»; la lista de inspectores trae a Mauricio Endara, Diana Cárdenas, Cristian Vaca, Luis Andrade, Marco Tapia y Paola Vinueza. Al registrarlos, el informe pasa a «sin pendientes», quedan «Editado» y se anotan en el historial. Al elegir «Confirmar el criterio del inspector» y pulsar «Completar y enviar» se envía `completarInforme` con `riesgo: '50012-V2'` y esos dos campos con origen «Back-office»; `guardarInforme` también los lleva.
+- Valor registrado más dato del sistema posterior (probado dándole «Cristian Vaca» a un campo cuyo sistema dice «Mauricio Endara»): sigue editable, muestra «Editado», «Sistema: Mauricio Endara» y «Registrado por…».
+- Ramos Generales (caso 20195, un dato de la solicitud con valor vacío): se habilita con el aviso; al registrar «Av. Amazonas N36-152» el chip dice «Editado», el origen guardado es Manual con `registro` y el historial anota «Informe editado · Dirección: sin dato del sistema → …».
+- Un solo vehículo igual que antes: comparé campo por campo (habilitado o no, valor) contra la versión anterior en `infcompletarcx`, `autonoaplica`, `informecompleto`, `infcompletar`, `infcxfotos`, `autoporseccion`, `autodecision` y `cxlimpio`: idénticos, con los automáticos bloqueados.
+
+**No verificado**
+- Una base real: `quienRecibe` y `relacionQuienRecibe` son los nombres que supuse para el contacto en sitio de la visita (también acepta `contactoSitio { nombre, relacion }`).
+- Que la app envíe `veh_persona_atiende` y `veh_relacion_asegurado` con otro origen que «Campo».
+- El informe de Ramos Generales con un automático vacío real: lo probé quitando el valor de un campo que llega de la solicitud, no hay una escena con ese caso.
+- Las demás plantillas (Equipos y maquinaria) con la regla del automático vacío.
+
+**Diferencias**
+- Con varios vehículos, la fecha y hora de inspección ya no es la de la primera foto sino la de la visita del vehículo (llegada o cita). Con un solo vehículo sigue siendo la de la primera foto.
+- Con varios vehículos, lo que la visita dice de modalidad, inspector y fecha manda sobre lo que traiga el informe; la persona que atiende y la relación mandan las del informe.
+- «Fecha y hora de carga» queda fuera de la regla del automático vacío, porque el sistema la fija al completar.
+- Un automático registrado sigue editable (para poder corregirlo); si llega el dato del sistema, no lo reemplaza.
+- Agregué la lectura de las filas de neumáticos de la conexión, que no se pedía.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxr0cauto` | 50012 con dos informes: PR121A (visita de Mauricio Endara, atiende Jorge Salazar) y PRB1212 (visita de Diana Cárdenas); automáticos bloqueados |
+| `cxr0cvacio` | PR121A sin persona que atiende ni inspector: se habilitan con «Sin dato del sistema: regístralo», quedan «Editado» y el informe se puede completar |
+
+También abrí `cxr0b`, `cxr0bcompletar`, `infcompletarcx` y `autonoaplica`.
+
+**Tiempo de la etapa: inicio 15/11/2026 19:23 · fin 15/11/2026 19:48 · 25 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-0b
 
 Con la conexión, el informe, completar y calificar ya son por vehículo: cada vehículo tiene su propio informe, el selector muestra solo los que lo tienen y las acciones de la base llevan el vehículo. Quedó publicado en la **Versión 247**; la Versión 248 solo completa en el registro la hora de fin.

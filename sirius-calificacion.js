@@ -81,10 +81,10 @@
         out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: r.label || (v && v.label) || r.id, sub: (v && v.tipo ? v.tipo + ' · ' + v.anio : r.detalle) || '', tipo: 'Equipo y maquinaria', ramos: [c.ramo], llego: env.length ? { k: 'reglas', label: 'Reglas de envío', sub: env.map(function (e) { return e.regla; }).join(' · '), title: 'Reglas de envío activadas: ' + env.map(function (e) { return e.regla + (e.pct ? ' (' + e.pct + ')' : ''); }).join(' · ') } : { k: 'sinfac', label: 'Sin determinación', sub: '', title: 'Equipo y maquinaria no se determina en campo: lo califica el Ejecutivo de inspecciones' }, alertas: [], n: 1 })); });
     } else if (esVeh(c)) {
       var multi = c.riesgos && c.riesgos.length > 1, lista = multi ? c.riesgos : [{ id: ((ctx.vehCaso(c.id) || {}).riesgo) || (c.id + '-R1'), single: true }];
-      lista.forEach(function (r) { var v = ctx.vehiculo(r.id), pend = multi ? (ctx.listo(r.estado) && !r.aseg) : c.estado === 'Pendiente calificación' && !c.aseg;
+      lista.forEach(function (r) { var v = ctx.vehiculo(r.id), ci = multi && ctx.infVeh ? ctx.infVeh(c, r) : null, /* R-0d · DEC-239: con la conexión, el estado del informe de cada vehículo decide, no el del caso */ pend = ci ? ci.pend : multi ? (ctx.listo(r.estado) && !r.aseg) : c.estado === 'Pendiente calificación' && !c.aseg;
         if (!pend || ['Emitida', 'No emitida', 'Cancelado'].indexOf(c.estado) >= 0) return;
-        var placa = multi ? ((v && v.placa) || 'Sin placa') : (c.placa || (v && v.placa) || 'Sin placa');
-        out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1 })); });
+        var placa = multi ? ((v && v.placa) || (ci && ci.placa) || 'Sin placa') : (c.placa || (v && v.placa) || 'Sin placa');
+        out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || (ci && ci.sub) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: (ci && ci.llego) || llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1 })); });
     } else if (c.estado === 'Pendiente calificación') {
       var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean);
       out.push(Object.assign({}, b, { id: c.id, riesgo: c.id, etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: 'Ramos Generales', ramos: ramos, llego: { k: 'sinfac', label: 'Sin facultad', sub: '', title: 'Ramos Generales no se determina en campo: lo califica el Ejecutivo de inspecciones' }, alertas: alertasRG(c, ctx), n: 1 }));
@@ -119,7 +119,7 @@
     } else if (c.riesgos && esVeh(c)) {
 
       c.riesgos.forEach(function (r) { if (!r.aseg || !r.user) return; var d = ctx.parse(r.fecha); if (!d || d < lim) return; var v = ctx.vehiculo(r.id);
-        out.push(Object.assign(base(), { id: r.id, riesgo: r.id, etiqueta: (v && v.placa) || 'Sin placa', sub: nombreVeh(v) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], resultado: r.aseg, cobertura: r.aseg === 'Asegurable' ? (r.cobertura || '') : (r.motivoRech || ''), user: r.user, fecha: r.fecha, fechaD: d, modificado: !!r.mod, n: 1 })); });
+        var ci = ctx.infVeh ? ctx.infVeh(c, r) : null; out.push(Object.assign(base(), { id: r.id, riesgo: r.id, etiqueta: (v && v.placa) || (ci && ci.placa) || 'Sin placa', sub: nombreVeh(v) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], resultado: r.aseg, cobertura: r.aseg === 'Asegurable' ? (r.cobertura || '') : (r.motivoRech || ''), user: r.user, fecha: r.fecha, fechaD: d, modificado: !!r.mod, n: 1 })); });
     } else {
       var fc = c.califFecha || (D.n2 && D.n2.fecha) || (D.n1 && D.n1.fecha), d = ctx.parse(fc), user = c.califUser || (D.n2 && D.n2.user) || (D.n1 && D.n1.user) || '';
       if (c.aseg && d && d >= lim && user) { var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean), v1 = esVeh(c) ? (ctx.vehCaso(c.id) || null) : null;

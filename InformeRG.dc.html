@@ -310,6 +310,7 @@ class Component extends DCLogic {
     else if (t === 'No aplica') { text = 'No aplica · ' + o.motivo; add('No aplica', true); add('Motivo: ' + o.motivo); add(o.automatico ? 'Marcado automáticamente a las ' + o.automatico + ' (No aplica · por tipo de riesgo)' : 'Marcado por ' + o.persona + ' · ' + o.fecha); }
     else if (t === 'No visible') { text = 'No visible en las fotos'; add('No visible en las fotos', true); add('Motivo del motor: ' + o.motivo); if (o.foto) add('Foto ' + o.foto); add('El campo queda vacío.'); }
     else if (t === 'No consultado') { text = 'No consultado · ' + o.motivo; add('No consultado', true); add('Motivo: ' + o.motivo); }
+    else if (t === 'Manual' && o.registro) { text = 'Editado'; add('Editado', true); add('Registrado por ' + o.persona + ' · ' + o.fecha); add('Sin dato del sistema al registrarlo'); }
     else if (t === 'Manual') { text = 'Ver origen'; add('Manual', true); add(o.persona + ' · ' + o.fecha); }
     if (!text) return null;
     if (pol) add('Requerido por una política' + (c.na ? ' · admite No aplica' : ''), true);
@@ -320,12 +321,15 @@ class Component extends DCLogic {
       click: () => { if (Date.now() - (this._ft || 0) < 400) return; this.setState(s => ({ open: s.open === id ? null : id })); },
       focus: () => { this._ft = Date.now(); this.setState({ open: id }); }, blur: () => this.setState(s => s.open === id ? { open: null } : null),
       key: (e) => { if (e.key === 'Escape') { e.stopPropagation(); this.setState({ open: null }); } } }); }
-  lockedF(c, v) { const o = (v && v.origen) || {}; return !!c.locked || (o.tipo === 'Solicitud' && !(c.precarga && !c.locked)); }
+  lockedF(c, v) { const o = (v && v.origen) || {}; if (o.registro) return false; /* R-0c: dato del sistema que llegó vacío y se registró a mano */ return !!c.locked || (o.tipo === 'Solicitud' && !(c.precarga && !c.locked)); }
+  autoVacio(c, v) { return !!c && c.t !== 'Espejo' && c.t !== 'Cálculo' && !this.has(v) && ((v && v.origen) || {}).tipo !== 'No aplica' && this.lockedF(c, v); } // R-0c: automático (bloqueado) sin valor: se puede registrar
   CTX_DEP = ['rg_ubi_altitud', 'rg_ubi_dist_mar', 'rg_ubi_dist_rio', 'rg_bom_estacion', 'rg_bom_distancia', 'rg_bom_tiempo', 'rg_rob_upc_nombre', 'rg_rob_upc_distancia', 'rg_rob_upc_tiempo'];
   setVal(c, inst, val) { const who = this.props.userName || '', at = this.now(), coord = c.k === 'rg_ubi_latitud' || c.k === 'rg_ubi_longitud', sim = this.props.simulacion !== false, rp = { n: 0, kept: 0, chg: 0, pc: 0 };
-    this.setState(s => { rp.n = 0; rp.kept = 0; rp.chg = 0; rp.pc = 0; const vals = s.vals.map(x => x); let i = vals.findIndex(v => v.clave === c.k && (inst ? v.instancia === inst : !v.instancia)); const old = i >= 0 ? vals[i] : null, o = (old && old.origen) || {};
-      let origen;
-      if (old && o.tipo === 'Redacción') origen = this.editedO(o, val === null || val === undefined ? '' : String(val), inst, vals);
+    this.setState(s => { rp.n = 0; rp.kept = 0; rp.chg = 0; rp.pc = 0; rp.auto = ''; const vals = s.vals.map(x => x); let i = vals.findIndex(v => v.clave === c.k && (inst ? v.instancia === inst : !v.instancia)); const old = i >= 0 ? vals[i] : null, o = (old && old.origen) || {};
+      let origen; const vacAuto = !this.has(old) && this.lockedF(c, old); // R-0c: automático sin valor que se registra a mano
+      if (vacAuto) { origen = { tipo: 'Manual', persona: who, fecha: at, registro: true }; rp.auto = this.lab(c.k, inst); }
+      else if (old && o.registro) origen = Object.assign({}, o, { persona: who, fecha: at });
+      else if (old && o.tipo === 'Redacción') origen = this.editedO(o, val === null || val === undefined ? '' : String(val), inst, vals);
       else if (old && (this.MOTOR.includes(o.tipo) || o.tipo === 'Solicitud' || o.tipo === 'Contexto externo') && o.estado !== 'Modificado') origen = Object.assign({}, o, { estado: 'Modificado', propuesto: old.valor, modificadoPor: who, fechaModificacion: at });
       else if (old && o.estado === 'Modificado') origen = Object.assign({}, o, { modificadoPor: who, fechaModificacion: at });
       else origen = { tipo: 'Manual', persona: who, fecha: at };
@@ -333,7 +337,7 @@ class Component extends DCLogic {
       if (!coord) return { vals };
       if (!sim) return { vals, ctxFail: true };
       return { vals: this.ctxSim(vals, at, rp), ctxFail: false }; },
-      () => { if (coord && sim) this.toastMsg('IA-04 consultó de nuevo con las coordenadas nuevas · ' + (rp.chg ? rp.chg + (rp.chg === 1 ? ' valor cambió' : ' valores cambiaron') + (rp.pc ? ' · ' + rp.pc + (rp.pc === 1 ? ' vuelve' : ' vuelven') + ' a «Por confirmar»' : '') : 'ningún valor cambió') + (rp.kept ? ' · ' + rp.kept + ' conservado (editado por ti)' : '') + ' · ' + at); }); }
+      () => { if (rp.auto && this.props.onEvento) this.props.onEvento('Informe editado · ' + rp.auto + ': sin dato del sistema → «' + this.fmt(val) + '» · registrado por ' + who); if (coord && sim) this.toastMsg('IA-04 consultó de nuevo con las coordenadas nuevas · ' + (rp.chg ? rp.chg + (rp.chg === 1 ? ' valor cambió' : ' valores cambiaron') + (rp.pc ? ' · ' + rp.pc + (rp.pc === 1 ? ' vuelve' : ' vuelven') + ' a «Por confirmar»' : '') : 'ningún valor cambió') + (rp.kept ? ' · ' + rp.kept + ' conservado (editado por ti)' : '') + ' · ' + at); }); }
   // Recalcular por cambio de coordenadas (Envío 5E): IA-04 simulada recalcula las distancias con el desplazamiento desde las coordenadas originales; si un valor cambia y estaba confirmado, vuelve a «Por confirmar».
   CTX_SIM = { rg_ubi_dist_mar: 'm', rg_ubi_dist_rio: 'm', rg_bom_distancia: 'km', rg_rob_upc_distancia: 'km' };
   ctxSim(vals, at, rp) { const X = this.X(), base = X ? X.informe.valores : [], bv = (k) => base.find(v => v.clave === k && !v.instancia), num = (x) => Number(String(x).replace(',', '.'));
@@ -382,7 +386,7 @@ class Component extends DCLogic {
       return { n: String(i + 1), cells, canConfRow: edit && rowPc, confAria: 'Confirmar la fila ' + (i + 1), confRow: () => this.gridConfirm(c.k, i, null), delAria: 'Quitar la fila ' + (i + 1), del: () => this.setState({ modal: { kind: 'delrow', k: c.k, i, label: c.l } }) }; });
     return { gCols, gRows, gEmpty: !rows.length, gHas: !!rows.length, gAct: edit, gAdd: () => this.gridAdd(c.k) }; }
   fieldObj(c, inst, missSet) { const st = this.state, v = this.getV(c.k, inst), o = (v && v.origen) || {}, id = this.fid(c.k, inst), edit = this.canE();
-    const req = this.isReq(c), e = this.st(v), pc = e === 'pc', isNA = o.tipo === 'No aplica', locked = this.lockedF(c, v), mirror = c.t === 'Espejo', calc = c.t === 'Cálculo', grid = c.t === 'Grilla';
+    const req = this.isReq(c), e = this.st(v), pc = e === 'pc', isNA = o.tipo === 'No aplica', autoVac = edit && this.autoVacio(c, v), locked = this.lockedF(c, v) && !autoVac, mirror = c.t === 'Espejo', calc = c.t === 'Cálculo', grid = c.t === 'Grilla';
     const multi = c.t === 'Opción múltiple', sel = !multi && (c.opts || []).length > 0 && ['Opción única', 'Sí/No', 'Catálogo'].includes(c.t);
     const isArea = c.t === 'Texto' && this.areaKeys().has(c.k), rE = this.redEst(v), out = mirror || calc || locked || isNA, errOn = missSet.has(id), dis = !edit || locked;
     const lbl = c.l + (c.unidad ? ' (' + c.unidad + ')' : '');
@@ -397,6 +401,7 @@ class Component extends DCLogic {
     if (grid && v && o.simulada) notes.push({ t: 'Respuesta simulada · Solo en el prototipo' });
     if (v && v.nota) notes.push({ t: v.nota });
     if (mirror) notes.push({ t: 'Espejo de ' + c.lee + ' · solo lectura' });
+    if (autoVac) notes.push({ t: 'Sin dato del sistema: regístralo' }); // R-0c
     if (rE === 'Propuesto por IA') { notes.push({ t: 'Propuesto por IA: no completa el campo hasta que lo aceptes o lo edites' }); if (o.aviso && (o.cifras || []).some(z => z.resultado === 'Rechazada')) notes.push({ t: o.aviso }); }
     if (rE === 'Texto desactualizado') notes.push({ t: 'Cambiaron campos de origen después de ' + (o.estado === 'Aceptado' ? 'aceptarlo' : 'editarlo') + ' · revísalo o regenéralo en Revisión' });
     const naSt = st.na && st.na.id === id ? st.na : null, naLen = naSt ? naSt.txt.trim().length : 0;
