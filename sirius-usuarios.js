@@ -33,13 +33,17 @@
   };
   function log(por, objeto, accion, motivo, extra) { SU.hist.unshift(Object.assign({ fecha: SU.ahora(), por: por, objeto: objeto, accion: accion, motivo: motivo || '' }, extra || {})); }
   // ---------- Consultas ----------
-  SU.usuarios = function () { return (U() || { usuarios: [] }).usuarios; };
-  SU.usuario = function (n) { return SU.usuarios().find(function (u) { return u.nombre === n; }) || null; };
+  var MXa = function () { var M = window.SiriusMaestros; if (M && M.aplicar && (M.parches.renombres.length || M.parches.quitarId.length || M.parches.quitarRuc.length)) M.aplicar(); }; // P-6f-b · DEC-214: cambios de nombre de la sesión, aunque una pantalla recargue los datos
+  SU.usuarios = function () { MXa(); return (U() || { usuarios: [] }).usuarios; };
+  // Etapa P-6f-b · DEC-214: una persona se busca por su nombre actual, su identificación o un nombre anterior (alias de SiriusMaestros).
+  SU.usuario = function (n) { var L = SU.usuarios(), x = L.find(function (u) { return u.nombre === n; }); if (x) return x; var s = String(n == null ? '' : n).trim(); if (!s) return null;
+    x = L.find(function (u) { return u.identificacion && u.identificacion === s; }); if (x) return x; var M = window.SiriusMaestros, p = M ? M.persona(s) : null; return p && L.indexOf(p.ref) >= 0 ? p.ref : null; };
+  SU.validarIdent = function (tipo, ident, excluir) { var M = window.SiriusMaestros; if (!M) return ''; return M.ident(tipo, ident) || M.repetida(tipo, ident, excluir); };
   SU.porCorreo = function (c) { c = String(c || '').trim().toLowerCase(); return SU.usuarios().find(function (u) { return u.correo.toLowerCase() === c; }) || null; };
   SU.roles = function () { return (U() || { roles: [] }).roles; };
   SU.rol = function (n) { return SU.roles().find(function (r) { return r.nombre === n; }) || null; };
   SU.base = function (n) { var r = SU.rol(n); return r && r.base ? r.base : n; };
-  SU.agencias = function () { return (U() || { agencias: [] }).agencias; };
+  SU.agencias = function () { MXa(); return (U() || { agencias: [] }).agencias; };
   SU.agencia = function (id) { return SU.agencias().find(function (a) { return a.id === id; }) || null; };
   SU.estadoEf = function (u) { if (u.estado === 'Invitado' && u.vence && u.vence < SU.ahora()) return 'Invitación vencida'; return u.estado; };
   SU.estadoInfo = function (e) { return ((U() || {}).estadosUsuario || []).find(function (x) { return x.id === e; }) || { id: e, badge: 'neutral' }; };
@@ -151,7 +155,7 @@
   SU.invitar = function (d, por) {
     var u = U(), vence = SU.sumaHoras(SU.ahora(), 72);
     var n = { nombre: String(d.nombre).trim(), correo: String(d.correo).trim().toLowerCase(), celular: String(d.celular || '').trim(), tipo: d.tipo, roles: d.roles.slice(), alcance: { sucursales: d.sucursales === 'Todas' ? 'Todas' : d.sucursales.slice(), grupos: d.grupos === 'Todos' ? 'Todos' : d.grupos.slice() }, estado: 'Invitado', acceso: null, gmail: d.tipo === 'Interno' ? 'Sin conectar' : 'No aplica', invitado: [por, SU.ahora()], vence: vence, enlace: 1 };
-    if (d.tipo === 'Agencia') n.agencia = d.agencia; u.usuarios.push(n);
+    if (d.tipo === 'Agencia') n.agencia = d.agencia; if (d.identificacion) { n.tipoIdentificacion = d.tipoIdentificacion || 'Cédula'; n.identificacion = window.SiriusMaestros ? window.SiriusMaestros.normal(n.tipoIdentificacion, d.identificacion) : String(d.identificacion).trim(); } /* DEC-214 */ u.usuarios.push(n);
     bitacoraInvitacion(n, por, 'Invitación a SIRIUS'); log(por, n.nombre, 'Invitó al usuario (' + n.tipo + ' · ' + n.roles.join(', ') + ')', d.motivo || 'Alta de usuario'); avisar(); return n;
   };
   SU.reenviar = function (nombre, por) {
@@ -170,7 +174,9 @@
   SU.reactivar = function (nombre, por, motivo) { var x = SU.usuario(nombre); if (!x) return; x.estado = 'Activo'; delete x.suspension; delete x.baja; log(por, nombre, 'Reactivó al usuario', motivo); avisar(); };
   SU.darBaja = function (nombre, por, motivo) { var x = SU.usuario(nombre); if (!x) return; x.estado = 'Inactivo'; x.baja = [por, SU.ahora(), motivo]; delete x.suspension; log(por, nombre, 'Dio de baja al usuario (queda Inactivo; no se elimina)', motivo); avisar(); };
   SU.editar = function (nombre, c, por, motivo) {
-    var x = SU.usuario(nombre); if (!x) return; var det = [];
+    var x = SU.usuario(nombre); if (!x) return; var det = [], M = window.SiriusMaestros;
+    if (c.identificacion !== undefined && (c.identificacion !== (x.identificacion || '') || (c.tipoIdentificacion || 'Cédula') !== (x.tipoIdentificacion || ''))) { var antes = x.identificacion ? x.tipoIdentificacion + ' ' + x.identificacion : 'sin identificación'; x.tipoIdentificacion = c.tipoIdentificacion || 'Cédula'; x.identificacion = M ? M.normal(x.tipoIdentificacion, c.identificacion) : c.identificacion; if (M) { M.alias[x.nombre] = x.identificacion; M.avisar(); } det.push('identificación: ' + antes + ' → ' + x.tipoIdentificacion + ' ' + x.identificacion); } /* DEC-214 */
+    if (c.nombre !== undefined && String(c.nombre).trim() && String(c.nombre).trim() !== x.nombre) { var vn = x.nombre; if (M) M.renombrar(x.identificacion || vn, String(c.nombre).trim()); else x.nombre = String(c.nombre).trim(); det.push('nombre: ' + vn + ' → ' + x.nombre); nombre = x.nombre; } /* DEC-214: lo que apunta a su identificación muestra el nombre nuevo */
     if (c.celular !== undefined && c.celular !== x.celular) { det.push('celular'); x.celular = c.celular; }
     if (c.agencia !== undefined && c.agencia !== x.agencia) { det.push('agencia'); x.agencia = c.agencia; }
     if (c.roles && c.roles.join('|') !== x.roles.join('|')) { det.push('roles: ' + c.roles.join(', ')); x.roles = c.roles.slice(); }
@@ -237,12 +243,12 @@
     return { ambito: 'Vehículos', fac: fac, desde: own ? 'asignada al inspector' : src ? 'heredada de ' + lbl(src) : 'heredada del valor global', mue: fac === 'Sin facultad' ? 'No aplica' : (mueOwn ? own.mue : Fv.mue) + ' %' + (mueOwn ? ' · del inspector' : ' · global'), hasta: src && src.hasta ? src.hasta : '', tope: tp0.tope, topeDesde: tp0.desde };
   };
   // ---------- Agencias ----------
-  SU.agenciaDeInspector = function (nombreAg) { nombreAg = String(nombreAg || '').toLowerCase(); return SU.agencias().find(function (a) { var n = a.nombre.toLowerCase(); return n === nombreAg || n.indexOf(nombreAg) === 0; }) || null; };
+  SU.agenciaDeInspector = function (nombreAg) { var M0 = window.SiriusMaestros, a0 = M0 ? M0.agencia(nombreAg) : null; if (a0 && SU.agencias().indexOf(a0) >= 0) return a0; /* DEC-214: por RUC, id, razón social o nombre comercial */ nombreAg = String(nombreAg || '').toLowerCase(); return SU.agencias().find(function (a) { var n = a.nombre.toLowerCase(); return n === nombreAg || n.indexOf(nombreAg) === 0; }) || null; };
   // Logo de la agencia para el encabezado del PDF: { archivo, nombre } o null si no subió ninguno.
   SU.logoAgencia = function (nombreAg) { var a = SU.agenciaDeInspector(nombreAg); return a && a.logoArchivo ? { archivo: a.logoArchivo, nombre: a.nombre } : null; };
   SU.editarAgencia = function (id, c, por, motivo) {
     var a = SU.agencia(id); if (!a) return []; var det = [];
-    ['nombre', 'ruc', 'contacto', 'estado'].forEach(function (k) { if (c[k] !== undefined && c[k] !== a[k]) { det.push(k + ': ' + (a[k] || '—') + ' → ' + c[k]); a[k] = c[k]; } });
+    if (c.razonSocial !== undefined && c.nombre === undefined) c.nombre = c.razonSocial; ['nombre', 'razonSocial', 'nombreComercial', 'ruc', 'contacto', 'estado'].forEach(function (k) { if (c[k] !== undefined && c[k] !== a[k]) { det.push(k + ': ' + (a[k] || '—') + ' → ' + c[k]); a[k] = c[k]; } });
     if (c.sucursales && c.sucursales.join('|') !== a.sucursales.join('|')) { det.push('sucursales: ' + c.sucursales.join(', ')); a.sucursales = c.sucursales.slice(); }
     if (c.logoArchivo !== undefined && c.logoArchivo !== (a.logoArchivo || '')) { det.push(c.logoArchivo ? 'subió el logo' : 'quitó el logo'); if (c.logoArchivo) { a.logoArchivo = c.logoArchivo; a.logoNombre = c.logoNombre || 'logo'; a.logo = 'subido'; } else { delete a.logoArchivo; delete a.logoNombre; a.logo = null; } }
     if (det.length) log(por, 'Agencia ' + a.nombre, 'Editó la agencia: ' + det.join('; '), motivo); avisar(); return det;

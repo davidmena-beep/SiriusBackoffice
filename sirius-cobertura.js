@@ -31,13 +31,16 @@
   // Migración: las «zonas» actuales (sucursales) pasan a 'sucursales'; sin zonas, 'todas'.
   S.migrar = (ins) => { const z = arr(ins && ins.zonas); return z.length ? { modo: 'sucursales', sucursales: z, ciudades: [] } : { modo: 'todas', sucursales: [], ciudades: [] }; };
   const nombreDe = (ins) => (typeof ins === 'string' ? ins : ins ? String(ins.inspector || ins.nombre || ins.n || '') : '');
+  // P-6f-b · DEC-214: la cobertura guardada en la sesión va por la identificación del inspector (clave); lo anterior guardado por nombre se sigue leyendo.
+  const MX = () => W.SiriusMaestros || null, claveDe = (n) => (MX() ? MX().clave(n) : n), mismo = (a, b) => (MX() ? MX().mismo(a, b) : a === b);
+  const edDe = (n) => { if (!n) return null; const M0 = MX(); const v = M0 ? M0.buscar(S.ed, n) : S.ed[n]; return v || null; };
   // Zonas heredadas de un inspector del ejemplo (lo que hoy usan la Agenda y la red): la red, si no, la disponibilidad.
-  S.zonasHeredadas = (n) => { const A = W.SIRIUS_AGENDA || {}, r = (A.red || []).find((x) => x.inspector === n), d = (A.disponibilidad || []).find((x) => x.inspector === n);
+  S.zonasHeredadas = (n) => { const A = W.SIRIUS_AGENDA || {}, r = (A.red || []).find((x) => mismo(x.inspector, n)), d = (A.disponibilidad || []).find((x) => mismo(x.inspector, n));
     const AP = W.SiriusAppInspectorLogic, ov = AP && AP.perfilDe ? AP.perfilDe(n) : null; return arr(ov && ov.zonas && ov.zonas.length ? ov.zonas : r ? r.zonas : d ? d.zonas : []); };
   // Con la conexión: el usuario de la base (por nombre o correo) o el inspector de SIRIUS_CONEXION.inspectores.
-  const deBase = (n) => { const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase()); if (u) return u.cobertura ? S.normalizar(u.cobertura) : S.migrar(u); }
-    const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) { const i = C.inspectores.find((x) => x && x.nombre === n); if (i) return i.cobertura ? S.normalizar(i.cobertura) : S.migrar(i); } return null; };
-  S.de = (ins) => { const n = nombreDe(ins); if (n && S.ed[n]) return S.normalizar(S.ed[n]);
+  const deBase = (n) => { const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase() || (x.identificacion && x.identificacion === claveDe(n))); if (u) return u.cobertura ? S.normalizar(u.cobertura) : S.migrar(u); }
+    const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) { const i = C.inspectores.find((x) => x && (x.nombre === n || (x.identificacion && x.identificacion === claveDe(n)))); if (i) return i.cobertura ? S.normalizar(i.cobertura) : S.migrar(i); } return null; };
+  S.de = (ins) => { const n = nombreDe(ins), e0 = edDe(n); if (e0) return S.normalizar(e0);
     if (ins && typeof ins === 'object' && ins.cobertura) return S.normalizar(ins.cobertura);
     const b = n ? deBase(n) : null; if (b) return b;
     if (ins && typeof ins === 'object' && Array.isArray(ins.zonas)) return S.migrar(ins);
@@ -87,7 +90,7 @@
     const B = UB(), conBase = !!(B && B.activo && B.activo() && o.email && B.usuario(o.email));
     const reg = { fecha: ahora(), por: o.por || '', inspector: n, antes: S.corto(antes), despues: S.corto(nueva), motivo: mot, estado: conBase ? 'Enviado a la base' : 'Guardado en la sesión' };
     if (conBase) return B.editar(o.email, { cobertura: nueva }, mot, o.por).then((r) => { if (r && r.ok) { delete S.ed[n]; S.hist.unshift(Object.assign(reg, { estado: 'Guardado en la base' })); avisar(); return { ok: true, cobertura: nueva }; } return r || { ok: false, mensaje: 'La base no guardó el cambio.' }; });
-    S.ed[n] = nueva; S.hist.unshift(reg); const SU = W.SiriusUsuarios; if (SU && Array.isArray(SU.hist)) SU.hist.unshift({ fecha: SU.ahora ? SU.ahora() : reg.fecha, por: o.por || '', objeto: n, accion: 'Cobertura: ' + reg.antes + ' → ' + reg.despues, motivo: mot });
+    Object.keys(S.ed).forEach((k) => { if (k !== claveDe(n) && mismo(k, n)) delete S.ed[k]; }); S.ed[claveDe(n)] = nueva; S.hist.unshift(reg); /* DEC-214: por identificación */ const SU = W.SiriusUsuarios; if (SU && Array.isArray(SU.hist)) SU.hist.unshift({ fecha: SU.ahora ? SU.ahora() : reg.fecha, por: o.por || '', objeto: n, accion: 'Cobertura: ' + reg.antes + ' → ' + reg.despues, motivo: mot });
     avisar(); return Promise.resolve({ ok: true, local: true, cobertura: nueva }); };
   const z2 = (v) => String(v).padStart(2, '0');
   const ahora = () => { const SC = W.SiriusCompania; let iso = SC && SC.ahoraIso ? SC.ahoraIso() : null; if (!iso) { const d = new Date(); iso = d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate()) + 'T' + z2(d.getHours()) + ':' + z2(d.getMinutes()); } return iso; };

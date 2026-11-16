@@ -2,6 +2,8 @@
 // Con la conexión, Administración › Usuarios y roles lista, filtra y muestra la ficha con SIRIUS_CONEXION.usuarios y SIRIUS_CONEXION.agencias: ningún usuario sale del ejemplo.
 // Contrato: usuarios = [{ nombre, email, rol, roles [], tipo ('Interno' | 'Agencia' | 'Independiente'), tipoInspector ('interno' | 'agencia' | 'independiente' | null), agencia (nombre o null),
 // estado ('Activo' | 'Invitado' | 'Suspendido' | 'Inactivo'), celular, alcance { sucursales [], grupos [] } (vacío = todas / todos), zonas [], vinculado (booleano) }]; agencias = [{ nombre, estado }].
+// Etapa P-6f-b · DEC-214: usuarios[] llevan tipoIdentificacion ('Cédula' | 'Pasaporte') e identificacion (obligatorias y únicas); agencias[] llevan ruc, razonSocial y nombreComercial.
+// crearUsuario y editarUsuario llevan { tipoIdentificacion, identificacion } (y agenciaRuc junto a agencia); guardarAgencia { ruc, razonSocial, nombreComercial, estado } → { ok, mensaje }.
 // Acciones: crearUsuario { nombre, email, celular, agencia, rol, roles, tipoInspector, alcance, zonas, motivo } → { ok, mensaje, activacion (url) };
 // editarUsuario { email (el actual), cambios { … }, motivo } → { ok, mensaje }; cambiarEstadoUsuario { email, estado, motivo } → { ok, mensaje }.
 // El cambio se ve al instante; con { ok: false } vuelve atrás y se devuelve el mensaje de la base. Motivo de 10 caracteres o más; el historial del usuario lo registra.
@@ -18,12 +20,16 @@
   S.activo = () => { const c = C(); return !!(c && c.activo === true); };
   const arr = (x) => (Array.isArray(x) ? x.filter((v) => v != null && v !== '').map(String) : []);
   const norm = (u) => { u = u || {}; const roles = arr(u.roles).length ? arr(u.roles) : arr([u.rol]), tipo = S.TIPOS.indexOf(u.tipo) >= 0 ? u.tipo : (u.agencia ? 'Agencia' : 'Interno');
-    return { nombre: String(u.nombre || u.email || ''), email: String(u.email || '').trim().toLowerCase(), rol: u.rol || roles[0] || '', roles, tipo, tipoInspector: u.tipoInspector || null, agencia: u.agencia || null,
+    return { nombre: String(u.nombre || u.email || ''), tipoIdentificacion: u.identificacion ? (u.tipoIdentificacion || 'Cédula') : '', identificacion: String(u.identificacion || '').trim(), email: String(u.email || '').trim().toLowerCase(), rol: u.rol || roles[0] || '', roles, tipo, tipoInspector: u.tipoInspector || null, agencia: u.agencia || null,
       estado: S.ESTADOS.indexOf(u.estado) >= 0 ? u.estado : 'Activo', celular: u.celular || '', alcance: { sucursales: arr((u.alcance || {}).sucursales), grupos: arr((u.alcance || {}).grupos) }, zonas: arr(u.zonas), vinculado: !!u.vinculado,
       activacion: u.activacion || null, cobertura: u.cobertura && typeof u.cobertura === 'object' ? JSON.parse(JSON.stringify(u.cobertura)) : null /* G-2b · DEC-223: si no viene, SiriusCobertura aplica migrar(zonas) */ }; };
   // Lista de la sesión: copia de SIRIUS_CONEXION.usuarios; si la base la reemplaza (otro arreglo), se vuelve a leer.
   S.lista = () => { const c = C(), src = c && Array.isArray(c.usuarios) ? c.usuarios : []; if (src !== S._src || !S._lista) { S._src = src; S._lista = src.map(norm); } return S._lista; };
-  S.agencias = () => { const c = C(), src = c && Array.isArray(c.agencias) ? c.agencias : []; if (src !== S._agSrc || !S._ag) { S._agSrc = src; S._ag = src.map((a) => ({ nombre: String((a && a.nombre) || ''), estado: (a && a.estado) || 'Activa' })).filter((a) => a.nombre); } return S._ag; };
+  S.agencias = () => { const c = C(), src = c && Array.isArray(c.agencias) ? c.agencias : []; if (src !== S._agSrc || !S._ag) { S._agSrc = src; S._ag = src.map((a) => ({ nombre: String((a && (a.nombreComercial || a.nombre || a.razonSocial)) || ''), razonSocial: String((a && (a.razonSocial || a.nombre)) || ''), nombreComercial: String((a && (a.nombreComercial || a.nombre)) || ''), ruc: String((a && a.ruc) || ''), estado: (a && a.estado) || 'Activa' })).filter((a) => a.nombre); } return S._ag; };
+  S.agencia = (ref) => { const r = String(ref || '').trim(); return S.agencias().find((a) => (a.ruc && a.ruc === r) || a.nombre === r || a.razonSocial === r) || null; }; // DEC-214: por RUC o por nombre
+  const MX = () => W.SiriusMaestros || null;
+  // DEC-214: identificación obligatoria, válida y única entre los usuarios de la base (excluye al que se edita).
+  S.validarIdent = (tipo, ident, excluirEmail) => { const M = MX(); if (!M) return ''; const e = M.ident(tipo, ident); if (e) return e; const v = M.normal(tipo, ident), o = S.lista().find((u) => u.identificacion && u.identificacion.toUpperCase() === v.toUpperCase() && u.email !== String(excluirEmail || '').toLowerCase()); return o ? 'Esa identificación ya está registrada (' + o.nombre + '). La identificación es única en la compañía.' : ''; };
   S.usuario = (email) => S.lista().find((u) => u.email === String(email || '').trim().toLowerCase()) || null;
   S.yo = () => { const c = C(), u = (c && c.usuario) || {}; return String(u.email || '').trim().toLowerCase(); };
   S.esYo = (email) => !!S.yo() && S.yo() === String(email || '').trim().toLowerCase();
@@ -52,19 +58,22 @@
   const tipoDe = (d) => (d.agencia ? 'Agencia' : d.tipoInspector === 'independiente' || d.tipo === 'Independiente' ? 'Independiente' : 'Interno');
   // Crear: queda «Invitado» (sin cuenta vinculada) con el enlace de activación que devuelve la base.
   S.crear = (d, motivo, por) => { d = d || {}; const email = String(d.email || '').trim().toLowerCase(), roles = arr(d.roles);
-    const err = !String(d.nombre || '').trim() ? 'Escribe el nombre.' : S.validarCorreo(email) || (!roles.length ? 'Elige al menos un rol.' : '') || (!motivoOk(motivo) ? 'Escribe el motivo (mínimo 10 caracteres).' : '');
+    const err = !String(d.nombre || '').trim() ? 'Escribe el nombre.' : S.validarIdent(d.tipoIdentificacion || 'Cédula', d.identificacion, '') || S.validarCorreo(email) || (!roles.length ? 'Elige al menos un rol.' : '') || (!motivoOk(motivo) ? 'Escribe el motivo (mínimo 10 caracteres).' : '');
     if (err) return Promise.resolve({ ok: false, validacion: true, mensaje: err });
     const insp = S.esInspector(roles), tipo = d.tipo || tipoDe(d);
-    const carga = { nombre: String(d.nombre).trim(), email, celular: String(d.celular || '').trim(), agencia: tipo === 'Agencia' ? d.agencia || null : null, rol: d.rol && roles.indexOf(d.rol) >= 0 ? d.rol : roles[0], roles,
+    const M0 = MX(), tId = d.tipoIdentificacion || 'Cédula', ag0 = tipo === 'Agencia' && d.agencia ? S.agencia(d.agencia) : null;
+    const carga = { nombre: String(d.nombre).trim(), tipoIdentificacion: tId, identificacion: M0 ? M0.normal(tId, d.identificacion) : String(d.identificacion || '').trim(), email, celular: String(d.celular || '').trim(), agencia: tipo === 'Agencia' ? d.agencia || null : null, agenciaRuc: ag0 && ag0.ruc ? ag0.ruc : null, rol: d.rol && roles.indexOf(d.rol) >= 0 ? d.rol : roles[0], roles,
       tipoInspector: insp ? tipo.toLowerCase() : null, alcance: { sucursales: arr((d.alcance || {}).sucursales), grupos: arr((d.alcance || {}).grupos) }, zonas: insp ? arr(d.zonas) : [], motivo: String(motivo).trim() };
     const u = norm(Object.assign({}, carga, { tipo, estado: 'Invitado', vinculado: false })), L = S.lista(); L.push(u); const reg = registrar(u, 'Creado como «Invitado» · ' + u.roles.join(', '), motivo, por, 'Enviado a la base'); avisar();
     return base('crearUsuario', carga).then((r) => { if (r && r.ok) { if (r.activacion) S.links[email] = String(r.activacion); reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
       const i = L.indexOf(u); if (i >= 0) L.splice(i, 1); const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó el usuario.' }; }); };
-  const CAMPOS = { email: 'Correo', celular: 'Celular', agencia: 'Agencia', roles: 'Roles', rol: 'Rol principal', tipoInspector: 'Tipo de inspector', alcance: 'Alcance', zonas: 'Zonas', cobertura: 'Cobertura' };
+  const CAMPOS = { tipoIdentificacion: 'Tipo de identificación', identificacion: 'Identificación', agenciaRuc: 'RUC de la agencia', email: 'Correo', celular: 'Celular', agencia: 'Agencia', roles: 'Roles', rol: 'Rol principal', tipoInspector: 'Tipo de inspector', alcance: 'Alcance', zonas: 'Zonas', cobertura: 'Cobertura' };
   const txt = (k, v) => (k === 'cobertura' ? (W.SiriusCobertura ? (v ? W.SiriusCobertura.corto(v) : 'Migrada de sus zonas') : '—') : k === 'alcance' ? S.alcanceTxt(v) : Array.isArray(v) ? (v.length ? v.join(', ') : '—') : v == null || v === '' ? '—' : String(v));
   // Editar: solo se envía lo que cambió (cambios { email, celular, agencia, rol, roles, tipoInspector, alcance, zonas }).
   S.editar = (email, cambios, motivo, por) => { const u = S.usuario(email); if (!u) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Ese usuario ya no está en la lista.' });
     const ch = {}; Object.keys(cambios || {}).forEach((k) => { if (CAMPOS[k] && JSON.stringify(cambios[k]) !== JSON.stringify(u[k])) ch[k] = clon(cambios[k]); });
+    if (ch.identificacion !== undefined || ch.tipoIdentificacion !== undefined) { const ti = ch.tipoIdentificacion || u.tipoIdentificacion || 'Cédula', iv = ch.identificacion !== undefined ? ch.identificacion : u.identificacion, e = S.validarIdent(ti, iv, u.email); if (e) return Promise.resolve({ ok: false, validacion: true, mensaje: e }); ch.tipoIdentificacion = ti; ch.identificacion = MX() ? MX().normal(ti, iv) : iv; } /* DEC-214 */
+    if (ch.agencia) { const a = S.agencia(ch.agencia); if (a && a.ruc) ch.agenciaRuc = a.ruc; }
     if (ch.email !== undefined) { const e = S.validarCorreo(ch.email); if (e) return Promise.resolve({ ok: false, validacion: true, mensaje: e }); ch.email = String(ch.email).trim().toLowerCase(); }
     if (ch.roles && !arr(ch.roles).length) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Elige al menos un rol.' });
     if (ch.roles && S.esYo(u.email) && u.roles.indexOf('Administrador') >= 0 && ch.roles.indexOf('Administrador') < 0) return Promise.resolve({ ok: false, validacion: true, propio: true, mensaje: 'No puedes quitarte tu propio rol de Administrador.' });
@@ -85,6 +94,15 @@
     const antes = u.estado; u.estado = estado; const reg = registrar(u, 'Estado: ' + antes + ' → ' + estado, motivo, por, 'Enviado a la base'); avisar();
     return base('cambiarEstadoUsuario', { email: u.email, estado, motivo: String(motivo).trim() }).then((r) => { if (r && r.ok) { reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
       u.estado = antes; const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó el cambio.' }; }); };
+  // DEC-214 · guardarAgencia { ruc, razonSocial, nombreComercial, estado } → { ok, mensaje }. Crea o actualiza (por RUC; refRuc = el RUC actual si cambia).
+  S.guardarAgencia = (d, motivo, por, refRuc) => { d = d || {}; const M = MX(), ruc = String(d.ruc || '').trim(), rs = String(d.razonSocial || '').trim(), nc = String(d.nombreComercial || '').trim(), est = d.estado || 'Activa';
+    const err = (M ? M.ruc(ruc) : (!/^\d{13}$/.test(ruc) ? 'El RUC tiene 13 dígitos.' : '')) || (S.agencias().some((a) => a.ruc === ruc && a.ruc !== String(refRuc || '')) ? 'Ese RUC ya es de otra agencia de la base. El RUC es único.' : '') || (rs.length < 3 ? 'Escribe la razón social.' : '') || (nc.length < 2 ? 'Escribe el nombre comercial.' : '') || (!motivoOk(motivo) ? 'Escribe el motivo (mínimo 10 caracteres).' : '');
+    if (err) return Promise.resolve({ ok: false, validacion: true, mensaje: err });
+    const L = S.agencias(), prev = L.find((a) => (refRuc && a.ruc === refRuc) || a.ruc === ruc) || null, antes = prev ? clon(prev) : null, nueva = { nombre: nc, razonSocial: rs, nombreComercial: nc, ruc, estado: est };
+    if (prev) Object.assign(prev, nueva); else L.push(nueva);
+    const reg = { fecha: ahora(), por: por || '', email: '', nombre: 'Agencia ' + nc, que: (prev ? 'Agencia actualizada' : 'Agencia creada') + ' · RUC ' + ruc + ' · ' + rs + ' · ' + est, motivo: String(motivo).trim(), estado: 'Enviado a la base' }; S.hist.unshift(reg); avisar();
+    return base('guardarAgencia', { ruc, razonSocial: rs, nombreComercial: nc, estado: est }).then((r) => { if (r && r.ok) { reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
+      if (prev) { Object.keys(prev).forEach((k) => { delete prev[k]; }); Object.assign(prev, antes); } else { const i = L.indexOf(nueva); if (i >= 0) L.splice(i, 1); } const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó la agencia.' }; }); };
   S.reset = () => { S.hist = []; S.links = {}; S._src = null; S._lista = null; S._agSrc = null; S._ag = null; avisar(); };
   W.SiriusUsuariosBase = S;
 })();

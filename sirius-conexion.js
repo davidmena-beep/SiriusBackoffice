@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 15/11/2026 · P-6f-b · DEC-214 (SQL 51): usuarios[] e inspectores[] con tipoIdentificacion, identificacion y agenciaRuc; agencias[] con ruc, razonSocial y nombreComercial (si la base aún no tiene el SQL 51, se lee como antes).
 // 15/11/2026 · R-0 · DEC-245 (SQL 47): riesgos[] con tipoConfirmado, plantilla, tipoAnterior, noInspeccionado y revisarDatos; visitasBase[] con motivoCierre y noInspeccionados; evidencias e informes con su riesgo («50012-V1»).
 // 15/11/2026 · Corrección: el estado de cada riesgo sale de sus visitas también con el caso «En curso» (DEC-239).
 // 15/11/2026 · Corrección: el riesgo de una visita realizada (Enviada o Terminada) queda «Inspeccionado», no «Por coordinar».
@@ -262,9 +263,9 @@
     return Promise.all([
       get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,lugar,fuera_cobertura,no_inspeccionados,motivo_cierre,ofertas_red(estado,origen,desde,hasta,minutos,nota,vence,inspector:usuarios!ofertas_red_inspector_id_fkey(nombre)),enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora'),
-      get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; }),   // P-6f-0e · DEC-231
-      get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,agencia:agencias(nombre)&order=nombre').catch(function (e) { console.warn('[SIRIUS] usuarios:', e.message); return null; }),   // P-6f-0g · DEC-233
-      get('agencias?select=nombre,estado&order=nombre').catch(function (e) { console.warn('[SIRIUS] agencias:', e.message); return null; })
+      get('usuarios?select=nombre,tipo_inspector,estado,datos,tipo_identificacion,identificacion,agencia:agencias(nombre,ruc)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function () { return get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; }),   // P-6f-0e · DEC-231
+      get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,tipo_identificacion,identificacion,agencia:agencias(nombre,ruc)&order=nombre').catch(function () { return get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,agencia:agencias(nombre)&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] usuarios:', e.message); return null; }),   // P-6f-0g · DEC-233
+      get('agencias?select=nombre,estado,ruc,razon_social,nombre_comercial&order=nombre').catch(function () { return get('agencias?select=nombre,estado&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] agencias:', e.message); return null; })
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
@@ -272,11 +273,13 @@
                  tipo: u.agencia ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', tipoInspector: t || null, agencia: u.agencia ? u.agencia.nombre : null,
                  estado: u.estado || 'Activo', celular: d.celular || '', alcance: { sucursales: Array.isArray(al.sucursales) ? al.sucursales : [], grupos: Array.isArray(al.grupos) ? al.grupos : [] },
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, vinculado: !!u.auth_id,
-                 historial: Array.isArray(d.historial) ? d.historial : [] }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base)
-      if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa' }; });
+                 historial: Array.isArray(d.historial) ? d.historial : [], tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null,
+                 agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base) · P-6f-b · DEC-214
+      if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa', ruc: a.ruc || null, razonSocial: a.razon_social || a.nombre, nombreComercial: a.nombre_comercial || null }; });   // P-6f-b · DEC-214
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
-                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo' }; });   // G-2b · DEC-223: sin cobertura, el prototipo migra las zonas
+                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',
+                 tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null, agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null }; });   // P-6f-b · DEC-214 · G-2b · DEC-223: sin cobertura, el prototipo migra las zonas
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });

@@ -41,11 +41,13 @@
   TC.unidadTxt = function (u) { return u === 'hora' ? 'por hora' : 'por visita'; };
   TC.tarifaTxt = function (t) { return t ? TC.usd(t.valor) + ' ' + TC.unidadTxt(t.unidad) : '—'; };
   TC.vigenteEn = function (t, fecha) { var f = String(fecha || TC.ahora()).slice(0, 10); return t.desde <= f && (!t.hasta || t.hasta >= f); };
-  TC.tarifas = function (agencia) { return S.tarifas.filter(function (t) { return t.agencia === agencia; }).sort(function (a, b) { return (a.inspector || '') < (b.inspector || '') ? -1 : (a.inspector || '') > (b.inspector || '') ? 1 : a.grupo < b.grupo ? -1 : a.grupo > b.grupo ? 1 : a.desde < b.desde ? 1 : -1; }); };
+  // P-6f-b · DEC-214: la tarifa propia guarda la identificación del inspector (inspectorId) y se muestra con su nombre actual; las anteriores (por nombre) se siguen leyendo.
+  var MX = function () { return W.SiriusMaestros || null; }, mismo = function (a, b) { var M = MX(); return M ? M.mismo(a, b) : a === b; }, nomAct = function (n) { var M = MX(); return n && M ? M.nombre(n) : n; }, clave = function (n) { var M = MX(); return n && M ? M.clave(n) : n; };
+  TC.tarifas = function (agencia) { return S.tarifas.filter(function (t) { return t.agencia === agencia; }).map(function (t) { return t.inspector ? Object.assign({}, t, { inspector: nomAct(t.inspectorId || t.inspector), inspectorId: clave(t.inspectorId || t.inspector) }) : t; }).sort(function (a, b) { return (a.inspector || '') < (b.inspector || '') ? -1 : (a.inspector || '') > (b.inspector || '') ? 1 : a.grupo < b.grupo ? -1 : a.grupo > b.grupo ? 1 : a.desde < b.desde ? 1 : -1; }); };
   // Tarifa que aplica a un inspector de agencia en una fecha: la propia del inspector; si no tiene, la general de la agencia.
   TC.tarifa = function (agencia, inspector, grupo, fecha) {
     var L = S.tarifas.filter(function (t) { return t.agencia === agencia && t.grupo === grupo && TC.vigenteEn(t, fecha); });
-    var propia = L.find(function (t) { return t.inspector === inspector; }), gen = L.find(function (t) { return !t.inspector; });
+    var propia = L.find(function (t) { return !!t.inspector && mismo(t.inspectorId || t.inspector, inspector); }), gen = L.find(function (t) { return !t.inspector; });
     return propia ? Object.assign({ origen: 'propia' }, propia) : gen ? Object.assign({ origen: 'general' }, gen) : null; };
   TC.sumarDia = function (f, n) { var p = f.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate()); };
   // Valida y muestra qué tarifa reemplaza (misma agencia, mismo «a quién» y mismo grupo, vigente en la fecha de inicio).
@@ -55,14 +57,14 @@
     if (!(t.valor > 0)) e.valor = 'Escribe un valor mayor que cero.';
     if (!/^\d{4}-\d\d-\d\d$/.test(t.desde || '')) e.desde = 'Elige desde cuándo rige.';
     if (String(t.motivo || '').trim().length < (v.motivoMin || 10)) e.motivo = 'Escribe el motivo (mínimo ' + (v.motivoMin || 10) + ' caracteres): queda en el historial.';
-    var prev = S.tarifas.find(function (x) { return x.agencia === t.agencia && (x.inspector || null) === (t.inspector || null) && x.grupo === t.grupo && TC.vigenteEn(x, t.desde); });
-    var fut = S.tarifas.find(function (x) { return x.agencia === t.agencia && (x.inspector || null) === (t.inspector || null) && x.grupo === t.grupo && x.desde > (t.desde || ''); });
+    var prev = S.tarifas.find(function (x) { return x.agencia === t.agencia && (x.inspector ? (t.inspector && mismo(x.inspectorId || x.inspector, t.inspector)) : !t.inspector) && x.grupo === t.grupo && TC.vigenteEn(x, t.desde); });
+    var fut = S.tarifas.find(function (x) { return x.agencia === t.agencia && (x.inspector ? (t.inspector && mismo(x.inspectorId || x.inspector, t.inspector)) : !t.inspector) && x.grupo === t.grupo && x.desde > (t.desde || ''); });
     if (!e.desde && prev && prev.desde >= t.desde) e.desde = 'Ya hay una tarifa que empieza el ' + TC.fecha(prev.desde) + ': elige una fecha posterior.';
     if (!e.desde && fut) e.desde = 'Ya hay una tarifa programada desde el ' + TC.fecha(fut.desde) + '.';
     return { errores: e, ok: !Object.keys(e).length, reemplaza: prev || null }; };
   TC.guardarTarifa = function (t, por) { var r = TC.validarTarifa(t); if (!r.ok) return r;
     if (r.reemplaza) r.reemplaza.hasta = TC.sumarDia(t.desde, -1);
-    S.seqT++; var n = { id: 'TAI-' + String(t.agencia).slice(0, 3).toUpperCase() + '-N' + S.seqT, agencia: t.agencia, inspector: t.inspector || null, grupo: t.grupo, unidad: t.unidad, valor: t.valor, desde: t.desde, hasta: null, motivo: String(t.motivo).trim(), por: por, at: TC.ahora() };
+    S.seqT++; var n = { id: 'TAI-' + String(t.agencia).slice(0, 3).toUpperCase() + '-N' + S.seqT, agencia: t.agencia, inspector: t.inspector ? nomAct(t.inspector) : null, inspectorId: t.inspector ? clave(t.inspector) : null, grupo: t.grupo, unidad: t.unidad, valor: t.valor, desde: t.desde, hasta: null, motivo: String(t.motivo).trim(), por: por, at: TC.ahora() };
     S.tarifas.push(n); var ag = TC.agencia(t.agencia) || { nombre: t.agencia };
     log(por, 'Tarifas de ' + ag.nombre, 'Tarifa ' + (t.inspector ? 'de ' + t.inspector : 'general') + ' · ' + t.grupo + ': ' + TC.tarifaTxt(n) + ' desde el ' + TC.fecha(t.desde) + (r.reemplaza ? ' (antes ' + TC.tarifaTxt(r.reemplaza) + ', hasta el ' + TC.fecha(r.reemplaza.hasta) + ')' : ''), n.motivo);
     avisar();

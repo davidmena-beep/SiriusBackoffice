@@ -18,11 +18,13 @@
   A.diaTxt = function (iso) { return A.diaNombre(iso) + ' ' + A.corta(iso); };
   A.diaLargo = function (iso) { var s = A.diaNombre(iso); return s.charAt(0).toUpperCase() + s.slice(1) + ' ' + A.corta(iso); };
   A.lista = function (a) { a = a.slice(); if (a.length <= 1) return a.join(''); var u = a.pop(); return a.join(', ') + ' y ' + u; };
-  A.disp = function (n) { return A.D().disponibilidad.find(function (x) { return x.inspector === n; }) || null; };
+  // P-6f-b · DEC-214: disponibilidad y bloqueos se buscan por la identificación del inspector (o su nombre, actual o anterior, como referencia de transición).
+  var mismo = function (a, b) { var M = window.SiriusMaestros; return M ? M.mismo(a, b) : a === b; };
+  A.disp = function (n) { return A.D().disponibilidad.find(function (x) { return x.inspector === n || (x.inspectorId && x.inspectorId === n) || mismo(x.inspector, n); }) || null; };
   A.feriado = function (iso) { var F = window.SIRIUS_FLUJO, f = F && F.calendario && F.calendario.feriados.find(function (x) { return x.fecha === iso && x.alcance === 'Nacional'; }); return f ? f.nombre : null; };
   A.trabaja = function (n, iso) { var d = A.disp(n); return !!d && d.dias.indexOf(A.parse(iso).getDay()) >= 0 && !A.feriado(iso); };
   // Bloqueos del inspector en un día: [{ ini, fin (minutos), motivo, todoElDia }]
-  A.bloqueos = function (n, iso) { return A.D().bloqueos.filter(function (b) { return b.inspector === n && iso >= b.desde.slice(0, 10) && iso <= b.hasta.slice(0, 10); }).map(function (b) {
+  A.bloqueos = function (n, iso) { return A.D().bloqueos.filter(function (b) { return mismo(b.inspector, n) && iso >= b.desde.slice(0, 10) && iso <= b.hasta.slice(0, 10); }).map(function (b) {
     var todo = b.desde.length <= 10 && b.hasta.length <= 10, ini = b.desde.length > 10 && b.desde.slice(0, 10) === iso ? A.min(b.desde.slice(11)) : 0, fin = b.hasta.length > 10 && b.hasta.slice(0, 10) === iso ? A.min(b.hasta.slice(11)) : 24 * 60;
     return { ini: ini, fin: fin, motivo: b.motivo, todoElDia: todo || (ini === 0 && fin === 24 * 60), desde: b.desde, hasta: b.hasta }; }); };
   A.confEstados = function () { return (A.D().confirmacion || {}).estados || []; };

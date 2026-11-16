@@ -4,6 +4,87 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6f-b
+
+Agencias, inspectores y usuarios ya se identifican por su identificación (DEC-214): el RUC de cada agencia y la cédula o el pasaporte de cada persona, con validación junto al campo, únicos en la compañía y con la etiqueta «Sin identificación» para las fichas anteriores. Quedó publicado en la **Versión 257**; la Versión 258 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Validaciones (`sirius-maestros.js`, nuevo):** cédula de 10 dígitos con provincia 01 a 24 o 30, tercer dígito menor que 6 y dígito verificador (módulo 10). Pasaporte de 5 a 20 letras o números. RUC de 13 dígitos que termina en 001. Los mensajes salen junto al campo, por ejemplo «La cédula no es válida (dígito verificador).» o «El RUC debe terminar en 001.».
+- **Usuarios:** la lista tiene la columna «Identificación». Invitar y editar piden «Tipo de identificación» (Cédula o Pasaporte) y el número, y rechazan uno repetido con «Esa identificación ya está registrada (Marco Tapia)». Al editar también se puede cambiar el nombre.
+- **Agencias:** la ficha y el formulario tienen razón social, nombre comercial y RUC obligatorio y único.
+- **Referencias por identificación:** lo nuevo se guarda con la identificación y se muestra con el nombre actual. Cuando alguien cambia de nombre, el anterior queda como alias de su identificación, así que lo que aún guarda el nombre viejo sigue apuntando a la misma persona y muestra el nombre nuevo. Esto aplica a:
+  - la cobertura del inspector;
+  - la disponibilidad, los bloqueos y las visitas en la Agenda;
+  - la tarifa propia que la agencia paga al inspector;
+  - las reglas de completado con inspector independiente (DEC-207);
+  - las facultades y los responsables (la búsqueda de la persona acepta nombre, identificación o nombre anterior);
+  - «Mis honorarios» y el filtro de proveedor de Liquidaciones.
+- **Fichas sin identificación:** llevan la etiqueta «Sin identificación» en Usuarios y Agencias. Para guardar cualquier cambio hay que completarlas primero; mientras tanto siguen funcionando con su nombre. El Inicio del Administrador muestra «N fichas sin identificación» con «Completar», que abre Usuarios filtrado.
+- **Con la conexión:**
+  - usuarios[] e inspectores[] traen tipoIdentificacion e identificacion; agencias[] traen ruc, razonSocial y nombreComercial;
+  - crearUsuario y editarUsuario llevan { tipoIdentificacion, identificacion } y agenciaRuc junto a la agencia;
+  - acción nueva guardarAgencia { ruc, razonSocial, nombreComercial, estado } → { ok, mensaje }, desde «Editar» de la agencia;
+  - agendarVisita y ofertarVisita llevan inspectorId e inspectoresId además del nombre.
+- `sirius-conexion.js` sigue con su línea mínima (70 bytes).
+
+**Verificado**
+- Abrí las 5 escenas nuevas (14 variantes) y 11 que ya existían (`usuarios`, `usuarioinvitar`, `agencias`, `agenciatarifas`, `cxusuarios`, `coordfases`, `cxcoordfases`, `agendasemana`, `cxagenda`, `liquidaciones`, `mishonorarios`) a 1280 × 720 y 1920 × 1080, sin errores en la consola.
+- Comparé con la versión anterior el texto de 27 escenas.
+  - Dieron exactamente el mismo texto 15: Coordinar visita (`coordfases`, `cxcoordfases`, `coordfechahora`, `coordoferta`), Agenda (`agendasemana`, `agendadia`, `agendamover`, `cxagenda`), Liquidaciones (`liquidaciones`, `liqdetalle`, `mishonorarios`, `agenciapagos`), `inicioadm`, `complreglas` y `cuentamascara`.
+  - En las 12 de Usuarios y Agencias la primera diferencia es la columna «Identificación» o el nombre comercial; no revisé el resto del texto de esas pantallas.
+- `maestrosusuarios`:
+  - 1709991268 da «La cédula no es válida (dígito verificador).»;
+  - con 1709991267 (`?fid=valida`) se invita a Camila Reyes y aparece con su cédula;
+  - con la de Marco Tapia (`?fid=repetida`) dice «Esa identificación ya está registrada (Marco Tapia)».
+- `maestrosagencias`: «El RUC tiene 13 dígitos (escribiste 12).» y, con `?fid=sin001`, «El RUC debe terminar en 001.».
+- `maestrosrenombrar`: Diana Cárdenas pasa a «Diana Cárdenas Vela».
+  - Su ficha conserva la cobertura «Quito: Centro y Sur», guardada por su cédula.
+  - En la Agenda (`?fvista=agenda`) salen con el nombre nuevo su jornada, su bloqueo del 20/10 y dos visitas: una guardada con el nombre anterior (20141) y otra con su identificación (20178).
+  - En Eurosurvey (`?fvista=tarifa`) su tarifa dice «Diana Cárdenas Vela · Ramos Generales · USD 14,00 por hora».
+- `maestrossinid`:
+  - Paola Vinueza y Peritajes del Pacífico salen con «Sin identificación»;
+  - el Inicio dice «2 fichas sin identificación»;
+  - al editar aparece «Completa la identificación para guardar los cambios de esta ficha (DEC-214).» y, en la agencia, «Escribe el RUC.».
+- `cxmaestros`:
+  - crearUsuario sale con { tipoIdentificacion: 'Cédula', identificacion: '0909991259', agencia: 'Eurosurvey', agenciaRuc: '1791456320001', … };
+  - con `?cxdup=1` la base responde { ok: false } y la pantalla dice «La base no guardó el cambio: La identificación 1709991275 ya está registrada (Carlos Mora). Se deshizo el cambio.»;
+  - con `?fvista=agencia` guardarAgencia sale con { ruc: '1793012345001', razonSocial: 'Verifica Inspecciones Técnicas S.A.', nombreComercial: 'Verifica', estado: 'Activa' }.
+- Las 27 identificaciones de prueba y los 4 RUC pasan las validaciones.
+
+**No verificado**
+- Una base real: los nombres de los campos (tipoIdentificacion, identificacion, ruc, agenciaRuc, inspectorId, inspectoresId) son los acordados, pero no los probé contra la base de la asesoría.
+- No envié agendarVisita ni ofertarVisita desde Coordinar visita para ver inspectorId en pantalla: se agrega en el paso común de envío, revisado solo en el código.
+- Honorarios del inspector, cuentas bancarias y la tarifa «Completado de informe» siguen buscando por nombre: después de un cambio de nombre no comprobé que se sigan encontrando.
+- No probé la pantalla con un pasaporte válido de punta a punta: probé la regla y el mensaje.
+
+**Diferencias**
+- En Coordinar visita, la Agenda, Usuarios y Liquidaciones los selectores muestran el nombre actual y usan ese nombre como valor; la identificación se resuelve al guardar o al enviar. El selector de la regla de completado sí usa la identificación como valor.
+- La agencia del usuario sigue guardando el identificador interno de la agencia (por ejemplo «eurosurvey»), que no depende del nombre; también se encuentra por su RUC.
+- Algunas pantallas vuelven a cargar los datos del ejemplo al abrirse. Por eso los cambios de nombre y las fichas sin identificación de la sesión se guardan como cambios que se vuelven a aplicar; al cambiar de escena se olvidan.
+- Con la conexión, las personas salen solo de la base: las del ejemplo no se mezclan con las de la base.
+- Identificaciones de prueba (no son de personas reales, LOPDP):
+  - Usuarios del ejemplo (cédulas): 0909991010 Andrea Salazar, 1709991028 Verónica Lema, 1709991036 Daniela Ruiz, 0909991044 Santiago Ortiz, 1709991051 Ricardo Almeida, 1709991069 Rodrigo Salvador, 0909991077 Mónica Ríos, 1709991085 Marco Tapia, 1709991093 Cristian Vaca, 0909991101 Paola Vinueza, 1709991119 Luis Andrade, 1709991127 Diana Cárdenas, 0909991135 Mauricio Endara, 1709991143 Sofía Arteaga, 1709991150 Jorge Pazmiño, 0909991168 Carla Ponce, 1709991176 Patricia Andrade, 1709991184 Gabriela Torres y 0909991192 Pedro Lasso.
+  - Pasaporte: PA4815162 de Felipe Andrade.
+  - Base simulada: 1709991218 David Mena, 0909991226 Gabriela Toapanta, 1709991234 Carolina Vega, 1709991242 Diego Salinas, 1709991275 Carlos Mora (inspector sin usuario) y 0909991259 Valeria Cevallos.
+  - Escena `maestrosusuarios`: 1709991267 Camila Reyes.
+  - RUC: 1791456320001 Eurosurvey S.A., 1792788441001 Inspecciones Andinas Cía. Ltda., 0992671543001 Peritajes del Pacífico S.A. y 1793012345001 Verifica.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `maestrosusuarios` | Columna «Identificación»; cédula inválida, válida (`?fid=valida`) y repetida (`?fid=repetida`) |
+| `maestrosagencias` | Agencias con RUC; RUC de 12 dígitos o, con `?fid=sin001`, que no termina en 001 |
+| `maestrosrenombrar` | Diana Cárdenas → «Diana Cárdenas Vela»: cobertura, Agenda (`?fvista=agenda`) y tarifa (`?fvista=tarifa`) con el nombre nuevo |
+| `maestrossinid` | Fichas «Sin identificación»; aviso del Inicio (`?fvista=inicio`); completar al editar (`?fvista=editar`, `?fvista=agencia`) |
+| `cxmaestros` | Conexión simulada: crearUsuario con identificación, { ok: false } por cédula repetida (`?cxdup=1`) y guardarAgencia (`?fvista=agencia`) |
+
+También abrí `usuarios`, `usuarioinvitar`, `agencias`, `agenciatarifas`, `cxusuarios`, `coordfases`, `cxcoordfases`, `agendasemana`, `cxagenda`, `liquidaciones` y `mishonorarios`.
+
+**Tiempo de la etapa: inicio 15/11/2026 22:13 · fin 15/11/2026 22:49 · 36 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-0e
 
 El módulo Calificación del menú lateral lista cada informe de vehículo por calificar —«50012 · PR121A»— aunque el caso siga «En coordinación», la pestaña «En calificación» de la bandeja cuenta ese caso y el resumen del inspector de PR121A ya dice «Presencial · Mauricio Endara». Quedó publicado en la **Versión 255**; la Versión 256 solo completa en el registro la hora de fin.
