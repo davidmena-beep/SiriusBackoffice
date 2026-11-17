@@ -4,6 +4,333 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-1c
+
+Publiqué la versión 279 de SIRIUS. Ya está el lado de la aseguradora: «Por aprobar» con la revisión a pantalla completa, y las pestañas de Finanzas («Facturas por validar» con la consulta al SRI, «Por pagar» y «Pagadas»). También está el mensaje del inspector de agencia de planta. Liquidaciones usa el contrato de la base (SQL 53) con las mismas pantallas, con y sin la conexión. Corregí lo observado en P-6g-1b.
+
+**Qué cambió**
+- **Panel del cálculo:**
+  - «Cálculo» (en «Por liquidar», en la mesa y en la revisión) abre un panel lateral a la derecha con la estructura de la ficha del inspector en Usuarios. Muestra placa o bien, caso y asegurado; el camino de aprobación; las partes del cálculo; el tiempo medido y la referencia; y los km.
+  - Se cierra con «×» o Esc y no tapa la barra de selección.
+  - Ya no está la sección «Cálculo del honorario» de arriba.
+- **Km y camino:**
+  - La explicación usa los mismos km del cálculo: «km sugeridos 18 (centro de Quito al punto, menos el radio urbano de 15 km) · km cobrados 27 · comentario: …».
+  - El camino se lee «Tarifa preacordada · pasa a liquidación por los km» (o «por el ajuste»).
+- **«Por liquidar»:** la casilla y Caso quedan fijos al desplazarse hacia los lados.
+- **«Por aprobar»:**
+  - La lista muestra número, proveedor, sucursales, versión, inspecciones, cuántas cambiaron frente al cálculo y subtotal.
+  - La revisión ocupa toda la pantalla, con «‹ Por aprobar» y «Siguiente ›». Es una hoja con la fila de títulos fija y estas columnas: caso, asegurado, placa o bien, nivel (con el sugerido), horas con «!» y su valor calculado, km con los sugeridos, comentario del proveedor, subtotal calculado, subtotal propuesto y observación.
+  - Las líneas cambiadas se resaltan. Desde la v2 aparece arriba «Cambios desde la v1» con el subtotal antes y ahora, y las líneas quitadas, agregadas o corregidas.
+  - «Observar» habilita la observación y el subtotal sugerido en la misma fila.
+  - «Devolver para corregir» exige al menos una línea observada y un motivo. «Aprobar» aprueba toda la liquidación y no se puede pulsar mientras haya observaciones.
+- **Finanzas:**
+  - «Facturas por validar»: cada factura muestra su consulta al SRI (estado, RUC, número, fecha, subtotal ✓), lo que incluye y el subtotal aprobado, con «Validar» o «Devolver» con motivo.
+  - «Por pagar»: registra el pago de una o varias facturas con fecha y referencia.
+  - «Pagadas»: el historial.
+- **Inspector de agencia:** si la agencia no paga a sus inspectores por inspección, ve «Eres inspector de planta». Si paga, ve «Mis honorarios con Eurosurvey», informativo.
+- **Contrato con la base:**
+  - El honorario lleva `calculo { … }`, `ajuste { … } | null` y `aprobacion 'Preacordada' | 'Liquidación'`. La liquidación lleva `observaciones [{ linea, texto, subtotalSugerido }]` y `versiones [{ version, enviada, resultado, por, cambios }]`. La factura lleva `sri { … }`.
+  - Las 13 acciones tienen la forma indicada: `enviarLiquidacion { lineas }` → { id, numero } y `enviarFactura { clave, liquidaciones, honorarios }` (la base vuelve a consultar el SRI).
+  - El borrador vive en la sesión del proveedor («Borrador 1») y recibe su número al enviarlo.
+- **Prueba del contrato:** la escena `cxliqproceso` tiene «Prueba del contrato con la base», que envía las 13 acciones y muestra cada respuesta.
+- **Inicio:** los indicadores del proveedor y de Finanzas van en subtotal y llevan a las pestañas nuevas.
+
+**Verificado**
+- Abrí 13 escenas a 1280×720 y 1920×1080 (las 6 nuevas más `liqcalculopanel` con `?fvista=planta` y `liqplanta` con `?fvista=si`, y las 7 de P-6g-1b) y todas cargan sin errores. A 1280 px la revisión cabe sin desplazar (1066 px en 1066 px).
+- Abrí también otras 14 escenas sin errores: `liquidaciones`, `liqdetalle`, `liqfactura`, `facturagrupo`, `facturadevuelta`, `mishonorarios`, `tarifarios`, `cuentainspector`, `agenciapagos`, `honorpropuesta`, `liqdevolver`, `liqdocumento` (también con `?fvista=factura`), `inicio` e `iniciofin`.
+- Con y sin la conexión se ven las mismas pantallas: el texto de 9 escenas es idéntico con y sin `?cx=1`. No queda nada de la pantalla de P-6g-1 en el proyecto ni en lo publicado.
+- Forma exacta, en una copia aparte con una conexión temporal que revisa las claves de cada acción y de los datos:
+  - Se enviaron 32 acciones de las 13 clases desde 7 escenas, todas con la forma exacta y con los datos del contrato sin campos de más.
+  - `cxliqproceso`: 19 de 19 como se esperaba. `devolverLiquidacion` sin observaciones da { ok: false } («Observa al menos una línea»), y `enviarFactura` con subtotal distinto también («El subtotal de la factura en el SRI (USD 949,70) no coincide con lo marcado (USD 946,20)»).
+- Recorridos:
+  - Revisión: observar PCK2210 y devolver con 2 observaciones; pasa a la siguiente («1 de 1»).
+  - v2: «Aprobar» deja las 3 líneas en «Por facturar».
+  - Finanzas: validar, devolver con motivo y pagar 2 facturas.
+  - Mesa: enviar el Borrador 1 lo vuelve #001414 · v1.
+  - Quitar y descartar en un borrador no llegan a la base.
+  - Con `cxok=0`, el cambio se deshace y se muestra el mensaje.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real (SQL 53) y el servicio real del SRI: lo probé con la conexión simulada.
+- La descarga real de PDF y Word.
+- El uso con lectores de pantalla.
+
+**Diferencias**
+- El panel del cálculo usa la estructura de la ficha de Usuarios, pero va acoplado a la derecha y sin fondo oscuro, para no tapar la barra de selección.
+- El borrador no tiene número hasta enviarlo («Borrador 1»), porque el contrato asigna el número en `enviarLiquidacion`. En P-6g-1b se veía como #001414.
+- Retirado:
+  - La pantalla de P-6g-1 (`sirius-honorarios-base.js`, `datos-cx-honorarios.js` y sus 5 escenas cx*) ya no estaba desde P-6g-1b. Ahora lo comprobé también en lo publicado.
+  - En esta etapa salen la sección «Cálculo del honorario», el detalle y los formularios anteriores de la aseguradora, sus pestañas «Honorarios» y «Facturas» y la fila «▾» de la mesa.
+  - En el modelo salen las acciones `crearLiquidacion` y `cargarFactura` hacia la base.
+- Queda en Liquidaciones el código del recorrido anterior a DEC-247 (etapas 11 y 11-b). Ya no se usa, pero no lo borré en esta etapa.
+- «Aprobar» no se puede pulsar mientras haya observaciones, para que no haya aprobación parcial.
+- Los contadores de la aseguradora solo aparecen si son mayores que 0, para que las 8 pestañas de Finanzas quepan a 1280 px.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `liqcalculopanel` | Carla Ponce · Finanzas de agencia | Panel del cálculo de PCK2210 (sugeridos 18, cobrados 27, comentario); `?fvista=planta`: la planta con «!» |
+| `liqrevision` | Verónica Lema · Ejecutivo de inspecciones | #001414 · v1 a pantalla completa, bodega observada (sugerido USD 146) y «Devolver para corregir (1)» |
+| `liqrevisionv2` | Verónica Lema | v2 con «Cambios desde la v1: USD 986,80 → USD 932,50» y «Aprobar» |
+| `liqfinanzas` | Mónica Ríos · Finanzas | Validar con la consulta al SRI, devolver otra, pagar dos, «Pagadas» |
+| `liqplanta` | Mauricio Endara · Inspector | «Eres inspector de planta»; `?fvista=si`: «Mis honorarios con Eurosurvey» |
+| `cxliqproceso` | Carla Ponce (con la conexión) | Prueba del contrato: 13 acciones y sus 2 { ok: false } esperados |
+
+Todas, con `&cx=1`, van con la conexión simulada. También abrí `honorcalculo`, `liqporliquidar`, `liqmesa`, `liqmesavarias`, `liqunicidad`, `liqfacturarsri`, `liqindependiente`, `liqdevolver`, `liqdocumento`, `liquidaciones`, `liqdetalle`, `tarifarios`, `honorpropuesta`, `facturagrupo` y `cuentainspector`.
+
+**Tiempo de la etapa: inicio 16/11/2026 16:33 · fin 16/11/2026 17:09 · 36 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6g-1b (con la maqueta aprobada)
+
+Publiqué la versión 275 de SIRIUS. La etapa P-6g-1b está rehecha sobre la maqueta aprobada: cada inspección entregada llega con su honorario precalculado, y el proveedor trabaja en cuatro pestañas («Por liquidar», «Mesa de trabajo», «Por facturar» con la clave de acceso del SRI y «Seguimiento»). Los componentes y los colores son los del sistema de diseño.
+
+**Qué cambió**
+- **Honorario precalculado (DEC-247 · 1):** hay uno por inspección y por vehículo o bien. Usa el tarifario vigente en la fecha de la inspección: el contrato del proveedor y, para lo que el contrato no define, el general.
+  - Vehículos: tarifa fija por modalidad.
+  - Ramos Generales: hora-hombre por nivel (Básico 50, N1 80, N2 100), redacción por hora y equipos por tramos escalonados.
+  - Las horas medidas se redondean a la media hora superior y el nivel se sugiere por el riesgo.
+  - Las horas fuera del 50 %–150 % de la referencia del nivel llevan «!» con su explicación.
+  - km = distancia del centro a la visita − radio urbano, nunca negativo, × valor por km. Sin valor por km: «km por valorar» y movilización 0.
+  - Todo es subtotal; el IVA y el total solo aparecen al pie, como información.
+- **Caminos (DEC-247 · 2):**
+  - Un preacordado sin km ni ajuste va directo a «Por facturar».
+  - Ramos Generales, o cualquier honorario con km o con ajuste, va a «Por liquidar».
+  - «Ajustar» un preacordado lo pasa a «Por liquidar» con un aviso; «Quitar el ajuste» lo devuelve.
+- **Unicidad (DEC-247 · 3):** un honorario está en una sola liquidación no anulada, y un honorario o una liquidación en una sola factura no devuelta. Quitar un honorario («×») o anular su liquidación lo devuelve a «Por liquidar».
+- **«Por liquidar»:**
+  - Lista amplia con caso y orden, asegurado, línea de negocio, sucursal, ramo, modalidad, placa o bien, fecha, inspector, por qué se liquida y subtotal. El subtotal va fijo a la derecha, con el enlace «Cálculo».
+  - Filtros de fechas, ramo, modalidad, sucursal y línea de negocio, y búsqueda por caso, placa o asegurado.
+  - Selección con un clic en la fila y «marcar todo».
+  - Barra de selección con cantidad, subtotal, «Quitar selección», «Agregar a #N» y «Crear liquidación y abrir la mesa».
+  - La tarjeta «Cálculo del honorario» muestra las partes del cálculo, el tiempo medido, la referencia y los km.
+- **«Mesa de trabajo»:**
+  - Las liquidaciones abiertas aparecen arriba como fichas; se ve una o «Ver todas a la vez».
+  - Cada liquidación tiene «Vista previa», «Anular» y «Enviar a aprobación» (o «Reenviar vN+1»).
+  - La hoja tiene la fila de títulos fija, «Caso · sucursal» fijo a la izquierda y el subtotal y las acciones fijos a la derecha.
+  - Se editan nivel, horas, equipos, km, ajuste ± y comentario. En Vehículos la base lleva candado y solo cambian los km.
+  - La celda cambiada se resalta y el subtotal muestra debajo «calculado USD …».
+  - Todo cambio pide comentario: si falta, la celda se resalta y no se puede enviar. Tras cambiar un valor, el foco pasa al comentario de esa fila.
+  - «▾» muestra el cálculo de Ramos Generales y «×» quita la línea.
+  - En una liquidación «Por corregir», la observación aparece bajo su línea con «Aceptar» el subtotal sugerido.
+  - El pie muestra el subtotal resaltado, y el IVA y el total como información.
+- **«Por facturar»:**
+  - Dos grupos: «Liquidaciones aprobadas» y «Honorarios preacordados».
+  - Panel «Nueva factura» con el subtotal a facturar (IVA y total como información), la clave de acceso de 49 dígitos y «Consultar en el SRI».
+  - Compara el estado AUTORIZADO, el RUC del emisor y el subtotal. «Enviar factura» solo se habilita con los tres ✓; si algo no coincide, dice qué y todo sigue pendiente.
+- **«Seguimiento»:** liquidaciones enviadas, por corregir, aprobadas, facturadas y pagadas, y las facturas con su estado, con «Documento» y «Corregir».
+- **Documento:** «Liquidación de honorarios de inspección #N · vN» en PDF y Word, con las partes del cálculo, los km, el ajuste con su comentario y la observación. El pie lleva subtotal, IVA y total.
+- **`sirius-sri.js` (nuevo):**
+  - `SIRIUS_SRI.consultar(clave) → { estado, ruc, numero, fecha, subtotal, iva, total }`, simulado.
+  - `validarClave` revisa los 49 dígitos, el tipo 01 y el dígito verificador.
+  - `SIRIUS_SRI.servicio` queda listo para conectar el servicio real.
+- **Con la conexión:**
+  - Acciones nuevas: `crearLiquidacion`, `enviarLiquidacion { id }`, `ajustarHonorario { id, cambios, comentario }`, `aceptarSugerencia` y `cargarFactura` con la clave.
+  - Corrección: con la conexión, la tarifa de la agencia caía en el general. Ahora se busca por RUC en el catálogo local.
+- **Colores:**
+  - Tokens del sistema: encabezado de tabla de la DataTable con una línea `--border-strong` para dar contraste, y «Anular» como botón secundario con `--color-danger` (el sistema no tiene variante de peligro).
+  - Celda cambiada en `--color-brand-wash`, comentario faltante en `--color-danger-bg`, «!» en `--color-warning`.
+  - El amarillo propio de las líneas retenidas pasa a `--color-warning-bg`.
+- **Escenas:**
+  - 5 nuevas y 4 retiradas (`liqcaminos`, `liqproveedor`, `liqcorregir`, `liqfacturar`), con las descripciones revisadas.
+  - El lado de la aseguradora sigue como estaba hasta P-6g-1c, adaptado a los campos nuevos.
+
+**Verificado**
+- Abrí las 7 escenas nuevas y `tarifarios`, `honorpropuesta` (la calculadora), `facturagrupo` y `cuentainspector` a 1280×720 y 1920×1080: 24 capturas, sin errores de página.
+- Mesa a 1280: la tabla mide 1066 px en un contenedor de 1066 px. Caso, placa, celdas, comentario y subtotal se ven sin desplazar. La fila de títulos queda fija al desplazar (probado a 1280×560).
+- Valores:
+  - PRB1212: USD 16,50.
+  - PCK2210 con 18 km: USD 23,70.
+  - Bodega Básico 2,4→2,5 h y 1,4→1,5 h, 0 equipos: USD 146.
+  - Planta N1 6,4→6,5 h «!», 3 h y 14 equipos: USD 760.
+  - TBA1235 con 32 km: USD 29,30.
+  - PFJ3628 de Luis: 12 km «por valorar», USD 18.
+  - Factura: USD 169,70 + 3 × USD 16,50 = USD 219,20, con IVA USD 32,88 y total USD 252,08.
+- Flujos, sin la conexión y con la conexión (`&cx=1`):
+  - `liqmesa`: «Enviar» está deshabilitado mientras falta un comentario. Al cambiar los equipos, el foco pasa al comentario. Con los comentarios escritos, la #001414 queda Enviada v1.
+  - `liqunicidad`: «×» quita la bodega, que vuelve a «Por liquidar» y se agrega a la #001415. Al anular, vuelven sus líneas.
+  - `liqporliquidar`: la búsqueda «PCK» deja 1 de 5. «Crear liquidación y abrir la mesa» crea la #001415 con 2 líneas.
+  - `liqmesavarias`: «Aceptar USD 79,00» y luego «Reenviar v2» dejan la #001414 Enviada v2.
+  - `liqfacturarsri`: la clave coincide, se envía la factura 001-002-000000412 y queda «Por validar». Con `?fvista=nocoincide`, el subtotal difiere en USD 3,50, «Enviar factura» queda deshabilitado y todo sigue pendiente.
+  - Ajustar PRB1212 con 6 km lo pasa a «Por liquidar»; «Quitar el ajuste» lo devuelve.
+  - Con `cxok=0`, se muestra «La base no guardó el cambio…» y el cambio se deshace.
+- Colores: en el código nuevo no hay otro color fijo que `#FFFFFF`.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- No probé la consulta real al SRI: la consulta es simulada.
+- No probé la descarga real de PDF y Word en un navegador con ventanas emergentes.
+- No probé con lectores de pantalla.
+- El lado de la aseguradora no se rediseñó: es parte de P-6g-1c.
+
+**Diferencias**
+- Colores: el encabezado de tabla y la barra de selección usan los tonos del sistema (claros), no el azul oscuro de la maqueta.
+- «Agregar a #N» es un solo botón cuando hay una liquidación abierta; con varias, aparece un selector.
+- Anular en Borrador no pide motivo; en «Por corregir» pide un motivo de 10 caracteres o más, que queda en el historial.
+- Las horas medidas de `honorcalculo` son 2,4 h y 1,4 h (bodega) y 6,4 h (planta). Al redondearlas dan las horas pedidas.
+- No hay ninguna escena llamada «calculadora»: abrí `honorpropuesta`.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `honorcalculo` | Carla Ponce · Finanzas de agencia | Cálculo de 4 honorarios: tarifa fija, 18 km, bodega Básico y planta N1 con «!» |
+| `liqporliquidar` | Carla Ponce | Lista filtrada por Quito con 2 marcadas y la barra de selección |
+| `liqmesa` | Carla Ponce | #001414 con 4 líneas; cambios con comentario; «Enviar» deshabilitado mientras falta uno |
+| `liqmesavarias` | Carla Ponce | «Ver todas a la vez»: #001414 «Por corregir» con su observación y «Aceptar», y #001415 en Borrador |
+| `liqunicidad` | Carla Ponce | 2 Borrador; quitar la bodega y agregarla a la otra; anular devuelve las líneas |
+| `liqfacturarsri` | Carla Ponce | 1 aprobada + 3 preacordados; la clave coincide; `?fvista=nocoincide`: diferencia de USD 3,50 |
+| `liqindependiente` | Luis Andrade · Inspector | Preacordados en «Por facturar» y una presencial con km «por valorar» en «Por liquidar» |
+
+Todas, con `&cx=1`, van con la conexión simulada. También abrí `tarifarios`, `honorpropuesta`, `facturagrupo`, `cuentainspector`, `liqdevolver` y `liqdocumento`.
+
+**Tiempo de la etapa: inicio 16/11/2026 15:04 · fin 16/11/2026 15:47 · 43 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6g-1b
+
+Liquidaciones sigue ahora el proceso real (DEC-247). Los honorarios preacordados quedan listos para facturar. Los variables los agrupa el proveedor en una liquidación con número y versión, que la aseguradora aprueba o devuelve para corregir. El proveedor factura liquidaciones aprobadas y preacordados juntos. Todo usa las mismas pantallas con y sin la conexión, y se retiró la pantalla simplificada de P-6g-1. Quedó publicado en la **Versión 270**; la Versión 271 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Un solo modelo, con y sin la conexión:** `SiriusLiqProceso` calcula el honorario y aplica las reglas de las 13 acciones. Con la conexión, cada acción va a la base; con { ok: false }, todo vuelve atrás y se muestra el mensaje. La base simulada usa las mismas reglas.
+- **Honorario:** uno por inspección y por vehículo o bien, calculado al entregar el informe.
+  - Valor base del tarifario: Vehículos con tarifa fija por modalidad; Ramos Generales con la calculadora hora-hombre.
+  - Más la movilización: km sugeridos (centro de la ciudad a la visita, menos el radio urbano) por el valor por km. Sin valor por km, dice «km por valorar».
+  - Preacordado (sin km y sin ajuste) → directo a «Por facturar». Si no → «Por liquidar».
+  - Ajustar un preacordado avisa «Al ajustar, este honorario necesita liquidación»; quitar el ajuste lo devuelve.
+- **Proveedor** (Finanzas de agencia o inspector independiente): pestañas Honorarios, Liquidar, Liquidaciones, Facturar y Facturas, además de su cuenta o «Pagos a nuestros inspectores».
+  - Liquidar: filtros de fechas, modalidad y ramo; ajuste de valor o km con nota obligatoria; vista previa; envío (v1).
+  - Por corregir: aceptar el valor sugerido en un clic, ajustar, quitar, agregar, «Reenviar (vN+1)» o anular.
+  - Facturar: dos grupos (liquidaciones aprobadas completas y preacordados uno por uno) y el total esperado con el IVA vigente.
+- **Aseguradora** (Ejecutivo de inspecciones, Finanzas y Administrador, configurable):
+  - «Por aprobar» con la columna Versión y, por proveedor, cuántas liquidaciones tuvieron más de una versión.
+  - El detalle resalta las líneas ajustadas (propuesto frente a tarifario) y, desde la v2, muestra solo lo que cambió.
+  - «Aprobar» aprueba la liquidación completa. «Devolver para corregir» pide líneas observadas (texto y valor sugerido opcional) y un motivo.
+  - Finanzas valida o devuelve la factura y registra el pago.
+- **Unicidad:** un honorario está en una sola liquidación no anulada, y un honorario o una liquidación en una sola factura no devuelta. Quitar o anular devuelve a «Por liquidar»; una factura devuelta deja todo en «Por facturar».
+- **Documento:** la orden de pago «#001414 · v2» y la factura, con caso, orden, ramo, asegurado, modalidad, placa o bien, fecha, estado del caso, base, km, movilización, ajuste con su nota, observación y total. Se descargan en PDF (imprimir) y en Word, con su plantilla.
+- **Historial** por versión (quién, cuándo, resultado, observaciones y cambios) y de cada factura.
+- **Tarifario:** «Aprobación» por grupo (inicial: Vehículos «Preacordada», Ramos Generales «Requiere liquidación») y «Valor por km fuera del perímetro urbano» (sin valor inicial). Salen «Momento y responsable de liquidar» y la validación previa de la agencia.
+- **Ficha de la agencia:** «Paga a sus inspectores por inspección» (inicial: no). Con «no», el inspector de agencia no ve honorarios ni el menú «Honorarios»; con «sí», ve «Mis honorarios con <agencia>».
+- **Inicio:** tareas del proceso nuevo para el proveedor (liquidar, corregir, facturar, factura devuelta), los aprobadores y Finanzas.
+- **Retirado:** `sirius-honorarios-base.js`, `datos-cx-honorarios.js` y las 5 escenas cx* de P-6g-1.
+
+**Verificado**
+- `liqcaminos` (con y sin la conexión): 4 preacordados «Por facturar» (USD 16,50 y 12,00), PBX4410 con 20 km sugeridos × USD 0,40 «Por liquidar» y la bodega USD 121,00. Ajustar uno avisa y lo pasa a «Por liquidar»; quitar el ajuste lo devuelve.
+- `liqproveedor`: ajusté 35 km con nota, vi la vista previa y envié la #001414 · v1 (USD 174,23).
+- `liqdevolver`: la línea ajustada sale resaltada; al devolver, la liquidación queda «Por corregir» con la observación y el motivo en el historial.
+- `liqcorregir`: aceptar la sugerencia, quitar la bodega y reenviar dejan la v2 (con la conexión, envía `aceptarSugerencia`, `editarLiquidacion` y `reenviarLiquidacion`). Con `?fvista=aprobador`, «Qué cambió desde la v1» y «Líneas que cambiaron (1 de 1)»; se aprueba.
+- `liqunicidad`: «Liquidar» vacío; al quitar la bodega aparece y entra en la #001415. Con la conexión, al anular, sus 2 líneas vuelven y van en la #001415.
+- `liqfacturar`: con otro total, «No coincide: el total debe ser USD 225,98» junto al campo y nada se envía. Con el total correcto (USD 196,50 + 29,48 = 225,98) queda «Por validar». Con `?fvista=devuelta`, todo vuelve a «Por facturar» con el aviso.
+- `liqindependiente` (con la conexión): Luis factura sus 2 preacordados (USD 34,50) y envía su Ramos Generales.
+- `liqplanta`: sin pago, el inspector no ve honorarios; con `?fvista=si`, «Mis honorarios con Eurosurvey» (con y sin la conexión).
+- `liqdocumento`: el documento «#001414 · v2»; la factura se valida y se paga.
+- **Conexión temporal en una copia aparte:** las 13 acciones salieron con la forma exacta del contrato. Las ids de la base reemplazan a las de la pantalla, y una respuesta { ok: false } devolvió todo a como estaba.
+- Inicio de Luis (`facturadevuelta`) muestra «Corregir factura» y «Facturar». `iniciofin` e `inicioeje` abren sin errores.
+- Abrí las 9 escenas nuevas sin y con la conexión simulada, y `tarifarios`, `facturagrupo`, `facturadevuelta`, `agenciapagos`, `cuentainspector`, `cuentaaprobar` y `mishonorarios`, a 1280×720 y 1920×1080, sin errores en la consola.
+- `sirius-conexion.js` sigue con su línea mínima (70 bytes). KNOWN_ESC 663 y 706 escenas.
+
+**No verificado**
+- Las capturas adjuntas («Solicitud de liquidación» y «Aprobación de liquidaciones») no llegaron a esta sesión; me guié por su descripción.
+- Contra la base real: solo con la base simulada y la conexión temporal.
+- El cálculo al entregar un informe en el prototipo: los honorarios salen de los informes entregados de datos-liq-proceso.js; no lo conecté al envío del informe en Completar o en la app.
+- Imprimir y descargar Word: los botones existen, pero no abrí el PDF ni el .doc en otro programa.
+- Las escenas existentes no tienen variante con la conexión (`?cx=1` solo arma las 9 nuevas).
+
+**Diferencias**
+- La «Factura que agrupa» y la «Factura devuelta» se rehicieron sobre el modelo nuevo; las pantallas son nuevas, con los mismos componentes de Liquidaciones. Las escenas `liquidaciones`, `liqdetalle`, `liqfactura`, `facturagrupo`, `facturadevuelta` y `mishonorarios` ahora muestran el proceso nuevo.
+- Aceptar el valor sugerido deja la línea exactamente en ese valor, sin km aparte (el valor sugerido se toma como el total de la línea).
+- El ajuste guarda «valor de la inspección» y «km»; el total es valor más km por valor por km.
+- No hay «Borrador» guardado: la liquidación nace «Enviada · v1» desde «Liquidar». Anular solo se ofrece en «Por corregir».
+- Con la conexión, «Paga a sus inspectores por inspección» se lee de `agencias[].pagaInspectores`. Cambiarlo con la conexión no tiene acción en el contrato: hoy solo se cambia sin la conexión.
+- Tarifarios, Configuración y Cuentas siguen con datos de ejemplo también con la conexión. El aviso «Datos de demostración» vuelve a Liquidaciones solo si la base no trae `honorarios[]`.
+- Las escenas `honoragencia`, `honorporliquidar`, `honorsubasta` y `montodecimal` (aprobación honorario por honorario, validación de la agencia, subasta y monto con decimales) quedan fuera del recorrido: abren sin errores, pero con las pestañas nuevas.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `liqcaminos` | 6 honorarios de Eurosurvey: 4 preacordados, 1 con km y 1 de Ramos Generales; ajustar un preacordado lo pasa a «Por liquidar» |
+| `liqproveedor` | «Liquidar»: ajustar con km adicional y nota, vista previa y enviar (v1) |
+| `liqdevolver` | Ejecutivo de inspecciones: la v1 con la línea ajustada resaltada y «Devolver para corregir» con valor sugerido |
+| `liqcorregir` | Aceptar la sugerencia, quitar una línea y reenviar (v2); `?fvista=aprobador`: solo los cambios y aprobar |
+| `liqunicidad` | Quitar o anular devuelve el honorario a «Liquidar» y entra en una liquidación nueva |
+| `liqfacturar` | Factura con 1 liquidación y 3 preacordados; total errado; `?fvista=devuelta` |
+| `liqindependiente` | Luis Andrade factura sus preacordados y liquida su Ramos Generales |
+| `liqplanta` | Inspector de agencia sin honorarios; `?fvista=si`: «Mis honorarios con Eurosurvey» |
+| `liqdocumento` | Documento «#001414 · v2»; `?fvista=factura`: la factura con su detalle |
+
+Todas con `&cx=1` van con la conexión simulada. También abrí `tarifarios`, `facturagrupo`, `facturadevuelta`, `agenciapagos`, `cuentainspector`, `cuentaaprobar`, `mishonorarios`, `liqfactura`, `iniciofin` e `inicioeje` para comparar.
+
+**Tiempo de la etapa: inicio 16/11/2026 10:35 · fin 16/11/2026 11:13 · 38 min**
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-6g-1
+
+Con la conexión, Liquidaciones trabaja con los honorarios y las liquidaciones de la base: Finanzas aprueba, rechaza y corrige honorarios, y genera, cierra, aprueba, paga o anula liquidaciones. Cada rol ve solo lo suyo. Sin la conexión, Liquidaciones queda como antes. Quedó publicado en la **Versión 266**; la Versión 267 solo completa en el registro la hora de fin.
+
+**Qué cambió**
+- **Módulo nuevo `SiriusHonorariosBase`:** lee `SIRIUS_CONEXION.honorarios` y `SIRIUS_CONEXION.liquidaciones`. Muestra el nombre actual del inspector y de la agencia por su identificación y RUC (DEC-214), y aplica las 9 acciones. Cada cambio se ve al instante; con { ok: false } todo vuelve atrás y se muestra el mensaje de la base.
+- **Honorarios (Finanzas y Administrador):**
+  - Contadores por estado y filtros de período y estado.
+  - «Aprobar seleccionados», con un comentario opcional.
+  - «Rechazar» y «Corregir» piden el motivo (10 caracteres o más) y, al corregir, el monto; el mensaje sale junto al campo. Un rechazado corregido vuelve a «Por aprobar».
+- **Liquidaciones (Finanzas y Administrador):**
+  - «Generar liquidación» por período y beneficiario: la agencia por su RUC o el inspector independiente por su cédula. La lista solo ofrece beneficiarios con honorarios aprobados.
+  - En el detalle: «Quitar» y «Agregar honorarios aprobados» mientras está «Abierta»; luego «Cerrar», «Aprobar», «Registrar pago» (fecha y referencia obligatorias, cuenta opcional) y «Anular» con motivo. Debajo, el historial.
+  - Los honorarios pasan a «Liquidado» al entrar en la liquidación y a «Pagado» con el pago; quitarlos o anular la liquidación los devuelve a «Aprobado».
+- **Quién ve qué:**
+  - Finanzas de agencia ve solo lo de su RUC, sin acciones.
+  - El inspector independiente ve sus honorarios y sus liquidaciones.
+  - El inspector de agencia ve «Mis honorarios con <agencia>»: sus honorarios y lo acumulado del mes, sin la liquidación de su agencia.
+- **Back-office:** carga los dos archivos nuevos, abre las escenas con su rol y quita el aviso «Datos de demostración» de Liquidaciones con la conexión.
+
+**Verificado**
+- `cxhonorarios`: aprobar HON-6101 y HON-6102 envía `aprobarHonorarios { ids }`, y los contadores pasan de 4 a 2 «Por aprobar» y de 6 a 8 «Aprobado». «Rechazar» sin motivo muestra «Escribe el motivo (mínimo 10 caracteres).» junto al campo y no envía nada; con motivo, envía `rechazarHonorario { id, motivo }` y «Rechazado» pasa de 1 a 2.
+- `cxliquidaciongen`: generar la de Eurosurvey (3 honorarios, USD 74,50), quitar HON-6106 (2, USD 60,50), cerrar, aprobar y pagar. Sin referencia, el pago no se envía y avisa junto al campo. Los honorarios pasan a «Liquidado» y luego a «Pagado». Las 5 acciones salieron con la forma del contrato.
+- `cxliquidacionerror`: cerrar la liquidación vacía envía `cerrarLiquidacion`; la base responde { ok: false }, la liquidación sigue «Abierta» y se muestra el mensaje. Con `?fvista=anular`, la «Cerrada» queda «Anulada» y sus 2 honorarios vuelven a «Aprobado».
+- `cxliquidacionindep`: la de Luis Andrade por su cédula se cierra. Con `?fvista=inspector`, Luis ve solo lo suyo.
+- `cxliquidacionagencia`: Finanzas de agencia ve solo honorarios de Eurosurvey (ni Luis Andrade ni Inspecciones Andinas) y ningún botón. Con `?fvista=inspector`, Mauricio ve sus 3 honorarios y USD 84,00 acumulados, sin la liquidación.
+- **Conexión temporal en una copia aparte** (`sirius-conexion.js` reemplazado solo allí): las 9 acciones salieron con la forma exacta del contrato. Una respuesta { ok: false } al cerrar devolvió todo a como estaba. Liquidaciones también se abrió desde el menú con esa conexión.
+- **Sin la conexión:** las 15 escenas existentes (`liquidaciones`, `liqdetalle`, `liqfactura`, `liqtarifas`, `tarifarios`, `tarifarioeur`, `compltarifa`, `honoragencia`, `facturagrupo`, `honorsubasta`, `montodecimal`, `honorporliquidar`, `agenciapagos`, `cuentainspector`, `cuentaaprobar`) dan el mismo texto que antes.
+- Abrí las 5 escenas nuevas (y sus variantes) y esas 15 a 1280×720 y 1920×1080, sin errores en la consola.
+- `sirius-conexion.js` sigue con su línea mínima (70 bytes). KNOWN_ESC 659 y 702 escenas.
+
+**No verificado**
+- Contra la base real: solo con la base simulada y con la conexión temporal de la copia.
+- La app del inspector (`sirius-app-inspector.js`) sigue mostrando sus honorarios con datos de ejemplo; conecté la sección de honorarios del Back-office.
+- No probé un período sin honorarios ni el cambio de mes (el período actual sale del reloj de Ecuador).
+- No probé con teclado las casillas de la tabla ni el detalle, solo con clic.
+
+**Diferencias**
+- Con la conexión, Liquidaciones no muestra Tarifarios, Configuración (IVA), Facturas, Cuentas bancarias ni «Pagos a nuestros inspectores»: no están en la base todavía y siguen con datos de ejemplo sin la conexión.
+- «Cerrar» una liquidación sin honorarios no se bloquea en la pantalla: avisa debajo y envía, y la base la rechaza (así lo pide la escena `cxliquidacionerror`). Pagar sin fecha o sin referencia sí se frena en la pantalla.
+- Una liquidación generada sin honorarios aprobados queda «Abierta» y vacía; no se puede generar otra igual (mismo período y beneficiario) mientras no se anule.
+- El inspector de agencia ve el estado de cada honorario («Liquidado», «Pagado»), pero no la liquidación, su total ni a otros inspectores. El monto que ve es el que la base registra para su visita.
+- Finanzas de agencia ve los montos de su agencia, pero no puede aprobar ni liquidar.
+- El historial de la liquidación lo arma la pantalla con lo hecho en la sesión; el de la base llega en `historial`.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| `cxhonorarios` | Finanzas aprueba 2 honorarios y rechaza 1 con motivo; los contadores por estado cambian |
+| `cxliquidaciongen` | Generar la liquidación de Eurosurvey (RUC 1791456320001) del período actual, quitar un honorario, cerrar, aprobar y pagar con fecha y referencia |
+| `cxliquidacionindep` | La liquidación de Luis Andrade por su cédula; `?fvista=inspector`, como Luis |
+| `cxliquidacionagencia` | Finanzas de agencia de Eurosurvey ve solo lo suyo; `?fvista=inspector`, Mauricio Endara con sus honorarios sin montos de la liquidación |
+| `cxliquidacionerror` | La base rechaza cerrar sin honorarios; `?fvista=anular`, anular una liquidación cerrada |
+
+También abrí `liquidaciones`, `liqdetalle`, `liqfactura`, `liqtarifas`, `tarifarios`, `tarifarioeur`, `compltarifa`, `honoragencia`, `facturagrupo`, `honorsubasta`, `montodecimal`, `honorporliquidar`, `agenciapagos`, `cuentainspector` y `cuentaaprobar` para comparar.
+
+**Tiempo de la etapa: inicio 16/11/2026 07:41 · fin 16/11/2026 08:04 · 23 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6f-d (con el lugar contraído)
 
 Nueva solicitud muestra el lugar de inspección contraído, con una casilla para abrirlo. Los mensajes de validación junto al campo y las agencias con sus inspectores por RUC ya estaban en la Versión 261; en esta etapa los volví a abrir y probar junto con el lugar contraído. Quedó publicado en la **Versión 263**; la Versión 264 solo completa en el registro la hora de fin.

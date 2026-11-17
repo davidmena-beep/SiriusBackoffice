@@ -1,0 +1,322 @@
+// SIRIUS · Honorarios precalculados, liquidaciones (orden de pago con versiones) y facturas con la clave de acceso del SRI
+// (v3.0 · provisional · etapa P-6g-1c · DEC-247 aprobada; ajusta DEC-136 a 139, conserva DEC-174).
+// Un solo modelo con y sin la conexión, y las mismas pantallas. Sin la conexión, los datos salen de SIRIUS_LIQ_PROCESO (datos-liq-proceso.js) y viven en
+// memoria; con la conexión, de SIRIUS_CONEXION.honorarios[], .liquidaciones[] y .facturas[] (contrato de la base, SQL 53): se trabaja sobre una copia de la
+// sesión, se envía la acción y, con { ok: false }, todo vuelve atrás y se muestra el mensaje. La base simulada (datos-cx-liq-proceso.js) aplica LP.ops.
+// Contrato:
+//   honorario { id, caso, orden, visita, riesgo, placa, bien, asegurado, linea, sucursal, ramo, modalidad, fecha, estadoCaso, inspector, inspectorId,
+//     proveedor { tipo, nombre, identificacion }, aprobacion ('Preacordada' | 'Liquidación'), calculo { tarifario, nivel, nivelSugerido, horasVisita,
+//     horasRedaccion, medidoVisita, medidoRedaccion, equipos, base, km, kmSugeridos, valorKm, movilizacion, subtotal },
+//     ajuste { nivel, horasVisita, horasRedaccion, equipos, km, valor, comentario } | null, subtotal, estado, liquidacionId, facturaId }
+//   liquidación { id, numero, version, proveedor, estado, lineas, observaciones [{ linea, texto, subtotalSugerido }], motivo, subtotal, iva, total,
+//     facturaId, versiones [{ version, enviada, resultado, por, cambios }], historial }
+//   factura { id, proveedor, clave, numero, fecha, sri { estado, ruc, subtotal, iva, total }, liquidaciones, honorarios, subtotal, estado, motivo,
+//     pago { fecha, referencia } | null, historial }
+// Acciones (→ { ok, mensaje }): ajustarHonorario { id, nivel, horasVisita, horasRedaccion, equipos, km, valor, comentario }, quitarAjuste { id },
+//   enviarLiquidacion { lineas } → { id, numero }, editarLiquidacion { id, agregar, quitar }, reenviarLiquidacion { id }, anularLiquidacion { id, motivo },
+//   aprobarLiquidacion { id }, devolverLiquidacion { id, observaciones, motivo }, aceptarSugerencia { id, linea }, enviarFactura { clave, liquidaciones,
+//   honorarios } (la base vuelve a consultar el SRI y compara), validarFactura { id }, devolverFactura { id, motivo }, registrarPago { facturas, fecha, referencia }.
+// La liquidación en Borrador es del proveedor y vive en su sesión (no va a la base): recibe número al enviarla. Quitar o agregar líneas y anular en
+// Borrador no se envían; en «Por corregir», sí (editarLiquidacion, anularLiquidacion).
+// Reglas: 1. honorario precalculado (tarifario vigente en la fecha de la inspección; Vehículos tarifa fija; Ramos Generales hora-hombre por nivel +
+// redacción + equipos por tramos; horas a la media hora superior; «!» fuera del 50 %–150 % de la referencia; km = distancia − radio urbano × valor por km
+// o «km por valorar»). 2. preacordado sin km ni ajuste → «Por facturar»; si no → «Por liquidar». 3. unicidad: un honorario en una sola liquidación no
+// anulada; un honorario o una liquidación en una sola factura no devuelta. 4. Borrador → Enviada (vN) → Aprobada | Por corregir → Enviada (vN+1) …;
+// Aprobada → Facturada → Pagada; Anulada. 5. factura por la clave de acceso: AUTORIZADO, RUC del proveedor y subtotal igual a lo marcado.
+(function () {
+  'use strict';
+  const W = window; if (W.SiriusLiqProceso) return;
+  const clon = (x) => JSON.parse(JSON.stringify(x === undefined ? null : x)), sd = (x) => String(x == null ? '' : x).trim(), ON = [];
+  const LP = { version: 0, EST_H: ['Por liquidar', 'En liquidación', 'Por facturar', 'Facturado', 'Pagado'], EST_L: ['Borrador', 'Enviada', 'Por corregir', 'Aprobada', 'Facturada', 'Pagada', 'Anulada'], EST_F: ['Por validar', 'Validada', 'Pagada', 'Factura devuelta'],
+    CAMPOS: ['nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'ajuste'], borr: [], ctx: { ahora: () => { const E = W.SIRIUS_EJEMPLO; return E && E.ahora ? E.ahora() : new Date(); }, usuario: () => '' }, local: null, _cs: null, _cc: null, pagaOv: {} };
+  LP.on = (f) => { ON.push(f); return () => { const i = ON.indexOf(f); if (i >= 0) ON.splice(i, 1); }; };
+  const avisar = () => { LP.version++; ON.slice().forEach((f) => { try { f(); } catch (e) { /* nada */ } }); };
+  LP.avisar = avisar;
+  LP.r2 = (n) => Math.round((Number(n) + 1e-9) * 100) / 100;
+  LP.usd = (n) => (n == null || !isFinite(n) ? '—' : (W.SIRIUS_COMPANIA && W.SIRIUS_COMPANIA.formatoMonto ? W.SIRIUS_COMPANIA.formatoMonto(n) : 'USD ' + Number(n).toFixed(2)));
+  LP.num = (n) => String(n).replace('.', ',');
+  const pad = (n) => String(n).padStart(2, '0');
+  LP.ahoraIso = () => { const d = LP.ctx.ahora(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  LP.fecha = (s) => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(sd(s)); return m ? m[3] + '/' + m[2] + '/' + m[1] : sd(s) || '—'; };
+  LP.numCorto = (l) => (l && l.numero ? '#' + String(l.numero).padStart(6, '0') : 'Borrador ' + String((l && l.id) || '').replace(/\D/g, ''));
+  LP.numTxt = (l) => LP.numCorto(l) + (!l || !l.numero ? '' : ' · v' + (l.version || 1));
+  LP.tasaIva = (fecha) => { const c = W.SIRIUS_COMPANIA, t = c && c.tasa ? c.tasa('iva', sd(fecha).slice(0, 10) || LP.ahoraIso().slice(0, 10)) : null; return t == null ? 0 : Number(t); };
+  LP.ivaDe = (sub, fecha) => { const t = LP.tasaIva(fecha); return { tasa: t, iva: LP.r2(sub * t / 100), total: LP.r2(sub + LP.r2(sub * t / 100)) }; };
+  LP.D = () => W.SIRIUS_LIQ_PROCESO || {};
+  LP.cfg = () => Object.assign({ aprueban: ['Ejecutivo de inspecciones', 'Finanzas', 'Administrador'], numeroInicial: 1414 }, LP.D().config || {});
+  // ---------- Conexión ----------
+  const C = () => W.SIRIUS_CONEXION || null;
+  LP.cx = () => { const c = C(); return !!(c && c.activo === true && Array.isArray(c.honorarios)); };
+  const tienda = () => { if (!LP.cx()) { if (!LP.local) LP.local = LP.semilla(''); return LP.local; }
+    const c = C(), src = [c.honorarios, c.liquidaciones || [], c.facturas || []]; if (!LP._cc || src.some((x, i) => x !== LP._cs[i])) { LP._cs = src; LP._cc = { honorarios: clon(src[0]).map(LP.prep), liquidaciones: clon(src[1]), facturas: clon(src[2]) }; mezclarBorradores(LP._cc); } return LP._cc; };
+  // Los borradores del proveedor viven en la sesión: se suman a lo que llega de la base (sus líneas, si siguen libres, quedan «En liquidación»).
+  const mezclarBorradores = (S) => { LP.borr.forEach((b) => { if (S.liquidaciones.some((l) => l.id === b.id)) return; b.lineas = b.lineas.filter((id) => { const h = S.honorarios.find((x) => x.id === id); if (!h || h.facturaId || (h.liquidacionId && h.liquidacionId !== b.id) || ['Por liquidar', 'En liquidación'].indexOf(h.estado) < 0) return false; h.estado = 'En liquidación'; h.liquidacionId = b.id; return true; }); S.liquidaciones.push(b); }); };
+  const syncBorr = (S) => { if (LP.cx()) LP.borr = S.liquidaciones.filter((l) => l.estado === 'Borrador'); };
+  LP.tienda = tienda;
+  LP.honorarios = () => tienda().honorarios;
+  LP.liquidaciones = () => tienda().liquidaciones;
+  LP.facturas = () => tienda().facturas;
+  LP.hon = (id) => LP.honorarios().find((x) => x.id === sd(id)) || null;
+  LP.liq = (id) => LP.liquidaciones().find((x) => x.id === sd(id)) || null;
+  LP.fac = (id) => LP.facturas().find((x) => x.id === sd(id)) || null;
+  // ---------- Proveedor: la agencia (por su RUC) o el inspector independiente (por su identificación) ----------
+  LP.provKey = (p) => (p ? (p.tipo === 'agencia' ? 'agencia' : 'inspector') + '|' + sd(p.identificacion).toUpperCase() : '');
+  LP.mismo = (a, b) => !!a && !!b && LP.provKey(a) === LP.provKey(b);
+  const agencias = () => { const c = C(); if (c && c.activo && Array.isArray(c.agencias)) return c.agencias; const M = W.SiriusMaestros; return M && M.agencias ? M.agencias() : ((W.SIRIUS_USUARIOS || {}).agencias || []); };
+  LP.agencia = (ref) => { const r = sd(ref).toLowerCase(); if (!r) return null; return agencias().find((a) => [a.ruc, a.id, a.nombre, a.razonSocial, a.nombreComercial].some((x) => sd(x).toLowerCase() === r)) || null; };
+  LP.provNombre = (p) => { if (!p) return '—'; if (p.tipo === 'agencia') { const a = LP.agencia(p.identificacion); return a ? sd(a.nombreComercial || a.nombre) : sd(p.nombre); }
+    const c = C(), L = c && c.activo ? (c.usuarios || []).concat(c.inspectores || []) : ((W.SIRIUS_USUARIOS || {}).usuarios || []), u = L.find((x) => sd(x.identificacion) && sd(x.identificacion) === sd(p.identificacion)); return u ? sd(u.nombre) : sd(p.nombre); };
+  // RUC con que factura el proveedor: el de la agencia; el independiente, su cédula + 001 (persona natural).
+  LP.rucProveedor = (p) => { if (!p) return ''; const id = sd(p.identificacion); return p.tipo === 'agencia' ? id : (/^\d{10}$/.test(id) ? id + '001' : id); };
+  LP.pagaInspectores = (ref) => { const a = LP.agencia(ref); if (!a) return false; const k = sd(a.ruc || a.id); if (Object.prototype.hasOwnProperty.call(LP.pagaOv, k)) return !!LP.pagaOv[k]; return a.pagaInspectores === true; };
+  LP.setPaga = (ref, v) => { const a = LP.agencia(ref); if (!a) return; LP.pagaOv[sd(a.ruc || a.id)] = !!v; avisar(); };
+  // ---------- Cálculo ----------
+  const HD = () => W.SIRIUS_HONORARIOS || {};
+  LP.mediaHora = (h) => (h == null || !isFinite(h) ? 0 : Math.ceil(Number(h) * 2 - 1e-9) / 2);
+  LP.NIVELES = () => (HD().roles || []).filter((r) => r.id !== 'redaccion').map((r) => ({ id: r.id, nombre: r.nombre }));
+  LP.nivelCorto = (id) => ({ basico: 'Básico', n1: 'N1', n2: 'N2' }[id] || id);
+  // Nivel sugerido por el tipo de riesgo u ocupación (catálogo nivelPorRiesgo).
+  LP.nivelSugerido = (ocupacion) => { const o = sd(ocupacion).toLowerCase(); if (!o) return 'basico'; const L = HD().nivelPorRiesgo || [];
+    for (const r of L.slice().reverse()) { if (sd(r.si).toLowerCase().split(/,|\(|\)/).map((x) => x.trim()).filter((x) => x.length > 3).some((p) => o.indexOf(p) >= 0 || p.indexOf(o) >= 0)) return r.nivel; } return 'basico'; };
+  LP.referencia = (nivel) => { const r = ((HD().tiempo || {}).referencia || []).find((x) => x.nivel === nivel); return r ? { visita: r.visitaH, redaccion: r.redaccionH } : null; };
+  const rad = (x) => x * Math.PI / 180;
+  LP.distKm = (a, b) => { if (!a || !b) return null; const R = 6371, dLa = rad(b[0] - a[0]), dLo = rad(b[1] - a[1]), s = Math.sin(dLa / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); };
+  LP.ciudadDe = (h) => { if (h.ciudad) return h.ciudad; const g = (W.SIRIUS_GEOGRAFIA || {}).ciudades || [], n = sd(h.sucursal).toUpperCase(), c = g.find((x) => sd(x.nombre).toUpperCase() === n || sd(x.buscador).toUpperCase() === n); return c ? c.cod : ''; };
+  LP.radioUrbano = (ciudad) => { const Z = W.SiriusZonas, zz = Z && Z.zonasDe ? Z.zonasDe(ciudad) : null; return (zz && zz.radio) || 10; };
+  LP.kmSugeridos = (ciudad, punto) => { const Z = W.SiriusZonas, cen = Z && Z.centro ? Z.centro(ciudad) : null, d = LP.distKm(cen, punto); return d == null ? null : Math.max(0, Math.round(d - LP.radioUrbano(ciudad))); };
+  // Tarifa vigente del proveedor (contrato sobre el general) en la fecha de la inspección.
+  // El tarifario identifica a la agencia por su id del catálogo local (p. ej. «eurosurvey»); con la conexión, las agencias de la base traen otro id: se busca por RUC en el catálogo local.
+  const agTarifa = (ruc) => { const r = sd(ruc), M = W.SiriusMaestros, loc = (M && M.agencias ? M.agencias() : ((W.SIRIUS_USUARIOS || {}).agencias || [])).find((a) => sd(a.ruc) === r || sd(a.id) === r); return loc ? loc.id : (LP.agencia(r) || {}).id || null; };
+  LP.tarifaDe = (inf) => { const H = W.SiriusHonorarios, ag = inf.proveedor && inf.proveedor.tipo === 'agencia' ? agTarifa(inf.proveedor.identificacion) : null, ef = H && H.efectivo ? H.efectivo(inf.inspector, ag) : { mapa: {} }, m = ef.mapa || {};
+    const rg = inf.grupo !== 'Vehículos', apr = m['aprob.' + (rg ? 'Ramos Generales' : 'Vehículos')] || (rg ? 'Requiere liquidación' : 'Preacordada'), d = HD();
+    const tramos = ((d.equipos || {}).tramos || []).map((t, i) => ({ hasta: m['eqHasta.' + i] !== undefined ? m['eqHasta.' + i] : t.hasta, valor: m['eq.' + i] !== undefined ? m['eq.' + i] : t.valor }));
+    return { origen: ef.contrato ? ef.contrato.nombre : (ef.general && ef.general.nombre) || 'Tarifario general', vehiculo: rg ? null : (m['veh.' + inf.modalidad] == null ? 0 : Number(m['veh.' + inf.modalidad])),
+      hora: { basico: m['rol.basico'], n1: m['rol.n1'], n2: m['rol.n2'] }, redaccion: m['rol.redaccion'], valorKm: m['km.valor'] == null || m['km.valor'] === '' ? null : Number(m['km.valor']),
+      tramos, aplicacion: m.eqAplicacion || (d.equipos || {}).aplicacion || 'escalonada', aprobacion: apr === 'Preacordada' ? 'Preacordada' : 'Liquidación' }; };
+  // Honorario que llega de la base (solo el contrato): se completan el grupo, la ciudad y la tarifa para recalcular al editar (valor por km y base del cálculo).
+  LP.prep = (h) => { if (!h) return h; h.grupo = h.grupo || (h.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'); h.calculo = h.calculo || {}; if (!h.ciudad) h.ciudad = LP.ciudadDe(h);
+    if (!h.tarifa) { const t = LP.tarifaDe(h), c = h.calculo; if (c.valorKm !== undefined) t.valorKm = c.valorKm == null ? null : Number(c.valorKm); if (h.grupo === 'Vehículos' && c.base != null) t.vehiculo = Number(c.base); if (c.tarifario) t.origen = c.tarifario; t.aprobacion = h.aprobacion === 'Preacordada' ? 'Preacordada' : 'Liquidación'; h.tarifa = t; }
+    if (h.subtotalCalculado == null) h.subtotalCalculado = h.calculo.subtotal != null ? h.calculo.subtotal : h.subtotal; return h; };
+  const CONTRATO_H = ['id', 'caso', 'orden', 'visita', 'riesgo', 'placa', 'bien', 'asegurado', 'linea', 'sucursal', 'ramo', 'modalidad', 'fecha', 'estadoCaso', 'inspector', 'inspectorId', 'proveedor', 'aprobacion', 'calculo', 'ajuste', 'subtotal', 'estado', 'liquidacionId', 'facturaId'];
+  const CONTRATO_C = ['tarifario', 'nivel', 'nivelSugerido', 'horasVisita', 'horasRedaccion', 'medidoVisita', 'medidoRedaccion', 'equipos', 'base', 'km', 'kmSugeridos', 'valorKm', 'movilizacion', 'subtotal'];
+  const CONTRATO_L = ['id', 'numero', 'version', 'proveedor', 'estado', 'lineas', 'observaciones', 'motivo', 'subtotal', 'iva', 'total', 'facturaId', 'versiones', 'historial'];
+  const CONTRATO_F = ['id', 'proveedor', 'clave', 'numero', 'fecha', 'sri', 'liquidaciones', 'honorarios', 'subtotal', 'estado', 'motivo', 'pago', 'historial'];
+  const solo = (o, ks) => { const r = {}; ks.forEach((k) => { r[k] = o[k] === undefined ? null : clon(o[k]); }); return r; };
+  // Lo que guarda la base (para la conexión simulada y la prueba del contrato).
+  LP.aContrato = (S) => ({ honorarios: S.honorarios.map((h) => { const x = solo(h, CONTRATO_H); x.calculo = solo(h.calculo || {}, CONTRATO_C); return x; }),
+    liquidaciones: S.liquidaciones.filter((l) => l.estado !== 'Borrador').map((l) => { const x = solo(l, CONTRATO_L); x.versiones = (l.versiones || []).map((v) => solo(v, ['version', 'enviada', 'resultado', 'por', 'cambios'])); return x; }),
+    facturas: S.facturas.map((f) => solo(f, CONTRATO_F)) });
+  LP.CONTRATO = { honorario: CONTRATO_H, calculo: CONTRATO_C, liquidacion: CONTRATO_L, factura: CONTRATO_F,
+    acciones: { ajustarHonorario: ['id', 'nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'valor', 'comentario'], quitarAjuste: ['id'], enviarLiquidacion: ['lineas'], editarLiquidacion: ['id', 'agregar', 'quitar'], reenviarLiquidacion: ['id'], anularLiquidacion: ['id', 'motivo'], aprobarLiquidacion: ['id'], devolverLiquidacion: ['id', 'observaciones', 'motivo'], aceptarSugerencia: ['id', 'linea'], enviarFactura: ['clave', 'liquidaciones', 'honorarios'], validarFactura: ['id'], devolverFactura: ['id', 'motivo'], registrarPago: ['facturas', 'fecha', 'referencia'] } };
+  LP.valorEquipos = (n, t) => { n = Math.max(0, Math.round(Number(n) || 0)); const T = (t && t.tramos) || []; if (!n || !T.length) return 0;
+    if (t.aplicacion === 'tramoTotal') { const tr = T.find((x) => x.hasta == null || n <= x.hasta) || T[T.length - 1]; return LP.r2(n * tr.valor); }
+    let s = 0, i = 0; for (let k = 1; k <= n; k++) { while (T[i].hasta != null && k > T[i].hasta && i < T.length - 1) i++; s += Number(T[i].valor) || 0; } return LP.r2(s); };
+  // El ajuste del contrato con los nombres de la pantalla (el ajuste ± es «valor»).
+  const AJK = { nivel: 'nivel', horasVisita: 'horasVisita', horasRedaccion: 'horasRedaccion', equipos: 'equipos', km: 'km', ajuste: 'valor' };
+  LP.cambios = (h) => { const a = h.ajuste || {}, o = {}; Object.keys(AJK).forEach((k) => { const v = a[AJK[k]]; if (v !== undefined && v !== null && v !== '') o[k] = v; }); return o; };
+  LP.comentario = (h) => sd((h.ajuste || {}).comentario);
+  LP.val = (h, k, sinCambios) => { const c = sinCambios ? {} : LP.cambios(h); return c[k] !== undefined ? c[k] : k === 'ajuste' ? 0 : (h.calculo || {})[k]; };
+  // Partes del cálculo y subtotal (con o sin los cambios del proveedor).
+  LP.desglose = (h, sinCambios) => { const t = h.tarifa || {}, v = (k) => LP.val(h, k, sinCambios), km = Number(v('km')) || 0, mov = t.valorKm == null ? 0 : LP.r2(km * t.valorKm), aj = h.grupo === 'Vehículos' ? Number(v('ajuste')) || 0 : Number(v('ajuste')) || 0, partes = [];
+    let base; if (h.grupo === 'Vehículos') { base = Number(t.vehiculo) || 0; partes.push({ concepto: 'Tarifa fija · ' + h.modalidad, valor: base }); }
+    else { const nv = v('nivel'), hv = Number(v('horasVisita')) || 0, hr = Number(v('horasRedaccion')) || 0, eq = Math.round(Number(v('equipos')) || 0), th = Number((t.hora || {})[nv]) || 0, iv = LP.r2(hv * th), ir = LP.r2(hr * (Number(t.redaccion) || 0)), ie = LP.valorEquipos(eq, t);
+      base = LP.r2(iv + ir + ie); partes.push({ concepto: 'Inspección ' + LP.num(hv) + ' h × ' + LP.usd(th) + ' (' + LP.nivelCorto(nv) + ')', valor: iv }, { concepto: 'Redacción ' + LP.num(hr) + ' h × ' + LP.usd(t.redaccion), valor: ir }, { concepto: 'Equipos: ' + eq + ' (por tramos)', valor: ie }); }
+    if (km) partes.push({ concepto: 'Movilización ' + km + ' km' + (t.valorKm == null ? (km ? ' (km por valorar)' : '') : ' × ' + LP.usd(t.valorKm)), valor: mov }); if (aj) partes.push({ concepto: 'Ajuste', valor: aj });
+    return { base, mov, km, ajuste: aj, partes, subtotal: LP.r2(base + mov + aj), porValorar: t.valorKm == null && km > 0 }; };
+  LP.campoCambiado = (h, k) => { const c = LP.cambios(h); return c[k] !== undefined && (k === 'ajuste' ? Number(c[k]) !== 0 : String(c[k]) !== String((h.calculo || {})[k])); };
+  LP.cambiado = (h) => LP.CAMPOS.some((k) => LP.campoCambiado(h, k));
+  LP.falta = (h) => LP.cambiado(h) && LP.comentario(h).length < 3;
+  LP.preacordado = (h) => h.aprobacion === 'Preacordada' && !(Number(LP.val(h, 'km')) > 0) && !LP.cambiado(h);
+  // Fuera de la referencia del nivel (50 % a 150 %): «!» y la explicación.
+  LP.fueraRef = (h) => { if (h.grupo === 'Vehículos') return null; const r = LP.referencia(LP.val(h, 'nivel')); if (!r) return null; const hv = Number(LP.val(h, 'horasVisita')) || 0, hr = Number(LP.val(h, 'horasRedaccion')) || 0, out = [];
+    if (hv < r.visita * 0.5 || hv > r.visita * 1.5) out.push('visita ' + LP.num(hv) + ' h frente a ' + LP.num(r.visita) + ' h de referencia'); if (hr < r.redaccion * 0.5 || hr > r.redaccion * 1.5) out.push('redacción ' + LP.num(hr) + ' h frente a ' + LP.num(r.redaccion) + ' h');
+    return out.length ? { visita: hv < r.visita * 0.5 || hv > r.visita * 1.5, redaccion: hr < r.redaccion * 0.5 || hr > r.redaccion * 1.5, texto: 'Fuera del 50 % a 150 % de la referencia del nivel ' + LP.nivelCorto(LP.val(h, 'nivel')) + ': ' + out.join('; ') + '.' } : null; };
+  // Por qué pasa a liquidación una tarifa preacordada: por los km o por el ajuste.
+  LP.motivoLiq = (h) => { if (h.aprobacion !== 'Preacordada' || LP.preacordado(h)) return ''; const km = Number(LP.val(h, 'km')) > 0, aj = LP.CAMPOS.filter((k) => k !== 'km').some((k) => LP.campoCambiado(h, k)); return km && !aj ? 'por los km' : aj && !km ? 'por el ajuste' : 'por los km y el ajuste'; };
+  LP.caminoTxt = (h) => (LP.preacordado(h) ? 'Tarifa preacordada · directo a «Por facturar»' : h.aprobacion === 'Preacordada' ? 'Tarifa preacordada · pasa a liquidación ' + LP.motivoLiq(h) : 'Requiere liquidación · ' + (h.grupo === 'Vehículos' ? 'tarifa fija' : 'tarifario por horas'));
+  // Explicación de los km con los mismos km del cálculo; si el proveedor los cambió, los sugeridos y los cobrados.
+  LP.kmTxt = (h) => { const c = h.calculo || {}, sug = c.kmSugeridos == null ? null : Number(c.kmSugeridos), cob = Number(LP.val(h, 'km')) || 0, t = h.tarifa || {}, cod = LP.ciudadDe(h), Z = W.SiriusZonas;
+    if (!sug && !cob) return ''; const ciu = (((W.SIRIUS_GEOGRAFIA || {}).ciudades || []).find((x) => x.cod === cod) || {}).buscador || h.sucursal || '', cen = Z && Z.centro && cod && Z.centro(cod);
+    const como = cen ? '(centro de ' + ciu + ' al punto, menos el radio urbano de ' + LP.radioUrbano(cod) + ' km)' : '(registrados en la visita)', val = t.valorKm == null ? 'km por valorar: el tarifario no tiene valor por km, movilización USD 0' : ' × ' + LP.usd(t.valorKm) + ' = ' + LP.usd(LP.r2(cob * t.valorKm));
+    if (LP.campoCambiado(h, 'km')) return 'km sugeridos ' + (sug || 0) + ' ' + como + ' · km cobrados ' + cob + (t.valorKm == null ? ' (' + val + ')' : val) + ' · comentario: ' + (LP.comentario(h) || 'sin comentario');
+    return 'km fuera del perímetro: ' + cob + ' ' + como + (t.valorKm == null ? ' · ' + val : val); };
+  LP.porQue = (h) => { const k = Number(LP.val(h, 'km')) || 0; if (LP.cambiado(h) && h.aprobacion === 'Preacordada' && !(Number((h.calculo || {}).km) > 0)) return 'Ajustado: ' + (LP.comentario(h) || 'sin comentario');
+    if (h.grupo !== 'Vehículos') return 'Tarifario por horas'; if (k > 0) return k + ' km fuera del perímetro' + (h.tarifa && h.tarifa.valorKm == null ? ' (por valorar)' : ''); return h.aprobacion === 'Preacordada' ? 'Preacordado' : 'Requiere liquidación'; };
+  LP.recalc = (h) => { const d = LP.desglose(h), d0 = LP.desglose(h, true), c = h.calculo = h.calculo || {}, t = h.tarifa || {}; c.tarifario = t.origen || c.tarifario || ''; c.base = d0.base; c.valorKm = t.valorKm == null ? null : t.valorKm; c.movilizacion = d0.mov; c.subtotal = d0.subtotal;
+    h.subtotal = d.subtotal; h.subtotalCalculado = d0.subtotal; return h; };
+  const camino = (h) => { if (h.liquidacionId || h.facturaId || ['Por liquidar', 'Por facturar'].indexOf(h.estado) < 0) return; h.estado = LP.preacordado(h) ? 'Por facturar' : 'Por liquidar'; };
+  // Al entregar el informe: un honorario por vehículo o bien, con todo calculado.
+  LP.calcular = (inf) => { const grupo = inf.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales', t = LP.tarifaDe(Object.assign({}, inf, { grupo })), k0 = inf.kmSugeridos != null ? inf.kmSugeridos : (inf.modalidad === 'Presencial' ? LP.kmSugeridos(inf.ciudad, inf.punto) : 0), ks = k0 == null ? (inf.kmRespaldo || 0) : k0;
+    const ns = grupo === 'Vehículos' ? null : LP.nivelSugerido(inf.ocupacion), v = grupo === 'Vehículos', calculo = { tarifario: t.origen, nivel: ns, nivelSugerido: ns, horasVisita: v ? null : LP.mediaHora(inf.medidoVisita), horasRedaccion: v ? null : LP.mediaHora(inf.medidoRedaccion), medidoVisita: v ? null : inf.medidoVisita, medidoRedaccion: v ? null : inf.medidoRedaccion, equipos: v ? null : Math.round(inf.equipos || 0), base: 0, km: ks, kmSugeridos: k0 == null ? null : k0, valorKm: t.valorKm, movilizacion: 0, subtotal: 0 };
+    const h = { id: 'HON-' + inf.riesgo, caso: inf.caso, orden: inf.orden || '', visita: inf.visita || 1, riesgo: inf.riesgo, placa: inf.placa || '', bien: inf.bien || '', ramo: inf.ramo, grupo, modalidad: inf.modalidad, asegurado: inf.asegurado, linea: inf.linea || '', sucursal: inf.sucursal || '', ciudad: inf.ciudad || '', fecha: inf.fecha, estadoCaso: inf.estadoCaso || '',
+      inspector: inf.inspector, inspectorId: inf.inspectorId || '', proveedor: clon(inf.proveedor), aprobacion: t.aprobacion, tarifa: t, calculo, ajuste: null, subtotal: 0, subtotalCalculado: 0, estado: 'Por liquidar', liquidacionId: '', facturaId: '' };
+    LP.recalc(h); h.estado = LP.preacordado(h) ? 'Por facturar' : 'Por liquidar'; return h; };
+  LP.semilla = (escena, vista) => { const D = LP.D(), S = { honorarios: (D.informes || []).map(LP.calcular), liquidaciones: [], facturas: [], seq: { liq: LP.cfg().numeroInicial, fac: 1 } };
+    const f = (D.escenas || {})[escena]; if (f) { f(S, (tipo, d, por, fecha) => { const r = LP.ops(S, tipo, d, { por: por || 'Prueba', fecha: fecha || '2026-10-18T09:00' }); if (!r.ok) console.warn('Semilla ' + escena + ': ' + tipo + ' → ' + r.mensaje); return r; }, vista || ''); }
+    return S; };
+  LP.iniciar = (escena, vista) => { LP.local = LP.semilla(escena, vista); LP.escena = escena || ''; avisar(); };
+  // ---------- Liquidación: totales y versiones ----------
+  const totLiq = (S, l, fecha) => { l.subtotal = LP.r2(l.lineas.reduce((s, id) => s + ((S.honorarios.find((h) => h.id === id) || {}).subtotal || 0), 0)); const x = LP.ivaDe(l.subtotal, fecha || l.fechaIva || ''); l.iva = x.iva; l.total = x.total; };
+  const foto = (S, l) => l.lineas.map((id) => { const h = S.honorarios.find((x) => x.id === id) || {}; return { linea: id, subtotal: h.subtotal, cambios: LP.cambios(h), comentario: LP.comentario(h) }; });
+  // Lo que quedó en la versión i, rehecho con los cambios de cada versión (la base solo guarda los cambios).
+  const fotoV = (l, i) => { const m = {}; for (let k = 0; k <= i; k++) ((l.versiones[k] || {}).cambios || []).forEach((c) => { if (c.tipo === 'Quitada') delete m[c.linea]; else m[c.linea] = { linea: c.linea, subtotal: c.ahora, comentario: c.comentario || '' }; }); return Object.keys(m).map((k) => m[k]); };
+  LP.fotoV = fotoV;
+  LP.diferencias = (antes, ahora) => { const out = [], A = {}, N = {}; (antes || []).forEach((x) => { A[x.linea] = x; }); (ahora || []).forEach((x) => { N[x.linea] = x; });
+    (ahora || []).forEach((x) => { const a = A[x.linea]; if (!a) out.push({ linea: x.linea, tipo: 'Agregada', antes: null, ahora: x.subtotal }); else if (a.subtotal !== x.subtotal || (a.cambios ? JSON.stringify(a.cambios) !== JSON.stringify(x.cambios) : sd(a.comentario) !== sd(x.comentario))) out.push({ linea: x.linea, tipo: /^Acepto el subtotal sugerido/.test(x.comentario) ? 'Sugerencia aceptada' : 'Cambiada', antes: a.subtotal, ahora: x.subtotal, comentario: x.comentario }); });
+    (antes || []).forEach((a) => { if (!N[a.linea]) out.push({ linea: a.linea, tipo: 'Quitada', antes: a.subtotal, ahora: null }); }); return out; };
+  const hist = (o, que, ctx, extra) => { o.historial = o.historial || []; o.historial.push(Object.assign({ fecha: ctx.fecha, por: ctx.por, que }, extra || {})); };
+  const NO = (m) => ({ ok: false, mensaje: m });
+  const libre = (h) => !h.liquidacionId && !h.facturaId;
+  const sigLiq = (S) => Math.max(LP.cfg().numeroInicial, (S.seq && S.seq.liq) || 0, ...S.liquidaciones.map((l) => (Number(l.numero) || 0) + 1));
+  const sigBor = (S) => Math.max(1, ...S.liquidaciones.concat(LP.borr).map((l) => (/^BOR-/.test(l.id) ? Number(l.id.slice(4)) + 1 : 1)));
+  const renLiq = (S, de, a) => { if (!a || a === de) return; const l = S.liquidaciones.find((x) => x.id === de); if (l) l.id = a; S.honorarios.forEach((h) => { if (h.liquidacionId === de) h.liquidacionId = a; }); S.facturas.forEach((f) => { f.liquidaciones = f.liquidaciones.map((x) => (x === de ? a : x)); }); };
+  const sigFac = (S) => Math.max(1, (S.seq && S.seq.fac) || 0, ...S.facturas.map((f) => (Number(String(f.id).replace(/\D/g, '')) || 0) + 1));
+  const listo = (S, l) => { const hs = l.lineas.map((id) => S.honorarios.find((h) => h.id === id)).filter(Boolean), fal = hs.filter(LP.falta); return !hs.length ? 'La liquidación no tiene líneas' : fal.length ? 'Falta el comentario del cambio en ' + fal.map((h) => h.placa || h.bien).join(', ') : ''; };
+  // ---------- Reglas (las aplican la pantalla y la base simulada) ----------
+  LP.ops = (S, tipo, d, ctx) => { d = d || {}; ctx = Object.assign({ por: '', fecha: LP.ahoraIso() }, ctx || {}); const H = (id) => S.honorarios.find((x) => x.id === sd(id)), L = (id) => S.liquidaciones.find((x) => x.id === sd(id)), F = (id) => S.facturas.find((x) => x.id === sd(id));
+    const enLiqEditable = (h) => { const l = h.liquidacionId ? L(h.liquidacionId) : null; return l && ['Borrador', 'Por corregir'].indexOf(l.estado) >= 0 ? l : null; };
+    if (tipo === 'ajustarHonorario') { const h = H(d.id); if (!h) return NO('El honorario no existe'); const l = enLiqEditable(h);
+      if (!(l || (libre(h) && ['Por liquidar', 'Por facturar'].indexOf(h.estado) >= 0))) return NO('Ese honorario ya no se puede cambiar');
+      const aj = { nivel: null, horasVisita: null, horasRedaccion: null, equipos: null, km: null, valor: null, comentario: sd(d.comentario) };
+      for (const k of Object.keys(d)) { if (['id', 'comentario'].indexOf(k) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(aj, k)) return NO('Campo desconocido: ' + k); const v = d[k]; if (v === null || v === undefined || v === '') continue;
+        if (h.grupo === 'Vehículos' && ['km', 'valor'].indexOf(k) < 0) return NO('En Vehículos la tarifa es fija: solo cambian los km');
+        if (k === 'nivel') { if (!LP.NIVELES().some((n) => n.id === v)) return NO('Nivel desconocido'); if (v !== (h.calculo || {}).nivel) aj.nivel = v; continue; }
+        const n = Number(v); if (!isFinite(n) || (k !== 'valor' && n < 0)) return NO('Valor no válido en ' + k); const x = k === 'equipos' ? Math.round(n) : k === 'km' ? Math.round(n * 10) / 10 : LP.r2(n);
+        if (k === 'valor' ? x !== 0 : String(x) !== String((h.calculo || {})[k])) aj[k] = x; }
+      const hay = ['nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'valor'].some((k) => aj[k] !== null);
+      const pre = h.estado === 'Por facturar'; h.ajuste = hay || aj.comentario ? aj : null; LP.recalc(h); camino(h); if (l) totLiq(S, l, ctx.fecha);
+      return { ok: true, mensaje: pre && h.estado === 'Por liquidar' ? 'Al ajustar, este honorario necesita liquidación: pasa a «Por liquidar»' : 'Cambio guardado' }; }
+    if (tipo === 'quitarAjuste') { const h = H(d.id); if (!h) return NO('El honorario no existe'); const l = enLiqEditable(h); if (!(l || (libre(h) && h.estado === 'Por liquidar'))) return NO('Ese honorario ya no se puede cambiar');
+      h.ajuste = null; LP.recalc(h); camino(h); if (l) totLiq(S, l, ctx.fecha); return { ok: true, mensaje: h.estado === 'Por facturar' ? 'Sin el ajuste, vuelve a preacordado: «Por facturar»' : 'Ajuste quitado' }; }
+    if (tipo === 'crearLiquidacion') { const ids = (d.lineas || []).map(sd).filter(Boolean); if (!ids.length) return NO('Marca al menos una inspección «Por liquidar»'); const hs = ids.map(H);
+      if (hs.some((h) => !h || h.estado !== 'Por liquidar' || !libre(h))) return NO('Alguna inspección ya está en otra liquidación o no está «Por liquidar»'); if (hs.some((h) => !LP.mismo(h.proveedor, hs[0].proveedor))) return NO('Todas deben ser del mismo proveedor');
+      const id = 'BOR-' + sigBor(S);
+      const l = { id, numero: null, version: 1, proveedor: clon(hs[0].proveedor), estado: 'Borrador', lineas: ids.slice(), observaciones: [], motivo: '', subtotal: 0, iva: 0, total: 0, facturaId: '', fechaIva: ctx.fecha, creada: ctx.fecha, versiones: [], historial: [] };
+      hs.forEach((h) => { h.estado = 'En liquidación'; h.liquidacionId = id; }); totLiq(S, l, ctx.fecha); hist(l, 'Creada en borrador con ' + ids.length + (ids.length === 1 ? ' inspección' : ' inspecciones'), ctx); S.liquidaciones.push(l); return { ok: true, mensaje: LP.numCorto(l) + ' creado: recibe su número al enviarlo', id }; }
+    if (tipo === 'editarLiquidacion') { const l = L(d.id); if (!l) return NO('La liquidación no existe'); if (['Borrador', 'Por corregir'].indexOf(l.estado) < 0) return NO('Solo se cambian las líneas de una liquidación en Borrador o «Por corregir»');
+      const ag = (d.agregar || []).map(sd).filter(Boolean), qu = (d.quitar || []).map(sd).filter(Boolean); if (!ag.length && !qu.length) return NO('No hay cambios');
+      if (qu.some((x) => l.lineas.indexOf(x) < 0)) return NO('Esa inspección no está en la liquidación'); if (ag.some((x) => { const h = H(x); return !h || h.estado !== 'Por liquidar' || !libre(h) || !LP.mismo(h.proveedor, l.proveedor); })) return NO('Solo se agregan inspecciones «Por liquidar» libres del mismo proveedor');
+      qu.forEach((x) => { const h = H(x); h.estado = 'Por liquidar'; h.liquidacionId = ''; camino(h); }); ag.forEach((x) => { const h = H(x); h.estado = 'En liquidación'; h.liquidacionId = l.id; });
+      l.lineas = l.lineas.filter((x) => qu.indexOf(x) < 0).concat(ag); l.observaciones = (l.observaciones || []).filter((o) => qu.indexOf(o.linea) < 0); totLiq(S, l, ctx.fecha);
+      const nm = (ids) => ids.map((x) => { const h = H(x); return h ? h.placa || h.bien : x; }).join(', '); hist(l, [ag.length ? 'Agregó ' + nm(ag) : '', qu.length ? 'Quitó ' + nm(qu) + ' (vuelve a «Por liquidar»)' : ''].filter(Boolean).join(' · '), ctx); return { ok: true, mensaje: 'Liquidación actualizada' }; }
+    if (tipo === 'enviarLiquidacion' && !d.id) { const r0 = LP.ops(S, 'crearLiquidacion', { lineas: d.lineas }, ctx); if (!r0.ok) return r0; const r1 = LP.ops(S, 'enviarLiquidacion', { id: r0.id }, ctx);
+      if (!r1.ok) LP.ops(S, 'anularLiquidacion', { id: r0.id }, ctx); return r1; }
+    if (tipo === 'enviarLiquidacion' || tipo === 'reenviarLiquidacion') { const l = L(d.id); if (!l) return NO('La liquidación no existe'); const de = tipo === 'enviarLiquidacion' ? 'Borrador' : 'Por corregir';
+      if (l.estado !== de) return NO(tipo === 'enviarLiquidacion' ? 'Solo se envía una liquidación en Borrador' : 'Solo se reenvía una liquidación «Por corregir»'); const e = listo(S, l); if (e) return NO(e);
+      if (!l.numero) { const n = sigLiq(S); S.seq = Object.assign({}, S.seq || {}, { liq: n + 1 }); renLiq(S, l.id, 'LIQ-' + String(n).padStart(6, '0')); l.numero = n; }
+      l.versiones = l.versiones || []; const prev = l.versiones[l.versiones.length - 1] || null, fo = foto(S, l), pf = prev ? (prev.foto || fotoV(l, l.versiones.length - 1)) : null; if (prev) l.version += 1; l.estado = 'Enviada'; l.observaciones = []; l.motivo = ''; totLiq(S, l, ctx.fecha);
+      l.versiones.push({ version: l.version, enviada: ctx.fecha, resultado: 'Por aprobar', por: ctx.por, cambios: prev ? LP.diferencias(pf, fo) : fo.map((x) => ({ linea: x.linea, tipo: Object.keys(x.cambios).length ? 'Cambiada' : 'Incluida', antes: null, ahora: x.subtotal, comentario: x.comentario })), foto: fo });
+      hist(l, (prev ? 'Reenviada' : 'Enviada') + ' v' + l.version + ' · ' + LP.usd(l.subtotal), ctx); return { ok: true, mensaje: 'Liquidación ' + LP.numCorto(l) + (prev ? ' reenviada' : ' enviada') + ' (v' + l.version + ')', id: l.id, numero: l.numero }; }
+    if (tipo === 'anularLiquidacion') { const l = L(d.id); if (!l) return NO('La liquidación no existe'); if (['Borrador', 'Por corregir'].indexOf(l.estado) < 0) return NO('Solo el proveedor anula una liquidación en Borrador o «Por corregir»');
+      if (l.estado === 'Por corregir' && sd(d.motivo).length < 10) return NO('Escribe el motivo (mínimo 10 caracteres)');
+      l.lineas.forEach((x) => { const h = H(x); if (h) { h.estado = 'Por liquidar'; h.liquidacionId = ''; camino(h); } }); l.estado = 'Anulada'; l.motivo = sd(d.motivo); if (!l.numero) { S.liquidaciones.splice(S.liquidaciones.indexOf(l), 1); return { ok: true, mensaje: LP.numCorto(l) + ' descartado: sus inspecciones vuelven a «Por liquidar»' }; } hist(l, 'Anulada: sus inspecciones vuelven a «Por liquidar»', ctx, d.motivo ? { motivo: sd(d.motivo) } : {}); return { ok: true, mensaje: 'Liquidación ' + LP.numCorto(l) + ' anulada' }; }
+    if (tipo === 'aprobarLiquidacion') { const l = L(d.id); if (!l) return NO('La liquidación no existe'); if (l.estado !== 'Enviada') return NO('Solo se aprueba una liquidación enviada');
+      l.lineas.forEach((x) => { const h = H(x); if (h) h.estado = 'Por facturar'; }); l.estado = 'Aprobada'; const v = l.versiones[l.versiones.length - 1]; if (v) { v.resultado = 'Aprobada'; v.revisor = ctx.por; v.fechaResultado = ctx.fecha; }
+      hist(l, 'Aprobada v' + l.version + ' · ' + LP.usd(l.subtotal), ctx); return { ok: true, mensaje: 'Liquidación aprobada' }; }
+    if (tipo === 'devolverLiquidacion') { const l = L(d.id); if (!l) return NO('La liquidación no existe'); if (l.estado !== 'Enviada') return NO('Solo se devuelve una liquidación enviada');
+      const obs = (d.observaciones || []).map((o) => ({ linea: sd(o.linea), texto: sd(o.texto), subtotalSugerido: o.subtotalSugerido == null || o.subtotalSugerido === '' ? null : LP.r2(Number(o.subtotalSugerido)) }));
+      if (!obs.length) return NO('Observa al menos una línea'); if (obs.some((o) => l.lineas.indexOf(o.linea) < 0 || o.texto.length < 3 || (o.subtotalSugerido != null && !(o.subtotalSugerido >= 0)))) return NO('Cada observación necesita su línea y un texto');
+      if (sd(d.motivo).length < 10) return NO('Escribe el motivo (mínimo 10 caracteres)');
+      l.estado = 'Por corregir'; l.observaciones = obs; l.motivo = sd(d.motivo); const v = l.versiones[l.versiones.length - 1]; if (v) { v.resultado = 'Devuelta para corregir'; v.revisor = ctx.por; v.fechaResultado = ctx.fecha; v.observaciones = clon(obs); v.motivo = sd(d.motivo); }
+      hist(l, 'Devuelta para corregir v' + l.version, ctx, { motivo: sd(d.motivo), observaciones: clon(obs) }); return { ok: true, mensaje: 'Liquidación devuelta para corregir' }; }
+    // Aceptar el subtotal sugerido: en Vehículos se ajustan los km (o, sin valor por km, un ajuste); en Ramos Generales, el ajuste ±.
+    if (tipo === 'aceptarSugerencia') { const l = L(d.id); if (!l || l.estado !== 'Por corregir') return NO('La liquidación no está «Por corregir»'); const o = (l.observaciones || []).find((x) => x.linea === sd(d.linea)), h = H(d.linea);
+      if (!o || o.subtotalSugerido == null || !h) return NO('Esa línea no tiene un subtotal sugerido'); const c = LP.cambios(h), dd = LP.desglose(h);
+      if (h.grupo === 'Vehículos' && h.tarifa.valorKm) { c.km = Math.max(0, Math.round((o.subtotalSugerido - dd.base - (Number(c.ajuste) || 0)) / h.tarifa.valorKm * 10) / 10); }
+      else c.ajuste = LP.r2((Number(c.ajuste) || 0) + (o.subtotalSugerido - dd.subtotal));
+      h.ajuste = { nivel: c.nivel == null ? null : c.nivel, horasVisita: c.horasVisita == null ? null : c.horasVisita, horasRedaccion: c.horasRedaccion == null ? null : c.horasRedaccion, equipos: c.equipos == null ? null : c.equipos, km: c.km == null ? null : c.km, valor: c.ajuste ? c.ajuste : null, comentario: 'Acepto el subtotal sugerido por la aseguradora (' + LP.usd(o.subtotalSugerido) + ')' };
+      LP.recalc(h); totLiq(S, l, ctx.fecha); hist(l, 'Aceptó el subtotal sugerido de ' + (h.placa || h.bien) + ': ' + LP.usd(o.subtotalSugerido), ctx); return { ok: true, mensaje: 'Subtotal sugerido aceptado' }; }
+    // La base vuelve a consultar el SRI con la clave (aquí, ctx.sri si la pantalla ya lo consultó, o el registro de la consulta simulada) y compara.
+    if (tipo === 'enviarFactura') { const ls = (d.liquidaciones || []).map(sd).filter(Boolean), hs = (d.honorarios || []).map(sd).filter(Boolean); if (!ls.length && !hs.length) return NO('Marca al menos una liquidación aprobada o un honorario preacordado');
+      const LL = ls.map(L), HH = hs.map(H); if (LL.some((l) => !l || l.estado !== 'Aprobada' || l.facturaId)) return NO('Alguna liquidación no está aprobada o ya está en otra factura');
+      if (HH.some((h) => !h || h.estado !== 'Por facturar' || !libre(h))) return NO('Algún honorario no está «Por facturar» como preacordado o ya está en otra factura');
+      const provs = LL.map((l) => l.proveedor).concat(HH.map((h) => h.proveedor)); if (provs.some((p) => !LP.mismo(p, provs[0]))) return NO('Todo lo de una factura debe ser del mismo proveedor');
+      const SRI = W.SIRIUS_SRI, clave = sd(d.clave), ec = SRI && SRI.validarClave ? SRI.validarClave(clave) : (/^\d{49}$/.test(clave) ? '' : 'La clave de acceso tiene 49 dígitos'); if (ec) return NO(ec);
+      if (S.facturas.some((f) => f.clave === clave && f.estado !== 'Factura devuelta')) return NO('Esa factura ya está cargada');
+      const r = ctx.sri && ctx.sri.clave === clave ? ctx.sri : (SRI && SRI.registro ? SRI.registro(clave) : null); if (!r) return NO('El SRI no tiene un comprobante autorizado con esa clave de acceso');
+      const e = LP.esperado(S, ls, hs, r.fecha), cmp = LP.compararSri(r, provs[0], e.subtotal);
+      if (!cmp.estado) return NO('La factura no está AUTORIZADA en el SRI (' + sd(r.estado) + ')'); if (!cmp.ruc) return NO('El RUC del emisor (' + sd(r.ruc) + ') no es el del proveedor (' + LP.rucProveedor(provs[0]) + ')');
+      if (!cmp.subtotal) return NO('El subtotal de la factura en el SRI (' + LP.usd(r.subtotal) + ') no coincide con lo marcado (' + LP.usd(e.subtotal) + ')');
+      const nf = sigFac(S), id = 'FAC-' + String(nf).padStart(4, '0'); S.seq = Object.assign({}, S.seq || {}, { fac: nf + 1 });
+      const f = { id, proveedor: clon(provs[0]), clave, numero: sd(r.numero), fecha: sd(r.fecha), sri: { estado: sd(r.estado), ruc: sd(r.ruc), subtotal: LP.r2(Number(r.subtotal)), iva: LP.r2(Number(r.iva)), total: LP.r2(Number(r.total)) }, liquidaciones: ls, honorarios: hs, subtotal: LP.r2(Number(r.subtotal)), estado: 'Por validar', motivo: '', pago: null, historial: [] };
+      LL.forEach((l) => { l.estado = 'Facturada'; l.facturaId = id; l.lineas.forEach((x) => { const h = H(x); if (h) { h.estado = 'Facturado'; h.facturaId = id; } }); }); HH.forEach((h) => { h.estado = 'Facturado'; h.facturaId = id; });
+      hist(f, 'Enviada con la clave del SRI: ' + ls.length + (ls.length === 1 ? ' liquidación' : ' liquidaciones') + ' y ' + hs.length + (hs.length === 1 ? ' honorario preacordado' : ' honorarios preacordados') + ' · subtotal ' + LP.usd(f.subtotal), ctx); S.facturas.push(f); return { ok: true, mensaje: 'Factura ' + f.numero + ' enviada: queda por validar en Finanzas', id }; }
+    if (tipo === 'validarFactura') { const f = F(d.id); if (!f || f.estado !== 'Por validar') return NO('La factura no está «Por validar»'); f.estado = 'Validada'; hist(f, 'Validada por Finanzas', ctx); return { ok: true, mensaje: 'Factura validada' }; }
+    if (tipo === 'devolverFactura') { const f = F(d.id); if (!f || f.estado !== 'Por validar') return NO('La factura no está «Por validar»'); if (sd(d.motivo).length < 10) return NO('Escribe el motivo (mínimo 10 caracteres)');
+      f.liquidaciones.forEach((x) => { const l = L(x); if (l) { l.estado = 'Aprobada'; l.facturaId = ''; l.lineas.forEach((y) => { const h = H(y); if (h) { h.estado = 'Por facturar'; h.facturaId = ''; } }); } }); f.honorarios.forEach((x) => { const h = H(x); if (h) { h.estado = 'Por facturar'; h.facturaId = ''; } });
+      f.estado = 'Factura devuelta'; f.motivo = sd(d.motivo); hist(f, 'Devuelta: lo incluido vuelve a «Por facturar»', ctx, { motivo: sd(d.motivo) }); return { ok: true, mensaje: 'Factura devuelta' }; }
+    if (tipo === 'registrarPago') { const ids = (d.facturas || []).map(sd).filter(Boolean), FF = ids.map(F); if (!ids.length || FF.some((f) => !f || f.estado !== 'Validada')) return NO('Solo se paga una factura validada');
+      if (!/^\d{4}-\d\d-\d\d$/.test(sd(d.fecha))) return NO('Escribe la fecha del pago'); if (!sd(d.referencia)) return NO('Escribe la referencia del pago');
+      FF.forEach((f) => { f.estado = 'Pagada'; f.pago = { fecha: sd(d.fecha), referencia: sd(d.referencia) }; f.liquidaciones.forEach((x) => { const l = L(x); if (l) { l.estado = 'Pagada'; l.lineas.forEach((y) => { const h = H(y); if (h) h.estado = 'Pagado'; }); } }); f.honorarios.forEach((x) => { const h = H(x); if (h) h.estado = 'Pagado'; }); hist(f, 'Pagada · ' + LP.fecha(d.fecha) + ' · ref. ' + sd(d.referencia), ctx); });
+      return { ok: true, mensaje: 'Pago registrado' }; }
+    return NO('Acción desconocida: ' + tipo); };
+  // Lo que debe decir la factura de lo marcado: se compara el subtotal; IVA y total son informativos.
+  LP.esperado = (S, ls, hs, fecha) => { S = S || tienda(); const sub = LP.r2(ls.reduce((s, id) => s + ((S.liquidaciones.find((l) => l.id === id) || {}).subtotal || 0), 0) + hs.reduce((s, id) => s + ((S.honorarios.find((h) => h.id === id) || {}).subtotal || 0), 0)); const x = LP.ivaDe(sub, fecha); return { subtotal: sub, iva: x.iva, total: x.total, tasa: x.tasa }; };
+  // ---------- Acciones (pantalla): al instante; con la conexión se envía y, con { ok: false }, vuelve atrás ----------
+  const renFac = (S, de, a) => { if (!a || a === de) return; const f = S.facturas.find((x) => x.id === de); if (f) f.id = a; S.honorarios.forEach((h) => { if (h.facturaId === de) h.facturaId = a; }); S.liquidaciones.forEach((l) => { if (l.facturaId === de) l.facturaId = a; }); };
+  const base = (tipo, carga) => { const c = C(); if (!c || typeof c.accion !== 'function') return Promise.resolve({ ok: false, mensaje: 'No hay conexión con la base.' });
+    let pr; try { pr = Promise.resolve(c.accion(tipo, carga)); } catch (e) { pr = Promise.resolve({ ok: false, mensaje: (e && e.message) || 'La base no respondió.' }); }
+    return pr.then((r) => r || { ok: false, mensaje: 'La base no respondió.' }, (e) => ({ ok: false, mensaje: (e && e.message) || 'La base no respondió.' })); };
+  LP.base = base;
+  // o.base: la carga que va a la base (false: solo la sesión, p. ej. el borrador); o.ctx: datos para la regla local (p. ej. la consulta al SRI ya hecha).
+  LP.accion = (tipo, carga, por, o) => { o = o || {}; const S = tienda(), antes = clon({ h: S.honorarios, l: S.liquidaciones, f: S.facturas, s: S.seq || null }), volver = () => { ['honorarios', 'liquidaciones', 'facturas'].forEach((k, i) => { const v = [antes.h, antes.l, antes.f][i]; S[k].splice(0, S[k].length); v.forEach((x) => S[k].push(x)); }); S.seq = antes.s; syncBorr(S); avisar(); };
+    const cb = o.base === undefined ? carga : o.base, r = LP.ops(S, tipo, carga, Object.assign({ por: por || LP.ctx.usuario() || '', fecha: LP.ahoraIso() }, o.ctx || {})); if (!r.ok) { volver(); return Promise.resolve(Object.assign({ validacion: true }, r)); }
+    syncBorr(S); avisar(); if (!LP.cx() || cb === false) return Promise.resolve(r);
+    return base(o.tipoBase || tipo, cb).then((rb) => { if (!rb || !rb.ok) { volver(); return { ok: false, mensaje: (rb && rb.mensaje) || 'La base no guardó el cambio.' }; }
+      if (tipo === 'enviarLiquidacion' && rb.id) { renLiq(S, r.id, sd(rb.id)); const l = S.liquidaciones.find((x) => x.id === sd(rb.id)); if (l && rb.numero) l.numero = rb.numero; }
+      if (tipo === 'enviarFactura' && rb.id) renFac(S, r.id, sd(rb.id)); syncBorr(S); avisar(); return Object.assign({}, r, rb, { id: rb.id || r.id, mensajeLocal: r.mensaje }); }); };
+  const borr = (id) => { const l = LP.liq(id); return !!l && l.estado === 'Borrador'; };
+  const AJN = (cambios) => { const c = cambios || {}, v = (k) => (c[k] === undefined || c[k] === '' ? null : c[k]); return { nivel: v('nivel'), horasVisita: v('horasVisita'), horasRedaccion: v('horasRedaccion'), equipos: v('equipos'), km: v('km'), valor: v('ajuste') }; };
+  LP.ajustar = (id, cambios, comentario, por) => LP.accion('ajustarHonorario', Object.assign({ id }, AJN(cambios), { comentario: sd(comentario) }), por);
+  LP.quitarAjuste = (id, por) => LP.accion('quitarAjuste', { id }, por);
+  LP.crear = (lineas, por) => LP.accion('crearLiquidacion', { lineas: lineas.slice() }, por, { base: false });
+  LP.editar = (id, agregar, quitar, por) => LP.accion('editarLiquidacion', { id, agregar: agregar || [], quitar: quitar || [] }, por, borr(id) ? { base: false } : {});
+  LP.enviar = (id, por) => { const l = LP.liq(id); return LP.accion('enviarLiquidacion', { id }, por, { base: { lineas: l ? l.lineas.slice() : [] } }); };
+  LP.reenviar = (id, por) => LP.accion('reenviarLiquidacion', { id }, por);
+  LP.anular = (id, motivo, por) => LP.accion('anularLiquidacion', { id, motivo: sd(motivo) }, por, borr(id) ? { base: false } : {});
+  LP.aprobar = (id, por) => LP.accion('aprobarLiquidacion', { id }, por);
+  LP.devolver = (id, observaciones, motivo, por) => LP.accion('devolverLiquidacion', { id, observaciones: observaciones.map((o) => ({ linea: o.linea, texto: sd(o.texto), subtotalSugerido: o.subtotalSugerido == null || o.subtotalSugerido === '' ? null : LP.r2(Number(o.subtotalSugerido)) })), motivo: sd(motivo) }, por);
+  LP.aceptar = (id, linea, por) => LP.accion('aceptarSugerencia', { id, linea }, por);
+  LP.enviarFactura = (d, por) => LP.accion('enviarFactura', { clave: sd(d.clave), liquidaciones: d.liquidaciones.slice(), honorarios: d.honorarios.slice() }, por, { ctx: { sri: d.sri || null } });
+  LP.validarFactura = (id, por) => LP.accion('validarFactura', { id }, por);
+  LP.devolverFactura = (id, motivo, por) => LP.accion('devolverFactura', { id, motivo: sd(motivo) }, por);
+  LP.registrarPago = (facturas, fecha, referencia, por) => LP.accion('registrarPago', { facturas: facturas.slice(), fecha: sd(fecha), referencia: sd(referencia) }, por);
+  // Compara lo que devuelve el SRI con lo marcado: estado AUTORIZADO, RUC del emisor igual al del proveedor y subtotal igual.
+  LP.compararSri = (r, prov, subtotal) => { const c = { estado: r.estado === 'AUTORIZADO', ruc: sd(r.ruc) === LP.rucProveedor(prov), subtotal: Math.abs(Number(r.subtotal) - subtotal) <= 0.005 }; c.ok = c.estado && c.ruc && c.subtotal; c.diferencia = LP.r2(Number(r.subtotal) - subtotal); return c; };
+  // ---------- Consultas ----------
+  LP.deProv = (p) => (x) => !p || LP.mismo(x.proveedor, p);
+  LP.porLiquidar = (p) => LP.honorarios().filter((h) => h.estado === 'Por liquidar' && libre(h) && LP.deProv(p)(h));
+  LP.preacordadosPorFacturar = (p) => LP.honorarios().filter((h) => h.estado === 'Por facturar' && libre(h) && LP.deProv(p)(h));
+  LP.liqsPorFacturar = (p) => LP.liquidaciones().filter((l) => l.estado === 'Aprobada' && !l.facturaId && LP.deProv(p)(l));
+  LP.abiertas = (p) => LP.liquidaciones().filter((l) => ['Borrador', 'Por corregir'].indexOf(l.estado) >= 0 && LP.deProv(p)(l));
+  LP.lineas = (l) => l.lineas.map(LP.hon).filter(Boolean);
+  // La observación ya aceptada: el subtotal de la línea es el sugerido (la observación del contrato solo trae linea, texto y subtotalSugerido).
+  LP.aceptada = (l, o) => { const h = o && LP.hon(o.linea); return !!h && o.subtotalSugerido != null && Math.abs(h.subtotal - o.subtotalSugerido) < 0.005; };
+  LP.obsDe = (l, id) => (l.observaciones || []).find((o) => o.linea === id) || null;
+  LP.listoParaEnviar = (l) => listo(tienda(), l);
+  LP.multiVersion = () => { const o = {}; LP.liquidaciones().filter((l) => ['Anulada', 'Borrador'].indexOf(l.estado) < 0).forEach((l) => { const k = LP.provKey(l.proveedor), x = o[k] || (o[k] = { proveedor: l.proveedor, total: 0, mas: 0 }); x.total++; if ((l.version || 1) > 1) x.mas++; }); return Object.keys(o).map((k) => o[k]); };
+  LP.contar = (L) => { const o = {}; LP.EST_H.forEach((e) => { o[e] = { n: 0, monto: 0 }; }); L.forEach((h) => { const x = o[h.estado]; if (x) { x.n++; x.monto = LP.r2(x.monto + h.subtotal); } }); return o; };
+  // Tareas para Inicio (proveedor, aprobadores y Finanzas).
+  LP.tareas = (vista) => { const out = []; if (!vista) return out; const p = vista.proveedor;
+    if (p) { const pl = LP.porLiquidar(p); if (pl.length) out.push({ tipo: 'liquidar', n: pl.length, texto: pl.length + (pl.length === 1 ? ' inspección «Por liquidar»' : ' inspecciones «Por liquidar»') + ': arma la liquidación', boton: 'Liquidar', tab: 'Por liquidar' });
+      LP.liquidaciones().filter((l) => l.estado === 'Por corregir' && LP.mismo(l.proveedor, p)).forEach((l) => out.push({ tipo: 'corregir', id: l.id, texto: 'Liquidación ' + LP.numTxt(l) + ' devuelta para corregir: ' + String(l.motivo || '').replace(/\.$/, ''), boton: 'Corregir en la mesa', tab: 'Mesa de trabajo' }));
+      const pf = LP.liqsPorFacturar(p).length + LP.preacordadosPorFacturar(p).length; if (pf) out.push({ tipo: 'facturar', n: pf, texto: pf + ' por facturar (liquidaciones aprobadas y honorarios preacordados)', boton: 'Facturar', tab: 'Por facturar' });
+      LP.facturas().filter((f) => f.estado === 'Factura devuelta' && LP.mismo(f.proveedor, p)).forEach((f) => out.push({ tipo: 'facturaDevuelta', id: f.id, texto: 'Factura ' + f.numero + ' devuelta: ' + String(f.motivo || '').replace(/\.$/, '') + '. Lo incluido volvió a «Por facturar»', boton: 'Corregir factura', tab: 'Por facturar' })); }
+    if (vista.aprueba) { const pa = LP.liquidaciones().filter((l) => l.estado === 'Enviada'); if (pa.length) out.push({ tipo: 'aprobar', n: pa.length, texto: pa.length + (pa.length === 1 ? ' liquidación por aprobar' : ' liquidaciones por aprobar'), boton: 'Revisar', tab: 'Por aprobar' }); }
+    if (vista.finanzas) { const pv = LP.facturas().filter((f) => f.estado === 'Por validar'); if (pv.length) out.push({ tipo: 'validar', n: pv.length, texto: pv.length + (pv.length === 1 ? ' factura por validar' : ' facturas por validar'), boton: 'Validar', tab: 'Facturas por validar' }); const pp = LP.facturas().filter((f) => f.estado === 'Validada'); if (pp.length) out.push({ tipo: 'pagar', n: pp.length, texto: pp.length + (pp.length === 1 ? ' factura por pagar' : ' facturas por pagar'), boton: 'Registrar pago', tab: 'Por pagar' }); }
+    return out; };
+  // ---------- Documento «Liquidación de honorarios de inspección #N · vN» y factura (PDF con imprimir; Word con la plantilla) ----------
+  const esc = (s) => sd(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  LP.filaDoc = (h, l) => { const o = l ? LP.obsDe(l, h.id) : null, d = LP.desglose(h); return { caso: h.caso, orden: h.orden || '—', asegurado: h.asegurado, ramo: h.ramo, modalidad: h.modalidad, objeto: h.placa ? h.placa + (h.bien ? ' · ' + h.bien : '') : h.bien || '—', fecha: LP.fecha(h.fecha),
+    partes: d.partes.filter((p) => !/^Movilización/.test(p.concepto) && p.concepto !== 'Ajuste').map((p) => p.concepto + ' = ' + LP.usd(p.valor)).join('; '), km: d.km ? d.km + ' km' + (d.porValorar ? ' (por valorar)' : ' = ' + LP.usd(d.mov)) : '—',
+    ajuste: LP.cambiado(h) ? (d.ajuste ? 'Ajuste ' + LP.usd(d.ajuste) + ' · ' : '') + (LP.comentario(h) || '—') : '—', observacion: o ? o.texto + (o.subtotalSugerido != null ? ' (sugerido ' + LP.usd(o.subtotalSugerido) + ')' : '') : '—', subtotal: LP.usd(h.subtotal) }; };
+  LP.documento = (tipo, id) => { const P = (LP.D().plantillas || {})[tipo] || {}, cols = P.columnas || [], fill = (s, o) => sd(s).replace(/\{\{(\w+)\}\}/g, (m, k) => esc(o[k] == null ? '' : o[k]));
+    let datos, grupos; if (tipo === 'liquidacion') { const l = LP.liq(id); if (!l) return null; const x = LP.ivaDe(l.subtotal, l.fechaIva); datos = { numero: LP.numTxt(l) + (l.numero ? '' : ' (vista previa)'), proveedor: LP.provNombre(l.proveedor), identificacion: l.proveedor.identificacion, estado: l.estado, fecha: LP.fecha(((l.versiones || [])[(l.versiones || []).length - 1] || {}).enviada || l.creada), subtotal: LP.usd(l.subtotal), iva: LP.usd(x.iva), tasa: x.tasa, total: LP.usd(x.total) };
+      grupos = [{ titulo: 'Inspecciones', filas: LP.lineas(l).map((h) => LP.filaDoc(h, l)) }]; }
+    else { const f = LP.fac(id); if (!f) return null; datos = { numero: f.numero, proveedor: LP.provNombre(f.proveedor), identificacion: LP.rucProveedor(f.proveedor), estado: f.estado, fecha: LP.fecha(f.fecha), subtotal: LP.usd(f.subtotal), iva: LP.usd((f.sri || {}).iva), tasa: '', total: LP.usd((f.sri || {}).total), clave: f.clave };
+      grupos = f.liquidaciones.map((x) => { const l = LP.liq(x); return l ? { titulo: 'Liquidación ' + LP.numTxt(l) + ' · ' + LP.usd(l.subtotal), filas: LP.lineas(l).map((h) => LP.filaDoc(h, l)) } : null; }).filter(Boolean).concat(f.honorarios.length ? [{ titulo: 'Honorarios preacordados', filas: f.honorarios.map(LP.hon).filter(Boolean).map((h) => LP.filaDoc(h, null)) }] : []); }
+    const tabla = (g) => '<h3>' + esc(g.titulo) + '</h3><table><thead><tr>' + cols.map((c) => '<th>' + esc(c[1]) + '</th>').join('') + '</tr></thead><tbody>' + g.filas.map((r) => '<tr>' + cols.map((c) => '<td>' + esc(r[c[0]]) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+    const cuerpo = '<h1>' + fill(P.titulo, datos) + '</h1><p>' + fill(P.encabezado, datos) + '</p>' + grupos.map(tabla).join('') + '<p class="pie">' + fill(P.pie, datos) + '</p>';
+    return { titulo: fill(P.titulo, datos), html: '<!doctype html><html><head><meta charset="utf-8"><title>' + fill(P.titulo, datos) + '</title><style>' + (P.estilo || '') + '</style></head><body>' + cuerpo + '</body></html>', cuerpo, datos, grupos, columnas: cols }; };
+  W.SiriusLiqProceso = LP;
+})();
