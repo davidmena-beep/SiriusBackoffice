@@ -40,6 +40,10 @@
       ['52254', 'PFW4525', 'Automóvil', 'Maritza Bibiana Chamorro Tavera', '12-0210202604', '2026-10-09'], ['52325', 'PFO7819', 'Automóvil', 'Zambrano Cedeño Angel Alcides', '0J-1310202610', '2026-10-13', { ciudad: RUM, kmRuta: 34.5 }],
       ['52357', 'ABJ2401', 'SUV', 'Romero Jaramillo Guido Alfredo', '00-1510202610', '2026-10-15', { ciudad: CAY, kmRuta: 101 }], ['52523', 'GTM5764', 'Volqueta', 'Matute Castro Miguel Angel', '00-2910202610', '2026-10-16', { ciudad: MEJ, kmRuta: 56.5, calificacion: 'Pendiente de calificación' }]]
       .map((r, i) => veh(r[0], 1, r[1], r[2], r[3], 'Individuales', 'Quito', 'Presencial', r[5], 'Emitida', i % 2 ? VC : ME, EUR, UIO, Object.assign({ orden: r[4], tipoVehiculo: r[2], escenas: ['liqpdf', 'liqpdfsinaprobar'], aprobacion: 'Liquidación' }, r[6] || {}))),
+    // P-6g-1e · DEC-249 · honormoto: tarifa por tipo con Moto (presencial USD 10,00), Liviano (Camioneta, 12,00) y Pesado (Bus, 17,00); una liquidación aprobada con las tres para el PDF.
+    veh('50130', 1, 'PMB3205', 'Yamaha MT-03 2022', 'Hidalgo Paredes Cristian Andrés', 'Individuales', 'Quito', 'Presencial', '2026-10-19', 'Emitida', ME, EUR, UIO, { tipoVehiculo: 'Moto', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
+    veh('50131', 1, 'PCT8832', 'Chevrolet D-Max 2021', 'Ferretería El Constructor Cía. Ltda.', 'Corporativo', 'Quito', 'Presencial', '2026-10-19', 'Emitida', VC, EUR, UIO, { tipoVehiculo: 'Camioneta', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
+    veh('50132', 1, 'PBZ9921', 'Hino FC9J Bus 2020', 'Cooperativa de Transportes Rutas del Sol', 'Corporativo', 'Quito', 'Presencial', '2026-10-20', 'Emitida', ME, EUR, UIO, { tipoVehiculo: 'Bus', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
     // Inspecciones Andinas: 1 preacordado (no es de Eurosurvey ni de Luis).
     veh('50045', 1, 'TBA3301', 'Toyota Corolla 2021', 'Agrícola Tungurahua S.A.', 'Corporativo', 'Ambato', 'Presencial', '2026-10-11', 'Emitida', SA, AND, null, {}),
   ];
@@ -83,6 +87,7 @@
     liqpdf: (S, op) => { aprobada(op, PDF12); },
     liqpdfrg: (S, op) => { aprobada(op, [H('50014-B1'), H('50018-B1')]); },
     liqpdfsinaprobar: (S, op) => { enviada(op, PDF12.slice(0, 6)); porCorregir(S, op); },
+    honormoto: (S, op) => { aprobada(op, [H('50130-V1'), H('50131-V1'), H('50132-V1')]); }, tarifatipos: () => {},
     honorclase: () => {}, fichaciudadbase: () => {},
     liqdevolver: (S, op) => { enviada(op, [H('50022-V1'), H('50019-B1')], [cambioPBX]); },
     liqdocumento: (S, op, v) => { const id = porCorregir(S, op); op('aceptarSugerencia', { id, linea: H('50019-B1') }, CP); op('reenviarLiquidacion', { id }, CP, '2026-10-17T15:00'); op('aprobarLiquidacion', { id }, EJE, '2026-10-17T17:00'); if (v === 'factura') facturada(S, op, EUR, [id], [H('50012-V1')], 415, CP); },
@@ -107,7 +112,7 @@
     liqcalculopanel: { tab: 'Por liquidar', calc: [H('50013-V1')] }, 'liqcalculopanel:planta': { tab: 'Por liquidar', calc: [H('50018-B1')] },
     liqrevision: { tab: 'Por aprobar', det: 'LIQ-001414', rev: { obs: { [H('50014-B1')]: { texto: '3 h no corresponde a una bodega de riesgo básico (referencia 2 h)', sug: '146' } }, motivo: 'Revisar las horas de la bodega.' } },
     liqrevisionv2: { tab: 'Por aprobar', det: 'LIQ-001414' }, liqfinanzas: { tab: 'Facturas por validar' }, cxliqproceso: { tab: 'Por liquidar', prueba: true },
-    liqpdf: { tab: 'Seguimiento' }, liqpdfrg: { tab: 'Seguimiento' }, liqpdfsinaprobar: { tab: 'Seguimiento' }, honorclase: { tab: 'Por liquidar', calc: [H('50120-V1'), H('50121-V1'), H('50122-V1')] },
+    liqpdf: { tab: 'Seguimiento' }, liqpdfrg: { tab: 'Seguimiento' }, liqpdfsinaprobar: { tab: 'Seguimiento' }, honorclase: { tab: 'Por liquidar', calc: [H('50120-V1'), H('50121-V1'), H('50122-V1')] }, honormoto: { tab: 'Seguimiento', calc: [H('50130-V1'), H('50131-V1'), H('50132-V1')] },
     liquidaciones: { tab: 'Por aprobar' }, liqdetalle: { tab: 'Por aprobar', det: 'LIQ-001414' }, liqfactura: { tab: 'Por facturar' }, facturagrupo: { tab: 'Por facturar', marcarLiq: ['LIQ-001414'], marcar: [H('52552-V1'), H('52559-V1')], clave: 'ok' }, mishonorarios: { tab: 'Por liquidar' },
   };
   const col = [['caso', 'Caso'], ['orden', 'Orden'], ['asegurado', 'Asegurado'], ['ramo', 'Ramo'], ['modalidad', 'Modalidad'], ['objeto', 'Placa o bien'], ['fecha', 'Fecha de inspección'], ['partes', 'Partes del cálculo'], ['km', 'km'], ['ajuste', 'Ajuste y comentario'], ['observacion', 'Observación de la aseguradora'], ['subtotal', 'Subtotal']];

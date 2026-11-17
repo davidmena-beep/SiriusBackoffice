@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 16/11/2026 · P-6g · SQL 53: SIRIUS_CONEXION.honorarios[], .liquidaciones[] y .facturas[] con el contrato de SiriusLiqProceso (si la base aún no tiene el SQL 53, quedan sin definir y el módulo sigue en demostración).
 // 16/11/2026 · DEC-246 (SQL 52): un vehículo enviado desde la app queda «Inspeccionado» aunque su visita siga en curso (visitas.riesgos_enviados).
 // 15/11/2026 · P-6f-b · DEC-214 (SQL 51): usuarios[] e inspectores[] con tipoIdentificacion, identificacion y agenciaRuc; agencias[] con ruc, razonSocial y nombreComercial (si la base aún no tiene el SQL 51, se lee como antes).
 // 15/11/2026 · R-0 · DEC-245 (SQL 47): riesgos[] con tipoConfirmado, plantilla, tipoAnterior, noInspeccionado y revisarDatos; visitasBase[] con motivoCierre y noInspeccionados; evidencias e informes con su riesgo («50012-V1»).
@@ -268,6 +269,9 @@
       get('usuarios?select=nombre,tipo_inspector,estado,datos,tipo_identificacion,identificacion,agencia:agencias(nombre,ruc)&rol=eq.Inspector&estado=eq.Activo&order=nombre').catch(function () { return get('usuarios?select=nombre,tipo_inspector,estado,datos,agencia:agencias(nombre)&rol=eq.Inspector&estado=eq.Activo&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] inspectores:', e.message); return null; }),   // P-6f-0e · DEC-231
       get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,tipo_identificacion,identificacion,agencia:agencias(nombre,ruc)&order=nombre').catch(function () { return get('usuarios?select=nombre,email,rol,tipo_inspector,estado,datos,auth_id,agencia:agencias(nombre)&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] usuarios:', e.message); return null; }),   // P-6f-0g · DEC-233
       get('agencias?select=nombre,estado,ruc,razon_social,nombre_comercial&order=nombre').catch(function () { return get('agencias?select=nombre,estado&order=nombre'); }).catch(function (e) { console.warn('[SIRIUS] agencias:', e.message); return null; })
+      ,get('honorarios?select=id,estado,aprobacion,calculo,ajuste,subtotal,liquidacion_id,factura_id,proveedor_tipo,fecha_inspeccion,visita_id,riesgo:riesgos(id,descripcion,datos,creado,caso:casos(id,numero,ramo,grupo_ramo,estado,asegurado,datos)),inspector:usuarios!honorarios_inspector_id_fkey(nombre,identificacion),agencia:agencias(nombre,ruc),visita:visitas(modalidad,creado,caso_id)&riesgo_id=not.is.null&order=fecha_inspeccion').catch(function (e) { console.info('[SIRIUS] honorarios (SQL 53):', e.message); return null; })
+      ,get('liquidaciones?select=id,numero,version,estado,proveedor_tipo,observaciones,motivo,subtotal,iva,total,factura_id,versiones,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&numero=not.is.null&order=numero').catch(function () { return null; })
+      ,get('facturas?select=id,proveedor_tipo,clave,numero,fecha,sri,liquidaciones,honorarios,subtotal,estado,motivo,pago,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&order=creado').catch(function () { return null; })
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
@@ -278,12 +282,35 @@
                  historial: Array.isArray(d.historial) ? d.historial : [], tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null,
                  agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base) · P-6f-b · DEC-214
       if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa', ruc: a.ruc || null, razonSocial: a.razon_social || a.nombre, nombreComercial: a.nombre_comercial || null }; });   // P-6f-b · DEC-214
+      if (Array.isArray(res[5])) {   // P-6g · SQL 53 · DEC-247/248/249: contrato de SiriusLiqProceso
+        var provDe = function (tipo, ag, us) { return tipo === 'agencia' ? { tipo: 'agencia', nombre: ag ? ag.nombre : '', identificacion: ag ? ag.ruc || '' : '' } : { tipo: 'inspector', nombre: us ? us.nombre : '', identificacion: us ? us.identificacion || '' : '' }; };
+        var nVis = {};
+        CX.honorarios = res[5].map(function (h) { var r = h.riesgo || {}, k = r.caso || {}, d = r.datos || {}, kd = k.datos || {}, a = k.asegurado || {}, c = h.calculo || {}, aj = h.ajuste || null;
+          var est = String(k.estado || '');
+          return { id: h.id, _rid: r.id, caso: String(k.numero || ''), orden: kd.orden || kd.numeroOrden || '', visita: h.visita_id, riesgo: String(k.numero || ''), placa: d.placa || '', bien: d.placa ? [d.marca, d.modelo, d.anio].filter(Boolean).join(' ') : (r.descripcion || ''),
+            asegurado: a.nombre || '', linea: kd.linea || k.grupo_ramo || '', sucursal: kd.sucursal || '', ramo: k.grupo_ramo === 'Vehículos' ? 'Vehículos' : (k.ramo || ''), modalidad: (h.visita && h.visita.modalidad) || 'Presencial',
+            fecha: h.fecha_inspeccion ? isoLocal(h.fecha_inspeccion) : null, estadoCaso: est, inspector: h.inspector ? h.inspector.nombre : '', inspectorId: h.inspector ? h.inspector.identificacion || '' : '',
+            proveedor: provDe(h.proveedor_tipo, h.agencia, h.inspector), aprobacion: h.aprobacion === 'Preacordada' ? 'Preacordada' : 'Liquidación',
+            calificacion: /Calificado|Emitid|Asegurable/i.test(est) ? 'Asegurable' : /No asegurable|Rechaz/i.test(est) ? 'No asegurable' : 'Pendiente de calificación',
+            calculo: { tarifario: c.tarifario || '', clase: c.clase || null, nivel: c.nivel || null, nivelSugerido: c.nivelSugerido || null, horasVisita: c.horasVisita != null ? +c.horasVisita : null, horasRedaccion: c.horasRedaccion != null ? +c.horasRedaccion : null,
+              medidoVisita: c.medidoVisita != null ? +c.medidoVisita : null, medidoRedaccion: c.medidoRedaccion != null ? +c.medidoRedaccion : null, equipos: c.equipos != null ? +c.equipos : null, base: +(c.base || 0), ciudadBase: c.ciudadBase || null, ciudadVisita: c.ciudadVisita || null,
+              enBase: c.enBase !== false, kmMedicion: c.kmMedicion || 'ida', km: +(c.km || 0), kmSugeridos: +(c.kmSugeridos || 0), valorKm: +(c.valorKm || 0), movilizacion: +(c.movilizacion || 0), subtotal: +(c.subtotal || 0) },
+            ajuste: aj ? { nivel: aj.nivel || null, horasVisita: aj.horasVisita != null ? +aj.horasVisita : null, horasRedaccion: aj.horasRedaccion != null ? +aj.horasRedaccion : null, equipos: aj.equipos != null ? +aj.equipos : null, km: aj.km != null ? +aj.km : null, valor: aj.valor != null ? +aj.valor : null, comentario: aj.comentario || '' } : null,
+            subtotal: +(h.subtotal || 0), estado: h.estado, liquidacionId: h.liquidacion_id || null, facturaId: h.factura_id || null }; });
+        CX.liquidaciones = (res[6] || []).map(function (l) { return { id: l.id, numero: l.numero, version: l.version || 1, proveedor: provDe(l.proveedor_tipo, l.agencia, l.usuario), estado: l.estado,
+            lineas: CX.honorarios.filter(function (h) { return h.liquidacionId === l.id; }).map(function (h) { return h.id; }),
+            observaciones: (l.observaciones || []).map(function (o) { return { linea: o.linea, texto: o.texto || '', subtotalSugerido: o.subtotalSugerido == null ? null : +o.subtotalSugerido }; }),
+            motivo: l.motivo || '', subtotal: +(l.subtotal || 0), iva: +(l.iva || 0), total: +(l.total || 0), facturaId: l.factura_id || null, versiones: l.versiones || [], historial: l.historial || [] }; });
+        CX.facturas = (res[7] || []).map(function (f) { return { id: f.id, proveedor: provDe(f.proveedor_tipo, f.agencia, f.usuario), clave: f.clave, numero: f.numero, fecha: f.fecha, sri: f.sri || null,
+            liquidaciones: f.liquidaciones || [], honorarios: f.honorarios || [], subtotal: +(f.subtotal || 0), estado: f.estado, motivo: f.motivo || '', pago: f.pago || null, historial: f.historial || [] }; });
+      }
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',
                  tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null, agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null }; });   // P-6f-b · DEC-214 · G-2b · DEC-223: sin cobertura, el prototipo migra las zonas
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
+      if (Array.isArray(CX.honorarios)) CX.honorarios.forEach(function (x) { if (x._rid && RREF[x._rid]) x.riesgo = RREF[x._rid]; delete x._rid; });   // «50012-V1»
       casos.forEach(function (k) { nuevo.eventos[String(k.numero)] = (porCaso[k.id] || []).map(aEvento); });
       var E = window.SIRIUS_EJEMPLO, det = {}, idPorCaso = {}; if (E && E.detallesCasos) nuevo.casos.forEach(function (c) { if (E.detallesCasos[c.id]) det[c.id] = E.detallesCasos[c.id]; });
       casos.forEach(function (k) { idPorCaso[k.id] = String(k.numero); });

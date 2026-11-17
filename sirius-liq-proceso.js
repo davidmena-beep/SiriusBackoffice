@@ -1,5 +1,8 @@
 // SIRIUS · Honorarios precalculados, liquidaciones (orden de pago con versiones) y facturas con la clave de acceso del SRI
-// (v3.1 · provisional · etapa P-6g-1d · DEC-247 ajustada y DEC-248; ajusta DEC-136 a 139, conserva DEC-174).
+// (v3.2 · provisional · etapa P-6g-1e · DEC-249; v3.1 · P-6g-1d · DEC-247 ajustada y DEC-248; ajusta DEC-136 a 139, conserva DEC-174).
+// P-6g-1e · DEC-249: tipos de vehículo del tarifario (Liviano, Pesado, Moto; antes «clases»): catálogo parametrizable con vigencia —agregar, renombrar, desactivar— y tabla de
+// equivalencias del tipo de vehículo del riesgo (LP.clases, clasesActivas, claseInfo, tipoAgregar/Renombrar/Desactivar/Activar, equivalencias, equivalenciaSet/Quitar). El contrato
+// con la base no cambia: calculo.clase sigue siendo el campo, con el valor nuevo 'moto'.
 // P-6g-1d: tarifa de Vehículos por modalidad y clase (Liviano, Pesado; la clase sale del tipo de vehículo del riesgo); movilización desde la ciudad
 // base del proveedor (km de ida —o ida y vuelta— por carretera hasta el punto de la visita, si la inspección es en otra ciudad; en la ciudad base, sin
 // movilización; reemplaza la regla del radio urbano); documento PDF de la liquidación aprobada (DEC-248, LP.documentoPdf + SiriusPdf.liquidacion).
@@ -87,10 +90,37 @@
   LP.distKm = (a, b) => { if (!a || !b) return null; const R = 6371, dLa = rad(b[0] - a[0]), dLo = rad(b[1] - a[1]), s = Math.sin(dLa / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); };
   LP.ciudadDe = (h) => { if (h.ciudad) return h.ciudad; const g = (W.SIRIUS_GEOGRAFIA || {}).ciudades || [], n = sd(h.sucursal).toUpperCase(), c = g.find((x) => sd(x.nombre).toUpperCase() === n || sd(x.buscador).toUpperCase() === n); return c ? c.cod : ''; };
   LP.ciudadNombre = (cod) => { const c = (((W.SIRIUS_GEOGRAFIA || {}).ciudades) || []).find((x) => x.cod === sd(cod)); return c ? (c.buscador || c.nombre) : sd(cod); };
-  // Clase de vehículo (catálogo parametrizable SIRIUS_HONORARIOS.clasesVehiculo): sale del tipo de vehículo del riesgo, confirmado en la inspección (DEC-212).
-  LP.clases = () => HD().clasesVehiculo || [{ id: 'liviano', nombre: 'Liviano', tipos: [] }, { id: 'pesado', nombre: 'Pesado', tipos: [] }];
-  LP.claseDe = (tipo) => { const t = sd(tipo).toLowerCase(), c = LP.clases().find((x) => (x.tipos || []).some((y) => sd(y).toLowerCase() === t)); return c ? c.id : (LP.clases()[0] || {}).id || 'liviano'; };
+  // Tipo de vehículo del tarifario (P-6g-1e · DEC-249; antes «clase»; el campo del contrato sigue llamándose calculo.clase). Catálogo parametrizable
+  // SIRIUS_HONORARIOS.clasesVehiculo: [{ id, nombre, estado ('Activo' | 'Inactivo'), desde, hasta, tipos [tipos de vehículo equivalentes] }]. Se trabaja sobre una copia
+  // de la sesión: agregar, renombrar y desactivar con vigencia no tocan el archivo de datos. El tipo sale del tipo de vehículo del riesgo (confirmado en la inspección, DEC-212).
+  const TV = { src: null, lista: null };
+  const tvBase = () => HD().clasesVehiculo || [{ id: 'liviano', nombre: 'Liviano', estado: 'Activo', desde: '2025-01-01', hasta: null, tipos: [] }, { id: 'pesado', nombre: 'Pesado', estado: 'Activo', desde: '2025-01-01', hasta: null, tipos: [] }];
+  LP.clases = () => { const src = tvBase(); if (src !== TV.src || !TV.lista) { TV.src = src; TV.lista = JSON.parse(JSON.stringify(src)).map((c) => Object.assign({ estado: 'Activo', desde: '2025-01-01', hasta: null }, c)); } return TV.lista; };
+  const hoyIso = () => { const E = W.SIRIUS_EJEMPLO, d = E && E.ahora ? E.ahora() : null, z = (n) => ('0' + n).slice(-2); return d ? d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) : '2026-10-18'; }; // reloj del prototipo
+  LP.hoyIso = hoyIso;
+  LP.tipoVigente = (c, fecha) => { const f = String(fecha || hoyIso()).slice(0, 10); return c.estado !== 'Inactivo' && (!c.desde || f >= c.desde) && (!c.hasta || f <= c.hasta); };
+  LP.clasesActivas = (fecha) => LP.clases().filter((c) => LP.tipoVigente(c, fecha));
+  LP.equivalencias = () => LP.clases().reduce((a, c) => a.concat((c.tipos || []).map((t) => ({ tipoVeh: t, clase: c.id }))), []);
+  // El tipo del honorario: el de la equivalencia si está vigente en la fecha de la inspección; si no, el primero vigente (avisa: sinEquivalencia).
+  LP.claseInfo = (tipo, fecha) => { const t = sd(tipo).toLowerCase(), c = LP.clases().find((x) => (x.tipos || []).some((y) => sd(y).toLowerCase() === t));
+    if (c && LP.tipoVigente(c, fecha)) return { id: c.id, nombre: c.nombre, equivalente: true };
+    const p = LP.clasesActivas(fecha)[0] || LP.clases()[0] || { id: 'liviano', nombre: 'Liviano' }; return { id: p.id, nombre: p.nombre, equivalente: false, motivo: c ? 'El tipo «' + c.nombre + '» no está vigente en esa fecha' : 'El tipo de vehículo «' + sd(tipo) + '» no está en la tabla de equivalencias' }; };
+  LP.claseDe = (tipo, fecha) => LP.claseInfo(tipo, fecha).id;
   LP.claseNombre = (id) => ((LP.clases().find((x) => x.id === id) || {}).nombre || sd(id));
+  const idTipo = (n) => sd(n).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // Validaciones y cambios del catálogo (devuelven '' o el mensaje; los cambios devuelven { ok, mensaje }).
+  LP.tipoErr = (nombre, excluirId) => { const n = sd(nombre).trim(); if (n.length < 3) return 'Escribe el nombre del tipo (mínimo 3 letras).'; return LP.clases().some((c) => c.id !== excluirId && sd(c.nombre).toLowerCase() === n.toLowerCase()) ? 'Ya existe un tipo con ese nombre.' : ''; };
+  LP.tipoAgregar = (nombre, desde) => { const e = LP.tipoErr(nombre, ''); if (e) return { ok: false, mensaje: e }; let id = idTipo(nombre), k = 2; while (LP.clases().some((c) => c.id === id)) id = idTipo(nombre) + '-' + k++;
+    LP.clases().push({ id, nombre: sd(nombre).trim(), estado: 'Activo', desde: desde || hoyIso(), hasta: null, tipos: [] }); avisar(); return { ok: true, id, mensaje: 'Tipo «' + sd(nombre).trim() + '» agregado: define su tarifa en cada tarifario.' }; };
+  LP.tipoRenombrar = (id, nombre) => { const c = LP.clases().find((x) => x.id === id); if (!c) return { ok: false, mensaje: 'Ese tipo ya no existe.' }; const e = LP.tipoErr(nombre, id); if (e) return { ok: false, mensaje: e }; const antes = c.nombre; c.nombre = sd(nombre).trim(); avisar(); return { ok: true, mensaje: 'Tipo «' + antes + '» ahora se llama «' + c.nombre + '»; las tarifas y los honorarios conservan el mismo tipo.' }; };
+  LP.tipoDesactivar = (id, hasta) => { const c = LP.clases().find((x) => x.id === id); if (!c) return { ok: false, mensaje: 'Ese tipo ya no existe.' }; if (LP.clasesActivas().filter((x) => x.id !== id).length < 1) return { ok: false, mensaje: 'Debe quedar al menos un tipo vigente.' };
+    c.estado = 'Inactivo'; c.hasta = hasta || hoyIso(); avisar(); return { ok: true, mensaje: 'Tipo «' + c.nombre + '» desactivado desde el ' + c.hasta + ': no se puede elegir en tarifarios nuevos; las inspecciones anteriores conservan su tarifa.' }; };
+  LP.tipoActivar = (id) => { const c = LP.clases().find((x) => x.id === id); if (!c) return { ok: false, mensaje: 'Ese tipo ya no existe.' }; c.estado = 'Activo'; c.hasta = null; avisar(); return { ok: true, mensaje: 'Tipo «' + c.nombre + '» activo de nuevo.' }; };
+  LP.equivalenciaErr = (tipoVeh, clase, excluir) => { const t = sd(tipoVeh).trim(); if (t.length < 3) return 'Escribe el tipo de vehículo (mínimo 3 letras).'; if (!clase) return 'Elige el tipo del tarifario.';
+    const o = LP.equivalencias().find((x) => sd(x.tipoVeh).toLowerCase() === t.toLowerCase() && sd(x.tipoVeh).toLowerCase() !== sd(excluir).toLowerCase()); return o ? '«' + t + '» ya equivale a «' + LP.claseNombre(o.clase) + '».' : ''; };
+  LP.equivalenciaSet = (tipoVeh, clase, antes) => { const e = LP.equivalenciaErr(tipoVeh, clase, antes); if (e) return { ok: false, mensaje: e }; const t = sd(tipoVeh).trim(), a = sd(antes || t).toLowerCase();
+    LP.clases().forEach((c) => { c.tipos = (c.tipos || []).filter((y) => sd(y).toLowerCase() !== a); }); const d = LP.clases().find((c) => c.id === clase); if (!d) return { ok: false, mensaje: 'Elige el tipo del tarifario.' }; d.tipos.push(t); avisar(); return { ok: true, mensaje: '«' + t + '» ahora equivale a «' + d.nombre + '».' }; };
+  LP.equivalenciaQuitar = (tipoVeh) => { const a = sd(tipoVeh).toLowerCase(); LP.clases().forEach((c) => { c.tipos = (c.tipos || []).filter((y) => sd(y).toLowerCase() !== a); }); avisar(); return { ok: true, mensaje: '«' + sd(tipoVeh) + '» sale de la tabla: sin equivalencia, el cálculo usa el primer tipo vigente y lo avisa.' }; };
   // Ciudad base del proveedor (cantón INEC, en su ficha): la agencia o el inspector independiente. LP.setCiudadBase la cambia en la sesión.
   LP.ciudadBaseDe = (p) => { if (!p) return ''; const k = LP.provKey(p); if (Object.prototype.hasOwnProperty.call(LP.cbOv, k)) return LP.cbOv[k];
     if (p.tipo === 'agencia') { const a = LP.agencia(p.identificacion) || {}, loc = ((W.SIRIUS_USUARIOS || {}).agencias || []).find((x) => sd(x.ruc) === sd(p.identificacion)) || {}; return sd(a.ciudadBase || loc.ciudadBase); }
@@ -169,7 +199,7 @@
     h.subtotal = d.subtotal; h.subtotalCalculado = d0.subtotal; return h; };
   const camino = (h) => { if (h.liquidacionId || h.facturaId || ['Por liquidar', 'Por facturar'].indexOf(h.estado) < 0) return; h.estado = LP.preacordado(h) ? 'Por facturar' : 'Por liquidar'; };
   // Al entregar el informe: un honorario por vehículo o bien, con todo calculado.
-  LP.calcular = (inf) => { const grupo = inf.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales', v = grupo === 'Vehículos', clase = v ? LP.claseDe(inf.tipoVehiculo) : null, t = LP.tarifaDe(Object.assign({}, inf, { grupo }), clase);
+  LP.calcular = (inf) => { const grupo = inf.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales', v = grupo === 'Vehículos', clase = v ? LP.claseDe(inf.tipoVehiculo, inf.fecha) : null, t = LP.tarifaDe(Object.assign({}, inf, { grupo }), clase);
     const cb = LP.ciudadBaseDe(inf.proveedor), cv = sd(inf.ciudad), enBase = !cb || !cv || cb === cv, pres = inf.modalidad === 'Presencial', k0 = !pres || enBase ? 0 : Math.round(LP.kmRuta(cb, inf) * (t.medicion === 'idaVuelta' ? 2 : 1) * 10) / 10;
     const ns = v ? null : LP.nivelSugerido(inf.ocupacion), ks = k0, calculo = { tarifario: t.origen, clase, ciudadBase: cb, ciudadVisita: cv, enBase: pres ? enBase : true, kmMedicion: t.medicion, nivel: ns, nivelSugerido: ns, horasVisita: v ? null : LP.mediaHora(inf.medidoVisita), horasRedaccion: v ? null : LP.mediaHora(inf.medidoRedaccion), medidoVisita: v ? null : inf.medidoVisita, medidoRedaccion: v ? null : inf.medidoRedaccion, equipos: v ? null : Math.round(inf.equipos || 0), base: 0, km: ks, kmSugeridos: k0, valorKm: t.valorKm, movilizacion: 0, subtotal: 0 };
     const h = { id: 'HON-' + inf.riesgo, caso: inf.caso, orden: inf.orden || '', visita: inf.visita || 1, riesgo: inf.riesgo, placa: inf.placa || '', bien: inf.bien || '', ramo: inf.ramo, grupo, modalidad: inf.modalidad, asegurado: inf.asegurado, linea: inf.linea || '', sucursal: inf.sucursal || '', ciudad: inf.ciudad || '', fecha: inf.fecha, estadoCaso: inf.estadoCaso || '',

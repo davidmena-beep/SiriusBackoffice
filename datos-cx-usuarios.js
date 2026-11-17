@@ -17,7 +17,7 @@
     { nombre: 'Luis Andrade', tipoIdentificacion: 'Cédula', identificacion: '1709991119', ciudadBase: '2301', email: 'luis.andrade.independiente@gmail.com', rol: 'Inspector', roles: ['Inspector'], tipo: 'Independiente', tipoInspector: 'independiente', agencia: null, estado: 'Activo', celular: '0995521304', alcance: T(['Quito', 'Ambato']), zonas: ['Quito', 'Ambato'], vinculado: true },
     { nombre: 'Carolina Vega', tipoIdentificacion: 'Cédula', identificacion: '1709991234', email: 'carolina.vega.comercial@gmail.com', rol: 'Ejecutivo comercial', roles: ['Ejecutivo comercial'], tipo: 'Interno', tipoInspector: null, agencia: null, estado: 'Invitado', celular: '0996640021', alcance: T(['Quito']), zonas: [], vinculado: false },
     { nombre: 'Sofía Arteaga', tipoIdentificacion: 'Cédula', identificacion: '1709991143', email: 'sofia.arteaga.inspectora+andinas@gmail.com', rol: 'Inspector', roles: ['Inspector'], tipo: 'Agencia', tipoInspector: 'agencia', agencia: 'Inspecciones Andinas Cía. Ltda.', agenciaRuc: '1792788441001', estado: 'Invitado', celular: '0983307719', alcance: T(['Ambato', 'Cuenca']), zonas: ['Ambato', 'Cuenca'], vinculado: false },
-    { nombre: 'Diego Salinas', tipoIdentificacion: 'Cédula', identificacion: '1709991242', email: 'diego.salinas.independiente@gmail.com', rol: 'Inspector', roles: ['Inspector'], tipo: 'Independiente', tipoInspector: 'independiente', agencia: null, estado: 'Inactivo', celular: '0992218806', alcance: T(['Quito']), zonas: ['Quito'], vinculado: true },
+    { nombre: 'Diego Salinas', tipoIdentificacion: 'Cédula', identificacion: '1709991242', email: 'diego.salinas.independiente@gmail.com', rol: 'Inspector', roles: ['Inspector'], tipo: 'Independiente', tipoInspector: 'independiente', agencia: null, estado: 'Inactivo', celular: '0992218806', alcance: T(['Quito']), zonas: ['Quito'], vinculado: false }, // P-6g-1e: su invitación se revocó y nunca activó la cuenta
   ];
   // P-6f-b · DEC-214: agencias con RUC, razón social y nombre comercial; usuarios con su identificación (de prueba). Carlos Mora es un inspector de la base sin usuario en SIRIUS:
   // su cédula no está en usuarios[], así que solo la base detecta que está repetida.
@@ -32,6 +32,7 @@
     cxmaestros: { panel: 'crear', d: { nombre: 'Valeria Cevallos', tipoIdentificacion: 'Cédula', identificacion: '0909991259', email: 'valeria.cevallos.inspectora+eurosurvey@gmail.com', celular: '0991187245', tipo: 'Agencia', agencia: 'Eurosurvey', roles: ['Inspector'], sucursales: ['Quito'], grupos: ['Vehículos'], zonas: ['Quito'] }, motivo: 'Nueva inspectora de Eurosurvey para la zona de Quito.' }, // P-6f-b · DEC-214 (?cxdup=1: la cédula de Carlos Mora; ?fvista=agencia: guardarAgencia)
     cxvalidacedula: { panel: 'crear', toque: true, d: { nombre: 'Valeria Cevallos', tipoIdentificacion: 'Cédula', identificacion: '1709991260', email: 'valeria.cevallos.inspectora+eurosurvey@gmail.com', celular: '0991187245', tipo: 'Agencia', agencia: 'Eurosurvey', roles: ['Inspector'], sucursales: ['Quito'], grupos: ['Vehículos'], zonas: ['Quito'] }, motivo: 'Nueva inspectora de Eurosurvey para la zona de Quito.' }, // P-6f-d: cédula con dígito verificador incorrecto: mensaje rojo junto al campo y «Crear usuario» no envía nada (?cxvalida=1: la cédula válida 1709991267 sí envía)
     cxagenciasinspectores: { panel: 'agencias' }, // P-6f-d · DEC-214: Agencias con la conexión; los inspectores llegan con agencia «Eurosurvey S.A.» y agenciaRuc: se cuentan por RUC
+    cxreinvitar: { panel: 'reinvitar', email: 'diego.salinas.independiente@gmail.com', nuevoEmail: 'diego.salinas.nuevo@gmail.com', motivo: 'Su invitación se revocó; vuelve a la zona de Quito con un correo nuevo.' }, // P-6g-1e · DEC-249 (?cxdup=1: el correo nuevo ya lo usa otro usuario → { ok: false }; ?cxactivo=1: un usuario activo con correo nuevo)
     cxusuarioeditar: { panel: 'editar', email: 'david.mena.coordinador+agencia@gmail.com', d: { roles: ['Coordinador de inspecciones', 'Ejecutivo de inspecciones'] }, motivo: 'También revisará los informes de Eurosurvey en Quito.' },
   };
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
@@ -41,6 +42,8 @@
     const ue = JSON.parse(JSON.stringify(e));
     if (escena === 'cxusuarioeditar' && q('cxdup') === '1') ue.d.email = 'luis.andrade.independiente@gmail.com'; // la base responde que el correo ya lo usa otro usuario
     if (escena === 'cxusuarioeditar' && q('cxyo') === '1') { ue.email = ADM.email; ue.d = { roles: ['Coordinador de inspecciones'] }; ue.motivo = 'Dejo la administración a otra persona del área.'; } // el aviso del propio rol de Administrador
+    if (escena === 'cxreinvitar' && q('cxdup') === '1') ue.nuevoEmail = 'luis.andrade.independiente@gmail.com';
+    if (escena === 'cxreinvitar' && q('cxactivo') === '1') { ue.email = 'gabriela.toapanta.inspectora@gmail.com'; ue.nuevoEmail = 'gabriela.toapanta.nueva@gmail.com'; ue.motivo = 'Cambió de correo de acceso: el anterior ya no lo usa.'; }
     if (escena === 'cxvalidacedula' && q('cxvalida') === '1') ue.d.identificacion = '1709991267';
     if (escena === 'cxvalidacedula' && q('cxdup') === '1') ue.d.identificacion = '1709991275'; // la base la rechaza («ya está registrada»): el mensaje también sale junto al campo
     const insp = JSON.parse(JSON.stringify(INSPECTORES_BASE)), usu = JSON.parse(JSON.stringify(USUARIOS));
@@ -54,7 +57,7 @@
   // Base simulada: el correo es único; crear devuelve el enlace de activación; editar y cambiar estado guardan en usuarios.
   const fnv = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('0000000' + h.toString(16)).slice(-8); };
   const token = (s) => fnv(s) + fnv(s + '|activar'); // fijo por correo: el mismo enlace en cada prueba
-  CC.aplicar = function (X, tipo, d) { if (['crearUsuario', 'editarUsuario', 'cambiarEstadoUsuario', 'guardarAgencia'].indexOf(tipo) < 0 || !X || !Array.isArray(X.usuarios)) return baseAp(X, tipo, d);
+  CC.aplicar = function (X, tipo, d) { if (['crearUsuario', 'editarUsuario', 'cambiarEstadoUsuario', 'guardarAgencia', 'reinvitarUsuario'].indexOf(tipo) < 0 || !X || !Array.isArray(X.usuarios)) return baseAp(X, tipo, d);
     const U = X.usuarios, de = (m) => U.find((u) => u.email === String(m || '').toLowerCase()); d = d || {};
     // DEC-214: la identificación es única (usuarios e inspectores de la base); el RUC de la agencia, también.
     const idDe = (v, excl) => { const s = String(v || '').trim().toUpperCase(); return s ? U.concat(Array.isArray(X.inspectores) ? X.inspectores : []).find((u) => String(u.identificacion || '').toUpperCase() === s && (!excl || u.email !== excl)) : null; };
@@ -67,9 +70,17 @@
       U.push({ nombre: d.nombre, tipoIdentificacion: d.tipoIdentificacion, identificacion: d.identificacion, email: d.email, rol: d.rol, roles: d.roles, tipo: d.agencia ? 'Agencia' : d.tipoInspector === 'independiente' ? 'Independiente' : 'Interno', tipoInspector: d.tipoInspector, agencia: d.agencia, agenciaRuc: d.agenciaRuc || '', estado: 'Invitado', celular: d.celular, alcance: d.alcance, zonas: d.zonas, vinculado: false });
       return { ok: true, mensaje: 'Usuario creado en la base', activacion: 'https://sirius-prueba.asur.ec/activar?token=' + token(d.email) }; }
     const u = de(d.email); if (!u) return { ok: false, mensaje: 'El usuario no existe en la base' };
+    // P-6g-1e · DEC-249: reinvitarUsuario { email, nuevoEmail?, motivo } → { ok, mensaje, activacion }; el usuario queda «Invitado» y sin cuenta vinculada.
+    const MSG_NUNCA = 'Este usuario nunca activó su cuenta: usa «Volver a invitar» para enviarle una invitación nueva', enlace2 = (em) => 'https://sirius-prueba.asur.ec/activar?token=' + token(em + '|reinvitar');
+    if (tipo === 'reinvitarUsuario') { const nu = d.nuevoEmail ? String(d.nuevoEmail).toLowerCase() : ''; if (nu && nu !== u.email && de(nu)) return { ok: false, mensaje: 'El correo ya lo usa otro usuario' };
+      if (u.estado === 'Suspendido' || (u.estado === 'Inactivo' && u.vinculado)) return { ok: false, mensaje: 'Este usuario ya usó su cuenta y no se puede volver a invitar en este estado.' };
+      if (nu) u.email = nu; u.estado = 'Invitado'; u.vinculado = false; return { ok: true, mensaje: 'Invitación nueva generada en la base', activacion: enlace2(u.email) }; }
     if (tipo === 'editarUsuario') { const ch = d.cambios || {}; if (ch.email && ch.email !== u.email && de(ch.email)) return { ok: false, mensaje: 'El correo ya lo usa otro usuario' };
+      if (ch.email && ch.email !== u.email) { if (u.estado === 'Inactivo' && !u.vinculado) return { ok: false, mensaje: MSG_NUNCA };
+        if (u.vinculado) return { ok: false, mensaje: 'La cuenta ya está vinculada a ' + u.email + ': para cambiar el correo de acceso usa «Volver a invitar»; la persona activará una cuenta nueva con el correo nuevo' };
+        Object.assign(u, JSON.parse(JSON.stringify(ch))); return { ok: true, mensaje: 'Usuario actualizado en la base: correo nuevo para la invitación', activacion: enlace2(u.email) }; }
       Object.assign(u, JSON.parse(JSON.stringify(ch))); if (ch.agencia !== undefined) u.tipo = ch.agencia ? 'Agencia' : u.tipo === 'Agencia' ? 'Interno' : u.tipo; return { ok: true, mensaje: 'Usuario actualizado en la base' }; }
-    if (d.estado === 'Activo' && !u.vinculado) return { ok: false, mensaje: 'El usuario aún no activó su cuenta' };
+    if (d.estado === 'Activo' && !u.vinculado) return { ok: false, mensaje: u.estado === 'Inactivo' ? MSG_NUNCA : 'El usuario aún no activó su cuenta' };
     u.estado = d.estado; return { ok: true, mensaje: 'Estado actualizado en la base' }; };
   CC.cxUsuarios = { usuarios: USUARIOS, agencias: AGENCIAS, escenas: ESC };
 })();

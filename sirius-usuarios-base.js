@@ -6,6 +6,10 @@
 // crearUsuario y editarUsuario llevan { tipoIdentificacion, identificacion } (y agenciaRuc junto a agencia); guardarAgencia { ruc, razonSocial, nombreComercial, estado } → { ok, mensaje }.
 // Acciones: crearUsuario { nombre, email, celular, agencia, rol, roles, tipoInspector, alcance, zonas, motivo } → { ok, mensaje, activacion (url) };
 // editarUsuario { email (el actual), cambios { … }, motivo } → { ok, mensaje }; cambiarEstadoUsuario { email, estado, motivo } → { ok, mensaje }.
+// P-6g-1e · DEC-249: reinvitarUsuario { email (el actual), nuevoEmail? (opcional), motivo } → { ok, mensaje, activacion (url) }. Solo el Administrador. Aplica a un «Invitado»
+// (enlace vencido o perdido), a un «Inactivo» que nunca activó su cuenta y a un «Activo» cuando se quiere cambiar su correo de acceso (la cuenta actual se desvincula y la persona
+// activa una cuenta nueva con el correo nuevo). El usuario queda «Invitado». editarUsuario con correo nuevo de un invitado también devuelve activacion; para los demás, la base
+// responde { ok: false } con un mensaje que manda a «Volver a invitar» (la pantalla lo muestra tal cual, con el botón al lado).
 // El cambio se ve al instante; con { ok: false } vuelve atrás y se devuelve el mensaje de la base. Motivo de 10 caracteres o más; el historial del usuario lo registra.
 // El Administrador no puede quitarse su propio rol de Administrador ni suspenderse (o darse de baja) a sí mismo. En la prueba todos activan con correo y contraseña (DEC-128 queda para producción).
 // La lista de la sesión, el historial y los enlaces de activación viven aquí (un solo módulo: los componentes vuelven a ejecutar los archivos de datos).
@@ -54,7 +58,7 @@
   S.destinos = (u) => { const o = {}; if (!u) return o;
     S.ESTADOS.filter((e) => e !== 'Invitado').forEach((e) => { let r = '';
       if (e === u.estado) r = 'Ya está «' + e + '».';
-      else if (e === 'Activo' && !u.vinculado) r = 'Aún no activó su cuenta: pasa a «Activo» al activarla con su correo y una contraseña.';
+      else if (e === 'Activo' && !u.vinculado) r = u.estado === 'Inactivo' ? 'Este usuario nunca activó su cuenta: usa «Volver a invitar» para enviarle una invitación nueva' : 'Aún no activó su cuenta: pasa a «Activo» al activarla con su correo y una contraseña.';
       else if (e === 'Suspendido' && u.estado === 'Invitado') r = 'Aún no activó su cuenta: para anular la invitación pásalo a «Inactivo».';
       else if (e !== 'Activo' && S.esYo(u.email)) r = e === 'Suspendido' ? 'No puedes suspenderte a ti mismo.' : 'No puedes darte de baja a ti mismo.';
       o[e] = r; });
@@ -96,7 +100,7 @@
     Object.assign(u, clon(ch)); if (ch.agencia !== undefined) u.tipo = ch.agencia ? 'Agencia' : u.tipo === 'Agencia' ? 'Interno' : u.tipo;
     if (ch.email && S.links[actual]) { S.links[ch.email] = S.links[actual]; delete S.links[actual]; }
     const reg = registrar(u, que, motivo, por, 'Enviado a la base'); avisar();
-    return base('editarUsuario', { email: actual, cambios: ch, motivo: String(motivo).trim() }).then((r) => { if (r && r.ok) { reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
+    return base('editarUsuario', { email: actual, cambios: ch, motivo: String(motivo).trim() }).then((r) => { if (r && r.ok) { if (r.activacion) S.links[ch.email || actual] = String(r.activacion); reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
       Object.keys(u).forEach((k) => { delete u[k]; }); Object.assign(u, antes); if (ch.email && S.links[ch.email]) { S.links[actual] = S.links[ch.email]; delete S.links[ch.email]; }
       const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó el cambio.' }; }); };
   // Cambiar estado: Activo, Suspendido o Inactivo.
@@ -106,6 +110,22 @@
     const antes = u.estado; u.estado = estado; const reg = registrar(u, 'Estado: ' + antes + ' → ' + estado, motivo, por, 'Enviado a la base'); avisar();
     return base('cambiarEstadoUsuario', { email: u.email, estado, motivo: String(motivo).trim() }).then((r) => { if (r && r.ok) { reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r); }
       u.estado = antes; const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó el cambio.' }; }); };
+  // P-6g-1e · DEC-249: «Volver a invitar». Aplica a Invitado, a Inactivo que nunca activó y a Activo (para cambiar el correo de acceso).
+  S.reinvitarMotivo = (u) => { if (!u) return 'Ese usuario ya no está en la lista.'; if (u.estado === 'Invitado' || (u.estado === 'Inactivo' && !u.vinculado) || u.estado === 'Activo') return ''; return u.estado === 'Suspendido' ? 'Está suspendido: reactívalo primero.' : 'Está dado de baja y ya usó su cuenta: no se vuelve a invitar.'; };
+  S.reinvitarAvisoActivo = 'La cuenta actual se desvincula; la persona activará una cuenta nueva con el correo nuevo.';
+  S.sugiereReinvitar = (msg) => /volver a invitar/i.test(String(msg || ''));
+  S.reinvitar = (email, nuevoEmail, motivo, por) => { const u = S.usuario(email); if (!u) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Ese usuario ya no está en la lista.' });
+    const no = S.reinvitarMotivo(u); if (no) return Promise.resolve({ ok: false, validacion: true, mensaje: no });
+    const nuevo = String(nuevoEmail || '').trim().toLowerCase(), cambia = !!nuevo && nuevo !== u.email;
+    if (nuevo) { const e = S.validarCorreo(nuevo); if (e) return Promise.resolve({ ok: false, validacion: true, mensaje: e }); }
+    if (u.estado === 'Activo' && !cambia) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Escribe el correo nuevo: a un usuario activo solo se le vuelve a invitar para cambiar su correo de acceso.' });
+    if (!motivoOk(motivo)) return Promise.resolve({ ok: false, validacion: true, mensaje: 'Escribe el motivo (mínimo 10 caracteres).' });
+    const antes = clon(u), actual = u.email, linkAntes = S.links[actual], que = (u.estado === 'Activo' ? 'Cuenta desvinculada y nueva invitación' : 'Nueva invitación') + (cambia ? ' · correo: ' + actual + ' → ' + nuevo : ' · mismo correo (el enlace anterior deja de valer)');
+    if (cambia) u.email = nuevo; u.estado = 'Invitado'; u.vinculado = false; delete S.links[actual];
+    const reg = registrar(u, que, motivo, por, 'Enviado a la base'); avisar();
+    const carga = { email: actual, motivo: String(motivo).trim() }; if (cambia) carga.nuevoEmail = nuevo;
+    return base('reinvitarUsuario', carga).then((r) => { if (r && r.ok) { S.links[u.email] = r.activacion ? String(r.activacion) : ''; reg.estado = 'Guardado en la base'; avisar(); return Object.assign({ ok: true }, r, { email: u.email }); }
+      Object.keys(u).forEach((k) => { delete u[k]; }); Object.assign(u, antes); if (linkAntes) S.links[actual] = linkAntes; const j = S.hist.indexOf(reg); if (j >= 0) S.hist.splice(j, 1); avisar(); return { ok: false, mensaje: (r && r.mensaje) || 'La base no guardó la invitación.' }; }); };
   // DEC-214 · guardarAgencia { ruc, razonSocial, nombreComercial, estado } → { ok, mensaje }. Crea o actualiza (por RUC; refRuc = el RUC actual si cambia).
   S.guardarAgencia = (d, motivo, por, refRuc) => { d = d || {}; const M = MX(), ruc = String(d.ruc || '').trim(), rs = String(d.razonSocial || '').trim(), nc = String(d.nombreComercial || '').trim(), est = d.estado || 'Activa';
     const err = (M ? M.ruc(ruc) : (!/^\d{13}$/.test(ruc) ? 'El RUC tiene 13 dígitos.' : '')) || (S.agencias().some((a) => a.ruc === ruc && a.ruc !== String(refRuc || '')) ? 'Ese RUC ya es de otra agencia de la base. El RUC es único.' : '') || (rs.length < 3 ? 'Escribe la razón social.' : '') || (nc.length < 2 ? 'Escribe el nombre comercial.' : '') || (!motivoOk(motivo) ? 'Escribe el motivo (mínimo 10 caracteres).' : '');

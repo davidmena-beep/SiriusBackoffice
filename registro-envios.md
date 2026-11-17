@@ -4,6 +4,60 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-1e
+
+Publiqué la versión 286 de SIRIUS. La tarifa de Vehículos ahora es por tipo (Liviano, Pesado y Moto) con un catálogo y una tabla de equivalencias que se editan, y la ficha de Usuarios tiene «Volver a invitar».
+
+**Qué cambió**
+- **Tipos de vehículo del tarifario (DEC-249):**
+  - La tarifa fija de Vehículos es por modalidad y por tipo: Liviano, Pesado y Moto. En Eurosurvey, presencial Liviano USD 12,00, Pesado USD 17,00 y Moto USD 10,00.
+  - Liquidaciones › Tarifarios › «Tipos de vehículo del tarifario»: el catálogo se agrega, se renombra y se desactiva con vigencia. Un tipo desactivado no se elige en tarifarios nuevos y las inspecciones anteriores conservan su tarifa.
+  - Tabla de equivalencias editable: Sedán, SUV y Camioneta → Liviano; Camión y Bus → Pesado; Moto → Moto. Sin equivalencia, el cálculo usa el primer tipo vigente.
+  - El tipo aparece en el panel del cálculo («ASEGURABLE // CIUDAD BASE // MOTO» y «Tipo Moto … tarifa presencial moto USD 10,00»), en la mesa, en la revisión y en el PDF (columna «Tipo», «1 liviano · 1 pesado · 1 moto» y la línea de tarifa).
+- **«Volver a invitar» (DEC-249, solo el Administrador):**
+  - Con la base: reinvitarUsuario { email, nuevoEmail?, motivo } → { ok, mensaje, activacion }. Aplica a Invitado, a Inactivo que nunca activó su cuenta y a Activo cuando se quiere cambiar su correo de acceso.
+  - El panel muestra el correo actual, «Correo nuevo» y el motivo (10 caracteres o más). En una cuenta activa con correo nuevo avisa: «La cuenta actual se desvincula; la persona activará una cuenta nueva con el correo nuevo».
+  - Al confirmar, la ficha muestra el enlace de activación con «Copiar enlace» y el usuario queda «Invitado».
+  - Editar el correo de un invitado también devuelve y muestra el enlace nuevo. Para un inactivo que nunca activó y para una cuenta vinculada, el mensaje de la base sale tal cual, con el botón «Volver a invitar» al lado.
+  - Sin la conexión funciona igual, con un enlace de prueba.
+
+**Verificado**
+- Abrí las 5 escenas nuevas, `honorclase`, `liqpdf`, `maestrosusuarios` y `cxusuarios` a 1280×720 y 1920×1080: 18 capturas sin errores.
+- `honormoto`: moto USD 10,00, camioneta USD 12,00 y bus USD 17,00; subtotal USD 39,00. Descargué el PDF: la línea de la moto dice «Moto», la tarjeta «1 liviano · 1 pesado · 1 moto» y los USD 39,00 coinciden. Con la conexión simulada sale el mismo contenido, salvo la insignia «Prueba conectada».
+- Catálogo: agregué «Cuatrimoto», la renombré, le agregué una equivalencia y la desactivé. Un nombre corto, un nombre repetido y una equivalencia repetida dan su mensaje.
+- «Volver a invitar» con la conexión simulada: el mensaje de la cuenta vinculada sale con el botón, el panel trae el correo nuevo y el aviso, y la ficha queda «Invitado» con su enlace. Un correo repetido da { ok: false } y el estado no cambia. Editar el correo de un invitado devuelve el enlace.
+- La consulta al SRI de `liqfacturarsri` sigue coincidiendo (subtotal USD 195,60).
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- «Copiar enlace» en un navegador de escritorio con permisos reales de portapapeles, y el nombre del PDF con «ó» al descargar en Chrome o Edge.
+- La respuesta real de la base a reinvitarUsuario: los mensajes y el enlace son los de la base simulada; el correo con la invitación no se envía.
+- Cambiar una equivalencia no recalcula los honorarios ya calculados: solo vale para los informes nuevos.
+
+**Diferencias**
+- En pantalla «clase» pasó a «tipo»; en el contrato con la base el campo sigue siendo `calculo.clase`, con el valor nuevo `'moto'`.
+- La Suzuki GN125 del caso 50012 (Motocicleta) pasa de Liviano a Moto: USD 10,00 en vez de USD 12,00 en las escenas de «Por facturar». Por eso el subtotal de `liqfacturarsri` es USD 195,60 y no USD 197,60.
+- La tarifa general del tipo Moto (presencial USD 12,00, virtual guiada USD 8,00) es un valor de prueba mío.
+- En una cuenta activa el correo nuevo es obligatorio (en el resto es opcional): sin él no habría nada que cambiar.
+- Sin la conexión, la ficha no edita el correo (sigue siendo único y fijo); el cambio de correo va solo por «Volver a invitar».
+- Datos de prueba: Renata Cobo es un usuario nuevo sin la conexión (Inactivo que nunca activó), y Diego Salinas, de la base simulada, ahora tampoco activó su cuenta.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `honormoto` | Carla Ponce · Finanzas de agencia | #001414 aprobada con moto, camioneta y bus (USD 39,00); panel de la moto: presencial USD 10,00; «Descargar PDF» |
+| `tarifatipos` | Mónica Ríos · Finanzas | Catálogo de tipos de vehículo (Liviano, Pesado, Moto) y tabla de equivalencias |
+| `usrreinvitar` | Administrador | «Volver a invitar» a Renata Cobo, Inactivo que nunca activó; `?rvista=enlace`: queda «Invitado» con su enlace |
+| `usrcambiocorreo` | Administrador | «Volver a invitar» a Daniela Ruiz, Activa, con el aviso de desvinculación; `?rvista=enlace`: enlace nuevo |
+| `cxreinvitar` | Administrador | Con la conexión simulada: reinvitarUsuario de Diego Salinas; `?cxdup=1`: { ok: false } «El correo ya lo usa otro usuario»; `?cxactivo=1`: cuenta activa |
+
+También abrí `honorclase`, `liqpdf`, `maestrosusuarios`, `cxusuarios`, `liqfacturarsri`, `liqfinanzas`, `tarifarioeur`, `honorcalculo`, `liqmesa` y `liqdocumento`.
+
+**Tiempo de la etapa: inicio 16/11/2026 20:38 · fin 16/11/2026 21:00 · 22 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-1d
 
 Publiqué la versión 282 de SIRIUS. La liquidación aprobada ya se descarga como PDF con el diseño aprobado: encabezado con el logo, sello «APROBADA» y marca de agua «APROBADO» en todas las páginas. La tarifa de Vehículos ahora es por clase y la movilización se mide desde la ciudad base de cada proveedor.

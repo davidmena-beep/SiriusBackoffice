@@ -71,6 +71,8 @@ window.SIRIUS_LIQUIDACIONES = {
     { grupo: 'Vehículos', modalidad: 'Presencial', valor: 18.00 }, { grupo: 'Vehículos', modalidad: 'Virtual guiada', valor: 12.00 },
     // P-6g-1d: por clase de vehículo (la fila sin clase queda como la del liviano).
     { grupo: 'Vehículos', modalidad: 'Presencial', clase: 'pesado', valor: 24.00 }, { grupo: 'Vehículos', modalidad: 'Virtual guiada', clase: 'pesado', valor: 12.00 },
+    // P-6g-1e · DEC-249: tipo Moto del tarifario general.
+    { grupo: 'Vehículos', modalidad: 'Presencial', clase: 'moto', valor: 12.00 }, { grupo: 'Vehículos', modalidad: 'Virtual guiada', clase: 'moto', valor: 8.00 },
   ],
   convenios: [{ agencia: 'eurosurvey', grupo: 'Vehículos', modalidad: 'Presencial', valor: 16.50, vigente: '2026-01-01 a 2026-12-31' }],
   ajustes: [

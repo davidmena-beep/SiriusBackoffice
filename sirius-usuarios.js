@@ -166,6 +166,25 @@
     } else { bitacoraInvitacion(x, por, 'Invitación para conectar Gmail'); log(por, nombre, 'Reenvió la invitación para conectar Gmail', 'Gmail «' + x.gmail + '»'); }
     avisar(); return x;
   };
+  // P-6g-1e · DEC-249: «Volver a invitar» (sin la conexión). Invitado, Invitado con enlace vencido, Inactivo que nunca activó su cuenta y Activo (para cambiar el correo de acceso:
+  // la cuenta actual se desvincula y la persona activa una cuenta nueva con el correo nuevo). Queda «Invitado» con enlace nuevo; el anterior deja de valer.
+  SU.reinvitarMotivo = function (x) { if (!x) return 'Ese usuario ya no está en la lista.'; var est = SU.estadoEf(x); if (est === 'Invitado' || est === 'Invitación vencida' || est === 'Activo' || (est === 'Inactivo' && !x.acceso)) return ''; return est === 'Suspendido' ? 'Está suspendido: reactívalo primero.' : 'Está dado de baja y ya usó su cuenta: no se vuelve a invitar.'; };
+  SU.reinvitarAvisoActivo = 'La cuenta actual se desvincula; la persona activará una cuenta nueva con el correo nuevo.';
+  function fnv8(t) { var h = 2166136261; for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('0000000' + h.toString(16)).slice(-8); }
+  SU.reinvitar = function (nombre, nuevoCorreo, motivo, por) {
+    var x = SU.usuario(nombre); if (!x) return { ok: false, mensaje: 'Ese usuario ya no está en la lista.' }; var no = SU.reinvitarMotivo(x); if (no) return { ok: false, mensaje: no };
+    var est = SU.estadoEf(x), nuevo = String(nuevoCorreo || '').trim().toLowerCase(), cambia = !!nuevo && nuevo !== String(x.correo).toLowerCase();
+    if (cambia) { var e = SU.validarCorreo(nuevo, x.tipo, x.nombre); if (e) return { ok: false, mensaje: e }; }
+    if (est === 'Activo' && !cambia) return { ok: false, mensaje: 'Escribe el correo nuevo: a un usuario activo solo se le vuelve a invitar para cambiar su correo de acceso.' };
+    if (String(motivo || '').trim().length < 10) return { ok: false, mensaje: 'Escribe el motivo (mínimo 10 caracteres).' };
+    var antes = x.correo, eraActivo = est === 'Activo'; if (cambia) x.correo = nuevo;
+    x.estado = 'Invitado'; x.invitado = [por, SU.ahora()]; x.vence = SU.sumaHoras(SU.ahora(), 72); x.enlace = (x.enlace || 1) + 1; delete x.baja; delete x.pidioNueva;
+    if (eraActivo) { x.acceso = null; x.ultimoAcceso = null; if (x.tipo === 'Interno') { x.gmail = 'Sin conectar'; x.gmailDesde = null; } }
+    x.activacion = 'https://sirius-prueba.asur.ec/activar?token=' + fnv8(x.correo + '|' + x.enlace) + fnv8(x.correo + '|activar|' + x.enlace);
+    bitacoraInvitacion(x, por, 'Volver a invitar' + (cambia ? ' (correo nuevo)' : ''));
+    log(por, nombre, (eraActivo ? 'Desvinculó la cuenta y volvió a invitar' : 'Volvió a invitar') + (cambia ? ' · correo: ' + antes + ' → ' + nuevo : ' · mismo correo; el enlace anterior quedó invalidado'), motivo);
+    avisar(); return { ok: true, mensaje: 'Invitación nueva generada', activacion: x.activacion, correo: x.correo };
+  };
   SU.revocar = function (nombre, por, motivo) { var x = SU.usuario(nombre); if (!x) return; x.estado = 'Inactivo'; x.baja = [por, SU.ahora(), 'Invitación revocada: ' + motivo]; x.vence = null; log(por, nombre, 'Revocó la invitación (el enlace dejó de valer)', motivo); avisar(); };
   SU.pedirNueva = function (nombre) { var x = SU.usuario(nombre); if (!x) return; x.pidioNueva = SU.ahora(); log(nombre, nombre, 'Pidió una nueva invitación desde el enlace vencido', 'Aviso para ' + (x.invitado ? x.invitado[0] : 'el Administrador')); avisar(); };
   SU.completarInvitacion = function (nombre, metodo) { var x = SU.usuario(nombre); if (!x) return; x.estado = 'Activo'; x.acceso = metodo; x.ultimoAcceso = SU.ahora(); x.vence = null; delete x.pidioNueva; log(nombre, nombre, 'Aceptó la invitación (' + metodo + ')', ''); avisar(); };
