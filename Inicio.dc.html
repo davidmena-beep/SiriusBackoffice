@@ -13,6 +13,9 @@
 <style>html,body{margin:0}*{box-sizing:border-box}
 .ini-ind{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 @media (max-width:1100px){.ini-ind{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ini-ind.ini-ind5{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:1500px){.ini-ind.ini-ind5{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:1100px){.ini-ind.ini-ind5{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ini-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}
 @media (min-width:1440px){.ini-cols{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}
 .ini-card{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF}
@@ -101,7 +104,7 @@ class Component extends DCLogic {
       m.accesos.length ? h('nav', { 'aria-label': 'Accesos rápidos', style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, m.accesos.map((a, i) => this.boton(a.label, () => this.ir(a.ir), i === 0 ? 'primary' : 'secondary', a.label, { size: 'md' }))) : null);
     const parts = [head];
     if (m.nota) parts.push(h('p', { key: 'nota', role: 'note', className: 'ini-card', style: { margin: 0, padding: '16px 20px', fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)', maxWidth: 760 } }, m.nota));
-    if (m.indicadores.length) parts.push(h('div', { key: 'ind', className: 'ini-ind', role: 'group', 'aria-label': 'Indicadores' }, m.indicadores.map(x => this.indicador(x))));
+    if (m.indicadores.length) parts.push(h('div', { key: 'ind', className: 'ini-ind' + (m.indicadores.length === 5 ? ' ini-ind5' : ''), role: 'group', 'aria-label': 'Indicadores' }, m.indicadores.map(x => this.indicador(x))));
     const cols = [];
     if (m.paraHoy) cols.push(h('div', { key: 'c1', style: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 } }, this.paraHoy(m.paraHoy)));
     if (m.bloques.length) cols.push(h('div', { key: 'c2', style: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 } }, m.bloques.map((b, i) => this.bloque(b, i))));

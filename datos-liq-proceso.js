@@ -44,6 +44,18 @@
     veh('50130', 1, 'PMB3205', 'Yamaha MT-03 2022', 'Hidalgo Paredes Cristian Andrés', 'Individuales', 'Quito', 'Presencial', '2026-10-19', 'Emitida', ME, EUR, UIO, { tipoVehiculo: 'Moto', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
     veh('50131', 1, 'PCT8832', 'Chevrolet D-Max 2021', 'Ferretería El Constructor Cía. Ltda.', 'Corporativo', 'Quito', 'Presencial', '2026-10-19', 'Emitida', VC, EUR, UIO, { tipoVehiculo: 'Camioneta', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
     veh('50132', 1, 'PBZ9921', 'Hino FC9J Bus 2020', 'Cooperativa de Transportes Rutas del Sol', 'Corporativo', 'Quito', 'Presencial', '2026-10-20', 'Emitida', ME, EUR, UIO, { tipoVehiculo: 'Bus', aprobacion: 'Liquidación', escenas: ['honormoto'] }),
+    // P-6g-1f · DEC-247 · facturarmasivo y facturarfiltros: 21 preacordados más de Eurosurvey (Vehículos en la ciudad base, sin km; con los 4 de siempre suman 25),
+    // de varias sucursales, modalidades y líneas de negocio, y 3 vehículos que sí requieren liquidación para la tercera liquidación aprobada (Guayaquil).
+    ...[['Quito', 'Presencial', 'Individuales', 'Automóvil', 'Salazar Pérez Jorge Luis', '2026-10-02'], ['Quito', 'Virtual guiada', 'Masivos', 'SUV', 'Cabrera Núñez Andrea Paola', '2026-10-02'], ['Guayaquil', 'Presencial', 'Corporativo', 'Camioneta', 'Importadora del Pacífico S.A.', '2026-10-03'],
+      ['Quito', 'Presencial', 'Individuales', 'Automóvil', 'Vega Torres Marcelo Ernesto', '2026-10-05'], ['Ambato', 'Presencial', 'Individuales', 'SUV', 'Tapia Guamán Verónica Elena', '2026-10-05'], ['Guayaquil', 'Virtual guiada', 'Masivos', 'Automóvil', 'Intriago Zambrano Pedro Pablo', '2026-10-06'],
+      ['Santo Domingo', 'Presencial', 'Individuales', 'Camioneta', 'Loor Mendoza Carlos Alberto', '2026-10-06'], ['Quito', 'Virtual guiada', 'Masivos', 'Automóvil', 'Jácome Ortiz Silvia Marcela', '2026-10-07'], ['Guayaquil', 'Presencial', 'Corporativo', 'SUV', 'Distribuidora Costa Azul Cía. Ltda.', '2026-10-08'],
+      ['Quito', 'Presencial', 'Individuales', 'Automóvil', 'Espinosa Rivadeneira Daniel', '2026-10-08'], ['Ambato', 'Virtual guiada', 'Masivos', 'Automóvil', 'Paredes Sánchez Lucía Beatriz', '2026-10-09'], ['Guayaquil', 'Presencial', 'Individuales', 'SUV', 'Villamar Castro Jessica Alexandra', '2026-10-09'],
+      ['Quito', 'Presencial', 'Corporativo', 'Camioneta', 'Constructora Cumbayá S.A.', '2026-10-12'], ['Santo Domingo', 'Virtual guiada', 'Masivos', 'Automóvil', 'Mera Alcívar Fernando Xavier', '2026-10-12'], ['Guayaquil', 'Presencial', 'Individuales', 'Automóvil', 'Burgos Macías Karina Estefanía', '2026-10-13'],
+      ['Quito', 'Virtual guiada', 'Masivos', 'SUV', 'Reinoso Chiriboga Patricio', '2026-10-14'], ['Quito', 'Presencial', 'Individuales', 'Automóvil', 'Yépez Almeida Gabriela Cristina', '2026-10-14'], ['Guayaquil', 'Presencial', 'Corporativo', 'Camioneta', 'Textiles del Guayas S.A.', '2026-10-15'],
+      ['Ambato', 'Presencial', 'Individuales', 'Automóvil', 'Cevallos Naranjo Rodrigo', '2026-10-16'], ['Quito', 'Virtual guiada', 'Masivos', 'Automóvil', 'Maldonado Ponce Elena Isabel', '2026-10-19'], ['Guayaquil', 'Presencial', 'Individuales', 'SUV', 'Alvarado Peña Ricardo Andrés', '2026-10-20']]
+      .map((r, i) => veh(String(53001 + i), 1, 'GF' + String(2100 + i * 7).slice(-3) + String.fromCharCode(65 + i % 26), r[3] + ' ' + (2019 + i % 6), r[4], r[2], r[0], r[1], r[5], 'Emitida', i % 2 ? VC : ME, EUR, r[1] === 'Virtual guiada' ? null : UIO, { tipoVehiculo: r[3], ciudad: '1701', escenas: ['facturarmasivo', 'facturarfiltros'] })),
+    ...[['53101', 'GLQ4101', 'Toyota Hilux 2022', 'Transportes Marítimos del Sur S.A.', '2026-10-14'], ['53102', 'GLQ4102', 'Chevrolet D-Max 2021', 'Agroexportadora Santa Elena S.A.', '2026-10-14'], ['53103', 'GLQ4103', 'Nissan Frontier 2023', 'Servicios Petroleros Litoral Cía. Ltda.', '2026-10-15']]
+      .map((r) => veh(r[0], 1, r[1], r[2], r[3], 'Corporativo', 'Guayaquil', 'Presencial', r[4], 'Emitida', ME, EUR, UIO, { tipoVehiculo: 'Camioneta', ciudad: '1701', aprobacion: 'Liquidación', escenas: ['facturarmasivo', 'facturarfiltros', 'inicioproveedorcx'] })),
     // Inspecciones Andinas: 1 preacordado (no es de Eurosurvey ni de Luis).
     veh('50045', 1, 'TBA3301', 'Toyota Corolla 2021', 'Agrícola Tungurahua S.A.', 'Corporativo', 'Ambato', 'Presencial', '2026-10-11', 'Emitida', SA, AND, null, {}),
   ];
@@ -70,6 +82,11 @@
     liqmesavarias: (S, op) => { porCorregir(S, op); crear(op, [H('50013-V1'), H('50014-B1'), H('50018-B1'), H('50016-V1')], CP, '2026-10-17T11:00'); },
     liqunicidad: (S, op) => { crear(op, [H('50013-V1'), H('50014-B1'), H('50018-B1')]); crear(op, [H('50016-V1')], CP, '2026-10-16T10:00'); },
     liqfacturarsri: (S, op) => { const id = aprobada(op, [H('50013-V1'), H('50014-B1')]), hs = [H('50012-V1'), H('50012-V2'), H('50017-V1')]; CLAVES.ok = sri(S, EUR, [id], hs, 412); CLAVES.mal = sri(S, EUR, [id], hs, 413, 3.5); },
+    // P-6g-1f · DEC-247: tres liquidaciones aprobadas (#001414 Quito, #001415 Ambato y Quito, #001416 Guayaquil) y 25 preacordados por facturar.
+    facturarmasivo: (S, op) => { aprobada(op, [H('50013-V1'), H('50014-B1')]); aprobada(op, [H('50016-V1'), H('50018-B1')]); aprobada(op, [H('53101-V1'), H('53102-V1'), H('53103-V1')]); },
+    facturarfiltros: (S, op) => { aprobada(op, [H('50013-V1'), H('50014-B1')]); aprobada(op, [H('50016-V1'), H('50018-B1')]); aprobada(op, [H('53101-V1'), H('53102-V1'), H('53103-V1')]); },
+    // P-6g-1f · DEC-247: el Inicio de Carla Ponce con la base: 3 por liquidar (Guayaquil), 1 enviada, 1 devuelta, 2 aprobadas y 1 preacordado por facturar, 1 factura devuelta y 1 por validar.
+    inicioproveedorcx: (S, op) => { porCorregir(S, op); enviada(op, [H('50013-V1'), H('50016-V1')]); aprobada(op, [H('50014-B1'), H('50018-B1')]); const k = facturada(S, op, EUR, [], [H('50017-V1')], 430, CP); op('devolverFactura', { id: k, motivo: 'La factura no tiene el número de autorización del SRI.' }, FIN, '2026-10-18T09:15'); facturada(S, op, EUR, [], [H('50020-V1')], 431, CP); },
     liqindependiente: () => {},
     honorcalculo: () => {},
     liqplanta: (S, op, v) => { const LP = window.SiriusLiqProceso; if (LP) LP.pagaOv = v === 'si' ? { '1791456320001': true } : {}; },
@@ -106,6 +123,8 @@
     liqmesa: { tab: 'Mesa de trabajo', exp: [H('50014-B1')] }, liqmesavarias: { tab: 'Mesa de trabajo', verTodas: true },
     liqunicidad: { tab: 'Mesa de trabajo', verTodas: true },
     liqfacturarsri: { tab: 'Por facturar', marcarLiq: ['LIQ-001414'], marcar: [H('50012-V1'), H('50012-V2'), H('50017-V1')], clave: 'ok' }, 'liqfacturarsri:nocoincide': { tab: 'Por facturar', marcarLiq: ['LIQ-001414'], marcar: [H('50012-V1'), H('50012-V2'), H('50017-V1')], clave: 'mal', consultar: true },
+    facturarmasivo: { tab: 'Por facturar', marcarLiq: ['LIQ-001414', 'LIQ-001415'], marcar: ['53001', '53002', '53003', '53004', '53005', '53006'].map((c) => H(c + '-V1')) },
+    facturarfiltros: { tab: 'Por facturar', filtrosFac: { sucursal: 'Guayaquil', tipo: 'Honorarios preacordados' }, marcarLiq: ['LIQ-001414'], marcar: ['53001', '53002', '53003', '53006', '53009'].map((c) => H(c + '-V1')) },
     liqindependiente: { tab: 'Por facturar', marcar: [H('52552-V1'), H('52559-V1')] }, liqplanta: {},
     liqdevolver: { tab: 'Por aprobar', det: 'LIQ-001414', rev: { obs: { [H('50022-V1')]: { texto: 'km sin respaldo: la visita registra 20 km', sug: '16' } }, motivo: 'Los km adicionales de PBX4410 no tienen respaldo en la visita.' } },
     liqdocumento: { tab: 'Liquidaciones', det: 'LIQ-001414', doc: 'liquidacion' }, 'liqdocumento:factura': { tab: 'Facturas por validar', doc: 'factura', docId: 'FAC-0001' },

@@ -7,8 +7,8 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxUsuarios) return;
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
-  const ESC = ['honorcalculo', 'liqporliquidar', 'liqmesa', 'liqmesavarias', 'liqfacturarsri', 'liqdevolver', 'liqunicidad', 'liqindependiente', 'liqplanta', 'liqdocumento', 'liqcalculopanel', 'liqrevision', 'liqrevisionv2', 'liqfinanzas', 'cxliqproceso', 'liqpdf', 'liqpdfrg', 'liqpdfsinaprobar', 'honorclase', 'honormoto'];
-  const conCx = (e) => q('cx') === '1' || e === 'cxliqproceso';
+  const ESC = ['honorcalculo', 'liqporliquidar', 'liqmesa', 'liqmesavarias', 'liqfacturarsri', 'liqdevolver', 'liqunicidad', 'liqindependiente', 'liqplanta', 'liqdocumento', 'liqcalculopanel', 'liqrevision', 'liqrevisionv2', 'liqfinanzas', 'cxliqproceso', 'liqpdf', 'liqpdfrg', 'liqpdfsinaprobar', 'honorclase', 'honormoto', 'facturarmasivo', 'facturarfiltros', 'inicioproveedorcx'];
+  const conCx = (e) => q('cx') === '1' || e === 'cxliqproceso' || e === 'inicioproveedorcx';
   if (conCx(q('escena'))) ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; }); // sin ?cx=1, las mismas escenas van sin la conexión
   const U0 = CC.cxUsuarios, clon = (x) => JSON.parse(JSON.stringify(x)), EUR = '1791456320001';
   const CP = { nombre: 'Carla Ponce', tipoIdentificacion: 'Cédula', identificacion: '1709991317', email: 'carla.ponce.finanzas+eurosurvey@gmail.com', rol: 'Finanzas de agencia', roles: ['Finanzas de agencia'], tipo: 'Agencia', agencia: 'Eurosurvey S.A.', agenciaRuc: EUR, estado: 'Activo', vinculado: true };

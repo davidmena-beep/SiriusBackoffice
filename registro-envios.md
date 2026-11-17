@@ -4,6 +4,55 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-1f
+
+Publiqué la versión 290 de SIRIUS. «Por facturar» ahora tiene filtros y selección masiva, y el Inicio de Finanzas de agencia lee la base igual que Liquidaciones.
+
+**Qué cambió**
+- **«Por facturar» con filtros (DEC-247):**
+  - La misma barra de «Por liquidar»: buscar (caso, placa, asegurado o número de liquidación), desde y hasta (fecha de inspección o de aprobación de la liquidación), tipo (Todos, Liquidaciones aprobadas, Honorarios preacordados), ramo, modalidad, sucursal y línea de negocio, con el contador «N de M» y «Limpiar filtros».
+  - Una liquidación se muestra si alguna de sus líneas cumple lo elegido. Los filtros se recuerdan en la pestaña durante la sesión.
+- **Selección masiva:**
+  - «Seleccionar todo» en la cabecera marca o desmarca lo visible con los filtros de ese momento. Cada grupo tiene su casilla, y con una parte marcada las casillas quedan en estado intermedio (—).
+  - La barra dice cuántas liquidaciones, preacordados e inspecciones hay marcados, el subtotal a facturar (el mismo de «Nueva factura») y trae «Quitar selección».
+  - Al cambiar un filtro, lo marcado que queda fuera se conserva: la barra dice «3 marcados fuera del filtro» y «Ver solo lo marcado» los muestra.
+- **Inicio del proveedor con la base:**
+  - Finanzas de agencia (y el inspector independiente con la conexión) ve 5 tarjetas de SiriusLiqProceso: Por liquidar, En aprobación en la aseguradora, Por corregir (con su motivo), Por facturar (con su subtotal) y Facturas por validar o devueltas. Cada una abre su pestaña de Liquidaciones.
+  - «Para hoy» sale de la misma fuente. Quité la tarjeta «Marcados «Revisar»» y ya no sale el aviso «Datos de demostración» en ese Inicio con la base.
+
+**Verificado**
+- Abrí las 3 escenas nuevas, `liqfacturarsri`, `liqporliquidar`, `iniciofin`, `facturadevuelta` e `inicioins` a 1280×720 y 1920×1080: 16 capturas sin errores.
+- `facturarmasivo`: 28 por facturar (3 liquidaciones y 25 preacordados). «Seleccionar todo» marca las 28 y el subtotal pasa a USD 1.294,80, igual en la barra y en «Nueva factura»; al desmarcar vuelve a cero. Las casillas de grupo marcan y desmarcan solo su grupo.
+- Filtros: sucursal Guayaquil deja 8 de 28; «Seleccionar todo» marca solo esas 8 (USD 120,00). Al pasar a Quito quedan «8 marcados fuera del filtro», «Ver solo lo marcado» los muestra y «Volver al filtro» regresa. También probé buscar, ramo, modalidad, línea, fechas y tipo; al ir a Seguimiento y volver, los filtros siguen.
+- Inicio de Carla Ponce con la conexión: 3 por liquidar (USD 36,00), 1 en aprobación, 1 por corregir, 4 por facturar (USD 940,00) y 2 facturas (1 por validar y 1 devuelta). Cada tarjeta abre su pestaña. No sale el aviso de demostración.
+- La consulta al SRI de `liqfacturarsri` sigue coincidiendo (subtotal USD 195,60), con y sin la conexión. Un clic en una fila reinicia la consulta.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- El Inicio del inspector independiente con la conexión: en esa vista el menú no trae «Inicio», así que probé el modelo con los datos de Luis Andrade (1 por liquidar, 2 por facturar) pero no lo vi en pantalla.
+- Cómo se comporta «Seleccionar todo» con cientos de filas reales: lo probé con 28.
+- La respuesta real de la base: las tarjetas leen la base simulada.
+
+**Diferencias**
+- Con la conexión, el Inicio del inspector independiente trae las mismas 5 tarjetas de liquidación y deja sus tarjetas de agenda; sin la conexión conserva las de siempre.
+- Cuando hay 5 tarjetas se muestran en 3 columnas y en 5 desde 1500 px de ancho (el resto de los roles sigue con 4).
+- En la fecha «desde/hasta», una liquidación entra si su aprobación o alguna de sus inspecciones cae en el rango.
+- Datos de prueba míos: 21 preacordados y 3 liquidaciones más para las escenas nuevas (solo existen en ellas).
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `facturarmasivo` | Carla Ponce · Finanzas de agencia | 28 por facturar; «Seleccionar todo» y los grupos en estado intermedio; barra «2 liquidaciones · 6 preacordados · 10 inspecciones», USD 1.032,80 |
+| `facturarfiltros` | Carla Ponce · Finanzas de agencia | Sucursal Guayaquil y tipo preacordados (7 de 28); 6 marcados, 3 fuera del filtro; «Ver solo lo marcado» |
+| `inicioproveedorcx` | Carla Ponce · Finanzas de agencia | Con la conexión simulada: 5 tarjetas de la base (3 · 1 · 1 · 4 · 2), «Para hoy» de 4 pendientes y sin aviso de demostración |
+
+También abrí `liqfacturarsri`, `liqporliquidar`, `iniciofin`, `facturadevuelta` e `inicioins`.
+
+**Tiempo de la etapa: inicio 16/11/2026 23:02 · fin 16/11/2026 23:23 · 21 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-1e
 
 Publiqué la versión 286 de SIRIUS. La tarifa de Vehículos ahora es por tipo (Liviano, Pesado y Moto) con un catálogo y una tabla de equivalencias que se editan, y la ficha de Usuarios tiene «Volver a invitar».
