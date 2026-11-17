@@ -10,6 +10,7 @@
 // 12/11/2026 · P-6e-2: informes[].responsable { tipo, agencia, usuario, regla, asignadoEn } (SQL 32); evidencias con tipoArchivo (foto, video, documento) y canal «Autoinspección».
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
+// 16/11/2026 · P-6g · Corrección: SIRIUS_CONEXION.usuario con agenciaRuc, identificacion y tipo (Liquidaciones reconoce al proveedor: Finanzas de agencia o independiente).
 // 16/11/2026 · P-6g · SQL 53: SIRIUS_CONEXION.honorarios[], .liquidaciones[] y .facturas[] con el contrato de SiriusLiqProceso (si la base aún no tiene el SQL 53, quedan sin definir y el módulo sigue en demostración).
 // 16/11/2026 · DEC-246 (SQL 52): un vehículo enviado desde la app queda «Inspeccionado» aunque su visita siga en curso (visitas.riesgos_enviados).
 // 15/11/2026 · P-6f-b · DEC-214 (SQL 51): usuarios[] e inspectores[] con tipoIdentificacion, identificacion y agenciaRuc; agencias[] con ruc, razonSocial y nombreComercial (si la base aún no tiene el SQL 51, se lee como antes).
@@ -354,11 +355,12 @@
       }, Math.max(450, 1100 - (Date.now() - GEO.ultimo)));
     }).then(function (r) { return r === null ? [] : r; });   // una búsqueda reemplazada por otra más nueva devuelve []
   };
-  CX.listo = get('usuarios?select=nombre,email,rol,tipo_inspector,datos,agencia:agencias(nombre)&auth_id=eq.' + (sesion.user && sesion.user.id))
+  CX.listo = get('usuarios?select=nombre,email,rol,tipo_inspector,datos,identificacion,agencia:agencias(nombre,ruc)&auth_id=eq.' + (sesion.user && sesion.user.id)).catch(function () { return get('usuarios?select=nombre,email,rol,tipo_inspector,datos,agencia:agencias(nombre)&auth_id=eq.' + (sesion.user && sesion.user.id)); })
     .then(function (us) {
       var u = us && us[0]; if (!u) { salir('Tu correo no está habilitado en SIRIUS.'); throw new Error('sin usuario'); }
       var roles = (u.datos && u.datos.roles) || [u.rol]; if (roles.indexOf(u.rol) < 0) roles.unshift(u.rol);
-      CX.usuario = { nombre: u.nombre, email: u.email, rol: u.rol, roles: roles, tipoInspector: u.tipo_inspector, agencia: u.agencia ? u.agencia.nombre : null };
+      CX.usuario = { nombre: u.nombre, email: u.email, rol: u.rol, roles: roles, tipoInspector: u.tipo_inspector, agencia: u.agencia ? u.agencia.nombre : null,
+        agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null, identificacion: u.identificacion || null, tipo: u.agencia ? 'Agencia' : String(u.tipo_inspector || '').toLowerCase() === 'independiente' ? 'Independiente' : 'Interno' };   // P-6g: el proveedor de Liquidaciones (agencia por RUC o independiente)
       var origenes = get('configuracion?select=clave,version,origen,creado&vigente=is.true').then(function (fs) { (fs || []).forEach(function (x) { ORIGEN[x.clave] = { origen: x.origen, version: x.version, creado: x.creado }; }); })
         .catch(function (e) { console.warn('[SIRIUS] origen de la configuración no disponible:', e.message); });
       return Promise.all([Promise.all([rpc('configuracion_vigente', {}), origenes]).then(function (r) { CONFIG = r[0] || {}; Object.keys(ARCH).forEach(aplicar); aplicarEspeciales(); evento('*'); })
