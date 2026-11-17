@@ -4,6 +4,78 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-1d
+
+Publiqué la versión 282 de SIRIUS. La liquidación aprobada ya se descarga como PDF con el diseño aprobado: encabezado con el logo, sello «APROBADA» y marca de agua «APROBADO» en todas las páginas. La tarifa de Vehículos ahora es por clase y la movilización se mide desde la ciudad base de cada proveedor.
+
+**Qué cambió**
+- **PDF de la liquidación (DEC-248):**
+  - El generador de PDF del prototipo (sirius-pdf.js, jsPDF) dibuja el documento con texto y formas, como el adjunto, y lo descarga como «Liquidación_001414_v1.pdf».
+  - Contenido:
+    - encabezado claro con el logo de SIRIUS, la aseguradora, la ciudad y la fecha;
+    - número grande con versión y período;
+    - sello «APROBADA» con fecha, hora y versión;
+    - marca de agua en diagonal, tenue, en todas las páginas;
+    - tarjetas de proveedor, inspecciones por clase, fuera de ciudad base y subtotal a facturar;
+    - barra de composición del subtotal con porcentajes;
+    - tabla con la franja por estado del caso, su leyenda y el encabezado repetido en cada página (en Ramos Generales, nivel, horas y equipos en lugar de la clase);
+    - cierre con el subtotal aprobado, IVA y total informativos, la nota de la factura, «Presentado por» y «Aprobado por»;
+    - pie con el código de verificación y «Página N de M».
+  - «Descargar PDF» aparece solo con la liquidación Aprobada, Facturada o Pagada: en Seguimiento del proveedor, en «Por facturar», en «Liquidaciones» de la aseguradora y en Finanzas. En los demás estados, la vista previa queda en pantalla y no se descarga.
+- **Tarifa de Vehículos por clase:**
+  - La tarifa es por modalidad y clase (Liviano, Pesado; catálogo parametrizable). La clase sale del tipo de vehículo del riesgo.
+  - Eurosurvey: presencial liviano USD 12,00 y pesado USD 17,00.
+  - El editor del tarifario muestra la tarifa por modalidad y clase.
+- **Ciudad base:**
+  - Cada proveedor tiene su ciudad base (cantón INEC) en su ficha: Eurosurvey, Quito; Luis Andrade, Santo Domingo.
+  - Si la inspección es en otra ciudad, la línea es «Ciudad no base» y se cobran los km por carretera desde la ciudad base hasta la visita, × USD 0,20 en Eurosurvey.
+  - Nuevo parámetro del tarifario «Medición de km»: ida (inicial) o ida y vuelta.
+  - En la ciudad base, sin movilización. Reemplaza la regla del radio urbano.
+- **Pantallas:**
+  - El panel lateral muestra arriba la referencia de la línea («ASEGURABLE // CIUDAD NO BASE // LIVIANO // 19,1 KM × 0,20 = 3,82») y una sección «Ciudad y movilización».
+  - La mesa y la revisión muestran bajo el caso el cantón y «Base» o «No base».
+
+**Verificado**
+- Abrí 9 escenas a 1280×720 y 1920×1080 (las 5 nuevas más `liqrevision`, `liqfinanzas`, `liqmesa` y `honorcalculo`) y otras 10 que ya existían; ninguna dio errores. A 1280 px la mesa y la revisión caben sin desplazar (1066 px).
+- Descargué el PDF de `liqpdf`:
+  - 12 líneas que suman USD 197,40, igual al subtotal aprobado;
+  - sello, marca de agua, «Página 1 de 1» y el código de verificación;
+  - con la conexión simulada sale el mismo contenido.
+- Con 84 líneas (las mismas repetidas) salen 3 páginas, con el encabezado de la tabla y la marca de agua en cada una.
+- `liqpdfrg` muestra nivel, horas y equipos. `liqdocumento` y Finanzas descargan su PDF. `liqpdfsinaprobar` no tiene «Descargar PDF».
+- `honorclase`: liviano USD 12,00, pesado USD 17,00 y liviano fuera de la ciudad base 19,1 km × 0,20 = 3,82, que da USD 15,82.
+- La prueba del contrato de `cxliqproceso` sigue en 19 de 19.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La descarga en un navegador de escritorio. En el navegador de prueba el archivo se descarga, pero el nombre con «ó» llega como «download»; con un nombre sin tilde sí se respeta. Conviene confirmarlo en Chrome o Edge.
+- La distancia real por carretera. El prototipo usa los km del informe y, si faltan, la línea recta × 1,25; falta el servicio de rutas.
+- El PDF en lectores de pantalla.
+
+**Diferencias**
+- La tabla usa el azul marino del sistema; no copié el tono exacto del adjunto.
+- Como en la #001412 real, las 12 inspecciones de `liqpdf` se liquidan todas. El contrato de Eurosurvey del prototipo sigue con Vehículos «Preacordada», así que en otras escenas los livianos en la ciudad base van directo a «Por facturar». ¿Cambio el parámetro del contrato a «Requiere liquidación»?
+- El número es #001414 y no #001412, porque las liquidaciones de prueba empiezan en 1414.
+- La regla nueva cambia montos de escenas anteriores. Para que tenga sentido, PCK2210 se inspecciona en Rumiñahui, PBX4410 en Mejía, TBA1235 en Ambato (136 km), PFJ3628 de Luis en La Concordia y la planta en Quito.
+- El contrato con la base suma campos: `calificacion` y, en `calculo`, `clase`, `ciudadBase`, `ciudadVisita`, `enBase` y `kmMedicion`. La ficha del proveedor suma `ciudadBase`.
+- La calculadora anterior (`honorpropuesta`) usa la tarifa del liviano. Su movilización sigue con la regla anterior.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `liqpdf` | Carla Ponce · Finanzas de agencia | #001414 aprobada (12 líneas, 3 fuera de la ciudad base, USD 197,40); «Descargar PDF» |
+| `liqpdfrg` | Carla Ponce | PDF con 2 líneas de Ramos Generales (nivel, horas y equipos) |
+| `liqpdfsinaprobar` | Carla Ponce | Enviada y por corregir: sin «Descargar PDF», solo vista previa |
+| `honorclase` | Carla Ponce | Liviano USD 12,00, pesado USD 17,00 y liviano fuera de la ciudad base USD 15,82 |
+| `fichaciudadbase` | Administrador | Ficha de Eurosurvey con su ciudad base Quito; `?fvista=luis`: Luis Andrade, Santo Domingo |
+
+Todas las de Liquidaciones, con `&cx=1`, van con la conexión simulada. También abrí `liqrevision`, `liqfinanzas`, `liqmesa`, `honorcalculo`, `liqdocumento`, `liqfacturarsri`, `liqindependiente`, `tarifarios`, `tarifarioeur`, `honorpropuesta`, `usuarios`, `maestrosagencias`, `agenda` e `iniciofin`.
+
+**Tiempo de la etapa: inicio 16/11/2026 19:22 · fin 16/11/2026 19:47 · 25 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-1c
 
 Publiqué la versión 279 de SIRIUS. Ya está el lado de la aseguradora: «Por aprobar» con la revisión a pantalla completa, y las pestañas de Finanzas («Facturas por validar» con la consulta al SRI, «Por pagar» y «Pagadas»). También está el mensaje del inspector de agencia de planta. Liquidaciones usa el contrato de la base (SQL 53) con las mismas pantallas, con y sin la conexión. Corregí lo observado en P-6g-1b.

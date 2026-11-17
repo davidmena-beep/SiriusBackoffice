@@ -7,7 +7,7 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxUsuarios) return;
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
-  const ESC = ['honorcalculo', 'liqporliquidar', 'liqmesa', 'liqmesavarias', 'liqfacturarsri', 'liqdevolver', 'liqunicidad', 'liqindependiente', 'liqplanta', 'liqdocumento', 'liqcalculopanel', 'liqrevision', 'liqrevisionv2', 'liqfinanzas', 'cxliqproceso'];
+  const ESC = ['honorcalculo', 'liqporliquidar', 'liqmesa', 'liqmesavarias', 'liqfacturarsri', 'liqdevolver', 'liqunicidad', 'liqindependiente', 'liqplanta', 'liqdocumento', 'liqcalculopanel', 'liqrevision', 'liqrevisionv2', 'liqfinanzas', 'cxliqproceso', 'liqpdf', 'liqpdfrg', 'liqpdfsinaprobar', 'honorclase'];
   const conCx = (e) => q('cx') === '1' || e === 'cxliqproceso';
   if (conCx(q('escena'))) ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; }); // sin ?cx=1, las mismas escenas van sin la conexión
   const U0 = CC.cxUsuarios, clon = (x) => JSON.parse(JSON.stringify(x)), EUR = '1791456320001';

@@ -51,11 +51,17 @@ window.SIRIUS_HONORARIOS = {
     ],
     recomendacion: 'Horas recomendadas = tiempo medido redondeado, dentro de 50 % a 150 % de la referencia; si el medido sale de ese rango, se recomienda el límite y se marca «Revisar tiempo».',
   },
+  // ---------- Clases de vehículo (P-6g-1d · ajuste de DEC-247; catálogo parametrizable) ----------
+  // La tarifa fija de Vehículos es por modalidad y por clase. La clase sale del tipo de vehículo del riesgo (confirmado en la inspección, DEC-212).
+  clasesVehiculo: [
+    { id: 'liviano', nombre: 'Liviano', tipos: ['Automóvil', 'Jeep', 'SUV', 'Camioneta', 'Furgoneta', 'Motocicleta', 'Van'] },
+    { id: 'pesado', nombre: 'Pesado', tipos: ['Camión', 'Tracto camión', 'Volqueta', 'Bus', 'Tanquero', 'Plataforma'] },
+  ],
   // ---------- Tarifarios por agencia e inspector (contratos) ----------
   // Reemplazan valores del general por partes; lo que no definen, sale del general. Con vigencia y versión.
   tarifarios: [
     { id: 'TAR-GEN-2025', nombre: 'Tarifario general RTG 2025', aplicaA: 'Todos', vigencia: ['2025-01-01', '2026-12-31'], version: 1, estado: 'Vigente', origen: 'Tarifario_Inspecciones_RTG_2025.xlsx', liquida: { momento: 'alEnviarInforme', quien: 'Inspector' } },
-    { id: 'TAR-EUR-2026', nombre: 'Contrato Eurosurvey 2026', aplicaA: { agencia: 'eurosurvey' }, vigencia: ['2026-01-01', '2026-12-31'], version: 2, estado: 'Vigente', cambios: { redaccion: 14, vehiculosPresencial: 16.5, completado: 12, 'km.valor': 0.4 }, validacionAgencia: true, liquida: { momento: 'posterior', quien: 'Finanzas de agencia', nota: 'El inspector envía el informe sin honorario; Carla Ponce los liquida después en lote' } },
+    { id: 'TAR-EUR-2026', nombre: 'Contrato Eurosurvey 2026', aplicaA: { agencia: 'eurosurvey' }, vigencia: ['2026-01-01', '2026-12-31'], version: 2, estado: 'Vigente', cambios: { redaccion: 14, 'veh.Presencial.liviano': 12, 'veh.Presencial.pesado': 17, completado: 12, 'km.valor': 0.2 }, validacionAgencia: true, liquida: { momento: 'posterior', quien: 'Finanzas de agencia', nota: 'El inspector envía el informe sin honorario; Carla Ponce los liquida después en lote' } },
     { id: 'TAR-AND-2026', nombre: 'Contrato Inspecciones Andinas 2026', aplicaA: { agencia: 'andinas' }, vigencia: ['2026-01-01', '2026-12-31'], version: 1, estado: 'Vigente', cambios: {}, validacionAgencia: false, liquida: { momento: 'alEnviarInforme', quien: 'Inspector' } },
     { id: 'TAR-LAN-2026', nombre: 'Luis Andrade (externo)', aplicaA: { inspector: 'Luis Andrade' }, vigencia: ['2026-01-01', '2026-12-31'], version: 1, estado: 'Vigente', cambios: { nivelMaximo: 'basico', completado: 8 }, nota: 'Solo puede facturar como Inspector Riesgos Básicos' },
   ],
