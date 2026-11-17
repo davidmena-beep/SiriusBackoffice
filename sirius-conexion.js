@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 17/11/2026 · P-6g-2 · SQL 55: SIRIUS_CONEXION.garantias[] y .notificacionesEnvio[] con el contrato de SiriusGarantiasBase (sin el SQL 55, quedan sin definir y siguen los datos de demostración).
 // 16/11/2026 · P-6g · Corrección: SIRIUS_CONEXION.usuario con agenciaRuc, identificacion y tipo (Liquidaciones reconoce al proveedor: Finanzas de agencia o independiente).
 // 16/11/2026 · P-6g · SQL 53: SIRIUS_CONEXION.honorarios[], .liquidaciones[] y .facturas[] con el contrato de SiriusLiqProceso (si la base aún no tiene el SQL 53, quedan sin definir y el módulo sigue en demostración).
 // 16/11/2026 · DEC-246 (SQL 52): un vehículo enviado desde la app queda «Inspeccionado» aunque su visita siga en curso (visitas.riesgos_enviados).
@@ -278,6 +279,8 @@
         .catch(function () { return get('honorarios?select=id,estado,aprobacion,calculo,ajuste,subtotal,liquidacion_id,factura_id,proveedor_tipo,fecha_inspeccion,visita_id,riesgo:riesgos(id,descripcion,datos,creado,caso:casos(id,numero,ramo,grupo_ramo,estado,asegurado,datos)),inspector:usuarios!honorarios_inspector_id_fkey(nombre,identificacion),agencia:agencias(nombre,ruc),visita:visitas(modalidad,creado,caso_id)&riesgo_id=not.is.null&order=fecha_inspeccion').catch(function (e) { console.info('[SIRIUS] honorarios (SQL 53):', e.message); return null; }); })
       ,get('liquidaciones?select=id,numero,version,estado,proveedor_tipo,observaciones,motivo,subtotal,iva,total,factura_id,versiones,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&numero=not.is.null&order=numero').catch(function () { return null; })
       ,get('facturas?select=id,proveedor_tipo,clave,numero,fecha,sri,liquidaciones,honorarios,subtotal,estado,motivo,pago,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&order=creado').catch(function () { return null; })
+      ,get('garantias?select=id,caso,riesgo,codigo,titulo,texto,ramo,prioridad,plazo_dias,vence,estado,origen,respaldo,cumplida_en,ampliaciones,endosos,historial&order=id').catch(function () { return null; })
+      ,get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,caso:casos(numero)&order=enviado_en.desc&limit=300').catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return null; })
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
@@ -310,6 +313,11 @@
         CX.facturas = (res[7] || []).map(function (f) { return { id: f.id, proveedor: provDe(f.proveedor_tipo, f.agencia, f.usuario), clave: f.clave, numero: f.numero, fecha: f.fecha, sri: f.sri || null,
             liquidaciones: f.liquidaciones || [], honorarios: f.honorarios || [], subtotal: +(f.subtotal || 0), estado: f.estado, motivo: f.motivo || '', pago: f.pago || null, historial: f.historial || [] }; });
       }
+      if (Array.isArray(res[8])) CX.garantias = res[8].map(function (g) { return { id: g.id, caso: String(g.caso || ''), riesgo: g.riesgo || '', codigo: g.codigo || '', titulo: g.titulo, texto: g.texto || '', ramo: g.ramo || '',
+          prioridad: g.prioridad || 'Media', plazoDias: g.plazo_dias, vence: g.vence || null, estado: g.estado, origen: g.origen, respaldo: g.respaldo || null, cumplidaEn: g.cumplida_en ? isoLocal(g.cumplida_en) : null,
+          ampliaciones: g.ampliaciones || [], endosos: g.endosos || [], historial: g.historial || [] }; });   // P-6g-2 · SQL 55
+      if (Array.isArray(res[9])) CX.notificacionesEnvio = res[9].map(function (n) { return { id: n.id, caso: n.caso ? String(n.caso.numero) : '', regla: n.regla || '', canal: n.canal || '', destinatario: n.destinatario || '',
+          estado: n.estado === 'Simulado' ? 'Enviado' : n.estado, contenido: n.contenido || '', fecha: n.enviado_en ? isoLocal(n.enviado_en) : null, error: n.error || null }; });
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',
