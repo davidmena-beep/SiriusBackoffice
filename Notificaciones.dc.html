@@ -110,7 +110,7 @@
 </sc-if>
 </section>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;reglas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;casos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;valoresCaso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;ir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;reglas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;casos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;valoresCaso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;ir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;envios&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onReenviar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;}}">
 class Component extends DCLogic {
   TABS = ['Reglas', 'Plantillas', 'Variables', 'Canales', 'Bitácora'];
   TIPOS = [['estado', 'Por estado'], ['regla', 'Por regla de tiempo'], ['evento', 'Por evento']];
@@ -125,7 +125,7 @@ class Component extends DCLogic {
     const e = this.props.escena || '', N = this.N();
     const st = { tab: 0, panel: null, step: 'edit', f: null, orig: null, errs: {}, showErr: false, motivo: '', motErr: false, histFor: null, prevId: null, prevCanal: null, bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: 0, snack: '', nonce: 0, vGrupo: 'all', vClase: 'all', vDisp: 'all', vQ: '', vCaso: '20178', vk: 0 };
     if (!N) return st;
-    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 4 }; if (tabs[e] != null) st.tab = tabs[e];
+    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 4, cxbitacora: 4 }; if (tabs[e] != null) st.tab = tabs[e];
     if (e === 'regla') { st.panel = 'regla'; st.orig = 'R02'; st.f = this.draftFrom(N.regla('R02')); }
     if (e === 'nueva') { st.panel = 'regla'; st.f = Object.assign(this.blank(), { tipo: 'evento' }); }
     if (e === 'ver') { st.panel = 'ver'; st.prevId = 'gar_recordatorio'; st.prevCanal = 'whatsapp'; }
@@ -404,13 +404,15 @@ class Component extends DCLogic {
     v.consRegla = N.consentimiento.regla;
     // ----- Bitácora -----
     const btone = { 'Enviado': 'neutral', 'Entregado': 'brand', 'Leído': 'success', 'Fallido': 'danger', 'Omitido': 'warning', 'Prueba': 'brand' }, opt = (a, b) => ({ v: a, l: b });
-    const casos = Array.from(new Set(N.bitacora.map(b => b.caso))).filter(c => c !== '—').sort(), hayInv = N.bitacora.some(b => b.caso === '—');
+    // P-6g-2: con la conexión, la bitácora lee los envíos de la base (notificacionesEnvio[]) y un envío fallido se puede reenviar.
+    const BASE = Array.isArray(this.props.envios), BIT = BASE ? this.props.envios : N.bitacora;
+    const casos = Array.from(new Set(BIT.map(b => b.caso))).filter(c => c !== '—').sort(), hayInv = BIT.some(b => b.caso === '—');
     v.canalFiltOpts = [opt('all', 'Todos')].concat(N.canales.map(c => opt(c.id, c.nombre))); v.estadoFiltOpts = [opt('all', 'Todos')].concat(this.ENVIOS.map(e => opt(e, e))); v.casoFiltOpts = [opt('all', 'Todos')].concat(casos.map(c => opt(c, c)), hayInv ? [opt('—', 'Sin caso (invitaciones)')] : []);
     v.fk = st.fk; v.bCanal = st.bCanal; v.bEstado = st.bEstado; v.bCaso = st.bCaso;
     v.onBCanal = (e) => this.setState({ bCanal: e.target.value }); v.onBEstado = (e) => this.setState({ bEstado: e.target.value }); v.onBCaso = (e) => this.setState({ bCaso: e.target.value });
     v.hasFilters = st.bCanal !== 'all' || st.bEstado !== 'all' || st.bCaso !== 'all'; v.clearFilters = () => this.setState({ bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: st.fk + 1 });
-    const bl = N.bitacora.map((b, i) => Object.assign({ ix: i }, b)).filter(b => (st.bCanal === 'all' || b.canal === st.bCanal) && (st.bEstado === 'all' || b.estado === st.bEstado) && (st.bCaso === 'all' || b.caso === st.bCaso)).sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : a.ix - b.ix);
-    v.bitIntro = 'Mostrando ' + bl.length + ' de ' + N.bitacora.length + ' envíos de ejemplo. Pasa el cursor por «Fallido» u «Omitido» para ver el motivo.';
+    const bl = BIT.map((b, i) => Object.assign({ ix: i }, b)).filter(b => (st.bCanal === 'all' || b.canal === st.bCanal) && (st.bEstado === 'all' || b.estado === st.bEstado) && (st.bCaso === 'all' || b.caso === st.bCaso)).sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : a.ix - b.ix);
+    v.bitIntro = 'Mostrando ' + bl.length + ' de ' + BIT.length + (BASE ? ' envíos de la base. Un envío «Fallido» se puede reenviar.' : ' envíos de ejemplo.') + ' Pasa el cursor por «Fallido» u «Omitido» para ver el motivo.';
     v.bitNoun = ['envío', 'envíos'];
     v.bitCols = [
       { key: 'fecha', label: 'Fecha', width: 140, wrap: false, sticky: true },
@@ -421,10 +423,10 @@ class Component extends DCLogic {
       { key: 'rem', label: 'Remitente', minWidth: 300, flex: true },
       { key: 'estado', label: 'Estado', type: 'badge', width: 120 },
     ];
-    v.bitRows = bl.map(b => { const rg = N.regla(b.regla), pp = !b.regla && b.plantilla ? N.plantilla(b.plantilla) : null, inv = b.tipo === 'invitacion'; return { id: 'b' + b.ix, casoId: b.caso, ariaName: inv ? 'Invitación a ' + b.a : (b.regla ? 'Envío de ' + b.regla : 'Prueba de plantilla') + ' del caso ' + b.caso, fecha: { label: this.fmtT(b.fecha), noBreak: true }, caso: inv ? { label: '—', dim: true } : { label: b.caso, link: true, linkAction: 'caso' },
-      regla: inv ? { label: 'Invitación a SIRIUS', sub: 'Usuarios y roles' } : b.regla ? { label: rg ? rg.nombre : b.regla, sub: b.regla } : { label: 'Prueba de plantilla', sub: pp ? pp.nombre : (b.plantilla || 'Plantilla nueva') }, canal: this.canalNombre(b.canal), dest: b.a, rem: { label: b.remitente, title: b.nota || undefined }, estado: { label: b.estado, tone: btone[b.estado] || 'neutral', title: b.motivo ? 'Motivo: ' + b.motivo : undefined } }; });
-    v.bitActions = [];
-    v.onBitAction = (a, row) => { if (a === 'caso' && this.props.onOpenCase) this.props.onOpenCase(row.casoId); };
+    v.bitRows = bl.map(b => { const rg = N.regla(b.regla), pp = !b.regla && b.plantilla ? N.plantilla(b.plantilla) : null, inv = b.tipo === 'invitacion'; return { id: 'b' + b.ix, envId: b.id, hideActions: BASE && b.estado === 'Fallido' ? [] : ['reenviar'], casoId: b.caso, ariaName: inv ? 'Invitación a ' + b.a : (b.regla ? 'Envío de ' + b.regla : 'Prueba de plantilla') + ' del caso ' + b.caso, fecha: { label: this.fmtT(b.fecha), noBreak: true }, caso: inv ? { label: '—', dim: true } : { label: b.caso, link: true, linkAction: 'caso' },
+      regla: inv ? { label: 'Invitación a SIRIUS', sub: 'Usuarios y roles' } : b.regla ? { label: rg ? rg.nombre : b.regla, sub: b.regla } : { label: 'Prueba de plantilla', sub: pp ? pp.nombre : (b.plantilla || 'Plantilla nueva') }, canal: this.canalNombre(b.canal), dest: b.a, rem: { label: b.remitente, title: b.nota || undefined }, estado: { label: b.estado + (b.reenvios ? ' · reenviado' : ''), tone: btone[b.estado] || 'neutral', title: b.motivo ? 'Motivo: ' + b.motivo : undefined } }; });
+    v.bitActions = BASE ? [{ id: 'reenviar', label: 'Reenviar', icon: 'history' }] : [];
+    v.onBitAction = (a, row) => { if (a === 'caso' && this.props.onOpenCase) this.props.onOpenCase(row.casoId); if (a === 'reenviar' && this.props.onReenviar) this.props.onReenviar(row.envId); };
     v.pn = this.panelVals();
     return v;
   }

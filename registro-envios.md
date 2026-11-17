@@ -4,6 +4,71 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-2
+
+Publiqué la versión 293 de SIRIUS. Las garantías (origen, seguimiento, ampliación, cierre y endosos) y la bitácora de Notificaciones ya leen la base y envían sus acciones, con las mismas pantallas de siempre.
+
+**Qué cambió**
+- **Origen de las garantías:**
+  - Con la conexión, la calificación de nivel 1 trae las recomendaciones del inspector como garantías propuestas (origen «Inspector»), con el plazo de la matriz.
+  - El calificador quita o agrega (origen «Calificador») y el nivel 2 también (origen «Nivel 2»).
+  - Al grabar la calificación final se envía definirGarantias: quedan «Pendientes» con su vencimiento y su endoso de inclusión «En cola». Las propuestas que se quitaron quedan «Retirada».
+- **Seguimiento (módulo Garantías):**
+  - Cumplir envía cumplirGarantia { id, respaldo, nota }. El respaldo es la foto o el documento adjunto, o el caso hijo; sin respaldo, la base lo rechaza.
+  - La ampliación envía solicitarAmpliacion y la garantía queda «En ampliación». La aprueba o rechaza el calificador final con resolverAmpliacion: el nuevo vencimiento y el endoso de modificación de plazo.
+  - Nuevo: «Retirar garantía» con motivo (solo calificador o nivel 2).
+  - «Solicitar cierre» envía cerrarSeguimiento; si queda alguna pendiente, sale el mensaje de la base.
+  - Cada garantía muestra su vencimiento, plazo y origen. En los endosos, «Marcar enviado» y «Marcar aplicado» (el BPM es simulado).
+- **Notificaciones:**
+  - La Bitácora lee notificacionesEnvio[] de la base, con «Reenviar» en el envío fallido.
+  - Los recordatorios de garantías salen de las garantías de la base. Reglas, plantillas y campana siguen igual.
+- **Con { ok: false }** no cambia nada y se muestra el mensaje.
+- **Sin la conexión** todo queda como antes.
+
+**Verificado**
+- Abrí 15 escenas a 1280×720 y 1920×1080: 30 capturas sin errores. Son las 6 nuevas más gar, garpanel, gendosos, gaprobar, gampliar, gcola, calrggar, n1 y notifbitacora.
+- `cxgarantiaspropuestas`, el flujo completo:
+  - El calificador quita «Alarma contra robo», agrega CCTV y deriva.
+  - Como Suscriptor agrega «Botón de pánico» y graba el dictamen.
+  - En la base quedan 4 Pendientes: 2 del Inspector, 1 del Calificador y 1 del Nivel 2. Cada una tiene su plazo (30 o 60 días), su vencimiento y su endoso «En cola», y la alarma queda «Retirada».
+- Cumplir con foto y nota deja la garantía «Cumplida» con el endoso «En cola», y «Marcar aplicado» lo deja «Aplicado».
+- Ampliación de 10 días: la garantía queda «En ampliación». Al aprobarla, el vencimiento pasa al 02/11/26 y el endoso de plazo queda «En cola».
+- Retirar: el Ejecutivo comercial no ve el botón y la calificadora sí.
+- Cierre: sin pendientes queda «Seguimiento cerrado». Con una pendiente sale «No se puede cerrar el seguimiento: queda 1 garantía pendiente (Detectores de humo)».
+- Reenviar un WhatsApp fallido lo deja «Enviado · reenviado».
+- Cumplir sin respaldo y `?cxok=0` dan { ok: false }: la base y la pantalla no cambian y sale el mensaje.
+- En una copia aparte con una conexión temporal comprobé la forma exacta de las 8 acciones.
+- Sin la conexión, 15 escenas existentes (Garantías, calificación, Inicio y Notificaciones) dan el mismo texto que antes.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La respuesta de la base real (SQL 55) y del BPM real: los endosos se marcan a mano.
+- Subir el archivo de respaldo a un almacenamiento: la ruta es el nombre del archivo adjunto.
+
+**Diferencias**
+- La ampliación se pide para el conjunto, como hoy, y se envía una solicitarAmpliacion por cada garantía pendiente o vencida.
+- La fecha límite del caso es el vencimiento más próximo de las garantías abiertas.
+- Con la conexión, el Ejecutivo comercial también puede marcar una garantía como cumplida; la base exige el respaldo.
+- En las escenas, Verónica Lema tiene dos roles (comercial y calificadora, o calificadora y Suscriptor) para probar cada flujo en una sola sesión.
+- Corregí un error que ya existía: enviar al BPM un caso de Ramos Generales calificado fallaba porque no trae adjuntos de vehículo.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `cxgarantiaspropuestas` | Verónica Lema · Ejecutivo de inspecciones y Suscriptor | 3 propuestas del inspector en la calificación de 50040; quitar, agregar y dictamen: 4 Pendientes con origen y vencimiento |
+| `cxgarantiacumplir` | Santiago Ortiz · Ejecutivo comercial | Cumplir con foto y nota; endoso de cumplimiento «En cola» → «Aplicado» |
+| `cxgarantiaampliacion` | Verónica Lema · Ejecutivo comercial y calificadora | Solicitar y aprobar la ampliación; nuevo vencimiento y endoso de plazo; `?fvista=solicitada`; «Retirar garantía» |
+| `cxgarantiacierre` | Santiago Ortiz · Ejecutivo comercial | Cierre sin pendientes; `?fvista=pendiente`: el mensaje que lo impide |
+| `cxnotificaciones` | Andrea Salazar · Administrador | Bitácora de la base con el envío fallido y «Reenviar» |
+| `cxgarantiaserror` | Santiago Ortiz · Ejecutivo comercial | Cumplir sin respaldo: { ok: false } y nada cambia |
+
+También abrí `gar`, `garpanel`, `gendosos`, `gaprobar`, `gampliar`, `gcola`, `calrggar`, `n1` y `notifbitacora`, y comparé sin la conexión `iniciocom`, `iniciosus`, `n2done`, `gsolicitar`, `notifreglas` y `cxlimpio`.
+
+**Tiempo de la etapa: inicio 16/11/2026 23:39 · fin 17/11/2026 00:20 · 41 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-1f
 
 Publiqué la versión 290 de SIRIUS. «Por facturar» ahora tiene filtros y selección masiva, y el Inicio de Finanzas de agencia lee la base igual que Liquidaciones.
