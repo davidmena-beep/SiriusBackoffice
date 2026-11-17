@@ -306,7 +306,7 @@
         CX.liquidaciones = (res[6] || []).map(function (l) { return { id: l.id, numero: l.numero, version: l.version || 1, proveedor: provDe(l.proveedor_tipo, l.agencia, l.usuario), estado: l.estado,
             lineas: CX.honorarios.filter(function (h) { return h.liquidacionId === l.id; }).map(function (h) { return h.id; }),
             observaciones: (l.observaciones || []).map(function (o) { return { linea: o.linea, texto: o.texto || '', subtotalSugerido: o.subtotalSugerido == null ? null : +o.subtotalSugerido }; }),
-            motivo: l.motivo || '', subtotal: +(l.subtotal || 0), iva: +(l.iva || 0), total: +(l.total || 0), facturaId: l.factura_id || null, versiones: l.versiones || [], historial: l.historial || [] }; });
+            motivo: l.motivo || '', subtotal: +(l.subtotal || 0), iva: +(l.iva || 0), total: +(l.total || 0), facturaId: l.factura_id || null, versiones: (l.versiones || []).map(function (v) { return Object.assign({}, v, { cambios: Array.isArray(v.cambios) ? v.cambios : [] }); }), historial: l.historial || [] }; });   // SQL 53c: cambios siempre como lista
         CX.facturas = (res[7] || []).map(function (f) { return { id: f.id, proveedor: provDe(f.proveedor_tipo, f.agencia, f.usuario), clave: f.clave, numero: f.numero, fecha: f.fecha, sri: f.sri || null,
             liquidaciones: f.liquidaciones || [], honorarios: f.honorarios || [], subtotal: +(f.subtotal || 0), estado: f.estado, motivo: f.motivo || '', pago: f.pago || null, historial: f.historial || [] }; });
       }
