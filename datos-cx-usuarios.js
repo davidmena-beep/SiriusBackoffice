@@ -43,6 +43,7 @@
     cxreinvitar: { panel: 'reinvitar', email: 'diego.salinas.independiente@gmail.com', nuevoEmail: 'diego.salinas.nuevo@gmail.com', motivo: 'Su invitación se revocó; vuelve a la zona de Quito con un correo nuevo.' }, // P-6g-1e · DEC-249 (?cxdup=1: el correo nuevo ya lo usa otro usuario → { ok: false }; ?cxactivo=1: un usuario activo con correo nuevo)
     // U-3a · DEC-254: la ficha única (con la conexión simulada). d = cambios en la ficha (resaltados), motivo y guardar = pulsa «Guardar en la base».
     usrlista: { panel: 'lista', u3: true },
+    cargatardia: { panel: 'lista', u3: true }, // U-3a2: igual que usrlista; el archivo de la ficha llega 1 s tarde (lo retrasa el Back-office)
     usrficha: { panel: 'ficha', u3: true, email: 'david.mena.coordinador+alex@gmail.com', d: { tipo: 'Agencia', agencia: 'Eurosurvey', cobertura: NC }, motivo: MOT_ABASCAL },
     usrfichanoinsp: { panel: 'ficha', u3: true, email: 'david.mena.coordinador+carla@gmail.com' },
     usrsinguardar: { panel: 'ficha', u3: true, email: 'david.mena.coordinador+alex@gmail.com', d: { cobertura: NC }, motivo: 'Cubre Quito norte y centro desde esta semana', guardar: true, rechazaCobertura: true }, // ?fsesion=1: solo la cobertura que quedó en la sesión

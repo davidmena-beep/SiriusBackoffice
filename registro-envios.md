@@ -4,6 +4,66 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa U-3a2
+
+Publiqué la versión 312 de SIRIUS. Usuarios y roles ya no falla si `sirius-usuarios-ficha.js` termina de cargar después del primer dibujo: muestra «Cargando usuarios…» y, cuando el archivo llega, vuelve a dibujar y aparece la lista. Apliqué la misma corrección que ya está en GitHub y revisé las demás páginas.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué usa de un archivo que carga la propia página | Antes | Ahora |
+|---|---|---|---|
+| Usuarios (lista) | `SiriusUsuariosFicha.Lista` | Si el objeto aún era null: «Cannot read properties of null (reading 'Lista')» y la página no se recuperaba | «Cargando usuarios…» y, al llegar el archivo, la lista |
+| Usuarios (ficha abierta) | `SiriusUsuariosFicha.Ficha` | Igual | Igual que la lista |
+| Liquidaciones (panel del honorario) | `SiriusHonorarioPanel` | Si no estaba, el panel no se dibujaba y no se volvía a intentar | «Cargando honorarios…» y, al llegar, el panel |
+| Agenda, Configuración general, Mi perfil, Liquidaciones (ventanas) | `SiriusModal` | Si no estaba, usan el modal del sistema de diseño | Sin cambios |
+| Las demás páginas | Objetos de archivos que carga el Back-office al inicio | — | Sin cambios |
+| Escena `cargatardia` | — | No existía | Usuarios con el archivo de la ficha 1 s tarde |
+
+**Qué cambió**
+- **`Usuarios.dc.html`** (igual que en GitHub):
+  - `ufEsperar()`: si `window.SiriusUsuariosFicha` no está, revisa cada 150 ms durante 20 s como máximo; cuando llega (o se acaba el tiempo) vuelve a dibujar la página con `setState` y `fk + 1`.
+  - `ufCargando()`: llama a `ufEsperar()` y muestra «Cargando usuarios…»; si pasaron los 20 s, «No se pudo cargar la lista de usuarios: recarga con Ctrl+F5.»
+  - `ufListaNode()`: si `this.UF()` es null, devuelve `ufCargando()`.
+  - `ufFichaNode()`: si no hay ficha abierta devuelve null; si `this.UF()` es null, devuelve `ufCargando()`.
+- **`Liquidaciones.dc.html`:** `glEsperar(nombre)` espera el objeto con el mismo método (150 ms, 20 s) y `drawerHon()` muestra «Cargando honorarios…» mientras `SiriusHonorarioPanel` no esté.
+- **Escena `cargatardia`:** igual que `usrlista`, pero el Back-office retrasa 1 s la entrada de `sirius-usuarios-ficha.js` al `<head>`. El segundo se cuenta desde que desaparece «Preparando tu espacio de trabajo», para que «Cargando usuarios…» se vea.
+
+**Páginas revisadas** (las 33 `.dc.html`)
+- **Corregidas (2):** Usuarios y Liquidaciones.
+- **Revisadas sin cambio, con riesgo cubierto (3):** Agenda, Configuración general y Mi perfil. Usan `SiriusModal` y, si falta, el modal del sistema de diseño.
+- **Revisadas sin cambio (28):** Calificación, CalificacionRG, Campos, Catálogos, Cola de calificación, Conflictos, Coordinación, DataTable, DocumentoPdf, EditorPlantilla, FilterBar, Flujo, Formularios, FotosEvidencias, Garantías y políticas, InformeRG, Inicio, Inspector, Modelos, Motores de IA, Niveles, Notificaciones, Nueva solicitud, Nueva solicitud (revisión), Portal, SalidaVeh, Login y el Back-office. Los objetos que usan (`SiriusLiqProceso`, `SiriusGarantiasBase`, `SiriusColaCalificacion`, `SiriusCobertura` y otros) también los carga el Back-office al inicio.
+- **Cómo lo comprobé:** para cada objeto `Sirius…` que usa una página, busqué en qué archivo se define y si el Back-office lo carga al inicio. Solo tres objetos se definen únicamente en archivos que carga la página: `SiriusUsuariosFicha` (Usuarios), `SiriusHonorarioPanel` (Liquidaciones) y `SiriusModal` (cuatro páginas).
+
+**Verificado (1280×720 y 1920×1080)**
+- `cargatardia`: «Cargando usuarios…» y, al llegar el archivo, la lista con 12 filas, sin error de página y sin desborde horizontal.
+- Con la copia anterior de Usuarios, la misma escena reproduce el error de GitHub y no se recupera. Con la corrección se recupera.
+- Si el archivo nunca llega, a los 20 s aparece «No se pudo cargar la lista de usuarios: recarga con Ctrl+F5.».
+- 12 escenas sin error de página a cada tamaño: `cargatardia`, `usrlista`, `usrficha`, `usrsinguardar`, `usrnuevo`, `cxusrcobertura`, `honoragencia`, `honorsubasta`, `honormoto`, `agenda`, `cobertura` y `coberturalectura`.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- «Cargando honorarios…» en Liquidaciones: no pude provocarlo. Con el archivo retrasado, la página no llega a dibujar el panel antes de que llegue. Comprobé la sintaxis y que las escenas de honorarios abren sin error.
+- Que en GitHub los archivos del Back-office lleguen siempre antes de dibujar cada página: las 120 etiquetas `<script>` se añaden sin esperar. Hasta ahora solo falló Usuarios.
+- En las pruebas con el navegador aparecen dos avisos de consola que ya estaban antes: un archivo que no se encuentra (404) y un `<path d="{{ n.d }}">` sin reemplazar. No son de esta etapa.
+
+**Diferencias**
+- La espera de Usuarios es igual a la de GitHub. La de Liquidaciones es mía: usa el mismo método, con otro nombre (`glEsperar`).
+- No cambié ninguna acción de la base ni ninguna pantalla cuando los archivos llegan a tiempo.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `cargatardia` | Andrea Salazar · Administrador (conexión simulada) | Usuarios con el archivo de la ficha 1 s tarde: «Cargando usuarios…» y luego la lista |
+
+También abrí `usrlista`, `usrficha`, `usrsinguardar`, `usrnuevo`, `cxusrcobertura`, `honoragencia`, `honorsubasta`, `honormoto`, `agenda`, `cobertura` y `coberturalectura`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 07:48 · fin 18/11/2026 08:04 · 16 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa U-3a
 
 Publiqué la versión 309 de SIRIUS. Usuarios tiene una lista con filtros y alertas y una sola ficha editable, que reemplaza «Ver» y «Editar». También encontré y corregí la causa del caso de Alexandre Abascal: la cobertura que quedaba solo en la sesión tenía prioridad sobre la de la base. Ahora la ficha parte de lo que tiene la base y marca «Sin guardar en la base» cuando no coincide (DEC-254). Las acciones de la base son las mismas: crearUsuario, editarUsuario, cambiarEstadoUsuario y reinvitarUsuario.
