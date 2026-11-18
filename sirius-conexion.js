@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 18/11/2026 · N-2c: SIRIUS_CONEXION.configuracion = { clave: { version, fecha, por, datos } } (versión vigente de cada configuración).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.usuario.correo (igual a email), para «Enviar prueba a mi correo».
 // 18/11/2026 · N-1 · SQL 58: la bitácora de notificaciones trae la cola real (asunto, rol, aprobación, intentos; estados Pendiente, Por aprobar, Enviado, Fallido, Rechazado) y «Enviar ahora» llama a la función sirius-notificar.
 // 18/11/2026 · U-1: al crear, reinvitar o cambiar el correo de un invitado, la invitación sale por correo con la función sirius-invitar (el mensaje dice si salió; si no, se copia el enlace como antes).
@@ -255,6 +256,10 @@
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
+  // N-2c: la versión vigente de cada configuración, para publicar «vigente + 1» y mostrarla en los editores: { clave: { version, fecha, por, datos } }
+  try { Object.defineProperty(CX, 'configuracion', { configurable: true, enumerable: true, get: function () { var o = {};
+    Object.keys(CONFIG || {}).forEach(function (k) { var g = ORIGEN[k] || {}; o[k] = { version: String(g.version || (CONFIG[k] && CONFIG[k].version) || ''), fecha: g.creado || null, por: g.origen || '', datos: CONFIG[k] }; });
+    return o; } }); } catch (e) {}
         if (r.ok && r.funcion && tipo === 'enviarNotificacionesAhora') {   // N-1: el Administrador manda ya los correos pendientes (función sirius-notificar)
           return renovar().then(function () { return fetch(r.funcion, { method: 'POST', headers: cab(), body: '{"origen":"backoffice"}' }); })
             .then(function (x) { return x.json().catch(function () { return { ok: false, mensaje: 'La función de envío no respondió (¿está publicada?)' }; }); })

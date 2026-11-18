@@ -4,6 +4,90 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-2c
+
+Publiqué la versión 321 de SIRIUS. Esta etapa corrige N-2b en cuatro puntos. El botón del correo lleva al destino que se elige y, si el caso no tiene esa dirección, no sale. La plantilla publicada es la que se ve al reabrir y al recargar. Con la conexión, la Bitácora muestra solo la cola de la base, de la más reciente a la más antigua, con la hora real. La prueba va al correo del usuario de la conexión.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| `sirius-correo-render.js` (botón) | Destino «sirius» o una URL; sin enlace caía al portal general con otro caso (20152) | Lista de destinos; cada uno sale del caso del correo; sin dirección válida, el botón no sale |
+| Editor › bloque Botón | URL o «sirius» | Selector «Destino del botón», con el destino ya resuelto para el caso de la vista previa |
+| Editor › Guardar y publicar | Publicaba sin versión de la base; el historial lo registraba, pero al reabrir volvía la anterior | Publica la versión vigente + 1; la cabecera dice «versión vigente de la base: N (fecha · quién)» |
+| Editor › Historial | Entrada solo en la página | «Publicó la versión N (plantilla «…»)» con la fecha real, publicada junto con la plantilla |
+| Vista previa y «Ver correo» | Botón al portal general | El mismo destino, y el aviso «Este caso no tiene enlace activo: el botón no saldrá» |
+| Bitácora | Mezclaba filas de la base con filas de ejemplo; orden por estado | Con la conexión, solo `notificacionesEnvio[]`, ordenadas por la hora de envío o de creación |
+| Back-office | `?caso=N` no existía | Abre el caso; si falta iniciar sesión, lo abre al entrar |
+| Función de envío (sirius-notificar) | Mismo archivo de armado | Mismo archivo; ahora lee `enlace` y `enlaces` de la base (SQL 59d) |
+| «Enviar prueba a mi correo» | «Tu usuario no tiene correo registrado» con la conexión | Usa `SIRIUS_CONEXION.usuario.correo` |
+
+**Qué cambió**
+- **Destino del botón** (`SiriusCorreoRender.DESTINOS`):
+  - Opciones: enlace del cliente para este caso (`enlace.url`), autoagendamiento, autoinspección, caso en el Back-office (`enlaces.caso`), portal general, Back-office inicio y otra dirección URL, que admite `{{…}}`.
+  - Automático («sirius»): para clientes y brókeres, el enlace del caso; para internos, el caso en el Back-office.
+  - Sin dirección válida (http, https o mailto, sin variables vacías), el bloque no se arma. Ya no se usa el portal general como respaldo.
+  - `avisos(plantilla, contexto)` da el aviso del botón. Lo muestran el editor y «Ver correo».
+- **Contexto del correo:** `enlace` es solo el del caso: `{ url, vence }`. `enlaces` trae autoagendamiento, autoinspección, caso, portal y backoffice de la base. Sin la base, se arman con los enlaces vigentes del caso y con `envio.enlaces`.
+- **Plantillas publicadas:**
+  - Guardar pide `publicarConfiguracion` con la versión vigente + 1.
+  - La vigente se lee de `SIRIUS_CONEXION.configuracion.SIRIUS_NOTIFICACIONES` o de `__version`, que anota `sirius-publicar.js` al publicar.
+  - La entrada del historial va dentro de lo publicado. Si la base responde `{ ok: false }`, se revierte.
+- **Causa del error de N-2b:** `datos-notificaciones.js` se ejecutaba dos veces al montar las pantallas y la segunda vez reemplazaba lo publicado por la plantilla original. Ahora se carga una sola vez.
+- **Bitácora:** con la conexión, solo la cola de la base, de la más reciente a la más antigua por `enviadoEn` o `fecha`, en «dd/mm/aa · hh:mm», debajo «Creado …». «Simulado» se distingue con su etiqueta, en el mismo orden.
+- **`?caso=N`:** abre el caso en Solicitudes. Si la conexión existe pero falta iniciar sesión, el número queda en `sessionStorage` (`sirius.casoPend`) y el caso se abre al entrar. Si no existe, se ve «No encontramos el caso».
+- **Prueba:** usa `SIRIUS_CONEXION.usuario.correo` (o `email`). Si está vacío: «La base no tiene correo para tu usuario. Pide que lo registren en Usuarios y roles.»
+
+**Prueba cruzada** (`plantillapublicada`, conexión simulada, plantilla «Visita agendada», caso 50012)
+
+Cambios: el asunto pasa a «No {{caso.numero}} · Tu inspección está agendada para el {{visita.fecha}}» y el destino del botón a «Caso en el Back-office». Guardé con motivo y recargué la página.
+
+| Dónde | Antes | Después de publicar | Después de recargar |
+|---|---|---|---|
+| Base (`configuracion.SIRIUS_NOTIFICACIONES`) | Versión 3 | Versión 4 (`publicarConfiguracion`, versión 4) | Versión 4 |
+| Editor (cabecera y campo Asunto) | Versión 3 · asunto anterior | Versión 4 · asunto nuevo | Versión 4 · asunto nuevo |
+| Vista previa | «Tu inspección está agendada para el 19/10/26» | «No 50012 · …» · botón a `…?caso=50012` · huella 467796db | Igual: huella 467796db |
+| Historial | — | «Publicó la versión 4 (plantilla «Visita agendada»)», 18/11/26 · 16:02 | Igual |
+| Prueba | — | — | «[Prueba] No 50012 · …», Para andrea.salazar@asur.ec, «Pendiente» |
+| Bitácora › fila de la prueba › «Ver correo» | — | — | Primera fila, 18/11/26 · 16:02 · huella 467796db, igual a la vista previa |
+
+**Verificado (1280×720 y 1920×1080)**
+- `botondestino`: con el caso 30031, «Enlace del cliente» lleva a `https://clientes.asur.ec/autoinspeccion?token=AI-7Q2K9X`. El caso 50012, sin enlace activo, no tiene botón y se ve el aviso. Con «Caso en el Back-office», el botón lleva a `…?caso=50012`, y con `https://clientes.asur.ec/caso/{{caso.numero}}` a `…/caso/50012`.
+- `sirius-correo-render.js` sin navegador (Node): un cliente sin enlace no tiene botón; con enlace usa ese enlace y no el portal general; un interno con «automático» va a `enlaces.caso`.
+- `plantillapublicada`: la prueba cruzada de arriba.
+- `bitacoraorden`: 8 filas, todas `ENV-…` de la base, sin filas de ejemplo, de 16:02 a 06:03, en un solo formato. Las de SMS, WhatsApp y En SIRIUS son «Simulado» y van en su hora.
+- `casoporenlace` (`&caso=50013`): abre «Caso 50013». Con la conexión sin sesión, el caso queda pendiente y se abre al iniciar sesión.
+- `notifprueba`: la prueba va a andrea.salazar@asur.ec, el correo del usuario de la conexión.
+- `correoigual` y `notifinterruptor` abren sin error de página.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real (SQL 59d): que `enlace` y `enlaces` lleguen con esos nombres y que `configuracion_vigente` devuelva `{ version, fecha, por, datos }`. Si la base no trae la versión vigente, se usa la que anotó la última publicación.
+- El inicio de sesión real con `?caso=N`: depende de que la conexión real tenga más datos que `activo` antes de iniciar sesión y de que el navegador permita sessionStorage.
+- La función sirius-notificar con los destinos nuevos: el archivo ya funciona sin navegador.
+
+**Diferencias**
+- **Otras configuraciones:** catálogos, formularios, facultades y otras se publican con el mismo `SiriusPublicar`. Si su archivo de datos también se ejecuta dos veces, podrían tener el mismo problema. No lo revisé en esta etapa.
+- **Sin la conexión:** la Bitácora sigue mostrando la cola de ejemplo junto con la bitácora antigua.
+- **Plantillas guardadas con destino «sirius» o una URL:** se leen igual. «sirius» queda como «Automático».
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `botondestino` | Andrea Salazar · Administrador (conexión simulada) | El editor de «Visita agendada» con el bloque Botón: 30031 con enlace y 50012 sin enlace, con el aviso |
+| `plantillapublicada` | Andrea Salazar · Administrador (conexión simulada) | La versión vigente de la base en el editor; publicar y recargar mantiene la plantilla |
+| `bitacoraorden` | Andrea Salazar · Administrador (conexión simulada) | La Bitácora con solo la cola de la base, de la más reciente a la más antigua, con la hora real |
+| `casoporenlace` | Andrea Salazar (conexión simulada) | `?escena=casoporenlace&caso=50013` abre el caso 50013 |
+
+También abrí `correoigual`, `notifinterruptor`, `notifprueba`, `notifporaprobar`, `notifverkorreo`, `cxnotifcola`, `enlacebloqueado`, `historialreloj`, `notifeditor` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 15:48 · fin 18/11/2026 16:10 · 22 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-2b
 
 Publiqué la versión 317 de SIRIUS. El correo que se envía ahora es idéntico a la vista previa: los dos los arma `sirius-correo-render.js`. Además hay un interruptor «Notificaciones», el enlace de autoagendamiento se bloquea cuando ya hay una cita, el Historial usa la hora real de Ecuador con la conexión y la Bitácora se refresca sola.

@@ -7,11 +7,13 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj']; // N-2b · DEC-257: las tres últimas
+  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro últimas
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const ADM = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] };
   const prevSim = CC.cxSim.bind(CC), prevAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
-  const datos = (escena) => { const X = prevSim('cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
+  const iso = (min) => new Date(Date.now() - min * 60000).toISOString(); // horas reales, como las devuelve la base (UTC con zona)
+  const CFG = 'sirius.sim.config.SIRIUS_NOTIFICACIONES', leerCfg = () => { try { return JSON.parse(sessionStorage.getItem(CFG) || 'null'); } catch (e) { return null; } }, guardarCfg = (c) => { try { sessionStorage.setItem(CFG, JSON.stringify(c)); } catch (e) { /* sin almacenamiento */ } };
+  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
     const cli = ct.nombre || c.asegurado || 'Cliente del caso 50012', mail = ct.correo || ct.email || 'cliente.50012@correo.ec';
     const n = (id, regla, destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, hora, extra) => Object.assign({ id, caso: '50012', regla, canal: 'correo', destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, contenido: '', fecha: hoy + 'T' + hora, error: '', simulado: false, requiereAprobacion: estado === 'Por aprobar', aprobadoPor: null, aprobadoEn: null, intentos: 0 }, extra || {});
     X.usuario = clon(ADM);
@@ -42,10 +44,37 @@
       X.notificacionesEnvio = [n('ENV-5821', 'R05', mail, cli, 'Cliente', 'Enviado', 'Tu inspección está agendada', 'visita_confirmada', '00:00', { fecha: tAg, enviadoEn: tAg, intentos: 1 }),
         n('ENV-5822', 'R05', 'santiago.ortiz@asur.ec', 'Santiago Ortiz', 'Ejecutivo comercial', 'Enviado', 'Visita agendada · caso 50012', 'visita_confirmada', '00:00', { fecha: tAg, enviadoEn: tAg, intentos: 1 })];
       X.horaReal = { agendada: tAg, intento: tInt }; }
+    // N-2c · plantillapublicada: la configuración se guarda por versiones (publicar_configuracion crea una vigente nueva; configuracion_vigente la devuelve).
+    // La base simulada la guarda en sessionStorage para que sobreviva a la recarga de la página; al entrar, la vigente se aplica a SIRIUS_NOTIFICACIONES (como el cargador real).
+    if (escena === 'plantillapublicada') { const N = window.SIRIUS_NOTIFICACIONES; let c = leerCfg();
+      if (!c && N) { const d0 = JSON.parse(JSON.stringify(N)); delete d0.cola; delete d0.colaEjemplo; c = { version: 3, fecha: iso(60 * 24 * 2), por: 'Andrea Salazar', datos: d0, versiones: [{ version: 3, fecha: iso(60 * 24 * 2), por: 'Andrea Salazar', motivo: 'Versión inicial de la prueba' }] }; guardarCfg(c); }
+      X.configuracion = { SIRIUS_NOTIFICACIONES: c }; if (N && c && c.datos) Object.keys(c.datos).forEach((k) => { if (typeof N[k] !== 'function') N[k] = JSON.parse(JSON.stringify(c.datos[k])); });
+      if (N) { N.__version = c.version; N.__fecha = c.fecha; N.__por = c.por; } }
+    // N-2c · bitacoraorden: correos y «Simulado» (WhatsApp, SMS, En SIRIUS) con horas reales, desordenados como llegan de la base.
+    if (escena === 'bitacoraorden') { X.notificacionesEnvio = [
+      n('ENV-5901', 'R05', mail, cli, 'Cliente', 'Enviado', 'Tu inspección está agendada', 'visita_confirmada', '', { fecha: iso(240), enviadoEn: iso(239), intentos: 1 }),
+      n('ENV-5902', 'R05', ct.cel || '0990000012', cli, 'Cliente', 'Pendiente', 'Visita agendada por WhatsApp', 'visita_confirmada', '', { canal: 'whatsapp', simulado: true, fecha: iso(240) }),
+      n('ENV-5903', 'R19', mail, cli, 'Cliente', 'Enviado', 'Agenda la inspección de tu caso 50012', 'enlace_autoagendamiento', '', { fecha: iso(30), enviadoEn: iso(29), intentos: 1 }),
+      n('ENV-5904', 'R04', 'santiago.ortiz@asur.ec', 'Santiago Ortiz', 'Ejecutivo comercial', 'Fallido', 'Caso 50012: garantías vencidas', 'gar_vencidas', '', { fecha: iso(600), error: 'Buzón lleno (552 5.2.2)', intentos: 1 }),
+      n('ENV-5905', 'R19', ct.cel || '0990000012', cli, 'Cliente', 'Simulado', 'Enlace de autoagendamiento por SMS', 'enlace_autoagendamiento', '', { canal: 'sms', simulado: true, fecha: iso(30) }),
+      n('ENV-5906', 'R23', 'lucia.vera@austrobrokers.ec', 'Lucía Vera', 'Bróker (APS)', 'Enviado', 'Caso 50012: se canceló la solicitud de PRB1213', 'solicitud_cancelada', '', { fecha: iso(5), enviadoEn: iso(4), intentos: 1 }),
+      n('ENV-5907', 'R04', 'Ricardo Almeida', 'Ricardo Almeida', 'Ejecutivo de inspecciones', 'Enviado', 'Caso 50012: garantías vencidas.', 'gar_vencidas', '', { canal: 'app', simulado: true, fecha: iso(600), enviadoEn: iso(599), intentos: 1 }),
+      n('ENV-5908', 'R05', 'santiago.ortiz@asur.ec', 'Santiago Ortiz', 'Ejecutivo comercial', 'Pendiente', 'Visita agendada · caso 50012', 'visita_confirmada', '', { fecha: iso(1) })]; }
+    if (escena === 'casoporenlace' || escena === 'botondestino') X.notificacionesEnvio = [];
+    // N-2c · botondestino: 30031 (autoinspección con enlace vigente) y 50012 (sin enlace activo) para ver el botón con y sin dirección.
+    if (escena === 'botondestino') { const c1 = (X.casos || []).find((x) => String(x.id) === '30031'), v1 = c1 && (c1.visitasBase || [])[0]; if (v1 && v1.enlace) { v1.estado = 'Enlace enviado'; v1.enlace.estado = 'Vigente'; } }
+    if (escena === 'botondestino') { const X2 = prevSim('cxestadoparcial'), c2 = (X2.casos || []).find((x) => String(x.id) === '50012'); if (c2 && !(X.casos || []).some((x) => String(x.id) === '50012')) { X.casos = (X.casos || []).concat([c2]); ['detalles', 'eventos', 'evidencias', 'controles', 'informes', 'calificaciones'].forEach((k) => { X[k] = X[k] || {}; if (X2[k] && X2[k]['50012'] !== undefined) X[k]['50012'] = X2[k]['50012']; }); X.inspectores = (X.inspectores || []).concat((X2.inspectores || []).filter((i) => !(X.inspectores || []).some((j) => j.nombre === i.nombre))); } }
     return X; };
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : prevSim(escena); };
   const TIPOS = ['aprobarNotificacion', 'rechazarNotificacion', 'reenviarNotificacion', 'enviarNotificacionesAhora', 'enviarPruebaNotificacion', 'configurarEnvioNotificaciones'];
-  CC.aplicar = function (X, tipo, d) { if (TIPOS.indexOf(tipo) < 0 || !X || !Array.isArray(X.notificacionesEnvio)) return prevAp ? prevAp(X, tipo, d) : null;
+  CC.aplicar = function (X, tipo, d) {
+    // N-2c: publicar_configuracion de la base simulada (solo si la escena trae configuracion): la versión debe ser mayor que la vigente; la nueva queda vigente.
+    if (tipo === 'publicarConfiguracion' && X && X.configuracion && d && d.clave === 'SIRIUS_NOTIFICACIONES') { const c = X.configuracion[d.clave] || { version: 0 }, v = Number(d.version);
+      if (!(v > Number(c.version || 0))) return { ok: false, mensaje: 'La versión ' + v + ' no es mayor que la vigente (' + c.version + '): vuelve a abrir la plantilla para trabajar sobre la vigente' };
+      const nueva = { version: v, fecha: iso(0), por: (X.usuario || {}).nombre || '', datos: JSON.parse(JSON.stringify(d.datos || {})), versiones: [{ version: v, fecha: iso(0), por: (X.usuario || {}).nombre || '', motivo: d.motivo || '' }].concat(c.versiones || []) };
+      X.configuracion[d.clave] = nueva; guardarCfg(nueva); try { window.__sirNcUltima = (window.__sirNcUltima || []).concat([{ tipo, datos: { clave: d.clave, version: v, motivo: d.motivo } }]); } catch (e) { /* nada */ }
+      return { ok: true, mensaje: 'Versión ' + v + ' publicada y vigente', version: v, fecha: nueva.fecha }; }
+    if (TIPOS.indexOf(tipo) < 0 || !X || !Array.isArray(X.notificacionesEnvio)) return prevAp ? prevAp(X, tipo, d) : null;
     try { window.__sirNcUltima = (window.__sirNcUltima || []).concat([clon({ tipo, datos: d || {} })]); } catch (er) { /* registro de prueba */ }
     const act = !X.envio || X.envio.activo !== false, rol = window.__sirRolActivo || (X.usuario || {}).rol || '';
     // SQL 59: configurarEnvioNotificaciones { activo, motivo } → { ok, mensaje, activo } (solo el Administrador, con motivo).

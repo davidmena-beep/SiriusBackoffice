@@ -13,7 +13,8 @@
   const clon = (x) => JSON.parse(JSON.stringify(x == null ? null : x)), sd = (s) => String(s == null ? '' : s), z = (n) => String(n).padStart(2, '0');
   const pl = (n, a, b) => n + ' ' + (n === 1 ? a : b);
   NC.N = () => W.SIRIUS_NOTIFICACIONES || null;
-  NC.X = () => { const X = W.SIRIUS_CONEXION; return X && X.activo === true && Array.isArray(X.notificacionesEnvio) ? X : null; };
+  // N-2c: con la conexión activa, la Bitácora es solo la base (aunque todavía no traiga notificacionesEnvio[]): nunca los registros de ejemplo.
+  NC.X = () => { const X = W.SIRIUS_CONEXION; return X && X.activo === true ? X : null; };
   NC.ahoraIso = () => { const E = W.SIRIUS_EJEMPLO || {}, a = typeof E.ahora === 'function' ? E.ahora() : new Date(); return a.getFullYear() + '-' + z(a.getMonth() + 1) + '-' + z(a.getDate()) + 'T' + z(a.getHours()) + ':' + z(a.getMinutes()); };
   // Hora de la base con zona (Z o ±hh:mm) → hora de Ecuador (UTC−5, sin horario de verano); sin zona se toma tal cual.
   NC.ec = (iso) => { const t = sd(iso).trim(); if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})$/i.test(t)) return t; const ms = Date.parse(t.replace(' ', 'T')); return isNaN(ms) ? t : new Date(ms - 5 * 3600e3).toISOString().slice(0, 16); };
@@ -43,11 +44,12 @@
     return NC.norm({ id: 'bit-' + i, caso: b.caso === '—' ? '' : b.caso, regla: b.regla || '', canal: b.canal, destinatario: b.a, destinatarioNombre: b.a, rolDestino: b.tipo === 'invitacion' ? 'Usuario invitado' : '', estado: b.estado,
       asunto: b.tipo === 'invitacion' ? 'Invitación a SIRIUS' : (b.nota || (rg ? rg.nombre : 'Prueba de plantilla')), plantilla: b.plantilla || (rg ? rg.plantilla : ''), fecha: b.fecha, error: b.motivo || '', intentos: 1, antigua: true, remitente: b.remitente }); };
   NC.E = null; NC.fuente = '';
-  NC.cargar = () => { const X = NC.X(); if (X) { NC.E = clon(X.notificacionesEnvio).filter((n) => n && n.id).map(NC.norm); NC.fuente = 'base'; NC._X = X; } else { NC.E = null; NC.fuente = 'ejemplo'; NC._X = null; } NC.v = (NC.v || 0) + 1; return NC.E; };
-  NC.reiniciar = (real) => { const N = NC.N(), X = W.SIRIUS_CONEXION; if (N) { N.cola = clon(N.colaEjemplo || []); if (!real) { if (!N._envioBase) N._envioBase = clon(N.envio || {}); N.envio = clon(N._envioBase); if (X && X.activo === true && X.envio && typeof X.envio === 'object') Object.assign(N.envio, clon(X.envio)); } } NC._log = []; Object.keys(NC).filter((k) => /^_auto/.test(k)).forEach((k) => { delete NC[k]; }); NC.cargar(); };
+  NC.cargar = () => { const X = NC.X(); if (X) { NC.E = clon(Array.isArray(X.notificacionesEnvio) ? X.notificacionesEnvio : []).filter((n) => n && n.id).map(NC.norm); NC.fuente = 'base'; NC._X = X; } else { NC.E = null; NC.fuente = 'ejemplo'; NC._X = null; } NC.v = (NC.v || 0) + 1; return NC.E; };
+  NC.reiniciar = (real) => { const N = NC.N(), X = W.SIRIUS_CONEXION; if (N) { N.cola = clon(N.colaEjemplo || []); if (!real) { if (!N._envioBase) N._envioBase = clon(N.envio || {}); N.envio = clon(N._envioBase); const cv = X && X.activo === true && X.configuracion && X.configuracion.SIRIUS_NOTIFICACIONES; if (cv && cv.datos && cv.datos.envio) Object.assign(N.envio, clon(cv.datos.envio)); /* N-2c: la versión vigente de la base */ if (X && X.activo === true && X.envio && typeof X.envio === 'object') Object.assign(N.envio, clon(X.envio)); } } NC._log = []; Object.keys(NC).filter((k) => /^_auto/.test(k)).forEach((k) => { delete NC[k]; }); NC.cargar(); };
   NC.base = () => !!NC.X();
   NC.copia = () => { const X = NC.X(); if (X && (NC._X !== X || !Array.isArray(NC.E))) NC.cargar(); if (X) return NC.E; const N = NC.N(); if (!N) return []; if (!Array.isArray(N.cola)) N.cola = clon(N.colaEjemplo || []); return N.cola; };
   NC.lista = () => { const L = NC.copia().map(NC.norm); if (NC.base()) return L; const N = NC.N(); return L.concat(((N && N.bitacora) || []).map(NC.deBitacora)); };
+  NC.cuando = (n) => NC.ec(n.enviadoEn || n.fecha || ''); // fecha real del registro: enviado o, si no salió, creado
   NC.fila = (id) => NC.lista().find((n) => n.id === sd(id)) || null;
   NC.sinDestinatario = (n, env) => { env = env || NC.envio(); return /^\[Sin destinatario/i.test(sd(n.asunto)) || (!!env.sinDestinatario && n.destinatario === env.sinDestinatario && !n.destinatarioNombre); };
   NC.rolSinDest = (n) => { const m = /^\[Sin destinatario:\s*([^\]]+)\]/i.exec(sd(n.asunto)); return m ? m[1].trim() : (n.rolDestino || ''); };
@@ -94,7 +96,8 @@
   NC.contexto = (caso, valores, fila) => { const V = (valores ? valores(caso) : null) || {}, vals = V.vals || {}, ctx = {}, C = W.SIRIUS_COMPANIA || {};
     Object.keys(vals).forEach((k) => { if (vals[k] == null || vals[k] === '') return; const p = k.split('.'); let o = ctx; for (let i = 0; i < p.length - 1; i++) { if (typeof o[p[i]] !== 'object' || o[p[i]] == null) o[p[i]] = {}; o = o[p[i]]; } if (typeof o[p[p.length - 1]] !== 'object') o[p[p.length - 1]] = vals[k]; });
     ctx.tablas = {}; Object.keys(V.filas || {}).forEach((k) => { ctx.tablas[k] = (V.filas[k] || []).map((r) => Object.assign({}, r)); });
-    const enl = ctx.enlace || {}; ctx.enlace = Object.assign({}, enl, { url: enl.url || enl.portal || '', vence: enl.vence || '' });
+    const enl = ctx.enlace || {}; ctx.enlace = { url: enl.url || '', vence: enl.vence || '' }; /* N-2c: el enlace activo del cliente de ESE caso; vacío si no hay (nunca el portal general) */
+    const env0 = ((NC.N() || {}).envio || {}).enlaces || {}; ctx.enlaces = Object.assign({ autoagendamiento: '', autoinspeccion: '', caso: '', portal: env0.portal || '', backoffice: env0.backoffice || '' }, typeof ctx.enlaces === 'object' ? ctx.enlaces : {});
     ctx.compania = Object.assign({ nombre: C.nombre || 'Aseguradora del Sur' }, typeof ctx.compania === 'object' ? ctx.compania : {});
     ctx.mensaje = typeof ctx.mensaje === 'string' ? ctx.mensaje : '';
     const n = fila || {}; ctx.destinatario = fila ? { nombre: n.destinatarioNombre || '', rol: n.rolDestino || '', sinDestino: NC.sinDestinatario(n) } : { nombre: (ctx.contacto || {}).nombre || '', rol: NC.rolDe(n.plantilla), sinDestino: false };
@@ -104,6 +107,11 @@
   NC.R = () => W.SiriusCorreoRender || null;
   NC.htmlDe = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && plantilla ? R.html(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : ''; };
   NC.asuntoPl = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && plantilla ? R.asunto(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : ''; };
+  NC.avisosDe = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && R.avisos && plantilla ? R.avisos(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : []; };
+  // N-2c: versión vigente de la configuración en la base (configuracion_vigente). La conexión la entrega en configuracion[clave] { version, fecha, por, datos };
+  // si no, la que dejó la última publicación en esta sesión. Se publica siempre sobre la vigente (versión nueva = vigente + 1).
+  NC.vigente = (clave) => { clave = clave || 'SIRIUS_NOTIFICACIONES'; const X = W.SIRIUS_CONEXION, c = X && X.activo === true && X.configuracion ? X.configuracion[clave] : null, o = W[clave] || {};
+    return c && c.version != null ? { version: Number(c.version), fecha: c.fecha || '', por: c.por || '' } : o.__version != null ? { version: Number(o.__version), fecha: o.__fecha || '', por: o.__por || '' } : null; };
   NC.huella = (t) => { let h = 2166136261; t = sd(t); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('0000000' + h.toString(16)).slice(-8); };
   // El correo dentro de un iframe (srcdoc): el mismo HTML que se envía, sin los estilos de SIRIUS.
   NC.CorreoFrame = function (props) { const h = React.createElement, ref = React.useRef(null), [alto, setAlto] = React.useState(props.alto || 480), ancho = props.ancho || 640;
@@ -116,7 +124,8 @@
     const cab = h('dl', { className: 'nc-mh' }, h('dt', null, 'De'), h('dd', null, (env.nombreRemitente ? env.nombreRemitente + ' · ' : '') + (env.remitente || '—')), h('dt', null, 'Para'), h('dd', null, NC.sinDestinatario(n, env) ? h('span', null, h('span', { className: 'nc-sindest' }, '[Sin destinatario]'), ' ' + NC.rolSinDest(n) + ' no tiene correo · va a ' + n.destinatario) : (n.destinatarioNombre ? n.destinatarioNombre + ' · ' : '') + (n.rolDestino ? n.rolDestino + ' · ' : '') + n.destinatario), h('dt', null, 'Asunto'), h('dd', { className: 'nc-as' }, asunto || '—'));
     if (!p || !p.correo) return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('div', { className: 'nc-mb' }, h('p', { className: 'nc-txt' }, n.contenido || 'Este correo no usa plantilla: la base arma el texto.')));
     if (!NC.R()) return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('p', { className: 'nc-txt', style: { padding: 16 } }, 'Cargando el armado del correo…'));
-    return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h(NC.CorreoFrame, { html: NC.htmlDe(p, n.caso, props.valores, n), ancho: 640, zoom: props.zoom || 0.95, titulo: 'Correo: ' + (asunto || '') })); };
+    const av = NC.avisosDe(p, n.caso, props.valores, n);
+    return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, av.length ? h('div', { className: 'nc-res err', role: 'note', 'data-nc-aviso-boton': '', style: { borderRadius: 0 } }, av.join(' ')) : null, h(NC.CorreoFrame, { html: NC.htmlDe(p, n.caso, props.valores, n), ancho: 640, zoom: props.zoom || 0.95, titulo: 'Correo: ' + (asunto || '') })); };
   // Escena correoigual: la vista previa (la misma función del editor) y el HTML que arma sirius-correo-render.js con el contexto en JSON, lado a lado.
   NC.Comparar = function (props) { NC.estilos(); const h = React.createElement, N = NC.N() || {}, R = NC.R(), p = N.plantilla ? N.plantilla(props.plantilla) : null, [caso, setCaso] = React.useState(props.caso || ((props.casos || [])[0] || {}).id || '');
     if (!p || !R) return h('p', null, 'Cargando…'); NC._valores = props.valores; // para la verificación
@@ -172,7 +181,7 @@
     const k = NC.cuenta(L), est = ['Por aprobar', 'Pendiente', 'Enviado', 'Fallido', 'Rechazado'].concat(NC.ESTADOS.filter((e) => ['Por aprobar', 'Pendiente', 'Enviado', 'Fallido', 'Rechazado'].indexOf(e) < 0 && L.some((n) => n.estado === e)));
     const reglas = Array.from(new Set(L.map((n) => n.regla).filter(Boolean))).sort(), casos = Array.from(new Set(L.map((n) => n.caso).filter(Boolean))).sort();
     const vis = L.filter((n) => (f.estado === 'all' || (f.estado === 'Simulado' ? (n.simulado || n.estado === 'Simulado') : n.estado === f.estado)) && (f.regla === 'all' || n.regla === f.regla) && (f.canal === 'all' || n.canal === f.canal) && (f.caso === 'all' || n.caso === f.caso) && (!f.desde || sd(n.fecha).slice(0, 10) >= f.desde))
-      .sort((a, b) => { const p = (n) => n.estado === 'Por aprobar' ? 0 : n.estado === 'Fallido' && !n.antigua ? 1 : 2; return p(a) - p(b) || (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0); }); // primero lo que espera al Administrador
+      .sort((a, b) => { const fa = NC.cuando(a), fb = NC.cuando(b); return fa < fb ? 1 : fa > fb ? -1 : 0; }); // N-2c: del más reciente al más antiguo, por la fecha real (enviado o creado); los «Simulado» van en el mismo orden
     const selOk = sel.filter((id) => vis.some((n) => n.id === id && n.estado === 'Por aprobar')), selectable = vis.filter((n) => n.estado === 'Por aprobar' && !n.antigua), todos = selectable.length > 0 && selectable.every((n) => sel.indexOf(n.id) >= 0);
     const hayF = f.estado !== 'all' || f.regla !== 'all' || f.canal !== 'all' || f.caso !== 'all' || !!f.desde;
     const correr = (tipo, datos, despues) => { if (!props.onAccion || ocupado) return; setOcupado(true); Promise.resolve(props.onAccion(tipo, datos)).then((r) => { r = r || {}; setOcupado(false); setLog((l) => [{ tipo, datos, r: { ok: r.ok !== false, mensaje: r.mensaje || '', enviados: r.enviados, fallidos: r.fallidos } }].concat(l).slice(0, 6)); if (despues) despues(r); }, () => setOcupado(false)); };
@@ -202,12 +211,12 @@
       if (admin && !n.antigua && ['Fallido', 'Rechazado', 'Omitido'].indexOf(n.estado) >= 0) acc.push(h('button', { key: 'e', type: 'button', className: 'nc-btn3', 'data-nc-reenviar': n.id, onClick: () => correr('reenviarNotificacion', { id: n.id }, (r) => setRes({ txt: r.ok === false ? r.mensaje : (r.mensaje || 'Volvió a la cola'), ok: r.ok !== false })) }, 'Reenviar'));
       return h('tr', { key: n.id, className: (on ? 'sel ' : '') + (sim ? 'sim ' : '') + (pa ? 'pa' : ''), 'data-nc-fila': n.id, 'data-nc-estado': n.estado },
         h('td', null, pa && admin ? h('input', { type: 'checkbox', checked: on, 'aria-label': 'Elegir el correo ' + n.id, onChange: () => setSel((s) => on ? s.filter((x) => x !== n.id) : s.concat([n.id])) }) : null),
-        h('td', { style: { whiteSpace: 'nowrap' } }, NC.fecha(n.fecha), n.enviadoEn ? h('span', { className: 'nc-sub' }, 'Salió ' + NC.fecha(n.enviadoEn).slice(-5)) : null),
+        h('td', { style: { whiteSpace: 'nowrap' } }, NC.fecha(NC.cuando(n)), n.enviadoEn && n.enviadoEn !== n.fecha ? h('span', { className: 'nc-sub' }, 'Creado ' + NC.fecha(n.fecha)) : null),
         h('td', null, n.caso ? h('button', { type: 'button', className: 'nc-btn3', onClick: () => props.onCaso && props.onCaso(n.caso) }, n.caso) : '—'),
         h('td', null, NC.reglaNombre(n.regla), h('span', { className: 'nc-sub' }, (n.regla && /^R\d+$/.test(n.regla) ? n.regla + ' · ' : '') + (props.canalNombre ? props.canalNombre(n.canal) : n.canal))),
         h('td', null, sinD ? h('span', { className: 'nc-sindest' }, '[Sin destinatario]') : (n.destinatarioNombre || n.destinatario), h('span', { className: 'nc-sub' }, sinD ? NC.rolSinDest(n) + ' · va a ' + n.destinatario : [n.rolDestino, n.canal === 'correo' && n.destinatarioNombre ? n.destinatario : ''].filter(Boolean).join(' · '))),
         h('td', null, NC.asuntoDe(n, props.valores)),
-        h('td', null, Pill(h, n.estado), sim ? h('span', { className: 'nc-pill sim', style: { marginTop: 4 }, title: 'WhatsApp, SMS y En SIRIUS: no salen todavía' }, 'Simulado') : null, n.aprobadoPor && n.estado !== 'Por aprobar' ? h('span', { className: 'nc-sub' }, 'Aprobó ' + n.aprobadoPor) : null, n.rechazadoPor ? h('span', { className: 'nc-sub' }, 'Rechazó ' + n.rechazadoPor) : null),
+        h('td', null, Pill(h, n.estado), sim && n.estado !== 'Simulado' ? h('span', { className: 'nc-pill sim', style: { marginTop: 4 }, title: 'WhatsApp, SMS y En SIRIUS: no salen todavía' }, 'Simulado') : null, n.aprobadoPor && n.estado !== 'Por aprobar' ? h('span', { className: 'nc-sub' }, 'Aprobó ' + n.aprobadoPor) : null, n.rechazadoPor ? h('span', { className: 'nc-sub' }, 'Rechazó ' + n.rechazadoPor) : null),
         h('td', { style: { textAlign: 'center' } }, String(n.intentos || 0)),
         h('td', { style: { color: n.estado === 'Fallido' ? '#912018' : 'inherit' } }, n.error || (n.errorPrevio ? h('span', { className: 'nc-sub' }, 'Antes: ' + n.errorPrevio) : '—')),
         h('td', null, h('div', { className: 'nc-acc' }, acc))); });

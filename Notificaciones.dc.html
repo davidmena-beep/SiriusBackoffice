@@ -126,8 +126,8 @@ class Component extends DCLogic {
     if (e === 'polizaoff') { st.tab = 2; st.panel = 'var'; st.orig = 'caso.poliza'; st.vQ = 'póliza'; }
     // Etapa 10n-plantillas: el editor ocupa la página (EditorPlantilla.dc.html).
     if (this.EDIT_ESC.includes(e)) { st.tab = 1; st.editor = { id: '', dup: '', escena: e === 'nuevaplant' ? '' : e, n: 1 }; }
-    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo' }; if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
-    if (e === 'correoigual') st.tab = 1; if (e === 'interruptor') st.tab = 5;
+    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo', cxboton: 'botondestino', cxvigente: 'vigente' }; /* N-2c: botondestino y plantillapublicada abren el editor */ if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
+    if (e === 'correoigual') st.tab = 1; if (e === 'interruptor' || e === 'cxorden') st.tab = 5;
     return st;
   })();
   N() { return window.SIRIUS_NOTIFICACIONES || null; }
@@ -314,7 +314,7 @@ class Component extends DCLogic {
     this.sincronizar(st.panel === 'var' ? (SVx => { const x = SVx && SVx.info(st.orig); return (x && x.disponible ? 'Activó' : 'Apagó') + ' «Disponible» de {{' + st.orig + '}}'; })(this.SV()) : st.panel === 'inact' ? 'Inactivó la regla ' + st.orig : st.panel === 'react' ? 'Activó la regla ' + st.orig : st.orig ? 'Editó la regla ' + st.orig : 'Agregó una regla');
     this.setState({ panel: null }); this.restoreFocus();
     /* Etapa C2-10 · DEC-187: con la conexión, el cambio se publica en la base (SIRIUS_NOTIFICACIONES completo, sin funciones); con { ok: false } se revierte */
-    const SP = window.SiriusPublicar, panel = st.panel, ref = st.orig; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones',
+    const SP = window.SiriusPublicar, panel = st.panel, ref = st.orig; if (SP && SP.activo()) SP.publicar({ base: ((window.SiriusNotifCola && window.SiriusNotifCola.vigente()) || {}).version, clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones',
       revertir: () => { N.reglas.splice(0, N.reglas.length, ...snap); H.splice(0, H.length - h0); if (panel === 'var') { const SV = this.SV(), x = SV && SV.info(ref); if (x) SV.setDisponible(x.clave, !x.disponible); } this.forceUpdate(); },
       alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: ref || '', accion: 'Publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } });
   }
@@ -419,7 +419,7 @@ class Component extends DCLogic {
   guardarEnvio(nuevo, motivo) { const N = this.N(), antes = JSON.parse(JSON.stringify(N.envio || {})), H = this.hist(), h0 = H.length, by = this.user();
     N.envio = nuevo; H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Cambió la configuración de envío', motivo }); this.forceUpdate();
     const SP = window.SiriusPublicar; if (!SP || !SP.activo()) return Promise.resolve({ ok: true, mensaje: 'Configuración de envío guardada en esta sesión (sin la conexión).' });
-    return SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones · Configuración de envío', aviso: 'Configuración de envío guardada en la base',
+    return SP.publicar({ base: ((window.SiriusNotifCola && window.SiriusNotifCola.vigente()) || {}).version, clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones · Configuración de envío', aviso: 'Configuración de envío guardada en la base',
       revertir: () => { N.envio = antes; H.splice(0, H.length - h0); this.forceUpdate(); },
       alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Configuración de envío publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } })
       .then(r => r && r.ok === false ? r : { ok: true, mensaje: 'Guardado en la base (versión ' + ((r || {}).version || '') + ').' }); }

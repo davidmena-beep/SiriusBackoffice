@@ -20,6 +20,9 @@
 // Reemplaza a «Plantillas de notificación». Las notificaciones en la campana de SIRIUS son el canal «En SIRIUS».
 // Decisiones: DEC-111 a DEC-115.
 (function () {
+  // N-2c · DEC-257: si el archivo se vuelve a ejecutar (cada página que lo incluye lo carga otra vez), se conserva el objeto que ya existe: puede tener la
+  // versión vigente de la base o cambios de la sesión. Antes se reemplazaba por el del archivo y la plantilla publicada volvía a verse como la anterior.
+  if (window.SIRIUS_NOTIFICACIONES && window.SIRIUS_NOTIFICACIONES.__cargada) return;
   const N = {
     version: '1.6', vigencia: 'Provisional',
     // ---------- Canales ----------
@@ -331,5 +334,6 @@
     { id: 'NE-3112', caso: '20186', regla: 'R19', canal: 'correo', destinatario: 'jvillacis@translitoral', destinatarioNombre: 'Jorge Villacís Mora', rolDestino: 'Cliente', estado: 'Fallido', asunto: 'Agenda la inspección de tu caso 20186', plantilla: 'enlace_autoagendamiento', fecha: '2026-10-17T10:10', error: 'Dirección rechazada por el servidor de correo: «jvillacis@translitoral» no es una dirección válida', requiereAprobacion: true, aprobadoPor: 'Andrea Salazar', aprobadoEn: '2026-10-17T10:12', intentos: 1 },
     { id: 'NE-3113', caso: '20163', regla: 'R23', canal: 'correo', destinatario: 'jorge.paredes@gmail.com', destinatarioNombre: 'Jorge Andrés Paredes', rolDestino: 'Cliente', estado: 'Rechazado', asunto: 'Tu solicitud de inspección se canceló', plantilla: 'solicitud_cancelada', contenido: 'Tu solicitud de inspección del caso 20163 se canceló.', fecha: '2026-10-15T16:20', error: 'El bróker avisa al cliente; no se envía desde SIRIUS', rechazadoPor: 'Andrea Salazar', requiereAprobacion: true, intentos: 0 },
   ];
+  Object.defineProperty(N, '__cargada', { value: true, enumerable: false });
   window.SIRIUS_NOTIFICACIONES = N;
 })();

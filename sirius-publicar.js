@@ -25,7 +25,7 @@
     return pr.then((r) => r || { ok: true }, (e) => ({ ok: false, mensaje: String((e && e.message) || e || 'Error de la conexión') })).then((r) => {
       if (r.ok === false) { if (o.revertir) o.revertir(); toast((r.mensaje || 'No se pudo publicar en la base') + '. Se deshizo el cambio.'); return r; }
       const fecha = ctx.ahora ? ctx.ahora() : '18/10/26 · 20:30', info = { version, fecha, motivo: carga.motivo, por: ctx.usuario ? ctx.usuario() : '', pantalla: o.pantalla || '' };
-      (reg[o.clave] = reg[o.clave] || []).unshift(info); if (o.alPublicar) { try { o.alPublicar(info); } catch (e) { /* nada */ } }
+      (reg[o.clave] = reg[o.clave] || []).unshift(info); try { const obj = W[o.clave]; if (obj && typeof obj === 'object') { obj.__version = version; obj.__fecha = r.fecha || ''; obj.__por = info.por; } } catch (e) { /* nada */ } /* N-2c: la versión vigente queda anotada en el objeto (la siguiente se publica sobre esta) */ if (o.alPublicar) { try { o.alPublicar(info); } catch (e) { /* nada */ } }
       toast(o.aviso || 'Publicado: la app y los portales lo verán al volver a abrirse'); avisar(); /* C2-12: `aviso` propio (p. ej. un borrador guardado no cambia lo que usan la app ni los portales) */ return Object.assign({}, r, info, { ok: true }); }); };
   W.SiriusPublicar = S;
 })();

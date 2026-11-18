@@ -1,4 +1,4 @@
-// SIRIUS · Un solo armado del correo (v1.0 · etapa N-2b · DEC-257 · 18/11/2026)
+// SIRIUS · Un solo armado del correo (v1.1 · etapa N-2c · DEC-257 · 18/11/2026; v1.0 en N-2b)
 // Lo usan la vista previa del editor de plantillas, «Ver correo» de la Bitácora (navegador: window.SiriusCorreoRender) y la función de envío
 // sirius-notificar de la base (module.exports o globalThis.SiriusCorreoRender). No usa el DOM ni depende de otros archivos: lo que se ve es lo que se envía.
 //   SiriusCorreoRender.html(plantilla, contexto, opciones) → HTML completo del correo (estilos en línea, ancho máximo 600 px, Mulish con respaldo Arial).
@@ -6,7 +6,8 @@
 // plantilla: la de SIRIUS_NOTIFICACIONES.plantillas (usa plantilla.correo { asunto, estilo, bloques }) o directamente { asunto, estilo, bloques }.
 // contexto (como lo arma la base): caso { numero, poliza, ramo, sucursal }, asegurado { nombre }, contacto { nombre, correo }, broker { nombre },
 //   visita { fecha, franja, direccion, modalidad, inspector }, garantias { fechaLimite, diasRestantes, pendientes },
-//   tablas { garantias: [{ codigo, nombre, detalle, estado, respaldo, fechaCumplimiento }], … }, enlace { url, vence }, mensaje,
+//   tablas { garantias: [{ codigo, nombre, detalle, estado, respaldo, fechaCumplimiento }], … }, enlace { url, vence } (el enlace activo del cliente de ESE caso; vacío si no hay),
+//   enlaces { autoagendamiento, autoinspeccion, caso (Back-office: …?caso=N), portal, backoffice } (SQL 59d), mensaje,
 //   destinatario { nombre, rol, sinDestino }, compania { nombre }.
 // opciones: { enlaces: { portal, backoffice }, assets: 'https://…/', archivos: ['banner.png', …] (si se da, solo esos existen),
 //   logo: { src, alt }, faltante: '—' (lo que va cuando una variable no tiene dato) }.
@@ -27,10 +28,21 @@
   R.cuerpo = (p) => (p && p.correo ? p.correo : p) || {};
   R.asunto = (plantilla, contexto, opciones) => R.llenar(R.cuerpo(plantilla).asunto || '', contexto, opciones, true).replace(/\s+/g, ' ').trim();
   R.externo = (rol) => /cliente|asegurado|contacto|br[oó]ker|aps/i.test(sd(rol));
-  // Destino de un botón: «sirius» lleva al portal (clientes y brókeres) o al Back-office (internos); si no, la URL escrita.
-  R.destino = (d, ctx, op) => { const en = (op && op.enlaces) || {}, des = (ctx && ctx.destinatario) || {};
-    if (d === 'sirius' || !d) return R.externo(des.rol) || !des.rol ? (en.portal || R.valor(ctx, 'enlace.url') || en.backoffice || '') : (en.backoffice || en.portal || R.valor(ctx, 'enlace.url') || '');
-    return R.llenar(d, ctx, op, true); };
+  // N-2c · Destino de un botón (bloque «botón»): un valor de R.DESTINOS o una dirección (URL, admite variables {{…}}).
+  //   'sirius' (automático, plantillas anteriores): clientes y brókeres → el enlace del cliente del caso; internos → el caso en el Back-office.
+  //   Si el destino no tiene dirección para ese caso, el botón no sale (nunca un enlace roto): R.avisos lo explica en la vista previa.
+  R.DESTINOS = [['cliente', 'Enlace del cliente para este caso (recomendado para clientes)'], ['autoagendamiento', 'Autoagendamiento del caso'], ['autoinspeccion', 'Autoinspección del caso'],
+    ['caso', 'Caso en el Back-office (recomendado para internos)'], ['portal', 'Portal general de autoagendamiento'], ['backoffice', 'Back-office (inicio)'], ['sirius', 'Automático: cliente → su enlace; interno → el caso'], ['url', 'Otra dirección (URL)']];
+  R.nombreDestino = (d) => { const x = R.DESTINOS.find((y) => y[0] === d); return x ? x[1].replace(/ \(recomendado.*\)$/, '') : 'Otra dirección (URL)'; };
+  R.esUrl = (u) => /^(https?:\/\/[^\s"'<>]+|mailto:[^\s"'<>]+)$/i.test(sd(u).trim());
+  R.tipoDestino = (d, ctx) => { const des = (ctx && ctx.destinatario) || {}; if (!d || d === 'sirius') return R.externo(des.rol) || !des.rol ? 'cliente' : 'caso'; return R.DESTINOS.some((y) => y[0] === d) ? d : 'url'; };
+  R.destino = (d, ctx, op, url) => { ctx = ctx || {}; const en = Object.assign({}, (op && op.enlaces) || {}), ce = ctx.enlaces || {}, t = R.tipoDestino(d, ctx);
+    let u = t === 'cliente' ? R.valor(ctx, 'enlace.url') : t === 'autoagendamiento' ? ce.autoagendamiento : t === 'autoinspeccion' ? ce.autoinspeccion : t === 'caso' ? ce.caso
+      : t === 'portal' ? (ce.portal || en.portal) : t === 'backoffice' ? (ce.backoffice || en.backoffice) : R.llenar(t === 'url' && d === 'url' ? url : d, ctx, { faltante: '' }, true);
+    u = sd(u).trim(); return R.esUrl(u) && !/\{\{|\}\}/.test(u) ? u : ''; };
+  // Avisos de la vista previa (lo mismo que hará el envío): botones que no saldrán porque su destino no tiene dirección para este caso.
+  R.avisos = (plantilla, contexto, opciones) => { const out = []; (R.cuerpo(plantilla).bloques || []).forEach((b, i) => { if (b.tipo !== 'boton' || R.destino(b.destino, contexto, opciones, b.url)) return; const t = R.tipoDestino(b.destino, contexto), txt = R.llenar(b.texto || 'Abrir', contexto, opciones, true);
+    out.push(t === 'cliente' ? 'Este caso no tiene enlace activo: el botón «' + txt + '» no saldrá.' : t === 'url' ? 'La dirección del botón «' + txt + '» no es válida para este caso: el botón no saldrá.' : '«' + R.nombreDestino(t) + '» no tiene dirección para este caso: el botón «' + txt + '» no saldrá.'); }); return out; };
   // Imagen de un banner o pie: la propia (b.img, solo en el editor), la del almacén (assets + archivo) o el logo.
   R.imagen = (b, op) => { op = op || {}; if (b.img) return { src: b.img, alt: b.alt || '' };
     const existe = b.archivo && op.assets && (!Array.isArray(op.archivos) || op.archivos.indexOf(b.archivo) >= 0);
@@ -62,8 +74,8 @@
       return fila('<div style="background:' + est.prim + ';color:#FFFFFF;padding:' + Math.round(alto / 3) + 'px 24px;text-align:center;font-size:18px;font-weight:700;">' + R.llenar(b.alt || 'Aseguradora del Sur', ctx, op) + '</div>', '0 0 16px'); }
     if (t === 'texto') return fila('<p style="margin:0;font-size:15px;line-height:1.55;color:' + est.texto + ';">' + lineas(R.llenar(b.contenido, ctx, op)) + '</p>');
     if (t === 'tabla') return fila(R.tabla(b, ctx, op, est));
-    if (t === 'boton') { const sec = b.estilo === 'secundario', href = R.destino(b.destino, ctx, op);
-      return fila('<a href="' + esc(href || '#') + '" target="_blank" style="display:inline-block;padding:12px 22px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;' + (sec ? 'background:#FFFFFF;color:' + est.prim + ';border:2px solid ' + est.prim + ';' : 'background:' + est.prim + ';color:#FFFFFF;border:2px solid ' + est.prim + ';') + '">' + R.llenar(b.texto || 'Abrir', ctx, op) + '</a>'); }
+    if (t === 'boton') { const sec = b.estilo === 'secundario', href = R.destino(b.destino, ctx, op, b.url); if (!href) return ''; // sin dirección para este caso: el botón no sale
+      return fila('<a href="' + esc(href) + '" target="_blank" style="display:inline-block;padding:12px 22px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;' + (sec ? 'background:#FFFFFF;color:' + est.prim + ';border:2px solid ' + est.prim + ';' : 'background:' + est.prim + ';color:#FFFFFF;border:2px solid ' + est.prim + ';') + '">' + R.llenar(b.texto || 'Abrir', ctx, op) + '</a>'); }
     if (t === 'separador') return fila('<hr style="border:0;border-top:1px solid #E4E7EC;margin:0;">');
     if (t === 'pie') { const im = R.imagen(b, op);
       return fila((im ? '<img src="' + esc(im.src) + '" alt="' + esc(R.llenar(im.alt, ctx, op, true)) + '" height="40" style="display:block;height:40px;border:0;margin:0 0 8px;">' : '') + (b.texto ? '<p style="margin:0;font-size:12px;line-height:1.5;color:#667085;">' + lineas(R.llenar(b.texto, ctx, op)) + '</p>' : ''), '16px 24px 24px;border-top:1px solid #E4E7EC'); }
