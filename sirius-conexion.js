@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 18/11/2026 · N-1 · SQL 58: la bitácora de notificaciones trae la cola real (asunto, rol, aprobación, intentos; estados Pendiente, Por aprobar, Enviado, Fallido, Rechazado) y «Enviar ahora» llama a la función sirius-notificar.
 // 18/11/2026 · U-1: al crear, reinvitar o cambiar el correo de un invitado, la invitación sale por correo con la función sirius-invitar (el mensaje dice si salió; si no, se copia el enlace como antes).
 // 17/11/2026 · P-6g-2 · SQL 55: SIRIUS_CONEXION.garantias[] y .notificacionesEnvio[] con el contrato de SiriusGarantiasBase (sin el SQL 55, quedan sin definir y siguen los datos de demostración).
 // 16/11/2026 · P-6g · Corrección: SIRIUS_CONEXION.usuario con agenciaRuc, identificacion y tipo (Liquidaciones reconoce al proveedor: Finanzas de agencia o independiente).
@@ -253,6 +254,12 @@
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
+        if (r.ok && r.funcion && tipo === 'enviarNotificacionesAhora') {   // N-1: el Administrador manda ya los correos pendientes (función sirius-notificar)
+          return renovar().then(function () { return fetch(r.funcion, { method: 'POST', headers: cab(), body: '{"origen":"backoffice"}' }); })
+            .then(function (x) { return x.json().catch(function () { return { ok: false, mensaje: 'La función de envío no respondió (¿está publicada?)' }; }); })
+            .catch(function () { return { ok: false, mensaje: 'La función de envío no respondió (¿está publicada?)' }; })
+            .then(function (m) { r.ok = !!(m && m.ok); r.mensaje = (m && m.mensaje) || 'Sin respuesta'; r.enviados = m && m.enviados; r.fallidos = m && m.fallidos; return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); });
+        }
         if (r.ok && r.activacion && /^(crearUsuario|reinvitarUsuario|editarUsuario)$/.test(tipo)) {   // U-1: la invitación sale por correo (función sirius-invitar)
           var dd = datos || {}, cb = dd.cambios || {}, correo = String(dd.nuevoEmail || cb.email || dd.email || '').trim().toLowerCase();
           return renovar().then(function () { return fetch(URLB + '/functions/v1/sirius-invitar', { method: 'POST', headers: cab(), body: JSON.stringify({ email: correo, redirectTo: r.activacion, nombre: dd.nombre || cb.nombre || '' }) }); })
@@ -289,7 +296,7 @@
       ,get('liquidaciones?select=id,numero,version,estado,proveedor_tipo,observaciones,motivo,subtotal,iva,total,factura_id,versiones,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&numero=not.is.null&order=numero').catch(function () { return null; })
       ,get('facturas?select=id,proveedor_tipo,clave,numero,fecha,sri,liquidaciones,honorarios,subtotal,estado,motivo,pago,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&order=creado').catch(function () { return null; })
       ,get('garantias?select=id,caso,riesgo,codigo,titulo,texto,ramo,prioridad,plazo_dias,vence,estado,origen,respaldo,cumplida_en,ampliaciones,endosos,historial&order=id').catch(function () { return null; })
-      ,get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,caso:casos(numero)&order=enviado_en.desc&limit=300').catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return null; })
+      ,get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,asunto,plantilla,destinatario_nombre,rol_destino,requiere_aprobacion,aprobado_por,aprobado_en,intentos,creado,caso:casos(numero)&order=creado.desc&limit=300').catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return null; })
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
@@ -326,7 +333,9 @@
           prioridad: g.prioridad || 'Media', plazoDias: g.plazo_dias, vence: g.vence || null, estado: g.estado, origen: g.origen, respaldo: g.respaldo || null, cumplidaEn: g.cumplida_en ? isoLocal(g.cumplida_en) : null,
           ampliaciones: g.ampliaciones || [], endosos: g.endosos || [], historial: g.historial || [] }; });   // P-6g-2 · SQL 55
       if (Array.isArray(res[9])) CX.notificacionesEnvio = res[9].map(function (n) { return { id: n.id, caso: n.caso ? String(n.caso.numero) : '', regla: n.regla || '', canal: n.canal || '', destinatario: n.destinatario || '',
-          estado: n.estado === 'Simulado' ? 'Enviado' : n.estado, contenido: n.contenido || '', fecha: n.enviado_en ? isoLocal(n.enviado_en) : null, error: n.error || null }; });
+          estado: n.estado === 'Simulado' ? 'Enviado' : n.estado, contenido: n.contenido || '', fecha: n.enviado_en ? isoLocal(n.enviado_en) : (n.creado ? isoLocal(n.creado) : null), error: n.error || null,
+          asunto: n.asunto || '', plantilla: n.plantilla || null, destinatarioNombre: n.destinatario_nombre || '', rolDestino: n.rol_destino || '', simulado: n.estado === 'Simulado',
+          requiereAprobacion: !!n.requiere_aprobacion, aprobadoPor: n.aprobado_por || null, aprobadoEn: n.aprobado_en ? isoLocal(n.aprobado_en) : null, intentos: n.intentos || 0 }; });   // N-1 · SQL 58: la cola real
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',
