@@ -24,6 +24,7 @@
   // Zonas publicadas de una ciudad (todas, con su estado) y las activas.
   const zonasCiudad = (cod) => { const z = Z() && Z().publicadasDe ? Z().publicadasDe(cod) : null; return z ? z.zonas : []; };
   const activasCiudad = (cod) => zonasCiudad(cod).filter((x) => x.estado !== 'Inactiva');
+  S.zonasCiudad = (cod) => zonasCiudad(cod); S.zonasActivas = (cod) => activasCiudad(cod); // U-3a: para la ficha única (mapa y lista de zonas)
   S.zonaNombre = (cod, id) => { const x = zonasCiudad(cod).find((y) => y.id === id); return x ? x.nombre : id; };
   S.normalizar = (c) => { c = c || {}; const modo = ['todas', 'sucursales', 'ciudad'].indexOf(c.modo) >= 0 ? c.modo : 'todas';
     const ciudades = (Array.isArray(c.ciudades) ? c.ciudades : []).filter((x) => x && x.cod).map((x) => ({ cod: String(x.cod), zonas: arr(x.zonas) })).filter((x, i, a) => a.findIndex((y) => y.cod === x.cod) === i);
@@ -38,13 +39,19 @@
   S.zonasHeredadas = (n) => { const A = W.SIRIUS_AGENDA || {}, r = (A.red || []).find((x) => mismo(x.inspector, n)), d = (A.disponibilidad || []).find((x) => mismo(x.inspector, n));
     const AP = W.SiriusAppInspectorLogic, ov = AP && AP.perfilDe ? AP.perfilDe(n) : null; return arr(ov && ov.zonas && ov.zonas.length ? ov.zonas : r ? r.zonas : d ? d.zonas : []); };
   // Con la conexión: el usuario de la base (por nombre o correo) o el inspector de SIRIUS_CONEXION.inspectores.
-  const deBase = (n) => { const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase() || (x.identificacion && x.identificacion === claveDe(n))); if (u) return u.cobertura ? S.normalizar(u.cobertura) : S.migrar(u); }
+  const deBase = (n) => { const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase() || (x.identificacion && x.identificacion === claveDe(n))); if (u) return u.cobertura ? S.normalizar(u.cobertura) : (arr(u.zonas).length || !B.esInspector(u.roles) ? S.migrar(u) : { modo: 'ciudad', sucursales: [], ciudades: [] }); } /* U-3a · DEC-254: un inspector de la base sin cobertura ni zonas no recibe inspecciones (antes se migraba a «Todas») */
     const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) { const i = C.inspectores.find((x) => x && (x.nombre === n || (x.identificacion && x.identificacion === claveDe(n)))); if (i) return i.cobertura ? S.normalizar(i.cobertura) : S.migrar(i); } return null; };
   S.de = (ins) => { const n = nombreDe(ins), e0 = edDe(n); if (e0) return S.normalizar(e0);
     if (ins && typeof ins === 'object' && ins.cobertura) return S.normalizar(ins.cobertura);
     const b = n ? deBase(n) : null; if (b) return b;
     if (ins && typeof ins === 'object' && Array.isArray(ins.zonas)) return S.migrar(ins);
     return S.migrar({ zonas: S.zonasHeredadas(n) }); };
+  // U-3a · DEC-254: ¿la cobertura deja al inspector sin inspecciones? (modo por sucursales sin sucursales o por ciudad sin ciudades).
+  S.sinCobertura = (c) => { c = (c && c.modo) ? S.normalizar(c) : S.de(c); return (c.modo === 'sucursales' && !c.sucursales.length) || (c.modo === 'ciudad' && !c.ciudades.length); };
+  // Lo guardado solo en la sesión (no en la base): la ficha lo marca «Sin guardar en la base». deBase0 = lo que tiene la base.
+  S.enSesion = (n) => { const e0 = edDe(n); return e0 ? S.normalizar(e0) : null; };
+  S.deBase = (n) => deBase(n);
+  S.quitarSesion = (n) => { let k = 0; Object.keys(S.ed).forEach((x) => { if (x === n || x === claveDe(n) || mismo(x, n)) { delete S.ed[x]; k++; } }); if (k) avisar(); return k; };
   // ¿Cubre este lugar? lugar = { sucursal, ciudad (COD_CANTON), zonaId }.
   S.cubre = (ins, lugar) => { const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins); lugar = lugar || {};
     if (c.modo === 'todas') return { nivel: 'todas', por: 'Atiende todas las inspecciones' };
@@ -75,7 +82,7 @@
   S.corto = (ins) => { const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins);
     if (c.modo === 'todas') return 'Todas';
     if (c.modo === 'sucursales') return c.sucursales.length ? 'Sucursales: ' + c.sucursales.join(', ') : 'Sin sucursales';
-    return c.ciudades.length ? c.ciudades.map((x) => ciudadTxt(x, false)).join(' · ') : 'Sin ciudades'; };
+    return c.ciudades.length ? c.ciudades.map((x) => ciudadTxt(x, false)).join(' · ') : 'Sin cobertura'; }; // U-3a: antes «Sin ciudades»
   // Quita las zonas eliminadas (su id ya no existe en SIRIUS_ZONAS); se aplica al guardar.
   S.limpiar = (c) => { c = S.normalizar(c); if (c.modo !== 'ciudad') return { modo: c.modo, sucursales: c.modo === 'sucursales' ? c.sucursales : [], ciudades: [] };
     return { modo: 'ciudad', sucursales: [], ciudades: c.ciudades.map((x) => ({ cod: x.cod, zonas: x.zonas.filter((id) => zonasCiudad(x.cod).some((z) => z.id === id)), antes: x.zonas.length })).filter((x) => !(x.antes && !x.zonas.length)).map((x) => ({ cod: x.cod, zonas: x.zonas })) }; }; // G-2a2: si todas sus zonas de una ciudad se eliminaron, la ciudad sale (zonas vacías sería «toda la ciudad»)
@@ -100,6 +107,7 @@
     if (e === 'coberturazonainactiva') { const SZ = Z(); if (SZ && SZ.tocar) { const cz = SZ.tocar('1701'), x = cz.zonas.find((y) => y.id === 'z1701-5'); if (x && x.estado !== 'Inactiva') { x.estado = 'Inactiva'; SZ.registrar('1701', 'Desactivó ' + x.nombre, 'est:' + x.id); SZ.publicar('1701', 'Escena: zona fuera de servicio por obras en la vía.', 'Escena de demostración'); } }
       S.ed['Sofía Arteaga'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-5'] }, { cod: '0101', zonas: ['z0101-2', 'z0101-9'] }] }; }
     if (e === 'zonaseliminar') { S.ed['Mauricio Endara'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] }; S.ed['Diana Cárdenas'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-2', 'z1701-3'] }] }; }
+    if (e === 'usrsinguardar' || e === 'cxusrsesion') S.ed['Alexandre Abascal'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] }; /* U-3a: la cobertura de Alexandre Abascal quedó solo en la sesión (no en la base) */
     avisar(); };
   // Etapa G-2a2 · DEC-235: a quién afecta eliminar una zona y cómo sale de las coberturas al publicar.
   S.inspectores = () => { const out = [], add = (n) => { if (n && out.indexOf(n) < 0) out.push(n); }, A = W.SIRIUS_AGENDA || {};

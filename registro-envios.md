@@ -4,6 +4,99 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa U-3a
+
+Publiqué la versión 309 de SIRIUS. Usuarios tiene una lista con filtros y alertas y una sola ficha editable, que reemplaza «Ver» y «Editar». También encontré y corregí la causa del caso de Alexandre Abascal: la cobertura que quedaba solo en la sesión tenía prioridad sobre la de la base. Ahora la ficha parte de lo que tiene la base y marca «Sin guardar en la base» cuando no coincide (DEC-254). Las acciones de la base son las mismas: crearUsuario, editarUsuario, cambiarEstadoUsuario y reinvitarUsuario.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué toma del usuario | Antes | Ahora |
+|---|---|---|---|
+| Usuarios › lista | Todo | Tabla con «Ver ficha» (ojo), «Editar» (lápiz) y un menú; sin búsqueda ni alertas | Búsqueda y filtros (rol, tipo, agencia, estado, «Sin cobertura»), alertas «N invitados · N sin cobertura», clic en la fila = ficha, una sola acción «⋯» |
+| Usuarios › ficha | Todo | Dos vistas: «Ver» (con la cobertura y su propio guardado) y «Editar» (sin la cobertura) | Una ficha: secciones editables, cambios resaltados, un solo editarUsuario; lo guardado manda |
+| Agencias (inspectores por RUC) | tipo, agencia, agenciaRuc | Por RUC (`inspectoresDeAgencia`) | Igual; el tipo y la agencia se cambian en la ficha (editarUsuario manda agenciaRuc) |
+| Coordinar visita (candidatos por cobertura y zonas; «Agrupar por dirección») | cobertura, tipo, agencia | Un inspector de la base sin cobertura ni zonas contaba como «Todas» | Sin cobertura no es candidato («fuera de cobertura»); «Agrupar por dirección» no usa datos del usuario: sin cambios |
+| Agenda (filas de inspectores) | tipo, agencia, cobertura, jornada | Igual | Sin cambios en la pantalla; refleja lo guardado |
+| App del inspector (ofertas) | cobertura, recibe ofertas | Las ofertas van a quien cubre | Igual; «Recibe ofertas» queda en la ficha y en la base |
+| Liquidaciones (proveedor y tipo de inspector) | tipo, agencia, identificación | El inspector ve «Mis honorarios» según su tipo y agencia | Sin cambios en la pantalla; la ficha muestra «Honorarios» con la misma regla (`proveedorDe`) |
+| Inicio del Administrador (alertas) | estado, identificación | «Invitaciones pendientes» y «Fichas sin identificación» llevan a la lista filtrada | Igual: abren la lista nueva con el filtro |
+| Ciudades y zonas (zonas usadas por cada inspector) | cobertura | `conZona` lee la cobertura de cada inspector | Igual; ahora sin cobertura no cuenta |
+| Historial del usuario | Cambios | Panel aparte | Sección «Historial» de la ficha (con la conexión, lo enviado a la base) |
+| Página de entrada (activación e invitación por correo) | correo, estado | Enlace de activación en la ficha | Igual; además, «Invitación enviada por correo a …» cuando la base dice que salió, o el enlace con «Copiar enlace» |
+
+**Qué cambió**
+- **Lista:**
+  - Búsqueda por nombre, correo o identificación, y filtros por rol, tipo, agencia y estado.
+  - Columnas: usuario y correo, identificación (o «Sin identificación»), roles, tipo y agencia, cobertura («Sin cobertura» en rojo para los inspectores), estado («Invitado · vence en 3 d») y último acceso.
+  - Arriba, las alertas: «3 invitados (1 por vencer)» y «2 sin cobertura», que filtran la lista.
+  - Un clic en la fila abre la ficha. Cada fila tiene una sola acción «⋯». Se quitaron el ojo y el lápiz.
+- **Ficha única:**
+  - Cabecera: avatar, nombre, correo, último acceso, estado, roles y tipo, con «Volver a invitar» e «Inactivar…».
+  - Índice a la izquierda (con un punto donde hay cambios) y secciones: Datos e identificación, Acceso y roles, Inspección, Cobertura y zonas (mapa con las zonas marcadas y lista), Jornada, Facultad, Pagos e Historial.
+  - Quien no es inspector no ve Inspección, Cobertura ni Jornada.
+- **Guardar:**
+  - Cada cambio se resalta con su valor anterior («antes: Interno»).
+  - La barra fija «N cambios sin guardar · Motivo · Descartar · Guardar en la base» envía un solo editarUsuario con todos los cambios.
+  - Si la base rechaza un cambio, el mensaje sale en su sección y el cambio sigue resaltado, con «Sin guardar en la base».
+  - Al guardar con éxito, la ficha vuelve a leer la base.
+- **Correo de acceso:**
+  - De un Activo no se escribe encima: «Cambiar correo…» abre «Volver a invitar» con «Correo nuevo» y el aviso de desvinculación.
+  - De un Invitado, cambiarlo y guardar genera una invitación nueva.
+  - Después se muestra «Invitación enviada por correo a …» o, si no salió, el enlace con «Copiar enlace».
+- **Crear:** «Invitar usuario» abre la misma ficha en modo nuevo. Una cédula o un correo repetidos muestran el mensaje junto al campo con «Abrir la ficha de …».
+
+**Prueba cruzada** (escena `cxusrcobertura`, con la conexión simulada: Alexandre Abascal pasa a Agencia · Eurosurvey y a la cobertura Quito Norte y Centro)
+
+| Dónde | Antes de guardar | Después de «Guardar en la base» |
+|---|---|---|
+| Ficha | Interno · Sin cobertura | Agencia · Eurosurvey · «Atiende en Quito (Norte y Centro)» · Honorarios: los liquida Eurosurvey |
+| Lista | Interno · «Sin cobertura» | Eurosurvey · «Quito: Norte y Centro» |
+| Agencias | Eurosurvey: 4 inspectores (sin él) | Eurosurvey: 5 inspectores (Mauricio Endara, Alexandre Abascal, …) |
+| Agenda | «Alexandre Abascal · Interno · Sin cobertura» | «Alexandre Abascal · Agencia · Eurosurvey · Quito: Norte y Centro» |
+| Coordinar visita (50012, lugar en Quito, zona Norte) | «Alexandre Abascal (fuera de cobertura)» | En «Cubren la zona Norte (1)»: Alexandre Abascal · Agencia Eurosurvey |
+| Liquidaciones (la regla del proveedor) | Interno: sin proveedor | Proveedor: agencia Eurosurvey (RUC 1791456320001) |
+
+Todas coinciden.
+
+**Verificado (1280×720 y 1920×1080)**
+- Sin errores: las 8 escenas nuevas (con sus variantes `?fsesion=1`, `?fcorreo=0` y `?fpaso=panel`), `maestrosusuarios` (y `?fid=valida`), `usrreinvitar` (y `?rvista=enlace`), `usrcambiocorreo` y `cxusuarios`. También `cxusuarioeditar`, `cxusuariocrear`, `cxreinvitar`, `cobertura`, `coberturalectura`, `usuarioficha` y `maestrossinid?fvista=editar`.
+- Con clics:
+  - Lista: el menú «⋯», el filtro «2 sin cobertura» y el clic en la fila.
+  - Ficha: guardar los 3 cambios (la ficha se recarga sin la barra y la cabecera dice «Agencia · Eurosurvey»), «Descartar», el rechazo de la cobertura y «Usar lo de la sesión».
+  - Crear: con el correo enviado y sin enviar; la cédula repetida y «Abrir la ficha de Alexandre Abascal».
+  - Correo nuevo de un Activo.
+- Sin la conexión: invitar (`maestrosusuarios`, con el error de la cédula junto al campo), volver a invitar y la ficha de un usuario de ejemplo.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La prueba con la base real en GitHub, incluido si la respuesta de crearUsuario y reinvitarUsuario trae `correoEnviado` (también se acepta `correo.enviado`; sin el dato, la ficha muestra el enlace).
+- Liquidaciones en pantalla: la sesión simulada es del Administrador. Verifiqué la regla del proveedor (la misma función que usa la ficha), no la vista «Mis honorarios» del inspector.
+
+**Diferencias**
+- Un inspector de la base sin cobertura ni zonas ahora queda «Sin cobertura» y no es candidato. Antes contaba como «Todas».
+- «Modalidades», «Ramos», «Recibe ofertas», «Sucursal» y «Jornada» son campos nuevos de editarUsuario. Las otras pantallas todavía no los leen de la base, salvo la Agenda sin la conexión.
+- Sin «Gestionar usuarios» (por ejemplo, un Coordinador), la ficha sigue siendo la de antes, en solo lectura.
+- Sin la conexión, el menú «⋯» mantiene Reenviar invitación, Revocar, Suspender y Reactivar, que siguen existiendo en esa fuente.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `usrlista` | Andrea Salazar · Administrador | Lista con filtros, alertas y Alexandre Abascal «Sin cobertura» |
+| `usrficha` | Andrea Salazar · Administrador | Ficha de Alexandre Abascal con 3 cambios resaltados y la barra de guardar |
+| `usrfichanoinsp` | Andrea Salazar · Administrador | Ficha de Carla Ponce (Finanzas de agencia), sin Inspección ni Cobertura |
+| `usrsinguardar` | Andrea Salazar · Administrador | La base rechaza la cobertura: mensaje y «Sin guardar en la base» (`?fsesion=1`: la cobertura solo en la sesión) |
+| `usrnuevo` | Andrea Salazar · Administrador | Ficha en modo nuevo: «Invitación enviada por correo a …» (`?fcorreo=0`: el enlace) |
+| `usrduplicado` | Andrea Salazar · Administrador | Cédula repetida con «Abrir la ficha de Alexandre Abascal» |
+| `usrcorreonuevo` | Andrea Salazar · Administrador | Correo nuevo de Mauricio Endara: aviso de desvinculación e invitación enviada (`?fpaso=panel`) |
+| `cxusrcobertura` | Andrea Salazar · Administrador | La prueba cruzada en la lista, Agencias, la Agenda y Coordinar visita |
+
+También abrí `maestrosusuarios`, `usrreinvitar`, `usrcambiocorreo`, `cxusuarios`, `cxusuarioeditar`, `cxusuariocrear`, `cxreinvitar`, `cobertura`, `coberturalectura`, `usuarioficha` y `maestrossinid`.
+
+**Tiempo de la etapa: inicio 18/11/2026 06:12 · fin 18/11/2026 06:52 · 40 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-2e
 
 Publiqué la versión 306 de SIRIUS. «Agrupar por dirección» volvió, esta vez dentro de Coordinar visita, en la barra de vehículos. Muestra las propuestas de visita por dirección, «Usar esta agrupación» deja seleccionados esos vehículos y, al ofertar o agendar, se ofrece seguir con la siguiente propuesta. No cambió ninguna otra función (DEC-252).
