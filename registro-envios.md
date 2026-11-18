@@ -4,6 +4,74 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-2b
+
+Publiqué la versión 296 de SIRIUS. La calificación con garantías tiene la distribución de la propuesta aprobada (DEC-250): una barra de decisión arriba, la tabla de garantías como protagonista, un panel de contexto que se pliega y el pie fijo.
+
+**Qué cambió**
+- **Barra de decisión (una línea):**
+  - Veredicto como selector compacto, plazo global, «Fecha límite», «Próximo vencimiento» y la facultad.
+  - El plazo global es el mayor de los plazos de las garantías; se puede escribir uno mayor, nunca uno menor.
+  - La fecha límite es la de la garantía que vence más tarde; el próximo vencimiento, la de la más próxima.
+  - Con «No aprobado» la tabla se oculta y se pide el motivo del catálogo.
+- **Garantías:**
+  - Encabezado «N de M · del inspector · tuyas · del nivel 2» y «＋ Del catálogo» (con el plazo de la matriz).
+  - El ramo aparece una sola vez, encima de la tabla.
+  - Columnas: Garantía (título, código y origen), texto para el asegurado editable en línea (hasta 3 líneas), plazo con «vence», prioridad, estado y «⋯» (Quitar con motivo, Ver historial).
+  - Lo quitado queda tachado, con su motivo y «↺ Deshacer», hasta grabar.
+- **Panel de contexto:**
+  - Secciones que se pliegan por separado: Recomendaciones del inspector («✓ Es la garantía N», «Quitada por ti · Volver a agregar», «＋ Agregar como garantía»), Resumen del informe, Evidencias y Puntaje y controles.
+  - «» Plegar el panel» lo deja en una franja de 52 px con íconos y contadores; un clic en un ícono lo abre en esa sección.
+  - El estado se recuerda por usuario.
+- **Pie fijo:** «N garantías · fecha límite · se enviarán al BPM al grabar», «Guardar borrador» y «Grabar calificación».
+- **Dónde aplica:** nivel 1, nivel 2 (Suscriptor) y Vehículos, con un solo riesgo.
+- **Con la conexión:** al grabar se envía definirGarantias como en P-6g-2; el contrato no cambia.
+
+**Verificado**
+- Abrí 8 escenas a 1280×720 y 1920×1080 (las 5 nuevas, `cxgarantiaspropuestas`, `calrggar` y `gaprobar`), más la calificación de Vehículos y la de demostración de nivel 1 y nivel 2. Fueron 22 capturas sin errores.
+- A 1280 px con el panel expandido, el texto de cada garantía se lee en 2 líneas como máximo (medido en `calgarnueva`, `calgarnivel2`, `calgarrg` y `cxgarantiaspropuestas`); a 1920 px, en 1. Si el texto es más largo, crece hasta 3 líneas y luego se desplaza.
+- La barra de decisión cabe en una línea a 1280 px.
+- Quitar sin motivo da el aviso; con motivo, la fila queda tachada y la recomendación pasa a «Quitada por ti». «↺» y «Volver a agregar» la devuelven, y «＋ Agregar como garantía» suma «Orden y limpieza» como garantía 4.
+- Plazos:
+  - Si una garantía pasa a 90 días, el plazo global sube a 90 y la fecha límite al 16/01/2027.
+  - Un plazo global de 120 se acepta.
+  - Uno de 20 da «El plazo global no puede ser menor que el mayor de las garantías (90 días)».
+- El panel plegado se recuerda en otro caso del mismo usuario. Un clic en el ícono de Evidencias o de Recomendaciones lo abre en esa sección, y cerrar una sección también se recuerda.
+- «No aprobado» sin motivo no se graba; con motivo se graba sin garantías y la vista muestra el motivo.
+- Grabaciones:
+  - Nivel 1: definirGarantias lleva cada garantía con su origen (Inspector o Calificador).
+  - Nivel 2: el dictamen pide la confirmación con los cambios frente al nivel 1. En la base quedan Pendientes 1 del Inspector, 1 del Calificador y 1 del Nivel 2, y las quitadas quedan «Retirada».
+- `calrggar`, `gaprobar`, `gar`, `n2done`, `notifbitacora`, `cxgarantiacumplir`, `iniciocom` y `liqporliquidar` dan el mismo texto que en la versión anterior.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- «Guardar borrador» guarda en la sesión del navegador, no en la base.
+- La facultad que muestra la barra es la del nivel de la pantalla; no se calcula con los umbrales de facultad del usuario.
+
+**Diferencias**
+- Una recomendación del inspector sin código del catálogo (como «Orden y limpieza») no entra sola a la tabla: queda en el panel para agregarla. Las que tienen código entran como antes.
+- Una recomendación agregada desde el panel conserva el origen «Inspector»; las agregadas del catálogo llevan «Calificador» o «Nivel 2».
+- Seguí la propuesta en el pie: «Cancelar» salió; se sale con las pestañas o con «←».
+- Vehículos no tiene garantías: usa la barra (veredicto y cobertura o motivo), la observación, el pie y el panel.
+- Con varios ramos, en la calificación de garantías de una reinspección y en la pantalla de Ramos Generales por informe (`calrggar`) sigue el formulario anterior.
+- «Puntaje y controles» muestra los datos del informe que traen puntaje o controles; si no hay, lo dice.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `calgarnueva` | Verónica Lema · Ejecutivo de inspecciones | 50040: barra de decisión, 3 garantías (2 del inspector y 1 tuya), una quitada con «↺», panel expandido con 4 recomendaciones |
+| `calgarplegada` | Verónica Lema · Ejecutivo de inspecciones | El mismo caso con el panel en la franja; el ícono de recomendaciones lo abre en esa sección |
+| `calgarnoaprobado` | Verónica Lema · Ejecutivo de inspecciones | «No aprobado»: sin tabla y con el motivo obligatorio |
+| `calgarnivel2` | Ricardo Almeida · Suscriptor | Agrega «Botón de pánico» (Nivel 2) y quita «Detectores de humo» con motivo |
+| `calgarrg` | Verónica Lema · Ejecutivo de inspecciones | 50046 de Ramos Generales: 6 garantías con texto ancho y «vence» |
+
+También abrí `cxgarantiaspropuestas`, `calrggar`, `gaprobar`, la calificación de Vehículos (`veh`), `n1` y `n2`.
+
+**Tiempo de la etapa: inicio 17/11/2026 05:55 · fin 17/11/2026 06:27 · 32 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-2
 
 Publiqué la versión 293 de SIRIUS. Las garantías (origen, seguimiento, ampliación, cierre y endosos) y la bitácora de Notificaciones ya leen la base y envían sus acciones, con las mismas pantallas de siempre.

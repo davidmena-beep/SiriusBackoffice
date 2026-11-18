@@ -135,7 +135,7 @@
         cierre: cz ? { estado: 'Seguimiento cerrado', fecha: cz.fecha, por: cz.por, motivo: cz.motivo || '' } : null }; });
     return out; };
   // Calificación: las propuestas del inspector entran como garantías del formulario (con su origen y el plazo de la matriz).
-  GB.prefill = (caso) => { const P = GB.propuestas(caso); if (!P.length) return null; return { estado: '', obs: '', responsable: '', plazo: '', items: { garantias: P.map((g) => ({ id: g.id, ramo: g.ramo, desc: g.titulo, obs: g.texto, estado: 'Pendiente', plazo: String(g.plazoDias || GB.plazoDe(g.titulo, g.ramo)), origen: g.origen || 'Inspector', codigo: g.codigo })), documentos: [], preexistencias: [] } }; };
+  GB.prefill = (caso) => { const P = GB.propuestas(caso).filter((g) => !!g.codigo); if (!P.length) return null; /* P-6g-2b: una recomendación sin código del catálogo queda solo en el panel de contexto */ return { estado: '', obs: '', responsable: '', plazo: '', items: { garantias: P.map((g) => ({ id: g.id, ramo: g.ramo, desc: g.titulo, obs: g.texto, estado: 'Pendiente', prioridad: g.prioridad || 'Media', plazo: String(g.plazoDias || GB.plazoDe(g.titulo, g.ramo)), origen: g.origen || 'Inspector', codigo: g.codigo })), documentos: [], preexistencias: [] } }; };
   GB.riesgoDe = (caso) => (GB.deCaso(caso).find((g) => g.riesgo) || {}).riesgo || '';
   // Notificaciones: la bitácora con la forma de SIRIUS_NOTIFICACIONES.bitacora.
   GB.bitacora = () => (GB.envios() || []).map((n) => ({ id: sd(n.id), fecha: n.fecha, regla: n.regla || '', caso: sd(n.caso) || '—', canal: n.canal, a: n.destinatario, remitente: n.remitente || 'SIRIUS', estado: n.estado, motivo: n.error || '', contenido: n.contenido || '', reenvios: n.reenvios || 0, base: true }));

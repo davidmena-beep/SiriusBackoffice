@@ -14,9 +14,10 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/spacing.css">
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/tokens/components.css">
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
-<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
+<script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script><script src="sirius-cal-garantias.js"></script>
 </helmet>
-<div style="display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px;align-items:start;font-family:var(--font-brand);min-width:0">
+<div style="{{ gridStyle }}">
+<sc-if value="{{ nuevo }}" hint-placeholder-val="{{ false }}"><div data-dec250="1" style="min-width:0">{{ nuevaUi }}</div></sc-if>
 <sc-if value="{{ isView }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
 <sc-if value="{{ calReg }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="warning" hint-size="260px,22px"><span style="white-space:nowrap">Informe registrado por el calificador</span></x-import></div></sc-if>
@@ -278,7 +279,7 @@
 </section>
 </form>
 </sc-if>
-<aside aria-label="Evidencias del informe" style="position:sticky;top:{{ stickyTop }};display:flex;flex-direction:column;gap:16px;max-height:{{ asideMaxH }};overflow-y:auto;min-width:0">
+<sc-if value="{{ asideVieja }}" hint-placeholder-val="{{ true }}"><aside aria-label="Evidencias del informe" style="position:sticky;top:{{ stickyTop }};display:flex;flex-direction:column;gap:16px;max-height:{{ asideMaxH }};overflow-y:auto;min-width:0">
 <section style="display:flex;flex-direction:column;gap:14px;padding:20px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
 <h2 style="margin:0;font-size:17px;font-weight:700;color:var(--text-strong)">Evidencias del informe</h2>
@@ -323,7 +324,7 @@
 </div>
 </sc-if>
 </section>
-</aside>
+</aside></sc-if>
 <x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ catOpen }}" on-close="{{ closeCat }}" size="md" align="left" title="{{ catTitle }}" description="{{ catDesc }}" footer="{{ catFooter }}" hint-size="0px,0px">
 <div style="display:flex;flex-direction:column;gap:12px">
 <label style="display:flex;align-items:center;gap:8px;height:var(--input-outlined-height);padding:0 14px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF">
@@ -364,7 +365,7 @@
 </x-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1100},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;n1&quot;,&quot;options&quot;:[&quot;n1&quot;,&quot;n2&quot;,&quot;veh&quot;],&quot;tsType&quot;:&quot;&#x27;n1&#x27;|&#x27;n2&#x27;|&#x27;veh&#x27;&quot;},&quot;dual&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ramo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Incendio y líneas aliadas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20137&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;motivoInspector&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;evidences&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{tipo:&#x27;foto&#x27;|&#x27;doc&#x27;,titulo:string,fecha:string,hora:string,gps?:string}&gt;&quot;},&quot;informe&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{fields:{label:string,value:string,span:string,ws:string}[],hallazgos:string[]}&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(payload:object)=&gt;void&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;danosRid&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosUsuario&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosAbrir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onRevisarDanos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1100},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;n1&quot;,&quot;options&quot;:[&quot;n1&quot;,&quot;n2&quot;,&quot;veh&quot;],&quot;tsType&quot;:&quot;&#x27;n1&#x27;|&#x27;n2&#x27;|&#x27;veh&#x27;&quot;},&quot;dual&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ramo&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Incendio y líneas aliadas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;caseId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;20137&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;motivoInspector&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;evidences&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;{tipo:&#x27;foto&#x27;|&#x27;doc&#x27;,titulo:string,fecha:string,hora:string,gps?:string}&gt;&quot;},&quot;informe&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{fields:{label:string,value:string,span:string,ws:string}[],hallazgos:string[]}&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(payload:object)=&gt;void&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;danosRid&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosUsuario&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;danosAbrir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onRevisarDanos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;usuario&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;recomendaciones&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;facultad&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   keys = ['garantias', 'documentos', 'preexistencias'];
   titles = { garantias: 'Garantías', documentos: 'Documentos', preexistencias: 'Preexistencias' };
@@ -405,6 +406,14 @@ class Component extends DCLogic {
       s.items.documentos = s.items.documentos.concat([{ id: 'new-1', ramo: p.ramo, desc: 'Certificado de mantenimiento de extintores', obs: 'Reemplaza la garantía de extintores', estado: 'Pendiente', added: true }]);
     }
     s.ramoRes = JSON.parse(JSON.stringify(((this.props.prefill || {}).ramoRes) || {})); s.evFilter = '';
+    // P-6g-2b · DEC-250: panel de contexto (recordado por usuario), plazo global editable en ambos niveles y escenas de la nueva distribución.
+    s.panel = window.SiriusCalGar ? window.SiriusCalGar.panelInicial(p.usuario, preset) : null; s.cgEd = {}; s.cgMenu = null; s.cgHist = null; s.plazoG = '';
+    if (/^g250-/.test(preset)) { const G = s.items.garantias, quita = (titulo, motivo) => { const ix = G.findIndex(x => x.desc === titulo); if (ix < 0) return; s.removed.garantias = s.removed.garantias.concat([Object.assign({}, G[ix], { motivoQuita: motivo })]); G.splice(ix, 1); };
+      s.responsable = 'Verónica Lema'; s.obs = 'Riesgo asegurable con garantías de protección contra incendios y robo. Estructura en buen estado.';
+      if (preset === 'g250-nueva' || preset === 'g250-plegada' || preset === 'g250-noaprobado') { quita('Plan de emergencia y evacuación', 'ya existe, verificada en las fotos 12 y 13'); G.push({ id: 'new-alarma', ramo: p.ramo, desc: 'Alarma contra robo', obs: 'Alarma con sensores en los 2 accesos y monitoreo 24/7.', estado: 'Pendiente', plazo: '45', origen: 'Calificador', codigo: 'GAR-ROB-05', prioridad: 'Media' }); s.estado = 'Aprobado'; }
+      if (preset === 'g250-noaprobado') { s.estado = 'No aprobado'; s.obs = 'El local no cumple las políticas: sin medidas de protección contra incendio.'; }
+      if (preset === 'g250-n2') { quita('Detectores de humo', 'la bodega ya tiene detección térmica conectada al panel'); G.push({ id: 'new-panico', ramo: p.ramo, desc: 'Botón de pánico', obs: 'Botón de pánico en la caja, conectado a la central de monitoreo.', estado: 'Pendiente', plazo: '30', origen: 'Nivel 2', codigo: 'GAR-DYV-02', prioridad: 'Alta', added: true }); s.estado = 'Aprobado'; s.obs = 'Dictamen: asegurable; se agrega botón de pánico en caja.'; }
+      if (preset === 'g250-rg') s.estado = 'Aprobado'; }
     if (preset === 'rg-demo') { const ids = (this.props.ramos || []).map(r => r.id); s.ramoRes = { [ids[0]]: { res: 'Aprobado', obs: '' }, [ids[1]]: { res: 'No aprobado', obs: 'Sin guardianía nocturna ni alarma monitoreada' }, [ids[2]]: { res: 'Aprobado', obs: '' } }; s.estado = 'Aprobado'; s.responsable = 'Verónica Lema'; s.obs = 'Incendio y equipo electrónico aprobados; robo no aprobado hasta contar con guardianía nocturna.'; s.derivar = true; s.plazo = '30';
       s.items.garantias = [{ id: 'g1', ramo: 'Incendio y líneas aliadas', desc: 'Extintores', obs: 'Recargar los 4 extintores de la bodega', estado: 'Pendiente' }, { id: 'g2', ramo: 'Robo', desc: 'Guardianía 24/7', obs: 'Contrato vigente con empresa de seguridad', estado: 'Pendiente' }];
       s.items.documentos = [{ id: 'd1', ramo: 'Equipo electrónico', desc: 'Inventario de equipos con número de serie', obs: 'Incluir servidor y cámaras IP', estado: 'Pendiente' }];
@@ -420,7 +429,7 @@ class Component extends DCLogic {
   plazoCalc() { const s = this.state, mode = this.props.mode || 'n1'; if (!(mode === 'n1' || mode === 'n2')) return null;
     const ok = (v) => { const n = Number(v); return v !== '' && v != null && Number.isInteger(n) && n >= 1 && n <= 365; };
     const g = s.items.garantias || [], falta = g.filter(x => !ok(x.plazo)), mx = g.filter(x => ok(x.plazo)).sort((a, b) => Number(b.plazo) - Number(a.plazo))[0], max = mx ? Number(mx.plazo) : 0;
-    const ext = mode === 'n2' && s.plazoG !== '' && s.plazoG != null ? Number(s.plazoG) : null, extErr = ext != null && !(Number.isInteger(ext) && ext >= max && ext <= 365);
+    const ext = (mode === 'n2' || mode === 'n1') && s.plazoG !== '' && s.plazoG != null ? Number(s.plazoG) : null, extErr = ext != null && !(Number.isInteger(ext) && ext >= max && ext <= 365);
     return { g, falta, mx, max, ext, extErr, total: !g.length ? 0 : falta.length ? null : (ext != null && !extErr && ext > max ? ext : max) }; }
   componentDidMount() { this.emitDraft(null);
     // Etapa 12a · DEC-134: la calificación se actualiza cuando cambian los daños del riesgo y la escena danoscalif abre la revisión.
@@ -464,6 +473,10 @@ class Component extends DCLogic {
       return { items, removed: Object.assign({}, s.removed, { [k]: s.removed[k].concat([it]) }), removedOpen: Object.assign({}, s.removedOpen, { [k]: true }) };
     });
   }
+  // P-6g-2b · DEC-250: quitar con motivo (queda tachada en la tabla con «↺ Deshacer» hasta grabar) y agregar una recomendación del inspector.
+  quitarCon(id, motivo) { this.setState(s => { const it = s.items.garantias.find(x => x.id === id); if (!it) return { cgEd: {} };
+    return { cgEd: {}, items: Object.assign({}, s.items, { garantias: s.items.garantias.filter(x => x.id !== id) }), removed: Object.assign({}, s.removed, { garantias: s.removed.garantias.concat([Object.assign({}, it, { motivoQuita: motivo })]) }) }; }); }
+  agregarRec(r) { const isN2 = this.props.mode === 'n2'; this.setState(s => ({ items: Object.assign({}, s.items, { garantias: s.items.garantias.concat([{ id: r.id || ('rec-' + Date.now()), ramo: this.props.ramo, desc: r.titulo, obs: r.texto || '', estado: 'Pendiente', plazo: String(r.plazo || this.plazoCat(r.titulo) || 30), origen: 'Inspector', codigo: r.codigo || '', prioridad: r.prioridad || 'Media', recId: r.id, added: isN2 }]) }) })); }
   restore(k, id) {
     this.setState(s => {
       const it = s.removed[k].find(x => x.id === id);
@@ -511,7 +524,7 @@ class Component extends DCLogic {
   }
   submit() {
     const s = this.state, mode = this.props.mode || 'n1';
-    const payload = { plazoObs: (s.plazoObs || '').trim(), mode, isEdit: !!this.props.isEdit, estado: s.estado, ramoRes: s.ramoRes, derivar: !!s.derivar && !!this.props.dual && (mode === 'n1' || mode === 'gar1'), veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs.trim(), plazo: this.plazoCalc() ? (this.plazoCalc().total || 0) : Number(s.plazo), responsable: s.responsable, changes: this.props.baseline ? this.allChanges() : [], items: s.items, counts: this.keys.reduce((a, k) => Object.assign(a, { [k]: s.items[k].length }), {}) };
+    const payload = { plazoObs: (s.plazoObs || '').trim(), mode, isEdit: !!this.props.isEdit, estado: s.estado, ramoRes: s.ramoRes, derivar: !!s.derivar && !!this.props.dual && (mode === 'n1' || mode === 'gar1'), veredicto: s.veredicto, cobertura: s.cobertura, motivo: s.motivo, obs: s.obs.trim(), plazo: this.plazoCalc() ? (this.plazoCalc().total || 0) : Number(s.plazo), responsable: s.responsable, changes: this.props.baseline ? this.allChanges() : [], items: this.cgNuevo && s.estado === 'No aprobado' && mode !== 'veh' ? Object.assign({}, s.items, { garantias: [] }) : s.items, quitadas: (s.removed.garantias || []).map(x => ({ desc: x.desc, motivo: x.motivoQuita || '' })), counts: this.keys.reduce((a, k) => Object.assign(a, { [k]: s.items[k].length }), {}) };
     this.props.onSave && this.props.onSave(payload);
   }
   estadoGeneral(items, plazo) {
@@ -552,6 +565,7 @@ class Component extends DCLogic {
     const fields = [{ label: 'Usuario', value: v.user, span: 'auto', ws: 'normal' }, { label: 'Fecha', value: v.fecha, span: 'auto', ws: 'nowrap' }, { label: 'Ejecutivo responsable', value: v.responsable || '—', span: 'auto', ws: 'normal' }];
     if ((mode === 'n1' || mode === 'gar1') && p.dual && !p.finalDictamen) fields.push({ label: 'Evaluación de suscripción', value: v.derivar ? 'Derivado a suscripción' : 'No requerida', span: 'auto', ws: 'normal' });
     if (!(p.finalDictamen && mode === 'n1')) fields.push({ label: 'Estado general de seguimientos', value: eg.label, span: 'auto', ws: 'nowrap' });
+    if (v.estado === 'No aprobado' && v.motivo) fields.push({ label: 'Motivo de no aprobación', value: v.motivo, span: 'auto', ws: 'normal' }); // P-6g-2b · DEC-250
     fields.push({ label: 'Observación general', value: v.obs, span: '1 / -1', ws: 'normal' });
     return {
       title: mode === 'n2' || mode === 'gar2' ? 'Dictamen final de suscripción' : mode === 'gar1' ? 'Calificación de inspección de garantías' : 'Calificación de inspección', canEdit: false,
@@ -581,10 +595,12 @@ class Component extends DCLogic {
     const plazoChanged = PC ? (isN2 && PC.ext != null && !PC.extErr && PC.ext > PC.max) : (isGar && isN2 && basePlazo && String(s.plazo) !== basePlazo);
     const plazoN = PC ? (PC.total || 0) : Number(s.plazo);
     const plazoOk = PC ? (!PC.falta.length && !PC.extErr) : (Number.isInteger(plazoN) && plazoN >= 1 && plazoN <= 365);
+    const nuevo = !p.view && !isGar && !multiRG && (mode === 'n1' || mode === 'n2' || mode === 'veh') && !!window.SiriusCalGar; this.cgNuevo = nuevo; const noAp = nuevo && isRG && s.estado === 'No aprobado';
     const errs = {
       estado: isRG && !isGar && !multiRG && !s.estado, ramos: multiRG && ramosList.some(r => !(s.ramoRes[r.id] || {}).res), plazo: isRG && !plazoOk, resp: isRG && !isGar && !s.responsable, obs: !s.obs.trim(), pobs: plazoChanged && !(s.plazoObs || '').trim(),
-      ver: isVeh && !s.veredicto, cob: isVeh && s.veredicto === 'si' && !s.cobertura, mot: isVeh && s.veredicto === 'no' && !s.motivo,
+      ver: isVeh && !s.veredicto, cob: isVeh && s.veredicto === 'si' && !s.cobertura, mot: (isVeh && s.veredicto === 'no' && !s.motivo) || (noAp && !s.motivo),
     };
+    if (noAp) errs.plazo = false; if (nuevo) errs.pobs = false;
     const valid = !Object.values(errs).some(Boolean);
     const show = (k, e) => !!(s.touched[k] && errs[e || k]);
     const border = (k, e) => show(k, e) ? 'var(--color-danger)' : 'var(--input-outlined-border)';
@@ -626,7 +642,25 @@ class Component extends DCLogic {
     const vi = s.viewer, ve = vi != null ? evid[vi] : null;
     const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
     const informe = p.informe || { fields: [], hallazgos: [] };
+    const primary = () => { if (pendDanos) { this.setState({ danosErr: true }); this.focoDanos(); return; } if (!valid) { this.markErrs(errs); return; } if (isN2) this.setState({ confirmOpen: true }); else this.submit(); };
+    const CG = window.SiriusCalGar, GB = window.SiriusGarantiasBase, fmtL = (n) => { const q = String(p.baseDate || '2026-10-16').split('-').map(Number), d = new Date(q[0], q[1] - 1, q[2] + Number(n || 0)), z = (x) => String(x).padStart(2, '0'); return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear(); };
+    const gAct = s.items.garantias || [], pls = gAct.map(x => Number(x.plazo)).filter(n => n > 0), total = PC ? PC.total : null;
+    const recs = (p.recomendaciones || []).map(r => Object.assign({}, r)), mismo = (x, r) => x.recId === r.id || x.id === r.id || (!!r.codigo && CG && CG.codigo(x) === r.codigo) || x.desc === r.titulo;
+    const nuevaUi = nuevo ? CG.render(this, { isVeh, isN2, PC, show, formRef: this.formRef || (this.formRef = React.createRef()), formLabel: isN2 ? 'Dictamen final de suscripción' : 'Calificación de inspección',
+      plazoG: PC ? (s.plazoG !== '' ? s.plazoG : (PC.total != null && PC.g.length ? String(PC.total) : '')) : '', plazoErr: !!PC && !noAp && (PC.falta.length > 0 || (PC.extErr && !!s.touched.plazo)), plazoErrTxt: PC ? (PC.falta.length ? 'Falta el plazo en ' + PC.falta.map(x => x.desc).join(', ') + '.' : 'El plazo global no puede ser menor que el mayor de las garantías (' + PC.max + ' días).') : '',
+      limite: total ? fmtL(total) : '—', proximo: pls.length ? fmtL(Math.min.apply(null, pls)) : '—', facultad: p.facultad || (isN2 ? 'Nivel 2 · dictamen final' : s.derivar && p.dual && !isVeh ? 'Nivel 1 · se deriva al nivel 2' : 'Nivel 1 · dentro de tu facultad'),
+      colGar: (s.panel || {}).plegado ? 230 : 160, recs, recEstado: (r) => { const i = gAct.findIndex(x => mismo(x, r)); if (i >= 0) return { tipo: 'es', n: i + 1 }; const q = (s.removed.garantias || []).find(x => mismo(x, r)); return q ? { tipo: 'quitada', id: q.id } : { tipo: 'nueva' }; },
+      historial: (x) => { const g = GB && GB.g ? (GB.L || []).find(y => y.id === x.id) : null, f = (t) => GB ? GB.fecha(t) : t; const out = (g ? g.historial.map(hh => f(hh.fecha) + ' · ' + hh.que + (hh.por ? ' · ' + hh.por : '') + (hh.motivo ? ' · ' + hh.motivo : '')) : []); out.push('Origen: ' + CG.origen(x, isN2) + (x.recId || g ? ' · recomendación del informe' : ' · agregada en esta calificación')); return out; },
+      evid: evAll, informe, motivosNo: ['Riesgo fuera de las políticas de suscripción', 'Medidas de protección insuficientes', 'Estado de conservación deficiente', 'Actividad no asegurable', 'Siniestralidad previa del riesgo'],
+      responsables: isN2 ? this.responsables : this.responsables.filter(n => n !== 'Ricardo Almeida'), showDerivar: mode === 'n1' && !!p.dual,
+      danos: pendDanos > 0 ? { txt: 'Revisa los daños detectados antes de calificar (' + pendDanos + ')', sub: 'El sistema propuso ' + (pendDanos === 1 ? '1 daño' : pendDanos + ' daños') + ' en las fotos que nadie revisó.', abrir: () => { if (p.onRevisarDanos) p.onRevisarDanos(p.danosRid); } } : null,
+      aviso: p.avisoAdmin || '', n1: isN2 && p.prefill ? { estado: p.prefill.estado, obs: p.prefill.obs, user: p.prefill.user } : null,
+      pieTxt: isVeh ? (s.veredicto === 'si' ? 'Asegurable' + (s.cobertura ? ' · ' + s.cobertura : '') : s.veredicto === 'no' ? 'No asegurable' : 'Sin veredicto') + ' · se enviará al BPM al grabar' : noAp ? 'No aprobado · sin garantías · se enviará al BPM al grabar' : gAct.length + (gAct.length === 1 ? ' garantía' : ' garantías') + ' · fecha límite ' + (total ? fmtL(total) : '—') + ' · se enviarán al BPM al grabar',
+      pendiente: valid ? '' : (pending === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + pending + ' campos obligatorios'), primaryLabel: isN2 ? 'Grabar dictamen final' : 'Grabar calificación', grabar: primary,
+      borrador: () => { const z = (x) => String(x).padStart(2, '0'), d = new Date(); if (window.SiriusCalBorrador) window.SiriusCalBorrador.set((p.formKey || '') + ':g', { estado: s.estado, obs: s.obs, items: s.items, removed: s.removed }); this.setState({ cgBorrador: z(d.getHours()) + ':' + z(d.getMinutes()) }); },
+      cancelar: () => p.onCancel && p.onCancel() }) : null;
     return {
+      nuevo, nuevaUi, asideVieja: !nuevo, gridStyle: nuevo ? 'display:block;font-family:var(--font-brand);min-width:0' : 'display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px;align-items:start;font-family:var(--font-brand);min-width:0',
       formLabel: isN2 ? 'Dictamen final de suscripción' : isGar ? 'Calificación de inspección de garantías' : 'Calificación de inspección',
       isRG, isVeh, isN2, showAprob: !isGar && !multiRG, showResp: !isGar, multiRG,
       ramosSummary: ramosList.filter(r => (s.ramoRes[r.id] || {}).res === 'Aprobado').length + ' de ' + ramosList.length + (p.sustantivo === 'equipo' ? ' equipos aprobados' : ' ramos aprobados'), resTitulo: p.sustantivo === 'equipo' ? 'Resultado por equipo' : 'Resultado por ramo', colRiesgo: p.sustantivo === 'equipo' ? 'Equipo' : 'Ramo', colLinea: p.sustantivo === 'equipo' ? 'Tipo y año' : 'Línea de negocio', evChipsAria: p.sustantivo === 'equipo' ? 'Filtrar evidencias por equipo' : 'Filtrar evidencias por ramo',
@@ -655,7 +689,7 @@ class Component extends DCLogic {
       plazoErrTxt: PC ? (PC.falta.length ? 'No se pudo calcular el plazo: falta plazo en ' + PC.falta.map(x => x.desc).join(', ') + '.' : 'El plazo global no puede ser menor que el máximo de las garantías (' + PC.max + ' días).') : 'Ingresa un plazo entre 1 y 365 días.',
       fechaLimite: plazoOk && plazoN > 0 ? this.addDays(plazoN) : '—',
       plazoHint: PC ? (PC.mx && !PC.falta.length ? 'Máximo: ' + PC.mx.desc + ' · ' + PC.max + ' días' + (PC.total > PC.max ? '; ampliado por el Suscriptor a ' + PC.total + ' días' : '') + '. Fija la fecha límite y el estado Vencido del conjunto; el plazo de cada garantía es referencia. Contado desde el ' + this.addDays(0) + '. Documentos, preexistencias y recomendaciones no entran en el cálculo.' + (isN2 ? ' Puedes ampliarlo, nunca bajarlo del máximo.' : ' Se recalcula al cambiar el plazo de una garantía.') : PC.g.length ? 'Completa el plazo de cada garantía para calcular el global.' : 'Sin garantías: el caso no tiene plazo.') : 'Un solo plazo para todas las garantías, contado desde el ' + this.addDays(0) + '. Documentos sin plazo; preexistencias informativas.',
-      isView: !!p.view, isForm: !p.view,
+      isView: !!p.view, isForm: !p.view && !nuevo,
       canEdit: !!p.canEdit, onEdit: () => p.onEdit && p.onEdit(),
       hasLock: !!p.lockReason, lockReason: p.lockReason || '', calReg: !!p.calReg, hasAvisoAdmin: !!p.avisoAdmin, avisoAdmin: p.avisoAdmin || '', /* R-0d · DEC-245: el Administrador avisa en qué rol actúa antes de grabar */
       ...this.viewVals(),
@@ -718,7 +752,7 @@ class Component extends DCLogic {
         btn('ghost', 'Cancelar', () => this.setState({ cat: null })),
         btn('primary', s.catSel.length ? 'Agregar (' + s.catSel.length + ')' : 'Agregar', () => {
           if (!s.catSel.length) return;
-          const add = s.catSel.map(desc => Object.assign({ id: 'new-' + (++this.seq) + '-' + Date.now(), ramo, desc, obs: '', estado: 'Pendiente', added: isN2 }, cat === 'garantias' ? { plazo: this.plazoCat(desc) } : {}));
+          const add = s.catSel.map(desc => Object.assign({ id: 'new-' + (++this.seq) + '-' + Date.now(), ramo, desc, obs: '', estado: 'Pendiente', added: isN2 }, cat === 'garantias' ? { plazo: this.plazoCat(desc), origen: isN2 ? 'Nivel 2' : 'Calificador' } : {}));
           this.setState(st => ({ cat: null, catSel: [], items: Object.assign({}, st.items, { [cat]: st.items[cat].concat(add) }) }));
         }, !s.catSel.length)),
       confirmOpen: s.confirmOpen,

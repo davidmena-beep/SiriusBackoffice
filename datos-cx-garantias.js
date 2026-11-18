@@ -7,7 +7,8 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror'];
+  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror', 'calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg']; // P-6g-2b · DEC-250: las 5 últimas
+  const G250 = ['calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg'];
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const hoy = () => { const GB = window.SiriusGarantiasBase; return GB ? GB.hoy() : '2026-10-18'; }, mas = (n) => { const GB = window.SiriusGarantiasBase; return GB ? GB.sumar(hoy(), n) : hoy(); };
   const VL = 'Verónica Lema', SO = 'Santiago Ortiz';
@@ -19,6 +20,7 @@
     cxnotificaciones: { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] },
     cxgarantiaserror: { nombre: SO, email: 'santiago.ortiz.comercial@gmail.com', rol: 'Ejecutivo comercial', roles: ['Ejecutivo comercial'] },
   };
+  G250.forEach((k) => { USR[k] = k === 'calgarnivel2' ? { nombre: 'Ricardo Almeida', email: 'ricardo.almeida.suscriptor@gmail.com', rol: 'Suscriptor', roles: ['Suscriptor'] } : { nombre: VL, email: 'veronica.lema.ejecutiva@gmail.com', rol: 'Ejecutivo de inspecciones', roles: ['Ejecutivo de inspecciones', 'Suscriptor'] }; });
   const caso = (id, estado, extra) => Object.assign({ id, orden: 'EMI-2026-120' + id.slice(-3), origen: 'BPM de Emisión', ramo: 'Incendio y líneas aliadas', ramos: ['Incendio y líneas aliadas'], tipoRiesgo: 'Ramos Generales', broker: 'Seguros Pacífico Brokers',
     asegurado: 'Comercial de prueba ' + id, ident: '17920' + id + '001', placa: '', bien: 'Bodega · Quito', fecha: '2026-10-05', registrado: '2026-10-05T10:00', sucursal: 'Quito', backoffice: 'Andrea Salazar', estado, responsable: VL,
     comercial: SO, califUser: VL, flujoVersion: 2, aps: 'Lucía Vera', apsMail: 'lucia.vera@pacificobrokers.ec', dir: 'Av. de los Shyris N35-52 y Portugal, Quito', contacto: { nombre: 'Marcela Paredes', cargo: 'Administradora', cel: '0991234040', correo: 'mparedes@correo.ec' },
@@ -27,16 +29,30 @@
     respaldo: null, cumplidaEn: null, ampliaciones: [], endosos: [], historial: [{ fecha: '2026-10-08T11:00', que: 'Recomendada en el informe', por: 'Mauricio Endara' }] }, extra || {});
   const pend = (plazo, vence, extra) => Object.assign({ plazoDias: plazo, vence, endosos: [{ tipo: 'inclusion', estado: 'Aplicado', fecha: '2026-10-10T09:00', motivo: '', actualizado: '2026-10-11T08:30' }], historial: [{ fecha: '2026-10-08T11:00', que: 'Recomendada en el informe', por: 'Mauricio Endara' }, { fecha: '2026-10-10T09:00', que: 'Pendiente', por: VL }] }, extra || {});
   const datos = (escena) => { const fv = q('fvista');
-    const casos = [caso('50040', 'Pendiente calificación', { asegurado: 'Ferretería La Unión Cía. Ltda.', bien: 'Bodega y local · Av. Maldonado, Quito', califUser: '' }),
+    const g250 = G250.indexOf(escena) >= 0;
+    const casos = [caso('50040', escena === 'calgarnivel2' ? 'Pendiente calificación de suscripción' : 'Pendiente calificación', { asegurado: 'Ferretería La Unión Cía. Ltda.', bien: 'Bodega y local · Av. Maldonado, Quito', califUser: '' }),
+      caso('50046', 'Pendiente calificación', { asegurado: 'Plásticos Industriales del Pacífico S.A.', bien: 'Planta y bodegas · Km 12 vía Daule, Guayaquil', sucursal: 'Guayaquil', califUser: '', dir: 'Km 12 vía a Daule, Guayaquil' }),
       caso('50041', 'Emitida', { asegurado: 'Distribuidora El Ejido S.A.', emi: { poliza: 'POL-2026-120041' } }),
       caso('50042', 'Emitida', { asegurado: 'Textiles Andinos Cía. Ltda.', emi: { poliza: 'POL-2026-120042' }, comercial: escena === 'cxgarantiaampliacion' ? VL : SO }),
       caso('50043', 'Emitida', { asegurado: 'Panificadora San Blas S.A.', emi: { poliza: 'POL-2026-120043' } }),
       caso('50044', 'Inspeccionado', { asegurado: 'Imprenta Gráficas del Norte', orden: '' })];
     const garantias = [
       // 50040: 3 recomendaciones del inspector, aún «Propuesta» (se definen al calificar).
+      ...(g250 ? [G('50040', 1, 'GAR-INC-02', 'Extintores vigentes y recargados', 'Recargar los 4 extintores PQS de la bodega y colocar su etiqueta de vigencia.', '', { prioridad: 'Alta' }),
+        G('50040', 2, 'GAR-INC-04', 'Detectores de humo', 'Instalar detectores en la bodega y en el mezanine, conectados a un panel.', '', { prioridad: 'Alta' }),
+        G('50040', 3, 'GAR-INC-07', 'Plan de emergencia y evacuación', 'Señalética de evacuación incompleta en el mezanine.', '', { prioridad: 'Baja' }),
+        G('50040', 4, '', 'Orden y limpieza', 'Acumulación de cartón junto al tablero eléctrico.', '', { prioridad: 'Baja' })] : [
       G('50040', 1, 'GAR-INC-02', 'Extintores vigentes y recargados', 'Recargar los 4 extintores PQS de la bodega'),
       G('50040', 2, 'GAR-INC-04', 'Detectores de humo', 'Instalar detectores en la bodega y en el mezanine'),
-      G('50040', 3, 'GAR-ROB-05', 'Alarma contra robo', 'Alarma con sensores en los 2 accesos'),
+      G('50040', 3, 'GAR-ROB-05', 'Alarma contra robo', 'Alarma con sensores en los 2 accesos')]),
+      // P-6g-2b · calgarrg: planta de Ramos Generales con 6 recomendaciones del inspector (texto ancho, plazos de la matriz).
+      ...[['GAR-INC-01', 'Permiso de bomberos vigente del año en curso', 'Presentar el permiso de funcionamiento 2026 emitido por el Cuerpo de Bomberos.', 'Alta'],
+        ['GAR-INC-02', 'Extintores vigentes y recargados', 'Recargar los 8 extintores de la planta y señalizar su ubicación a 1,5 m de altura.', 'Alta'],
+        ['GAR-INC-03', 'Sistema de detección y alarma contra incendio', 'Instalar detección en la bodega de producto terminado, con panel en la garita.', 'Media'],
+        ['GAR-INC-05', 'Red hídrica', 'Mantener la red hídrica presurizada, con bomba jockey y prueba trimestral.', 'Media'],
+        ['GAR-ROB-04', 'CCTV', 'Cámaras en los accesos y en el patio de carga, con grabación de 30 días.', 'Media'],
+        ['GAR-ROB-03', 'Guardianía armada 24/7', 'Guardia armado en la garita principal las 24 horas, con registro de rondas.', 'Alta']]
+        .map((r, i) => G('50046', i + 1, r[0], r[1], r[2], '', { prioridad: r[3], riesgo: '50046-R1' })),
       // 50041: dos pendientes; la de extintores tiene la foto ya adjunta (cxRespaldos).
       G('50041', 1, 'GAR-INC-02', 'Extintores vigentes y recargados', 'Recarga anual con etiqueta del proveedor', 'Pendiente', pend(30, mas(12))),
       G('50041', 2, 'GAR-INC-04', 'Detectores de humo', 'En la bodega y en la oficina', 'Pendiente', pend(60, mas(40))),
@@ -63,7 +79,8 @@
       { id: 'cxn2', aud: '*', kind: 'adj', text: 'Faltan 5 días para la garantía Guardianía del caso 50042', caseId: '50042', ts: hoy() + 'T08:00', read: false }];
     const X = { usuario: clon(USR[escena]), casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: [], garantias, notificacionesEnvio, notificaciones,
       cxRespaldos: escena === 'cxgarantiacumplir' ? { 'GAR-50041-1': [{ name: 'foto-extintores-recargados.jpg', by: SO, at: '18/10/26 · 09:10', ts: hoy() + 'T09:10' }] } : {} };
-    casos.forEach((c) => { X.eventos[c.id] = [{ hora: c.registrado, accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });
+    const PASOS = ['Fachada', 'Acceso principal', 'Bodega · vista general', 'Mezanine', 'Tablero eléctrico', 'Extintores', 'Salida de emergencia', 'Patio de carga', 'Oficina', 'Techo y cubierta', 'Señalética', 'Cámaras de seguridad'], fotos = (id) => PASOS.map((p, i) => ({ paso: p, canal: 'App del inspector', hora: '17/10/26 · 10:' + String(5 + i * 3).padStart(2, '0'), gps: [-0.1807, -78.4678], prueba: true, tipo: 'foto' }));
+    casos.forEach((c) => { X.eventos[c.id] = [{ hora: c.registrado, accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = g250 && (c.id === '50040' || c.id === '50046') ? fotos(c.id) : []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });
     return X; };
   const baseCC = CC.cxSim.bind(CC), baseAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : baseCC(escena); };
