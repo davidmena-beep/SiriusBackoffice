@@ -233,7 +233,8 @@ class Component extends DCLogic {
     if (a && b && a !== b) setTimeout(() => { const d = Array.from(document.querySelectorAll('[role=dialog]')).find(x => x.offsetParent !== null); if (d && !d.contains(document.activeElement)) { const f = d.querySelector('input:not([disabled]):not([type=hidden]), textarea, select') || d.querySelector('.ads-button--primary:not([disabled])') || d.querySelector('button'); if (f) f.focus(); } }, 60); }
   miga() { const n = (this.state.d && this.state.d.nombre) || 'Plantilla nueva'; if (this._miga !== n && this.props.onCrumb) { this._miga = n; this.props.onCrumb(n); } }
   sucio() { return !!this.state.d && JSON.stringify(this.state.d) !== this.state.base; }
-  miCorreo() { const U = window.SIRIUS_USUARIOS, c = U ? U.usuario(this.user()) : null; return c ? c.correo : ''; }
+  miCorreo() { const cx = window.SIRIUS_CONEXION && window.SIRIUS_CONEXION.activo === true ? window.SIRIUS_CONEXION.usuario : null; if (cx && (cx.correo || cx.email)) return String(cx.correo || cx.email);   // con la conexión: el correo del usuario que inició sesión
+    const U = window.SIRIUS_USUARIOS, c = U ? U.usuario(this.user()) : null; return c ? c.correo : ''; }
   miCel() { const U = window.SIRIUS_USUARIOS, c = U ? U.usuario(this.user()) : null; return c && c.celular ? c.celular : ''; }
   // ---------- Medidas y disposición de la vista previa ----------
   medir() { const g = document.getElementById('pe-cols'), f = document.getElementById('pe-pv-frame'), ff = document.getElementById('pe-fs-frame');
