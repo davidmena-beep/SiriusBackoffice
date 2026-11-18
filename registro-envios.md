@@ -4,6 +4,88 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-2e
+
+Publiqué la versión 306 de SIRIUS. «Agrupar por dirección» volvió, esta vez dentro de Coordinar visita, en la barra de vehículos. Muestra las propuestas de visita por dirección, «Usar esta agrupación» deja seleccionados esos vehículos y, al ofertar o agendar, se ofrece seguir con la siguiente propuesta. No cambió ninguna otra función (DEC-252).
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes (P-6g-2d) | Ahora |
+|---|---|---|
+| Coordinar visita › barra de vehículos | Modalidad y vehículos (casillas); sin forma de armar visitas por dirección | Se suma «Agrupar por dirección» (solo casos de Vehículos con varios riesgos y visita nueva). Abre el panel con las propuestas |
+| Coordinar visita › fases (Contacto, Lugar, Inspector y horario) | Contacto y Lugar con los vehículos marcados a mano | «Usar esta agrupación» cambia los vehículos y el lugar por defecto (la dirección de la propuesta); el contacto y lo escrito no se pierden |
+| Coordinar visita › pie con la oferta enviada | «Anular oferta…», «Volver al caso», «Siguiente caso» | Suma «Coordinar la siguiente: 1 vehículo en Av. …» si la visita salió de una agrupación y quedan vehículos libres |
+| Aviso de la visita agendada (tras «Agendar visita») | «Entendido» | Suma «Coordinar la siguiente: …» en las mismas condiciones; el aviso se ensancha para que el botón quepa |
+| Pestaña Coordinación › franja de estado | «2 de 3 agendados», «Oferta enviada a N…» | Sin cambios de diseño; debe coincidir con las visitas que crea cada propuesta |
+| Pestaña Riesgos | Estado, inspector y visita de cada vehículo | Sin cambios; debe coincidir con la franja |
+| Agenda | Las visitas por inspector | Sin cambios |
+| Bandeja | Estado del caso, vehículos y responsable | Sin cambios; debe coincidir con la franja |
+| Pestaña Coordinación › «Vehículos por coordinar» | Salió en P-6g-2d | Sigue sin estar; la función vive en Coordinar visita |
+| Cabecera «Coordinar visita», «Registrar contacto», menú «⋯» | Abren Coordinar visita | Sin cambios |
+
+**Qué cambió**
+- **«Agrupar por dirección» (barra de vehículos):**
+  - Muestra una propuesta por dirección: «Visita propuesta 1 · 2 vehículos · PRB1212, PR121A» y su dirección.
+  - Los vehículos que ya están en una visita abierta no aparecen.
+  - Si no queda ninguno: «No quedan vehículos por coordinar: todos están en una visita abierta (V1, V2).»
+  - Con la oferta enviada se puede abrir, pero «Usar esta agrupación» queda apagado («Para cambiar los vehículos, anula la oferta.»).
+- **«Usar esta agrupación»:** deja seleccionados esos vehículos para la visita que se está coordinando y pone su dirección como lugar por defecto; la propuesta en uso dice «En uso». Si la modalidad quedara bloqueada para esos vehículos, pasa a Presencial, como al marcar un vehículo.
+- **Seguir con la siguiente:**
+  - Tras ofertar, el pie suma «Coordinar la siguiente: 1 vehículo en Av. de los Shyris y Nacio…».
+  - Tras agendar, el aviso de la visita trae el mismo botón.
+  - Abre Coordinar visita con los vehículos de la siguiente propuesta ya seleccionados, el mismo contacto y la misma modalidad (si sirve), en la fase Lugar.
+- **Una sola función (DEC-252):** las propuestas del panel, el botón «Coordinar la siguiente», el aviso tras agendar y la propuesta de la pestaña salen de `propuestasDe`; ninguna pantalla agrupa por su cuenta.
+- **Con y sin la conexión:** igual. Sin la conexión, el caso 20196 de ejemplo (3 vehículos, 2 direcciones).
+
+**Prueba cruzada (caso de 3 vehículos en 2 direcciones: agrupar, crear las 2 visitas y comparar)**
+
+| Paso (escena `coordagrupar`, con la conexión simulada) | Resultado |
+|---|---|
+| «Agrupar por dirección» | 2 propuestas: 1 = PRB1212 y PR121A (Av. Mariscal Sucre S12-45 y Ajaví); 2 = PRB1213 (Av. de los Shyris y Naciones Unidas, La Carolina) |
+| «Usar esta agrupación» en la 1 | PRB1212 y PR121A marcados, PRB1213 no; Lugar «Quito · zona Sur · de la solicitud, por revisar»; la propuesta 1 dice «En uso» |
+| Agendar la V1 (13:45, Cristian Vaca) | «Visita V1 agendada» con «Coordinar la siguiente: 1 vehículo en Av. de los Shyris y Nacio…» |
+| «Coordinar la siguiente» | Solo PRB1213 marcado, Lugar «Quito · zona Norte», misma modalidad (Presencial) |
+| Agendar la V2 (15:00, Mauricio Endara) | «Visita V2 agendada»; ya no hay botón de siguiente |
+
+| Dónde se mira | Qué dice |
+|---|---|
+| Franja de la pestaña Coordinación | «Coordinación 3 de 3 agendados» |
+| Encabezado del caso | «3 de 3 agendados» |
+| Pestaña Riesgos | PRB1212 y PR121A: Agendado, Cristian Vaca, V1 · 16/10 13:45. PRB1213: Agendado, Mauricio Endara, V2 · 16/10 15:00 |
+| Bandeja | 50012 · 3 vehículos · Agendado · responsable Cristian Vaca |
+
+Las cuatro pantallas coinciden. La escena `coordagrupar?fpaso=oferta` (oferta de la V1) deja el pie con «Coordinar la siguiente»; `coordagrupartodos` (V1 agendada y PRB1213 ofertada) dice que no quedan vehículos.
+
+**Verificado (1280×720 y 1920×1080)**
+- Las 2 escenas nuevas (con sus 4 variantes `?fpaso=`), `coordtabresumen`, `coordofertaabierta`, `coordagendada`, `coordsinguardar`, `coord`, `coordfases`, `cxcoordfases` y `coordoferta`, sin errores de página.
+- Con clics, a los dos tamaños: usar la 1 y la 2, el estado «En uso», ofertar y seguir, agendar y seguir, el panel con la oferta enviada y con todos los vehículos en visitas, y el recorrido completo de la prueba cruzada.
+- Sin la conexión (caso 20196): «Agrupar por dirección» propone 2 visitas (2 vehículos y 1), «Usar esta agrupación», agendar la primera y «Coordinar la siguiente» con el vehículo restante.
+- Sin regresiones de P-6g-2d: pie con oferta abierta, «Anular oferta…», visita agendada, «Cancelar visita…» y «Salir» con y sin datos.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La prueba con la base real en GitHub.
+- La Agenda con las 2 visitas nuevas: la Agenda semanal muestra la semana real (noviembre) y las visitas de la escena son de octubre. La Agenda no cambió en esta etapa.
+
+**Diferencias**
+- «Agrupar por dirección» ya no está en la pestaña Coordinación (donde lo sacó P-6g-2d) ni como lista con casillas; está en la barra de vehículos de Coordinar visita. «Crear visita con los seleccionados» no vuelve: la visita se arma en Coordinar visita con los vehículos de la barra.
+- En una visita que se reagenda (por ejemplo, desde la Agenda) no se ofrece «Agrupar por dirección»: ahí no se arman visitas nuevas.
+- «Coordinar la siguiente» aparece solo si la visita salió de una agrupación y quedan vehículos libres.
+- El aviso de la visita agendada es más ancho cuando trae «Coordinar la siguiente» (para que el texto no se corte).
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `coordagrupar` | Andrea Salazar · Coordinador | 50012 con 3 vehículos en 2 direcciones: panel con 2 propuestas. `?fpaso=usar`, `oferta`, `agendar` o `siguiente` recorren el camino |
+| `coordagrupartodos` | Andrea Salazar · Coordinador | V1 agendada y PRB1213 ofertada: «No quedan vehículos por coordinar…» |
+
+También abrí `coordtabresumen`, `coordofertaabierta`, `coordagendada`, `coordsinguardar`, `coord` (20196, sin la conexión), `coordfases`, `cxcoordfases` y `coordoferta`.
+
+**Tiempo de la etapa: inicio 18/11/2026 01:13 · fin 18/11/2026 01:42 · 29 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-2d
 
 Publiqué la versión 302 de SIRIUS. La pestaña Coordinación ya no repite botones: arriba, una franja de resumen; luego Contacto, de solo lectura, y Visitas del caso. La única entrada a Coordinar visita es la acción principal de la cabecera. En Coordinar visita, el pie cambia según lo que ya se envió o agendó. No cambió ninguna función, solo desde dónde se activa (DEC-252).

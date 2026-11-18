@@ -33,7 +33,7 @@
   const MODSIM = { conexion: true, vigentes: { 'Vehículos livianos': { modalidades: { P: true, V: true, A: true, D: false }, criteriosA: { activo: true, sumaMax: 30000, anioMin: 2015, carrocerias: [], sucursales: [] } } } };
   const VEH = [['PRB1212', 'Kia, Rio, 2022', 15000, 2022, 'sedan'], ['PR121A', 'Suzuki, GN125, 2023', 2400, 2023, 'moto'], ['PRB1213', 'Toyota, Hilux, 2021', 33200, 2021, 'camioneta']];
   const LUG_V1 = { provincia: '17', ciudad: Q, direccion: 'Av. Amazonas N36-152 y Naciones Unidas, Quito', referencia: 'Edificio Torre Azul, piso 3', punto: [-0.1765, -78.4845], zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona: 'Calculada', lejos: false, origen: 'Búsqueda' };
-  const SUR = 'Av. Mariscal Sucre S12-45 y Ajaví';
+  const SUR = 'Av. Mariscal Sucre S12-45 y Ajaví', DIR2 = 'Av. de los Shyris y Naciones Unidas, La Carolina'; // P-6g-2e: la segunda dirección de 50012 (PRB1213)
   const CHOFER = (num) => ({ tipo: 'otro', nombre: 'Jorge Pillajo', relacion: 'Chofer', numero: num || '0991234567' });
   const DET_CANC = 'La empresa decidió asegurar la flota con otra compañía; lo confirmó Fernanda Prueba por teléfono.';
   // escena → [con la visita V1, configuración de la vista por fases (la lee Coordinación en base.escena.fases)]
@@ -82,6 +82,17 @@
     coordofertaabierta: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1213'], panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade', 'Mauricio Endara'], enviar: 'oferta', diaVista: 3 }), { v1: 'PRB1212', v2ag: true }],
     coordagendada: [true, () => ({ fase: 'horario', reagendar: 'V1' }), { v1: 'PRB1212', v2ag: true }],
     coordsinguardar: [true, () => ({ fase: 'contacto', riesgos: ['PRB1213'], contacto: { nota: 'Pide que lo llamen después de las 15:00; confirmar la dirección del parqueadero.', salirBoton: true } }), { v1: 'PRB1212', v2ag: true }], // G-2e2 · DEC-238: el mismo caso 50012; la cabecera trae «Coordinar visita» (PRB1213 por coordinar)
+    // P-6g-2e · DEC-252: «Agrupar por dirección» dentro de Coordinar visita. 50012 con 3 vehículos en 2 direcciones: PRB1212 y PR121A en la Av. Mariscal Sucre y PRB1213 en la Av. de los Shyris.
+    // coordagrupar: los 3 vehículos elegidos y el panel abierto con 2 propuestas. ?fpaso=usar: usó la primera (PRB1212 y PR121A); oferta: la usó y envió la oferta («Coordinar la siguiente: 1 vehículo en Av. de los Shyris…»);
+    // agendar: la usó y agendó (el aviso ofrece la siguiente); siguiente: ya en la siguiente propuesta (PRB1213), con la V1 de los dos primeros agendada.
+    // coordagrupartodos: la V1 (PRB1212 y PR121A) agendada y PRB1213 ofertada en esta visita: no queda ningún vehículo por coordinar y el panel lo dice.
+    coordagrupar: [false, () => { const f = qp('fpaso'), G1 = ['PRB1212', 'PR121A'];
+      if (f === 'usar') return { fase: 'lugar', riesgos: G1, agrup: true };
+      if (f === 'oferta') return { fase: 'horario', texto: SUR, riesgos: G1, agrup: true, panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 };
+      if (f === 'agendar') return { fase: 'horario', texto: SUR, riesgos: G1, agrup: true, fecha: 1, hIni: '14:00', hFin: '15:00', inspector: 'Diana Cárdenas', enviar: 'principal' };
+      if (f === 'siguiente') return { fase: 'lugar', riesgos: ['PRB1213'], agrup: true };
+      return { fase: 'contacto', riesgos: ['PRB1212', 'PR121A', 'PRB1213'], agrupar: true }; }, { dirs: true, get vAgr() { return qp('fpaso') === 'siguiente'; } }],
+    coordagrupartodos: [false, () => ({ fase: 'horario', texto: DIR2, riesgos: ['PRB1213'], agrup: true, agrupar: true, panelOferta: true, ofertaIns: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], enviar: 'oferta', diaVista: 3 }), { dirs: true, vAgr: true }],
     coordmarco: [true, () => ({ fase: 'horario', texto: SUR, riesgos: ['PRB1212', 'PR121A'], diaVista: 3 })],
     migasangostas: [true, () => ({ fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: qp('fmenu') === '1' ? { menu: true } : {} })],
     coordsalir: [true, () => { const s = qp('fsalir'), NOTA = 'Confirmó que recibe el lunes a las 10:00; pedir el ingreso por la puerta de carga.'; return s === 'limpio' ? { fase: 'contacto', riesgos: ['PRB1212', 'PR121A'], contacto: { salir: true } }
@@ -106,8 +117,10 @@
       visitasBase: (e[0] ? [vis(1, 'Mauricio Endara', dia(3), '10:00', '10:45', Object.assign({ riesgos: [e[2] && e[2].v1 === 'PRB1212' ? '50012-V1' : '50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) }, e[2] && e[2].curso ? { estado: 'En curso', inicio: dia(0) + 'T13:00', fin: dia(0) + 'T13:45' } : {}))] : [])
         .concat(e[2] && e[2].v2ag ? [vis(2, 'Diana Cárdenas', dia(4), '14:00', '14:45', Object.assign({ riesgos: ['50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) }, e[2].curso2 ? { estado: 'En curso', inicio: dia(0) + 'T13:00', fin: dia(0) + 'T13:45' } : {}))] : [])
         .concat(e[2] && e[2].curso2 && qp('ffase') === 'inspeccion' ? [vis(3, 'Mauricio Endara', dia(5), '09:00', '09:45', { riesgos: ['50012-V3'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) })] : []) /* G-2c10: PRB1213 agendada */
+        .concat(e[2] && e[2].vAgr ? [vis(1, 'Diana Cárdenas', dia(3), '10:00', '10:45', { riesgos: ['50012-V1', '50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)) })] : []) /* P-6g-2e: la V1 con los dos vehículos de la primera dirección */
         .concat(e[2] && e[2].v2 ? [{ n: 2, modalidad: 'Presencial', estado: 'Buscando inspector', origen: 'Coordinador', inspector: '', enlace: null, enlaces: [], riesgos: ['50012-V1', '50012-V2'], direccion: LUG_V1.direccion, lugar: JSON.parse(JSON.stringify(LUG_V1)),
           oferta: { inspectores: ['Cristian Vaca', 'Diana Cárdenas', 'Luis Andrade'], desde: dia(1), hasta: dia(3), minutos: 45, vigenciaHoras: 2, nota: '', vence: HOY + 'T15:40' } }] : []) };
+    if (e[2] && e[2].dirs) c.riesgos.forEach((r, i) => { r.dir = i < 2 ? SUR : DIR2; }); /* P-6g-2e: 3 vehículos en 2 direcciones */
     // Agenda de los inspectores (hoy, mañana sábado y el lunes): bloques ocupados con su caso.
     const casos = [c, otro('50007', 'Sofía Moreno Paz', [vis(1, 'Mauricio Endara', dia(0), '09:00', '09:45'), vis(2, 'Mauricio Endara', dia(0), '14:00', '15:00')]), otro('30001', 'Panadería La Ronda', [vis(1, 'Diana Cárdenas', dia(0), '15:00', '16:30')]),
       otro('20200', 'Talleres Andinos', [vis(1, 'Luis Andrade', dia(0), '15:00', '15:45'), vis(2, 'Luis Andrade', dia(1), '10:00', '10:45')]), otro('20189', 'Mónica Ruiz', [vis(1, 'Marco Tapia', dia(0), '16:00', '16:45'), vis(2, 'Marco Tapia', dia(3), '08:00', '12:00')]),
