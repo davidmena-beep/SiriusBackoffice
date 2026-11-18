@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 19/11/2026 · N-2d: contextoNotificacion(caso, plantilla) y notificacionContexto(id) para la vista previa y «Ver correo»; salir() conserva ?caso.
 // 19/11/2026 · Configuración publicada escrita dentro del objeto de cada archivo de datos (las funciones de ayuda del archivo ven lo publicado).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.configuracion = { clave: { version, fecha, por, datos } } (versión vigente de cada configuración).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.usuario.correo (igual a email), para «Enviar prueba a mi correo».
@@ -262,6 +263,9 @@
   var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], inspectores: [], usuarios: [], agencias: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
+    // 59f: los datos con que la base arma el correo de un caso (enlaces activos y destinatario típico de la plantilla), para la vista previa
+    contextoNotificacion: function (caso, plantilla) { return rpc('notif_contexto', { p_caso: String(caso || ''), p_plantilla: String(plantilla || '') }).catch(function () { return null; }); },
+    notificacionContexto: function (id) { return get('notificaciones?select=contexto,asunto,plantilla&id=eq.' + encodeURIComponent(id)).then(function (r) { return (r && r[0]) || null; }).catch(function () { return null; }); },
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
   // N-2c: la versión vigente de cada configuración, para publicar «vigente + 1» y mostrarla en los editores: { clave: { version, fecha, por, datos } }
   try { Object.defineProperty(CX, 'configuracion', { configurable: true, enumerable: true, get: function () { var o = {};
@@ -293,7 +297,7 @@
     d.setAttribute('role', 'alert'); d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;max-width:560px;background:#fdecea;color:#b42318;border:1px solid #f1b7b0;border-radius:10px;padding:10px 14px;font:600 13px/1.4 Mulish,system-ui,sans-serif;box-shadow:0 6px 18px #0002';
     d.textContent = 'Conexión con la base: ' + txt; if (!d.parentNode) (document.body || document.documentElement).appendChild(d); } catch (e) {} }
   function avisar() { oyentes.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } }); }
-  function salir(motivo) { localStorage.removeItem(CLAVE); location.href = INGRESO + '?motivo=' + encodeURIComponent(motivo); }
+  function salir(motivo) { localStorage.removeItem(CLAVE); var cs = (location.search.match(/[?&]caso=(\d{3,10})/) || [])[1]; location.href = INGRESO + '?motivo=' + encodeURIComponent(motivo) + (cs ? '&caso=' + cs : ''); }   // N-2d: conserva el caso del enlace
 
   function cargarCasos() {
     return Promise.all([

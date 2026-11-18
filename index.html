@@ -108,7 +108,8 @@ footer{flex:0 0 auto;background:#0033A1;color:#fff;font-size:13px;text-align:rig
  lay();addEventListener('resize',()=>{lay();if(reduce)frame(performance.now());});requestAnimationFrame(frame);})();
 // ---------- ingreso (sin cambios de funcionamiento) ----------
 const SB=supabase.createClient('https://qdciqoxselwmudlycprq.supabase.co','sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW',{auth:{persistSession:true,detectSessionInUrl:true}});
-const BO='SIRIUS%20Back-office.dc.html',q=new URLSearchParams(location.search),a=document.getElementById('a'),$=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search),BO='SIRIUS%20Back-office.dc.html'+(/^\d{3,10}$/.test(q.get('caso')||'')?'?caso='+q.get('caso'):''),   /* N-2d: el enlace de un correo interno (…/?caso=N) abre ese caso después de iniciar sesión */
+ a=document.getElementById('a'),$=id=>document.getElementById(id);
 const aviso=t=>{a.hidden=false;a.textContent=t;};
 if(q.get('motivo'))aviso(q.get('motivo'));
 // P-6f-0g · DEC-233: activación de cuenta con el enlace del Administrador (?activar=<código>&correo=<correo>)
