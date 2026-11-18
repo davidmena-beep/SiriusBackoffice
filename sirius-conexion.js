@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 18/11/2026 · N-2c: SIRIUS_CONEXION.usuario.correo (igual a email), para «Enviar prueba a mi correo».
 // 18/11/2026 · N-1 · SQL 58: la bitácora de notificaciones trae la cola real (asunto, rol, aprobación, intentos; estados Pendiente, Por aprobar, Enviado, Fallido, Rechazado) y «Enviar ahora» llama a la función sirius-notificar.
 // 18/11/2026 · U-1: al crear, reinvitar o cambiar el correo de un invitado, la invitación sale por correo con la función sirius-invitar (el mensaje dice si salió; si no, se copia el enlace como antes).
 // 17/11/2026 · P-6g-2 · SQL 55: SIRIUS_CONEXION.garantias[] y .notificacionesEnvio[] con el contrato de SiriusGarantiasBase (sin el SQL 55, quedan sin definir y siguen los datos de demostración).
@@ -390,7 +391,7 @@
     .then(function (us) {
       var u = us && us[0]; if (!u) { salir('Tu correo no está habilitado en SIRIUS.'); throw new Error('sin usuario'); }
       var roles = (u.datos && u.datos.roles) || [u.rol]; if (roles.indexOf(u.rol) < 0) roles.unshift(u.rol);
-      CX.usuario = { nombre: u.nombre, email: u.email, rol: u.rol, roles: roles, tipoInspector: u.tipo_inspector, agencia: u.agencia ? u.agencia.nombre : null,
+      CX.usuario = { nombre: u.nombre, email: u.email, correo: u.email, rol: u.rol, roles: roles, tipoInspector: u.tipo_inspector, agencia: u.agencia ? u.agencia.nombre : null,
         agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null, identificacion: u.identificacion || null, tipo: u.agencia ? 'Agencia' : String(u.tipo_inspector || '').toLowerCase() === 'independiente' ? 'Independiente' : 'Interno' };   // P-6g: el proveedor de Liquidaciones (agencia por RUC o independiente)
       var origenes = get('configuracion?select=clave,version,origen,creado&vigente=is.true').then(function (fs) { (fs || []).forEach(function (x) { ORIGEN[x.clave] = { origen: x.origen, version: x.version, creado: x.creado }; }); })
         .catch(function (e) { console.warn('[SIRIUS] origen de la configuración no disponible:', e.message); });
