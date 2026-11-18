@@ -4,6 +4,104 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-2b
+
+Publiqué la versión 317 de SIRIUS. El correo que se envía ahora es idéntico a la vista previa: los dos los arma `sirius-correo-render.js`. Además hay un interruptor «Notificaciones», el enlace de autoagendamiento se bloquea cuando ya hay una cita, el Historial usa la hora real de Ecuador con la conexión y la Bitácora se refresca sola.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Vista previa del editor de plantillas | Su propio armado (React) | El HTML de `sirius-correo-render.js` en un iframe con `srcdoc`, con un caso real elegido |
+| «Ver correo» (Bitácora) | Otro armado propio | El mismo HTML, en un iframe |
+| Función de envío sirius-notificar | Armaba el correo a su manera | Puede cargar el mismo archivo (`module.exports` o `globalThis.SiriusCorreoRender`) |
+| Cabecera de Notificaciones | — | Interruptor «Notificaciones: Encendidas / Apagadas», con confirmación y motivo, solo para el Administrador |
+| Bitácora | Se actualizaba solo al salir y volver | Se refresca cada 60 s y al volver a la pestaña del navegador; con «Apagadas», aviso y filas «Simulado» |
+| Configuración de envío | Aprobación activa | Con «Encendidas», la aprobación no aplica: se conserva atenuada |
+| Plantillas | Sin regla de cancelación propia | Regla R23 con la plantilla «solicitud_cancelada» |
+| «Enviar prueba a mi correo» | La base no tenía la acción | Usa `enviarPruebaNotificacion`; la prueba entra a la cola |
+| Coordinar visita › Contacto | «Enviar enlace de autoagendamiento» activo aunque hubiera cita | Bloqueado con «Hay una cita agendada para el dd/mm · hh:mm: no se puede enviar el enlace» |
+| Errores de la base | A veces el JSON crudo (`{"code":"P0001",…}`) | Solo el mensaje |
+| Historial, pestaña Coordinación, Inicio, SLA y vencimientos | Mezclaban horas de la base con el reloj simulado y dos formatos de fecha | Con la conexión, hora real de Ecuador; Historial siempre «dd/mm/aa · hh:mm»; las horas de la base con zona se pasan a Ecuador |
+
+**Qué cambió**
+- **`sirius-correo-render.js` (nuevo):** no tiene dependencias ni usa el DOM.
+  - `html(plantilla, contexto, opciones)`: correo completo con estilos en línea, ancho máximo 600 px y Mulish con respaldo Arial.
+  - `asunto(plantilla, contexto)`: el asunto con las variables llenas.
+  - Bloques: banner, texto, tabla libre, tabla de datos (filtro, columnas, máximo y «vacío»), botón, separador y pie.
+  - Botón con destino «sirius»: lleva al portal para clientes y brókeres, y al Back-office para internos.
+  - Imágenes: se toman de `opciones.assets` + archivo; si no existen, se usa el logo con su texto alternativo.
+  - Variables `{{a.b}}` con los valores escapados; una variable sin dato muestra «—».
+- **Contexto del correo:** `SiriusNotifCola.contexto` arma el contexto con la forma de la base, a partir de los datos del caso. `SiriusNotifCola.opciones` saca los enlaces, las imágenes y el logo de `SIRIUS_NOTIFICACIONES.envio`, que también lee la función de envío.
+- **Interruptor:**
+  - Lee `SIRIUS_NOTIFICACIONES.envio.activo` y lo cambia con `configurarEnvioNotificaciones { activo, motivo }`.
+  - Con «Apagadas», la Bitácora avisa «Los correos nuevos quedan «Simulado»: no salen», con quién las apagó, cuándo y por qué.
+  - Con «Encendidas», la aprobación por regla no aplica y se ve atenuada.
+- **Prueba:** `enviarPruebaNotificacion` pone la prueba en la cola: «Pendiente», o «Simulado» si las notificaciones están apagadas.
+- **R23:** regla «Solicitud cancelada» con la plantilla `solicitud_cancelada`. Las filas de cancelación usan R23.
+- **Enlace de autoagendamiento:** una sola función (`agBloqueo`) mira si todos los riesgos del caso están en una visita abierta. Lo usan Contacto y la pestaña Coordinación. Un botón bloqueado muestra el aviso al pasar el cursor.
+- **Errores de la base:** `cxMsg` saca el mensaje de un JSON o de una excepción, en todas las acciones de la base.
+- **Reloj real:** con la conexión, `SIRIUS_EJEMPLO.ahora()`, `hoy()`, `fechaDemo` y `horaDemo` leen la hora de Ecuador (UTC−5). Sin la conexión, sigue el reloj de demostración.
+- **Formato de fechas:** el Historial, la Bitácora y la pestaña Coordinación pasan a Ecuador las horas de la base con zona y usan «dd/mm/aa · hh:mm».
+- **Refresco:** la Bitácora vuelve a leer la cola cada 60 s y al volver a la pestaña del navegador. Usa `recargar('notificacionesEnvio')` si la conexión lo tiene y, si no, relee `notificacionesEnvio[]`.
+
+**Prueba cruzada**
+
+1. La vista previa de cada plantilla y el HTML de `sirius-correo-render.js`, con el caso 20178:
+
+| Plantilla | Vista previa = HTML de la función |
+|---|---|
+| gar_recordatorio, gar_vencidas, visita_confirmada, enlace_autoinspeccion, enlace_autoagendamiento, enlace_agenda_recordatorio, enlace_recordatorio, documento_revision, interno_aviso, solicitud_cancelada, prueba_bloques y encuesta | Iguales en las 12 |
+| prueba_bloques en el editor (iframe) | Igual: 5215 caracteres, huella 26592955 |
+| prueba_bloques en Node, sin `window` ni `document` (como la función de envío) | Igual a la página |
+
+2. Las fechas de un mismo evento (`historialreloj`, prueba de las 13:08 de Ecuador, horas de la base en UTC):
+
+| Evento | Base | Historial | Bitácora | Pestaña Coordinación |
+|---|---|---|---|---|
+| Visita agendada (V1) y su R05 | 16:33 UTC | 18/11/26 · 11:33 | 18/11/26 · 11:33 (salió 11:33) | — |
+| Intento de contacto | 15:48 UTC | 18/11/26 · 10:48 | — | 18/11/26 · 10:48 |
+| Eventos de la pantalla (nota y enlace) | — | Hora real de Ecuador; el enlace «vence el 25/11/26», no el 25/10 | — | — |
+
+**Verificado (1280×720 y 1920×1080)**
+- Las 5 escenas nuevas, `notifporaprobar`, `notifverkorreo`, las de Coordinar visita (`coordcontacto`, `cxcoordcontacto`, `coordagendada`, `enlaceagenda`, `coordfases`, `cxvisitacancelar` y `cxestadoparcial`) y otras abren sin error de página.
+- `sirius-correo-render.js` en un contexto sin `window` ni `document`: arma el correo, escapa `<Andina>`, filtra «Pendientes», manda el botón al portal para un bróker, usa el logo cuando falta el banner y el pie del almacén.
+- `notifinterruptor`: sin motivo no cambia. Encender con motivo quita el aviso; apagar lo devuelve. Con las notificaciones apagadas, la prueba queda «Simulado» en la Bitácora. A la base van `configurarEnvioNotificaciones` y `enviarPruebaNotificacion` con su forma.
+- `enlacebloqueado`: el botón queda deshabilitado con el aviso «Hay una cita agendada para el 19/10 · 10:00: no se puede enviar el enlace».
+- Error de la base con `{"code":"P0001",…,"message":"Todos los riesgos del caso ya están en una visita abierta"}`, tanto como respuesta como en una excepción: se ve solo «Todos los riesgos del caso ya están en una visita abierta».
+- `notifprueba`: la prueba aparece «Pendiente» en la Bitácora.
+- Refresco: un correo agregado fuera de la pantalla aparece al volver a la pestaña, y su cambio a «Enviado» aparece solo a los 60 s.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La función de envío real (sirius-notificar) cargando `sirius-correo-render.js`: lo tiene que conectar la asesoría. El archivo ya funciona sin navegador.
+- Las imágenes reales: en el proyecto no hay banners ni logo. Sin `envio.assets` ni `envio.logo`, el banner sale como una franja con su texto alternativo, igual en la vista previa y en el envío.
+- Si la conexión real tiene `recargar('notificacionesEnvio')` o actualiza `notificacionesEnvio[]` por su cuenta: sin ninguna de las dos, el refresco relee lo que ya tiene.
+
+**Diferencias**
+- **Reloj real:** se usa con la conexión real. Entre las escenas simuladas, solo `historialreloj` lo usa; las demás siguen con el reloj de demostración para que sean repetibles.
+- **Escena «Probar envío» simulada:** la antigua `notifprueba` ahora se llama `notifprobarenvio`. `notifprueba` es la prueba con la base.
+- **Plantillas nuevas:** «Prueba de bloques (todos)» (Borrador) se agregó para la escena `correoigual`, y «solicitud_cancelada» para R23.
+- **Variable sin dato:** muestra «—» también en la vista previa; antes el editor la marcaba como «Sin dato en este caso». Así la vista previa es igual al envío.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `correoigual` | Andrea Salazar · Administrador | La vista previa y el HTML de `sirius-correo-render.js`, lado a lado e iguales |
+| `notifinterruptor` | Andrea Salazar · Administrador (conexión simulada) | «Notificaciones: Apagadas», el aviso en la Bitácora y dos correos «Simulado»; encender y apagar con motivo |
+| `enlacebloqueado` | Andrea Salazar · Coordinador (conexión simulada) | Contacto del caso 50012 con «Enviar enlace de autoagendamiento» bloqueado |
+| `historialreloj` | Andrea Salazar (conexión simulada, reloj real) | Historial del caso 50012 con hora real y un solo formato |
+| `notifprueba` | Andrea Salazar · Administrador (conexión simulada) | «Enviar prueba a mi correo» con la base y la prueba «Pendiente» en la Bitácora |
+
+También abrí `notifporaprobar`, `notifverkorreo`, `cxnotifcola`, `notifprobarenvio`, `notifeditor`, `notifbitacora`, `coordcontacto`, `cxcoordcontacto`, `coordagendada`, `enlaceagenda`, `coordfases`, `cxvisitacancelar`, `cxestadoparcial`, `historden` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 12:41 · fin 18/11/2026 13:09 · 28 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-2
 
 Publiqué la versión 314 de SIRIUS. La Bitácora de Notificaciones ahora es la cola real de correos: con la conexión lee `notificacionesEnvio[]` y desde ahí se aprueba, se rechaza, se reenvía y se envía ahora. La configuración de envío y las plantillas se guardan en la base con la publicación de configuración que ya existía.

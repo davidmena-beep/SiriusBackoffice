@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="datos-compania.js"></script><script src="sirius-motivo.js"></script>
 <script src="sirius-fecha.js"></script>
-<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-notif-cola.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-correo-render.js"></script><script src="sirius-notif-cola.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
 </helmet>
 <section data-screen-label="BO-25 Notificaciones" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
@@ -27,12 +27,13 @@
 <h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Notificaciones</h1>
 <p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">Reglas, plantillas y canales de los avisos por correo, WhatsApp, SMS y en SIRIUS.</p>
 </div>
-<div style="flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:8px;white-space:nowrap">
+<div style="flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;white-space:nowrap">{{ intNode }}
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" icon-left="{{ histIcon }}" on-click="{{ openHist }}" hint-size="210px,40px">Historial de cambios</x-import>
 <sc-if value="{{ tabReglas }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ openNew }}" hint-size="170px,40px">Agregar regla</x-import></sc-if>
 <sc-if value="{{ tabPlant }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="md" icon-left="{{ plusIcon }}" on-click="{{ openNewPl }}" hint-size="190px,40px">Agregar plantilla</x-import></sc-if>
 </div>
 </div>
+{{ cmpNode }}
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
 <sc-if value="{{ tabReglas }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
@@ -100,7 +101,7 @@
 </sc-if>
 </section>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;: {&quot;editor&quot;: null, &quot;default&quot;: &quot;reglas&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;userName&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;casos&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onOpenCase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;valoresCaso&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onCrumb&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;ir&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onIr&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;stickyTop&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;envios&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onReenviar&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;cola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;colaBase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;onCola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(tipo:string,datos:any)=&gt;any&quot;}, &quot;rol&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;: {&quot;editor&quot;: null, &quot;default&quot;: &quot;reglas&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;userName&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;casos&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onOpenCase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;valoresCaso&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onCrumb&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;ir&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onIr&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;stickyTop&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;envios&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onReenviar&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;cola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;colaBase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;onCola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(tipo:string,datos:any)=&gt;any&quot;}, &quot;rol&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;onRefrescarCola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(motivo:string)=&gt;any&quot;}}">
 class Component extends DCLogic {
   TABS = ['Reglas', 'Plantillas', 'Variables', 'Canales', 'Configuración de envío', 'Bitácora']; // N-2 · DEC-256: «Configuración de envío» (4) y la Bitácora es la cola de correos (5)
   TIPOS = [['estado', 'Por estado'], ['regla', 'Por regla de tiempo'], ['evento', 'Por evento']];
@@ -125,6 +126,8 @@ class Component extends DCLogic {
     if (e === 'polizaoff') { st.tab = 2; st.panel = 'var'; st.orig = 'caso.poliza'; st.vQ = 'póliza'; }
     // Etapa 10n-plantillas: el editor ocupa la página (EditorPlantilla.dc.html).
     if (this.EDIT_ESC.includes(e)) { st.tab = 1; st.editor = { id: '', dup: '', escena: e === 'nuevaplant' ? '' : e, n: 1 }; }
+    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo' }; if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
+    if (e === 'correoigual') st.tab = 1; if (e === 'interruptor') st.tab = 5;
     return st;
   })();
   N() { return window.SIRIUS_NOTIFICACIONES || null; }
@@ -328,7 +331,7 @@ class Component extends DCLogic {
     if (st.editor) { const ed = st.editor; v.ed = { key: 'ed-' + ed.n, id: ed.id, dup: ed.dup, escena: ed.escena, canal: ed.canal || '', ir: this.props.onIr || null, user: this.user(), casos: (this.props.casos || []).map(c => ({ id: c.id, asegurado: c.asegurado })).sort((a, b) => a.id < b.id ? -1 : 1), valores: this.props.valoresCaso || null, stickyTop: this.props.stickyTop || '16px',
       volver: () => this.cerrarEditor(), guardado: (id) => { if (id) this._edSaved = id; this.forceUpdate(); }, crumb: (n) => { if (this.props.onCrumb) this.props.onCrumb(n); } }; }
     v.tabReglas = st.tab === 0; v.tabPlant = st.tab === 1; v.tabVar = st.tab === 2; v.tabCan = st.tab === 3; v.tabEnv = st.tab === 4; v.tabBit = st.tab === 5;
-    if (!N || !F) return Object.assign(v, { regRows: [], regCols: [], plRows: [], plCols: [], cueRows: [], cueCols: [], varRows: [], varCols: [], colaNode: null, envNode: null });
+    if (!N || !F) return Object.assign(v, { regRows: [], regCols: [], plRows: [], plCols: [], cueRows: [], cueCols: [], varRows: [], varCols: [], colaNode: null, envNode: null, intNode: null, cmpNode: null });
     if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
     v.plusIcon = this.plusIcon || null;
     v.histIcon = this.histIcon || (this.histIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' })));
@@ -409,6 +412,9 @@ class Component extends DCLogic {
     if (this.state.colaPre) return this.state.colaPre; if (this._preUsado) return {}; return P[e] || {}; }
   accionCola(tipo, datos) { const NCx = this.NC(); if (this.props.onCola) return this.props.onCola(tipo, datos); /* sin el Back-office: la cola de ejemplo con la misma regla */
     const r = NCx.ops(NCx.copia(), tipo, datos, { por: this.user(), rol: this.rolActual() }); this.forceUpdate(); return Promise.resolve(r); }
+  cambiarEnvio(activo, motivo) { const N = this.N(), H = this.hist(), by = this.user();
+    return Promise.resolve(this.accionCola('configurarEnvioNotificaciones', { activo, motivo })).then(r => { r = r || {}; if (r.ok === false) return r;
+      H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: (activo ? 'Encendió' : 'Apagó') + ' las notificaciones', motivo }); this.setState(st => ({ envKey: (st.envKey || 0) + 1 })); return r; }); }
   datosPub() { const N = this.N(), o = Object.assign({}, N); delete o.cola; delete o.colaEjemplo; return o; } // la cola no es configuración
   guardarEnvio(nuevo, motivo) { const N = this.N(), antes = JSON.parse(JSON.stringify(N.envio || {})), H = this.hist(), h0 = H.length, by = this.user();
     N.envio = nuevo; H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Cambió la configuración de envío', motivo }); this.forceUpdate();
@@ -418,12 +424,15 @@ class Component extends DCLogic {
       alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Configuración de envío publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } })
       .then(r => r && r.ok === false ? r : { ok: true, mensaje: 'Guardado en la base (versión ' + ((r || {}).version || '') + ').' }); }
   colaVals() { const NCx = this.NC(), v = {}, base = !!this.props.colaBase, N = this.N();
-    if (!NCx) { this.glEsperar('SiriusNotifCola'); v.colaNode = this.cargando('Cargando la cola de correos…'); v.envNode = this.cargando('Cargando la configuración de envío…'); v.tabs = this.TABS; return v; }
+    if (!NCx) { this.glEsperar('SiriusNotifCola'); v.colaNode = this.cargando('Cargando la cola de correos…'); v.envNode = this.cargando('Cargando la configuración de envío…'); v.intNode = null; v.cmpNode = null; v.tabs = this.TABS; return v; }
     const L = Array.isArray(this.props.cola) ? this.props.cola : NCx.lista(), k = NCx.cuenta(L), h = React.createElement;
     v.tabs = this.TABS.map((t, i) => i === 5 && k.porAprobar ? 'Bitácora (' + k.porAprobar + ' por aprobar)' : t);
     if (this.state.tab === 5) { const pre = this.colaPreset(); this._preUsado = true;
       v.colaNode = h(NCx.Bitacora, { key: 'cola-' + (this.state.colaKey || 0), lista: L, base, rol: this.rolActual(), preset: pre, autoKey: this.props.escena || '', verAcciones: this.props.escena === 'cxcola',
-        onAccion: (t, d) => this.accionCola(t, d), onCaso: (id) => { if (this.props.onOpenCase) this.props.onOpenCase(id); }, valores: this.props.valoresCaso || null, canalNombre: (c) => this.canalNombre(c) }); }
+        onAccion: (t, d) => this.accionCola(t, d), onRefrescar: this.props.onRefrescarCola || null, onCaso: (id) => { if (this.props.onOpenCase) this.props.onOpenCase(id); }, valores: this.props.valoresCaso || null, canalNombre: (c) => this.canalNombre(c) }); }
+    v.intNode = h(NCx.Interruptor, { key: 'int-' + (NCx.envio().activo ? 1 : 0), rol: this.rolActual(), onCambiar: (activo, motivo) => this.cambiarEnvio(activo, motivo) });
+    v.cmpNode = this.props.escena === 'correoigual' && !this.state.cmpCerrado ? h('section', { 'aria-label': 'Vista previa y envío, lado a lado', style: { display: 'flex', flexDirection: 'column', gap: 8, padding: 16, border: '1px solid var(--border-subtle)', borderRadius: 12 } }, h('h2', { style: { margin: 0, fontSize: 18, color: 'var(--text-strong)' } }, 'Vista previa y correo enviado, lado a lado'),
+      h(NCx.Comparar, { plantilla: 'prueba_bloques', caso: (this.props.casos || []).some(c => c.id === '20178') ? '20178' : '', casos: (this.props.casos || []).map(c => ({ id: c.id, asegurado: c.asegurado })).sort((a, b) => a.id < b.id ? -1 : 1), valores: this.props.valoresCaso || null, onEditor: () => this.abrirEditor({ id: 'prueba_bloques', ret: 'Editar · Prueba de bloques (todos)' }) })) : null;
     if (this.state.tab === 4) v.envNode = h(NCx.ConfigEnvio, { key: 'env-' + (this.state.envKey || 0), cola: L, base, rol: this.rolActual(), onGuardar: (nuevo, mot) => this.guardarEnvio(nuevo, mot) });
     return v; }
   // Etapa 10n-variables: diccionario de variables (SiriusVariables) con disponibilidad, clasificación LOPDP y uso.

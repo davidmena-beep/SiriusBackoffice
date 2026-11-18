@@ -401,9 +401,15 @@ class Component extends DCLogic {
     return { propuestas: P0.map(g => ({ title: g.title, dir: g.dir && g.dir !== 'Sin dirección' ? g.dir : 'Sin dirección', count: g.n === 1 ? '1 vehículo' : g.n + ' vehículos', labels: g.list.map(r => r.label), ids: g.ids, enUso: igual(g.ids), usar: () => this.usarGrupo(g.ids) })), vacio: !P0.length,
       vacioTxt: 'No quedan vehículos por coordinar' + (abiertas.length ? ': todos están en una visita abierta (' + abiertas.join(', ') + ').' : '.'), bloqueada: p.ofertaId ? 'Para cambiar los vehículos, anula la oferta.' : '' }; }
   // Enlace de autoagendamiento desde Contacto: canal (WhatsApp, SMS o correo, vía Genesis) y destinatario; usa la acción de enlaces de siempre (enlaceAgenda).
+  // N-2b · DEC-257: el enlace de autoagendamiento no se envía si todos los riesgos del caso ya están en una visita abierta (la base lo rechazaría).
+  // La misma función bloquea el botón de Contacto (Coordinar visita) y el de la pestaña Coordinación.
+  agBloqueo() { const rs = this.props.riesgos || [], vis = this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección', 'Realizada', 'Inspeccionada'].includes(v.estado)), en = new Set();
+    vis.forEach(v => (v.riesgos || []).forEach(id => en.add(id))); if (!rs.length || !rs.every(r => en.has(r.id))) return '';
+    const cita = vis.filter(v => v.fecha && v.hIni).sort((a, b) => (a.fecha + a.hIni) < (b.fecha + b.hIni) ? -1 : 1)[0];
+    return cita ? 'Hay una cita agendada para el ' + cita.fecha.slice(8, 10) + '/' + cita.fecha.slice(5, 7) + ' · ' + cita.hIni + ': no se puede enviar el enlace' : 'Todos los riesgos del caso ya están en una visita abierta: no se puede enviar el enlace'; }
   autoagendaCtx(p, iv) { const AG = this.props.enlaceAgenda || null, ck = { whatsapp: 'WhatsApp', sms: 'SMS', correo: 'Correo' };
     const L = (this.canalesDe({ cName: p.cName, cCel: p.cCel, cMail: p.cMail }).opciones || []).map(x => ({ canal: ck[x.k] || x.nombre, ok: !!x.ok, porque: x.motivo || '' }));
-    const okMod = ['Presencial', 'Virtual guiada'].includes(p.mod), mot = this.props.estadoCaso === 'Cancelado' ? 'el caso está cancelado' : this.props.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'solo en Presencial y Virtual guiada (la modalidad es ' + p.mod + ')' : '';
+    const okMod = ['Presencial', 'Virtual guiada'].includes(p.mod), bloq = this.agBloqueo(), mot = bloq ? bloq : this.props.estadoCaso === 'Cancelado' ? 'el caso está cancelado' : this.props.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'solo en Presencial y Virtual guiada (la modalidad es ' + p.mod + ')' : '';
     const est = AG && window.SiriusEnlace && AG.token ? ((window.SiriusEnlace.estado(AG.token) || {}).nombre || '') : '';
     return { motivo: mot, canales: L.length ? L : null, estado: AG ? [est, 'por ' + (AG.canales || []).map(k => ck[k] || k).join(' y ') + (AG.cName ? ' a ' + AG.cName : ''), AG.envio ? 'el ' + this.fmtDT(AG.envio) : '', AG.venceTxt ? 'vence el ' + AG.venceTxt : ''].filter(Boolean).join(' · ') : '' }; }
   enviarAutoagenda(p, q) { const onA = this.props.onAction || (() => {}), d = q.destinatario || {}, k = { WhatsApp: 'whatsapp', SMS: 'sms', Correo: 'correo' }[q.canal] || 'whatsapp';
@@ -431,7 +437,9 @@ class Component extends DCLogic {
     if (l && v.lugarCliente) { const o = l.origen === 'GPS' ? 'GPS' : l.origen === 'Mapa' ? 'mapa' : l.origen === 'Solicitud' ? 'confirmó la de la solicitud' : 'dirección buscada'; out.splice(3, 0, { label: 'Origen', value: 'cliente (' + o + ')', ws: 'normal', span: 'auto', color: 'var(--text-strong)' }); } // G-2d · DEC-222: «Origen: cliente (GPS)»
     return out; }
   addHours(val) { const h = /(\d+) d/.test(val) ? Number(RegExp.$1) * 24 : parseInt(val, 10) || 48; const d = window.SIRIUS_EJEMPLO.ahora(); d.setHours(d.getHours() + h); const z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
-  fmtDT(iso) { const [dd, tt] = iso.split('T'); return this.fmtD(dd) + ' · ' + tt; }
+  // N-2b · DEC-257: una hora de la base con zona (Z o ±hh:mm) se muestra en hora de Ecuador y con el mismo formato del Historial (dd/mm/aa · hh:mm).
+  ecIso(t) { const x = String(t || '').trim(); if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})$/i.test(x)) return x; const ms = Date.parse(x.replace(' ', 'T')); return isNaN(ms) ? x : new Date(ms - 5 * 3600e3).toISOString().slice(0, 16); }
+  fmtDT(iso) { const [dd, tt] = this.ecIso(iso).replace(' ', 'T').split('T'); return this.fmtD(dd) + ' · ' + String(tt || '').slice(0, 5); }
   state = this.initial();
   initial() {
     const p = this.props, pr = p.preset || '';
@@ -467,6 +475,7 @@ class Component extends DCLogic {
       const dia = (k) => { const d = new Date(this.today + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); };
       if (E.fecha != null) s.pnl.fecha = typeof E.fecha === 'number' ? dia(E.fecha) : E.fecha; if (E.hIni) s.pnl.hIni = E.hIni; if (E.hFin) s.pnl.hFin = E.hFin; if (E.inspector) s.pnl.inspector = E.inspector; if (E.fueraMot) s.pnl.fueraMot = E.fueraMot;
       Object.assign(s.pnl, { fase: E.fase || 'contacto', enviar: E.enviar || '', verFuera: !!E.verFuera, panelOferta: !!E.panelOferta, ofertaIns: E.ofertaIns || null, propAuto: false, hFinAuto: false }); if (E.contacto) s.pnl.ctoEsc = JSON.parse(JSON.stringify(E.contacto)); if (E.dest) s.pnl.dest = Object.assign({}, s.pnl.dest, E.dest); if (E.llamarHace) s.pnl.llamarHace = E.llamarHace; if (E.obs) s.pnl.obs = E.obs; /* G-2c3: escenas de la fase Contacto */ if (E.fecha == null && E.diaVista != null) s.pnl.diaVista = dia(E.diaVista); if (E.agrup) s.pnl.agrup = true; if (E.agrupar) s.pnl.agrupar = true; /* P-6g-2e: escenas coordagrupar y coordagrupartodos */
+      if (E.contactoCaso) { s.pnl = this.newForm([], { mode: 'contacto' }); s.pnl.fase = 'contacto'; } /* N-2b · enlacebloqueado: «Contacto del caso» con todos los riesgos en visitas */
       if (E.reagendar) { const v0 = this.visits().find(x => x.id === E.reagendar); if (v0) { s.pnl = this.newForm(v0.riesgos, Object.assign({}, v0, { mode: 'reagendar', visitId: v0.id, riesgos: v0.riesgos })); s.pnl.fase = E.fase || 'contacto'; s.insQ = v0.inspector || ''; } } /* G-2c4: reagendar una visita (sus vehículos sí se pueden elegir) */
       if (E.cerrado) s.pnl = null; /* G-2c4: sin el panel, para ver la pestaña */ }
     else if (rs.length === 1 && !this.activeVisit() && p.canEdit !== false && ['cxcoordins', 'cxcoordpasado'].includes(pr)) { s.pnl = this.newForm(rs.map(r => r.id)); s.pnl.fase = 'horario';
@@ -691,7 +700,7 @@ class Component extends DCLogic {
         const pl0 = { modalidad: modAg, cName: (s.pnl && s.pnl.cName) || ct.nombre || '', cCel: (s.pnl && s.pnl.cCel) || ct.cel || '', cMail: (s.pnl && s.pnl.cMail) || ct.correo || '' };
         // Etapa C2-5: canales según los datos de contacto y los consentimientos (por defecto WhatsApp si hay celular); sin ninguno, el envío se bloquea.
         const cxC = this.canalesDe(pl0), posibles = cxC.opciones, sinCanal = !posibles.some(x => x.ok), agCan = (Array.isArray(s.agCan) ? s.agCan : this.canalDef(posibles)).filter(k => posibles.some(x => x.ok && x.k === k));
-        const mot = P.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'Solo en las modalidades Presencial y Virtual guiada (la elegida es ' + modAg + ')' : sinCanal ? this.SIN_CANAL() : ''; // etapa C2-2: disponible siempre en Presencial y Virtual guiada
+        const bloqAg = this.agBloqueo(), mot = bloqAg ? bloqAg : P.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'Solo en las modalidades Presencial y Virtual guiada (la elegida es ' + modAg + ')' : sinCanal ? this.SIN_CANAL() : ''; // etapa C2-2: disponible siempre en Presencial y Virtual guiada
         const pl = () => Object.assign({}, pl0, { cName: cxC.contacto.nombre || pl0.cName, cCel: cxC.contacto.cel || '', cMail: cxC.contacto.correo || '', canales: agCan.slice() });
         const mods = this.modCfg() ? ((L) => L.length ? L : ['Presencial'])(['Presencial', 'Virtual guiada'].filter(m => this.modOk(m))) : this.soloPresencial() ? ['Presencial'] : ['Presencial', 'Virtual guiada'], agSel = s.agMod && mods.includes(s.agMod) ? s.agMod : (mods.includes(modAg) ? modAg : 'Presencial');
         const enviarCon = (m) => { if (!agCan.length) { this.setState({ agCanMarcar: true }); return; } const q = Object.assign(pl(), { modalidad: m }); this.setState({ agMod: null, agOpenS: false, agCan: null, agCanMarcar: false }); this.trasEnvio(onAct('enlaceAgenda', q), (x) => this.agMostrar(x, q)); };
