@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 19/11/2026 · Configuración publicada escrita dentro del objeto de cada archivo de datos (las funciones de ayuda del archivo ven lo publicado).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.configuracion = { clave: { version, fecha, por, datos } } (versión vigente de cada configuración).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.usuario.correo (igual a email), para «Enviar prueba a mi correo».
 // 18/11/2026 · N-1 · SQL 58: la bitácora de notificaciones trae la cola real (asunto, rol, aprobación, intentos; estados Pendiente, Por aprobar, Enviado, Fallido, Rechazado) y «Enviar ahora» llama a la función sirius-notificar.
@@ -58,7 +59,13 @@
   function aplicar(clave) { var f = ARCH[clave], d = CONFIG && CONFIG[clave];
     if (d && f && !deAdministracion(clave) && masNueva(f.version, d.version)) { console.warn('[SIRIUS] ' + clave + ': el archivo (v' + f.version + ') es más nuevo que la base (v' + d.version + '); se usa el archivo.'); MEZCLA[clave] = f; return; }
     if (d && f && deAdministracion(clave) && masNueva(f.version, d.version)) console.info('[SIRIUS] ' + clave + ': se usa lo publicado desde Administración (v' + d.version + ') aunque el archivo diga v' + f.version + '.');
-    MEZCLA[clave] = d ? (f ? mezclar(f, d) : d) : f; }
+    MEZCLA[clave] = d ? (f ? enElArchivo(f, mezclar(f, d)) : d) : f; }
+  // 19/11/2026 · Corrección definitiva: lo publicado se escribe DENTRO del objeto del archivo de datos (misma identidad), no en una copia.
+  // Los archivos datos-*.js traen funciones de ayuda que leen su propio objeto (por ejemplo N.plantilla = (id) => N.plantillas.find(…)).
+  // Con una copia, esas funciones seguían leyendo los datos originales del archivo: la pantalla mostraba la versión vigente en la
+  // cabecera, pero el contenido de la versión del archivo (la plantilla publicada «no se guardaba»).
+  function enElArchivo(f, r) { if (!esObj(f) || !esObj(r) || f === r) return r;
+    Object.keys(r).forEach(function (k) { if (f[k] !== r[k]) { try { f[k] = r[k]; } catch (e) {} } }); return f; }
   function vigilar(clave) { if (Object.getOwnPropertyDescriptor(window, clave)) return;
     Object.defineProperty(window, clave, { configurable: true, enumerable: true, get: function () { return MEZCLA[clave]; }, set: function (v) { ARCH[clave] = v; aplicar(clave); } }); }
   ['SIRIUS_COMPANIA','SIRIUS_CATALOGO_CIIU','SIRIUS_INFORMES_RG','SIRIUS_CATALOGOS_MAESTROS','SIRIUS_FLUJO','SIRIUS_FLUJO_MOTOR','SIRIUS_MONITOR','SIRIUS_SEGUIMIENTO',
