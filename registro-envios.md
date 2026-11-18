@@ -4,6 +4,92 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-2d
+
+Publiqué la versión 302 de SIRIUS. La pestaña Coordinación ya no repite botones: arriba, una franja de resumen; luego Contacto, de solo lectura, y Visitas del caso. La única entrada a Coordinar visita es la acción principal de la cabecera. En Coordinar visita, el pie cambia según lo que ya se envió o agendó. No cambió ninguna función, solo desde dónde se activa (DEC-252).
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Pestaña Coordinación › arriba | Bloque grande «Recomendación del sistema»: puntaje, alertas y modalidad con su motivo | Franja de una línea: puntaje y nivel, modalidad recomendada (el motivo en la ayuda al pasar el cursor), «N alertas», que abre la lista, y estado de la coordinación |
+| Pestaña › «Intentos de contacto» | «Llamar y registrar intento», «Enviar enlace de autoagendamiento» y «Cancelar la solicitud…»; tarjeta del enlace con reenviar y generar | «Contacto»: el historial de intentos y enlaces, de solo lectura, con un único «Registrar contacto» que abre Coordinar visita › Contacto |
+| Pestaña › «Vehículos por coordinar» (varios riesgos) | Casillas, «Agrupar por dirección», «Crear visita con los seleccionados» y «Crear esta visita» | Sale. Los vehículos se eligen en la barra de Coordinar visita; el estado de cada uno está en la franja («2 de 3 agendados») y en la pestaña Riesgos |
+| Pestaña › tarjeta «Coordinar inspección» (un riesgo) | «Coordinar visita» | Sale |
+| Pestaña › «Visitas del caso» | Sin visitas: «Aún no hay visitas agendadas para este caso.» | Sin cambios en las tarjetas. Sin visitas: «Aún no hay visitas. Usa «Coordinar visita» arriba.», sin botón |
+| Cabecera › acción principal | «Coordinar inspección» o «Agendar visita» solo bajaban a la pestaña. «Coordinar visita» abría Coordinar visita cuando ya había visitas | «Coordinar visita» abre siempre Coordinar visita con lo que falta por coordinar. «Ver visita» sigue igual |
+| Cabecera › menú «⋯» | «Agendar · abre Coordinación» y «Cancelar por coordinación» (transiciones del flujo; la segunda abría la ventana genérica de cancelar) | «Agendar» no se repite cuando la cabecera ya abre Coordinar visita. «Cancelar la solicitud…» abre Coordinar visita › Contacto con la cancelación y el motivo del catálogo |
+| Coordinar visita › pie | Siempre «Salir · ← fase anterior · secundaria · principal». Con la oferta enviada: «Anular oferta» (sin confirmar) y «Listo · siguiente caso»; «Salir» preguntaba aunque no hubiera nada que guardar | Según el estado: edición como antes; oferta abierta: franja, «Anular oferta…» (confirma), «Volver al caso» y «Siguiente caso»; visita agendada sin cambios: «Cancelar visita…», «Volver al caso» y «Siguiente caso» |
+| Coordinar visita › Contacto y Lugar con la oferta abierta | Se podían editar | Se ven, pero no se editan: «Para cambiar el lugar (o el contacto), anula la oferta.» |
+| Bandeja › acción «Coordinar inspección» de la fila | Abre el caso en la pestaña Coordinación | Sin cambios |
+| Agenda › abrir la coordinación de una visita | Coordinar visita en «Reagendar», pie de edición | Igual, con el pie de visita agendada hasta que cambie algo |
+| Inicio del Coordinador › «Para hoy» | Abre la pestaña Coordinación | Sin cambios; ahí, la acción principal |
+
+**Qué cambió**
+- **Pestaña Coordinación:** franja de resumen, Contacto de solo lectura con «Registrar contacto» y Visitas del caso. Salieron la tarjeta «Coordinar inspección» y la lista de vehículos con «Crear visita».
+- **Cabecera:**
+  - La acción principal se llama «Coordinar visita» y es la única entrada a Coordinar visita desde la pestaña.
+  - «Cancelar la solicitud…» está en el menú «⋯»; reemplaza a la transición «Cancelar por coordinación» cuando el caso está en coordinación.
+- **Coordinar visita:**
+  - El pie cambia según el estado: edición, oferta abierta o visita agendada.
+  - «Anular oferta…» pide confirmación.
+  - «Salir» y «Volver al caso» solo preguntan si hay algo escrito sin enviar.
+  - «Listo · siguiente caso» pasa a «Siguiente caso».
+  - «Cancelar visita…» abre la misma ventana con motivo de la tarjeta de la visita.
+  - Los atajos siguen igual: Ctrl+Enter ejecuta la acción principal y Alt+← / Alt+→ cambian de fase.
+
+**Prueba cruzada (cada función, desde dónde se activa)**
+
+| Función | Antes | Ahora |
+|---|---|---|
+| Llamar y registrar el intento | Pestaña («Llamar y registrar intento») y Coordinar visita › Contacto | Coordinar visita › Contacto. En la pestaña, «Registrar contacto» lleva ahí |
+| Enviar el enlace de autoagendamiento | Pestaña y Coordinar visita › Contacto | Coordinar visita › Contacto |
+| Cancelar la solicitud | Pestaña, Coordinar visita › Contacto y menú «⋯» («Cancelar por coordinación», otra ventana) | Menú «⋯» («Cancelar la solicitud…», que lleva a Coordinar visita › Contacto) y Coordinar visita › Contacto |
+| Coordinar (abrir Coordinar visita) | Cabecera (a veces solo bajaba), tarjeta «Coordinar inspección», «Crear visita con los seleccionados», «Crear esta visita» y «Agendar» del menú | Cabecera «Coordinar visita» |
+| Ofertar | Coordinar visita › Inspector y horario | Sin cambios |
+| Anular la oferta | Pie de Coordinar visita (solo en Inspector y horario, sin confirmar) y tarjeta de la visita en la pestaña | Pie de Coordinar visita («Anular oferta…», confirma, en cualquier fase) y tarjeta de la visita |
+| Cancelar una visita | Tarjeta de la visita en la pestaña | Tarjeta de la visita y pie de Coordinar visita con la visita agendada («Cancelar visita…», la misma ventana con motivo) |
+| Siguiente caso | Pie («Listo · siguiente caso», «Siguiente caso» sin contacto, «Agendar y siguiente») | Pie («Siguiente caso», «Agendar y siguiente») |
+
+Ninguna de estas funciones se perdió y ninguna aparece dos veces en la misma pantalla. Sí salió el atajo «Agrupar por dirección» (ver Diferencias). En la pestaña quedan la cabecera «Coordinar visita» y el enlace «Registrar contacto»; los dos llevan a la misma pantalla, como pide la definición. La tarjeta de la visita y el pie de Coordinar visita están en pantallas distintas.
+
+**Verificado (1280×720 y 1920×1080)**
+- Las 4 escenas nuevas y 21 existentes de la pestaña y de Coordinar visita, sin errores: `coord`, `coordvis`, `coordrg`, `coordchoque`, `coordauto`, `coordfases`, `coordcontacto`, `coordcancelar`, `coordmarco`, `coordsalir`, `cxcoordfases`, `cxcabecera`, `coordcancelavisitas`, `cxcoordcontacto`, `coordoferta`, `coordautoinsp`, `coordvirtual`, `cxcoordins`, `cxcoordcambiar`, `coordenlaceauto` y `cxestadoparcial`.
+- Con clics:
+  - «Registrar contacto» y la cabecera abren Coordinar visita › Contacto.
+  - «Cancelar la solicitud…» del menú lo abre con la cancelación desplegada.
+  - «3 alertas» abre la lista de alertas.
+  - Con la oferta: Lugar y Contacto bloqueados con su aviso; «Anular oferta…» → «Volver» la mantiene y «Anular oferta» vuelve al pie de edición. «Volver al caso» sale sin preguntar.
+  - Visita agendada: al elegir «Libre 08:00» vuelve el pie de edición (pide el motivo del cambio); «Cancelar visita…» abre «Cancelar visita V1».
+  - «Salir» sin nada escrito sale directo; con una nota pregunta.
+- La pregunta al salir con la oferta enviada se reprodujo en la versión anterior (`coordoferta`, marcar un inspector, enviar y «Salir»). En esta versión ya no aparece.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La prueba con la base real en GitHub.
+
+**Diferencias**
+- «Agrupar por dirección» y las propuestas «Crear esta visita» salieron con la lista de vehículos: era otra entrada a Coordinar visita. Si quieres conservar la agrupación, puede ir en la barra de vehículos de Coordinar visita.
+- La acción principal «Coordinar inspección» o «Agendar visita» ahora se llama «Coordinar visita» y abre Coordinar visita; antes solo bajaba a la pestaña.
+- «Cancelar caso» del menú sigue para los demás roles y estados. En coordinación, para el Coordinador y el Administrador, se ve «Cancelar la solicitud…».
+- Con la oferta abierta, la barra de modalidad y vehículos tampoco se edita en Contacto y Lugar; en Inspector y horario todo sigue como antes.
+- La tarjeta del enlace de autoagendamiento en la pestaña es de solo lectura; se reenvía o se genera desde Coordinar visita › Contacto.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `coordtabresumen` | Andrea Salazar · Coordinador | 50012: franja «2 de 3 agendados», Contacto con «Registrar contacto», visitas y el menú «⋯» con «Cancelar la solicitud…» |
+| `coordofertaabierta` | Andrea Salazar · Coordinador | V3 ofertada a 4: franja, «Anular oferta…», «Volver al caso», «Siguiente caso»; Lugar sin editar |
+| `coordagendada` | Andrea Salazar · Coordinador | V1 agendada: «Cancelar visita…», «Volver al caso», «Siguiente caso» |
+| `coordsinguardar` | Andrea Salazar · Coordinador | Nota escrita sin registrar: «Salir» pregunta |
+
+También abrí `coord` (20196, con 3 alertas y «Sin contacto · 0 intentos»), `coordrg`, `coordfases`, `cxcoordfases`, `coordoferta`, `coordsalir` y `cxcabecera`.
+
+**Tiempo de la etapa: inicio 17/11/2026 23:57 · fin 18/11/2026 00:17 · 20 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-2c
 
 Publiqué la versión 300 de SIRIUS. Las cuatro secciones del panel de Calificación usan ahora una sola sección plegable (DEC-250). «Por calificar» sale de una sola función compartida, con la misma regla y la misma unidad en la bandeja, el menú Calificación, el Inicio y la campana (DEC-252).

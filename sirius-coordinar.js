@@ -1,4 +1,4 @@
-// SIRIUS · Coordinar visita por fases (v1.3 · etapa G-2c6 · DEC-237 · 15/11/2026; v1.2 en G-2c4 · 18/10/2026; v1.1 en G-2c3; v1.0 en G-2c2). G-2c4: vehículos que ya están en otra visita abierta (deshabilitados, «PRB1212 · en V1»), «Marcar todos» y «Desmarcar todos» en la oferta, y el aviso de visita en curso al cancelar la solicitud. Reemplaza la columna larga de «Coordinar inspección» (maqueta G-1f).
+// SIRIUS · Coordinar visita por fases (v1.4 · etapa P-6g-2d · DEC-252 · 18/11/2026: pie según el estado —oferta abierta, visita agendada o edición—, «Anular oferta…» con confirmación y «Salir» sin preguntar si no hay nada sin guardar; v1.3 · etapa G-2c6 · DEC-237 · 15/11/2026; v1.2 en G-2c4 · 18/10/2026; v1.1 en G-2c3; v1.0 en G-2c2). G-2c4: vehículos que ya están en otra visita abierta (deshabilitados, «PRB1212 · en V1»), «Marcar todos» y «Desmarcar todos» en la oferta, y el aviso de visita en curso al cancelar la solicitud. Reemplaza la columna larga de «Coordinar inspección» (maqueta G-1f).
 // G-2c3 · fase Contacto como la maqueta: «Llamada» (Llamar a: contacto para la coordinación con «Editar contacto», contacto en sitio u otro número; Llamar/Colgar «vía Genesis»
 // con cronómetro y guion; nota del intento y 6 resultados de un clic, teclas 1 a 6; «Cancelar la solicitud…») y, a la derecha, «Intentos de contacto (N)», «Historial del caso»
 // y el enlace de autoagendamiento (destacado con N intentos sin respuesta o «Prefiere agendar solo»). Atajos de Contacto fuera de los campos: L llama o cuelga; 1 a 6, el resultado.
@@ -69,7 +69,7 @@
       '.scv-aviso{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:1502;background:var(--blue-900,#011E41);color:#fff;border-radius:10px;padding:9px 14px;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:80%}' +
       '.scv-prev{white-space:pre-line;background:var(--surface-subtle,#F3F5F8);border-radius:12px 12px 12px 4px;padding:12px 14px;font-size:14.5px;line-height:1.5;color:var(--text-strong)}' +
       '.scv button:focus-visible,.scv [role=radio]:focus-visible{outline:2px solid var(--color-brand);outline-offset:1px}' +
-      '.scv-cuerpo{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}.scv-cuerpo.bloq{pointer-events:none;opacity:.5;user-select:none}' +
+      '.scv-cuerpo{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}.scv-cuerpo.bloq{pointer-events:none;opacity:.5;user-select:none}.scv-cuerpo.ofbloq>*:not(.scv-pasos):not(.scv-ofnota){pointer-events:none;opacity:.55;user-select:none}.scv-ofnota{margin:0 0 10px;padding:8px 14px;border-radius:8px;background:var(--color-brand-wash,#E6F6FC);color:var(--text-strong);font-size:14px;font-weight:600}' +
       '.scv-banda{padding:8px 20px;background:var(--color-danger,#B3261E);color:#fff;font-size:14.5px;font-weight:700}' +
       '.scv-tel{border:1px solid var(--border-subtle);border-radius:12px;padding:8px 12px;margin-bottom:10px}.scv-tel-f{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}' +
       '.scv-numg{font-size:20px;font-weight:800;color:var(--text-strong);letter-spacing:.02em;font-variant-numeric:tabular-nums}.scv-reloj{font-variant-numeric:tabular-nums;font-weight:800;font-size:16px;color:var(--color-danger,#B3261E)}' +
@@ -164,6 +164,7 @@
       if (E.cancelar && !E.cancelar.confirmar) setTimeout(() => { const b = document.querySelector('[data-scv-canc]'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }, 300); // G-2c4: el recuadro a la vista
       if (E.resultado) setTimeout(() => F().registrar(E.resultado), 700);
       if (E.salir) setTimeout(() => { const b = document.querySelector('[data-barra-app] nav button[data-mg-i]'); if (b) b.click(); }, 1100); // G-2c6: clic en «Bandeja» de las migas
+      if (E.salirBoton) setTimeout(() => { const b = document.getElementById('scv-salir'); if (b) b.click(); }, 1100); // P-6g-2d · coordsinguardar: clic en «Salir» del pie
       if (E.menu) setTimeout(() => { const b = document.querySelector('.ads-sidenav__toggle'); if (b && b.getAttribute('aria-expanded') === 'false') b.click(); }, 900); // G-2c7: menú lateral expandido
       if (E.enviarEnlace) setTimeout(() => F().enviarAG(), 700);
       if (E.cancelar && E.cancelar.confirmar) setTimeout(() => F().confirmarCanc(), 800);
@@ -244,7 +245,7 @@
       priB = btn('primary', 'Siguiente caso', () => x.siguiente && x.siguiente(), { id: 'scv-principal', title: 'Ctrl+Enter' }); } // G-2c3 · DEC-237
     else if (fase === 'horario' && x.oferta) { const o = x.oferta;
       res = [h('b', { key: 'b' }, 'Oferta enviada a ' + o.inspectores.length + ' inspectores'), ' · del ' + diaTxt(o.desde) + ' al ' + diaTxt(o.hasta), h('small', { key: 's' }, 'Vence ' + (o.venceTxt || 'en ' + o.vigenciaHoras + ' h') + '. El primero que acepta en la app queda agendado y el back-office recibe el aviso.')];
-      secB = btn('secondary', 'Anular oferta', () => ejecutar(() => x.anularOferta()), { id: 'scv-anular' }); priB = btn('primary', 'Listo · siguiente caso', () => x.siguiente(), { id: 'scv-principal', title: 'Ctrl+Enter' }); }
+      secB = btn('secondary', 'Anular oferta', () => ejecutar(() => x.anularOferta()), { id: 'scv-anular' }); priB = btn('primary', 'Siguiente caso', () => x.siguiente(), { id: 'scv-principal', title: 'Ctrl+Enter' }); } // P-6g-2d: antes «Listo · siguiente caso»
     else if (fase === 'horario') { const falta = faltaHorario(), ins = p.inspector, cuando = p.fecha && p.hIni ? diaTxt(p.fecha) + ' · ' + p.hIni + (p.hFin ? '–' + p.hFin : '') : '';
       res = [h('b', { key: 'b' }, ins && cuando ? cuando + ' · ' + ins : (x.modo === 'inspector' ? 'Cambiar inspector' : p.mod)), ' · ' + [p.mod === 'Presencial' ? lugarTxt() : '', x.vehTxt].filter(Boolean).join(' · '), h('small', { key: 's', className: falta ? 'falta' : '' }, falta ? 'Falta: ' + falta : fz ? 'Se agenda con alerta de cobertura.' : x.modo === 'nueva' ? 'Listo para agendar.' : 'Listo para guardar.')];
       if (fz) motivos.push(h('div', { key: 'mf', className: 'scv-mot' }, h('label', { htmlFor: 'scv-fueraMot', style: sr }, 'Motivo de asignar fuera de cobertura'), h('input', { id: 'scv-fueraMot', value: p.fueraMot || '', placeholder: ins + ' no cubre este lugar: escribe el motivo (mínimo 10 caracteres)', onChange: (e) => x.patch({ fueraMot: e.target.value }) })));
@@ -500,11 +501,12 @@
     const tocadoSnap = React.useRef(null), [conf, setConf] = React.useState(null), confDe = React.useRef(null);
     const marcarTocado = () => { if (tocadoSnap.current === null) tocadoSnap.current = snapDe(fx.current.p); };
     const cambios = tocadoSnap.current !== null && snapDe(p) !== tocadoSnap.current;
-    const pend = !cancelado && (nota.trim() !== '' || (panelOf && !x.oferta) || !!ofB || cambios);
+    const pend = !cancelado && (nota.trim() !== '' || (!x.oferta && ((panelOf) || !!ofB || cambios))); // P-6g-2d: con la oferta enviada no queda nada por guardar (antes, lo cambiado antes de enviarla seguía contando)
     const soltarFoco = () => { const a = confDe.current; confDe.current = null; setTimeout(() => { if (a && a.isConnected && a.focus) a.focus(); }, 0); };
     const salirA = (fn) => { if (!fx.current.pend) { x.salir(); if (fn) fn(); return; } confDe.current = document.activeElement; setConf({ fn: fn || null }); };
     const seguir = () => { setConf(null); soltarFoco(); };
-    const salirSin = () => { const f = conf && conf.fn; setConf(null); confDe.current = null; x.salir(); if (f) f(); };
+    const salirSin = () => { if (conf && conf.tipo === 'anular') { setConf(null); soltarFoco(); ejecutar(() => x.anularOferta()); return; } const f = conf && conf.fn; setConf(null); confDe.current = null; x.salir(); if (f) f(); };
+    const pedirAnular = () => { confDe.current = document.activeElement; setConf({ tipo: 'anular' }); }; // P-6g-2d: «Anular oferta…» pide confirmación
     fx.current.p = p; fx.current.pend = pend; fx.current.salirA = salirA; fx.current.conf = !!conf; fx.current.seguir = seguir;
     React.useEffect(() => { const M = (W.SIRIUS_COORD_MARCO = W.SIRIUS_COORD_MARCO || {}); M.activo = true; document.body.classList.add('scv-marco');
       const hd = document.querySelector('[data-barra-app]'), nv = document.querySelector('[data-bo-nav]'), y0 = window.pageYOffset || 0; try { window.scrollTo(0, 0); } catch (e) {}
@@ -536,10 +538,22 @@
     const pasos = h('nav', { className: 'scv-pasos', 'aria-label': 'Fases' }, fasesL.map((f, k) => { const e = resumenFase(f[0]); return h('button', { key: f[0], type: 'button', 'aria-current': fase === f[0] ? 'step' : undefined, 'data-scv-fase': f[0], onClick: () => irFase(f[0]) },
         h('span', { className: 'scv-num' + (e[1] ? ' ok' : '') }, e[1] ? '✓' : String(k + 1)), h('span', { className: 'scv-pt' }, h('b', null, f[1]), h('small', { 'data-scv-resumen': f[0] }, e[0]))); }),
       h('span', { className: 'scv-nota', style: { marginLeft: 'auto', alignSelf: 'center' } }, 'Clic en una fase para ir y volver · Alt+← / Alt+→'));
-    const pie = h('footer', { className: 'scv-pie', 'data-scv-pie': '' }, h('div', { className: 'scv-res', 'data-scv-res': '' }, res), motivos,
+    // P-6g-2d · DEC-252: el pie según lo que ya se envió o agendó. Oferta abierta: franja, «Anular oferta…», «Volver al caso» y «Siguiente caso».
+    // Visita agendada (reagendar o cambiar inspector, sin cambios todavía): «Cancelar visita…», «Volver al caso» y «Siguiente caso». Si no: como antes.
+    const peligro = (txt, fn, id) => h('button', { key: id, type: 'button', className: 'scv-bt borde', id, style: { height: 40, fontSize: 14 }, onClick: fn }, txt);
+    const sigCasoB = () => x.siguiente ? btn('primary', 'Siguiente caso', () => x.siguiente(), { id: 'scv-principal', title: 'Ctrl+Enter' }) : null;
+    let estadoPie = 'edicion';
+    if (!cancelado && x.oferta) { const o = x.oferta, vc = String(o.venceTxt || '').replace(/^el /, '').replace(/^(\d\d\/\d\d)\/\d\d · /, '$1 '); estadoPie = 'oferta';
+      res = [h('b', { key: 'b' }, 'Oferta enviada a ' + o.inspectores.length + (vc ? ' · vence ' + vc : ' · vence en ' + o.vigenciaHoras + ' h')), ' · del ' + diaTxt(o.desde) + ' al ' + diaTxt(o.hasta), h('small', { key: 's' }, 'El primero que acepta en la app queda agendado y el back-office recibe el aviso. Para cambiar el contacto o el lugar, anula la oferta.')];
+      motivos = []; secB = h('span', { key: 'gr', style: { display: 'inline-flex', gap: 8 } }, peligro('Anular oferta…', pedirAnular, 'scv-anular'), btn('secondary', 'Volver al caso', () => salirA(null), { id: 'scv-volver' })); priB = sigCasoB(); }
+    else if (!cancelado && x.agendada && !pend) { const a = x.agendada; estadoPie = 'agendada';
+      res = [h('b', { key: 'b' }, 'Visita ' + a.id + ' · ' + (a.estado || 'Agendada')), (a.cuando ? ' · ' + a.cuando : '') + (a.inspector ? ' · ' + a.inspector : ''), h('small', { key: 's' }, x.modo === 'inspector' ? 'Elige otro inspector para cambiarlo.' : 'Cambia la fecha, la hora o el inspector para guardar los cambios.')];
+      motivos = []; secB = h('span', { key: 'gr', style: { display: 'inline-flex', gap: 8 } }, x.cancelarVisita ? peligro('Cancelar visita…', () => x.cancelarVisita(), 'scv-cancvis') : null, btn('secondary', 'Volver al caso', () => salirA(null), { id: 'scv-volver' })); priB = sigCasoB(); }
+    const editando = estadoPie === 'edicion';
+    const pie = h('footer', { className: 'scv-pie', 'data-scv-pie': '', 'data-scv-estado-pie': estadoPie }, h('div', { className: 'scv-res', 'data-scv-res': '' }, res), motivos,
       h('span', { className: 'scv-nota', style: { whiteSpace: 'nowrap' } }, (kF + 1) + ' de ' + fasesL.length),
-      btn('ghost', 'Salir', () => salirA(null), { id: 'scv-salir', title: 'Cierra sin agendar; los intentos registrados se conservan' }),
-      ant && !cancelado ? btn('secondary', '← ' + ant[1], () => irFase(ant[0]), { id: 'scv-ant', title: 'Alt+←' }) : null, secB, priB);
+      editando ? btn('ghost', 'Salir', () => salirA(null), { id: 'scv-salir', title: 'Cierra sin agendar; los intentos registrados se conservan' }) : null,
+      editando && ant && !cancelado ? btn('secondary', '← ' + ant[1], () => irFase(ant[0]), { id: 'scv-ant', title: 'Alt+←' }) : null, secB, priB);
     // Historial del caso (G-2c3): la misma cronología de la pestaña Historial, con filtros; se cierra con Esc.
     const tipoH = (t) => /intento de contacto|autoagendamiento|llamad/i.test(t) ? 'Contacto' : /visita|oferta|inspector|autoinspecci|agend/i.test(t) ? 'Visitas' : /cancel|estado|solicitud|reapert|asignad|caso|calific|emiti|recibid/i.test(t) ? 'Estado' : 'Otros';
     const histL = hist ? (x.historial ? x.historial() : []).map((e) => Object.assign({ tipo: tipoH(String(e.evento || '')) }, e)) : [];
@@ -550,10 +564,14 @@
       histV.length ? h('ul', { className: 'scv-hist-l', 'data-scv-hist-lista': '' }, histV.map((e, k) => h('li', { key: k, 'data-scv-htipo': e.tipo }, h('span', { style: { display: 'flex', justifyContent: 'space-between', gap: 8 } }, h('span', { style: { color: 'var(--text-strong)', fontWeight: 600 } }, e.evento), h('span', { className: 'scv-nota', style: { whiteSpace: 'nowrap' } }, e.fecha)), h('span', { className: 'scv-nota' }, (e.usuario || '—') + ' · ' + e.tipo))))
         : h('p', { className: 'scv-nota', style: { padding: '0 16px' } }, 'Sin eventos de este tipo.')) : null;
     const banda = cancelado ? h('div', { className: 'scv-banda', role: 'alert', 'data-scv-banda': '' }, 'Caso cancelado · ' + cancelado.motivo + '. Ya no se puede coordinar.' + ((cancelado.visitas || []).length ? ' ' + (cancelado.visitas.length === 1 ? 'Visita cancelada: ' : 'Visitas canceladas: ') + cancelado.visitas.join(', ') + '.' : '')) : null;
-    const cuerpoEl = h('div', { ref: cuerpo, onPointerDownCapture: marcarTocado, onKeyDownCapture: (e) => { if (e.key !== 'Tab' && !e.altKey && !(e.ctrlKey || e.metaKey)) marcarTocado(); }, className: 'scv-cuerpo' + (cancelado ? ' bloq' : ''), 'aria-disabled': cancelado ? 'true' : undefined, 'data-scv-cuerpo': '' }, barra, pasos, vista);
+    const ofBloq = !cancelado && !!x.oferta && (fase === 'contacto' || fase === 'lugar'); // P-6g-2d: con la oferta abierta, Contacto y Lugar se ven pero no se editan
+    React.useEffect(() => { const c = cuerpo.current; if (!c) return; Array.from(c.children).forEach((el) => { const deja = el.classList.contains('scv-pasos') || el.classList.contains('scv-ofnota'); if (ofBloq && !deja) el.setAttribute('inert', ''); else el.removeAttribute('inert'); }); }); // sin foco ni edición en lo bloqueado
+    const ofNota = ofBloq ? h('div', { className: 'scv-ofnota', role: 'note', 'data-scv-ofnota': '' }, fase === 'lugar' ? 'Para cambiar el lugar, anula la oferta.' : 'Para cambiar el contacto, anula la oferta.') : null;
+    const cuerpoEl = h('div', { ref: cuerpo, onPointerDownCapture: marcarTocado, onKeyDownCapture: (e) => { if (e.key !== 'Tab' && !e.altKey && !(e.ctrlKey || e.metaKey)) marcarTocado(); }, className: 'scv-cuerpo' + (cancelado ? ' bloq' : '') + (ofBloq ? ' ofbloq' : ''), 'aria-disabled': cancelado ? 'true' : undefined, 'data-scv-cuerpo': '', 'data-scv-ofbloq': ofBloq ? '1' : undefined }, barra, pasos, ofNota, vista);
     const confEl = conf ? h('div', { className: 'scv-conf-f', 'data-scv-conf-fondo': '' }, h('div', { className: 'scv-conf', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'scv-conf-t', 'aria-describedby': 'scv-conf-d', 'data-scv-conf': '' },
-      h('h3', { id: 'scv-conf-t' }, 'Tienes una coordinación sin agendar. ¿Salir?'), h('p', { id: 'scv-conf-d' }, 'Lo que no has agendado ni enviado se pierde. Los intentos de contacto ya registrados se conservan.'),
-      h('div', { className: 'scv-conf-bt' }, btn('secondary', 'Salir sin guardar', salirSin, { id: 'scv-conf-salir' }), btn('primary', 'Seguir coordinando', seguir, { id: 'scv-conf-seguir' })))) : null;
+      conf.tipo === 'anular' ? h('h3', { id: 'scv-conf-t' }, '¿Anular la oferta enviada a ' + ((x.oferta || {}).inspectores || []).length + ' inspectores?') : h('h3', { id: 'scv-conf-t' }, 'Tienes una coordinación sin agendar. ¿Salir?'),
+      conf.tipo === 'anular' ? h('p', { id: 'scv-conf-d' }, 'Los inspectores ya no podrán aceptarla. Después puedes cambiar el contacto, el lugar o el horario y volver a ofertar o agendar.') : h('p', { id: 'scv-conf-d' }, 'Lo que no has agendado ni enviado se pierde. Los intentos de contacto ya registrados se conservan.'),
+      h('div', { className: 'scv-conf-bt' }, conf.tipo === 'anular' ? h('button', { key: 'an', type: 'button', className: 'scv-bt rojo', id: 'scv-conf-salir', style: { height: 40 }, onClick: salirSin }, 'Anular oferta') : btn('secondary', 'Salir sin guardar', salirSin, { id: 'scv-conf-salir' }), btn('primary', conf.tipo === 'anular' ? 'Volver' : 'Seguir coordinando', seguir, { id: 'scv-conf-seguir' })))) : null;
     return h('div', { ref: raiz, className: 'scv', role: 'region', 'aria-labelledby': 'scv-t', 'data-scv-marco': '', 'data-scv-pendiente': pend ? '1' : undefined, 'data-scv-fase-actual': fase, 'data-scv-cancelado': cancelado ? '1' : undefined }, cab, banda, cuerpoEl, pie, cajon, confEl,
       aviso ? h('div', { className: 'scv-aviso', role: 'status', 'aria-live': 'polite', 'data-scv-aviso': '' }, aviso) : null);
   }
