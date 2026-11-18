@@ -152,14 +152,16 @@
     var me = ctx.yo, mios = ctx.casos.filter(function (c) { return c.ejecutivo === me; });
     // Etapa 11b: «Por calificar» y «Revisión de control» salen de la cola de la página Calificación (SiriusCalificacion.cola): una fila por
     // vehículo (o por caso de Ramos Generales) y los mismos números que esa página con «Mis riesgos».
-    var SCl = window.SiriusCalificacion, Q = SCl ? SCl.mias(ctx.cola()) : { porCalificar: [], control: [] };
+    // P-6g-2c · DEC-252: «Por calificar» sale de SiriusColaCalificacion (la misma función de la bandeja, el menú Calificación y la campana): informes de nivel 1 del usuario.
+    var SCl = window.SiriusCalificacion, QC = window.SiriusColaCalificacion, cola0 = SCl ? ctx.cola() : null, Q = SCl ? SCl.mias(cola0) : { porCalificar: [], control: [] }, RC = QC && cola0 ? QC.resumen(cola0, 'Ejecutivo de inspecciones') : null;
+    if (RC) Q.porCalificar = RC.items.map(function (x) { return x.fila; });
     var puedeN1 = !window.SiriusUsuarios || window.SiriusUsuarios.permiso(ctx.rolNombre, 'Calificar nivel 1') !== '';
     var cal = Q.porCalificar, ctlP = Q.control.filter(function (x) { return x.estadoCtl === 'Pendiente'; }), ctl = ctlP;
     var gs = ctx.garantias.filter(function (g) { return g.ejecutivo === me; }), resp = gs.filter(function (g) { return g.porRevisar > 0 && !g.cerrado; }), nResp = resp.reduce(function (n, g) { return n + g.porRevisar; }, 0);
     var amp = ctx.garantias.filter(function (g) { return g.calificador === me && g.solicitudPend; });
     var tonoC = cal.some(function (x) { return x.sla && x.sla.tono === 'danger'; }) ? 'danger' : cal.some(function (x) { return x.sla && x.sla.tono === 'warning'; }) ? 'warning' : null;
     var ind = {
-      'Por calificar': { n: cal.length, tono: tonoC, sub: plural(cal.filter(function (x) { return x.sla && x.sla.tono === 'danger'; }).length, 'con SLA vencido', 'con SLA vencido'), ir: { k: 'cola', tab: 'Por calificar', scope: 'mis' } },
+      'Por calificar': { n: cal.length, tono: tonoC, sub: RC ? (RC.informes === 1 ? 'Informe en ' : 'Informes en ') + plural(RC.casos, 'caso', 'casos') + ' · ' + plural(RC.vencidos, 'vencido', 'vencidos') : plural(cal.filter(function (x) { return x.sla && x.sla.tono === 'danger'; }).length, 'con SLA vencido', 'con SLA vencido'), ir: { k: 'cola', tab: 'Por calificar', scope: 'mis' } },
       'Revisión de control': { n: ctl.length, tono: ctl.length ? 'warning' : null, sub: 'Determinados por el inspector', ir: { k: 'cola', tab: 'Revisión de control', scope: 'mis' } },
       'Respaldos por validar': { n: nResp, tono: nResp ? 'warning' : null, sub: 'En ' + plural(resp.length, 'caso', 'casos'), ir: irGar('Respaldos por validar', resp.map(function (g) { return g.caso; }), 2) },
       'Ampliaciones por aprobar': { n: amp.length, tono: amp.length ? 'warning' : null, sub: 'Eres el calificador final', ir: irGar('Ampliaciones por aprobar', amp.map(function (g) { return g.caso; }), 4) },
@@ -182,14 +184,16 @@
   R['Suscriptor'] = function (ctx) {
     var me = ctx.yo, gr = ctx.alcanceGrupos, enGr = function (c) { return !gr || gr.indexOf(ctx.grupo(c)) >= 0; };
     // Etapa 11b: «En suscripción» sale de la cola de la página Calificación (con «Mis riesgos»).
-    var SCl = window.SiriusCalificacion, sus = (SCl ? SCl.mias(ctx.cola()).suscripcion : []).map(function (x) { return ctx.caso(x.caso); }).filter(Boolean);
+    // P-6g-2c · DEC-252: la tarjeta cuenta informes de nivel 2 del usuario con SiriusColaCalificacion (misma regla de la bandeja, el menú y la campana); «Para hoy» sigue con una fila por caso.
+    var SCl = window.SiriusCalificacion, QC = window.SiriusColaCalificacion, RS = SCl && QC ? QC.resumen(ctx.cola(), 'Suscriptor') : null, susF = RS ? RS.items.map(function (x) { return x.fila; }) : (SCl ? SCl.mias(ctx.cola()).suscripcion : []);
+    var sus = susF.map(function (x) { return x.caso; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (id) { return ctx.caso(id); }).filter(Boolean);
     var amp = ctx.garantias.filter(function (g) { return g.calificador === me && g.solicitudPend; });
     var mes = function (d) { d = parse(d); return d && d.getMonth() === ctx.ahora.getMonth() && d.getFullYear() === ctx.ahora.getFullYear(); };
     var exc = ctx.riesgos.filter(function (r) { return r.emi && r.emi.res === 'Emitido por excepción' && mes(r.fecha); });
     var mios = ctx.dictamenes.filter(function (d) { return d.por === me && mes(d.fecha); });
-    var tonoS = sus.some(function (c) { return c.sla != null && c.sla < 0; }) ? 'danger' : sus.some(function (c) { return c.slaInfo && c.slaInfo.tono === 'warning'; }) ? 'warning' : null;
+    var tonoS = susF.some(function (x) { return x.sla && x.sla.tono === 'danger'; }) ? 'danger' : susF.some(function (x) { return x.sla && x.sla.tono === 'warning'; }) ? 'warning' : null;
     var ind = {
-      'En suscripción': { n: sus.length, tono: tonoS, sub: gr ? 'Grupo ' + gr.join(' y ') : 'Todos los grupos', ir: { k: 'cola', tab: 'En suscripción', scope: 'mis' } },
+      'En suscripción': { n: susF.length, tono: tonoS, sub: RS ? (RS.informes === 1 ? 'Informe en ' : 'Informes en ') + plural(RS.casos, 'caso', 'casos') + ' · ' + plural(RS.vencidos, 'vencido', 'vencidos') : (gr ? 'Grupo ' + gr.join(' y ') : 'Todos los grupos'), title: gr ? 'Grupo ' + gr.join(' y ') : 'Todos los grupos', ir: { k: 'cola', tab: 'En suscripción', scope: 'mis' } },
       'Ampliaciones por aprobar': { n: amp.length, tono: amp.length ? 'warning' : null, sub: 'Eres el calificador final', ir: irGar('Ampliaciones por aprobar', amp.map(function (g) { return g.caso; }), 4) },
       'Emitidos por excepción (mes)': { n: exc.length, tono: null, sub: MESES[ctx.ahora.getMonth()] + ' de ' + ctx.ahora.getFullYear(), ir: irIds('Emitidos por excepción en el mes', exc.map(function (r) { return r.caso; }).filter(function (x, i, a) { return a.indexOf(x) === i; })) },
       'Calificados por mí (mes)': { n: mios.length, tono: null, sub: MESES[ctx.ahora.getMonth()] + ' de ' + ctx.ahora.getFullYear(), ir: irIds('Calificados por mí en el mes', mios.map(function (d) { return d.caso; }).filter(function (x, i, a) { return a.indexOf(x) === i; })) },

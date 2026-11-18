@@ -29,6 +29,12 @@
   // Etapa 8a: Equipo y maquinaria (composición Equipo móvil) también tiene una fila por riesgo (un veredicto por equipo).
   var esEq = function (c) { return c.composicion === 'Equipo móvil' || c.tipoRiesgo === 'Equipo y maquinaria'; };
   var slaDe = function (c) { var s = c.slaInfo; return s ? { label: s.etiqueta, tono: s.tono, title: s.titulo, horas: c.sla, vence: s.vence } : null; };
+  // P-6g-2c · DEC-252: con la conexión, el SLA de calificación de cada informe corre desde que quedó completo (etapa «Calificación» del flujo), aunque el caso siga en otra fase.
+  var slaCal = function (c, desde, etapa) { var F = window.SIRIUS_FLUJO, m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(String(desde || '')); if (!F || !m || !F.sumarHabiles || !F.formato) return null;
+    var et = (F.etapas || []).find(function (e) { return e.id === (etapa || 'cal'); }), h = et ? F.slaDe(et, c) : null; if (h == null) return null;
+    var d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]), vence = F.sumarHabiles(d, h * 60, c.sucursal); if (!vence) return null;
+    var now = F.ahora(), mi = vence >= now ? F.minutosHabiles(now, vence, c.sucursal) : -F.minutosHabiles(vence, now, c.sucursal), f = F.formato(mi / 60, vence);
+    return { label: f.etiqueta, tono: f.tono, title: (etapa === 'susc' ? 'SLA de suscripción · ' : 'SLA de calificación del informe · ') + f.titulo, horas: mi / 60, vence: vence }; };
   var ordenSla = function (a, b) { var x = a.sla && a.sla.horas != null ? a.sla.horas : 1e9, y = b.sla && b.sla.horas != null ? b.sla.horas : 1e9; return x - y || (a.caso < b.caso ? -1 : a.caso > b.caso ? 1 : 0) || (a.riesgo < b.riesgo ? -1 : 1); };
   var nombreVeh = function (v) { return v ? [v.marca, v.modelo, v.anio].filter(Boolean).join(' ') : ''; };
   // Columna «Riesgo». Vehículos: placa (o «Sin placa») y debajo marca, modelo y año (si el caso no tiene vehículo registrado, la descripción del caso).
@@ -84,16 +90,16 @@
       lista.forEach(function (r) { var v = ctx.vehiculo(r.id), ci = multi && ctx.infVeh ? ctx.infVeh(c, r) : null, /* R-0d · DEC-239: con la conexión, el estado del informe de cada vehículo decide, no el del caso */ pend = ci ? ci.pend : multi ? (ctx.listo(r.estado) && !r.aseg) : c.estado === 'Pendiente calificación' && !c.aseg;
         if (!pend || ['Emitida', 'No emitida', 'Cancelado'].indexOf(c.estado) >= 0) return;
         var placa = multi ? ((v && v.placa) || (ci && ci.placa) || 'Sin placa') : (c.placa || (v && v.placa) || 'Sin placa');
-        out.push(Object.assign({}, b, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || (ci && ci.sub) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: (ci && ci.llego) || llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1, nivel: 1, cx: !!ci, cola: !!ci && c.estado !== 'Pendiente calificación', responsable: ci && c.estado !== 'Pendiente calificación' ? 'Ejecutivos de inspecciones' : b.responsable, desde: ci ? ci.desde || '' : '' /* R-0e: con la conexión, la fila es un informe de vehículo: su antigüedad corre desde que quedó completo */ })); });
+        out.push(Object.assign({}, b, { sla: ci && ci.desde ? (slaCal(c, ci.desde) || b.sla) : b.sla }, { id: r.id, riesgo: r.id, etiqueta: placa, sub: nombreVeh(v) || (ci && ci.sub) || r.detalle || c.bien || '', tipo: 'Vehículos', ramos: ['Vehículos'], llego: (ci && ci.llego) || llegoVeh(r, v), alertas: alertasVeh(v, ctx), n: 1, nivel: 1, cx: !!ci, cola: !!ci && c.estado !== 'Pendiente calificación', responsable: ci && c.estado !== 'Pendiente calificación' ? 'Ejecutivos de inspecciones' : b.responsable, desde: ci ? ci.desde || '' : '' /* R-0e: con la conexión, la fila es un informe de vehículo: su antigüedad corre desde que quedó completo */ })); });
     } else if (c.estado === 'Pendiente calificación') {
       var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean);
-      out.push(Object.assign({}, b, { id: c.id, riesgo: c.id, etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: 'Ramos Generales', ramos: ramos, llego: { k: 'sinfac', label: 'Sin facultad', sub: '', title: 'Ramos Generales no se determina en campo: lo califica el Ejecutivo de inspecciones' }, alertas: alertasRG(c, ctx), n: 1 }));
+      out.push(Object.assign({}, b, { sla: b.sla || (ctx.calDesde ? slaCal(c, ctx.calDesde(c, 1), 'cal') : null) /* P-6g-2c: con la conexión, desde que el informe quedó completo */ }, { id: c.id, riesgo: c.id, etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: 'Ramos Generales', ramos: ramos, llego: { k: 'sinfac', label: 'Sin facultad', sub: '', title: 'Ramos Generales no se determina en campo: lo califica el Ejecutivo de inspecciones' }, alertas: alertasRG(c, ctx), n: 1 }));
     }
     return out;
   }
   function filaSuscripcion(c, ctx) {
     var ramos = (c.ramos && c.ramos.length ? c.ramos : [c.ramo]).filter(Boolean);
-    return Object.assign({}, filaBase(c), { id: c.id, riesgo: c.id, enGrupo: !!(ctx.rolBase === 'Suscriptor' && ctx.enMisGrupos && ctx.enMisGrupos(c)), etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: esVeh(c) ? 'Vehículos' : 'Ramos Generales', ramos: ramos, llego: { k: 'susc', label: 'Calificación de inspección lista', sub: '', title: 'La calificación de inspección terminó: falta la de suscripción' }, alertas: alertasRG(c, ctx), n: 1, nivel: 2 });
+    var b2 = filaBase(c); return Object.assign(b2, { sla: b2.sla || (ctx.calDesde ? slaCal(c, ctx.calDesde(c, 2), 'susc') : null) /* P-6g-2c: con la conexión, desde la calificación de nivel 1 */ }, { id: c.id, riesgo: c.id, enGrupo: !!(ctx.rolBase === 'Suscriptor' && ctx.enMisGrupos && ctx.enMisGrupos(c)), etiqueta: riesgoRG(c, ramos).etiqueta, sub: riesgoRG(c, ramos).sub, tipo: esVeh(c) ? 'Vehículos' : 'Ramos Generales', ramos: ramos, llego: { k: 'susc', label: 'Calificación de inspección lista', sub: '', title: 'La calificación de inspección terminó: falta la de suscripción' }, alertas: alertasRG(c, ctx), n: 1, nivel: 2 });
   }
 
   // Etapa 8b · Equipo y maquinaria: una fila de suscripción por equipo derivado (obligatoria por suma asegurada o requerida por el nivel 1).

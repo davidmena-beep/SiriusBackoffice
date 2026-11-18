@@ -7,8 +7,8 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror', 'calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg']; // P-6g-2b · DEC-250: las 5 últimas
-  const G250 = ['calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg'];
+  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror', 'calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg', 'calevidplegable']; // P-6g-2b · DEC-250: las 5 últimas; P-6g-2c: calevidplegable
+  const G250 = ['calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg', 'calevidplegable'];
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const hoy = () => { const GB = window.SiriusGarantiasBase; return GB ? GB.hoy() : '2026-10-18'; }, mas = (n) => { const GB = window.SiriusGarantiasBase; return GB ? GB.sumar(hoy(), n) : hoy(); };
   const VL = 'Verónica Lema', SO = 'Santiago Ortiz';
@@ -80,7 +80,9 @@
     const X = { usuario: clon(USR[escena]), casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: [], garantias, notificacionesEnvio, notificaciones,
       cxRespaldos: escena === 'cxgarantiacumplir' ? { 'GAR-50041-1': [{ name: 'foto-extintores-recargados.jpg', by: SO, at: '18/10/26 · 09:10', ts: hoy() + 'T09:10' }] } : {} };
     const PASOS = ['Fachada', 'Acceso principal', 'Bodega · vista general', 'Mezanine', 'Tablero eléctrico', 'Extintores', 'Salida de emergencia', 'Patio de carga', 'Oficina', 'Techo y cubierta', 'Señalética', 'Cámaras de seguridad'], fotos = (id) => PASOS.map((p, i) => ({ paso: p, canal: 'App del inspector', hora: '17/10/26 · 10:' + String(5 + i * 3).padStart(2, '0'), gps: [-0.1807, -78.4678], prueba: true, tipo: 'foto' }));
-    casos.forEach((c) => { X.eventos[c.id] = [{ hora: c.registrado, accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = g250 && (c.id === '50040' || c.id === '50046') ? fotos(c.id) : []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });
+    const fotos6 = () => ['Bodega · pasillo norte', 'Bodega · pasillo sur', 'Rociadores', 'Detector de humo', 'Gabinete contra incendio', 'Puerta cortafuego'].map((p, i) => ({ paso: p, canal: 'App del inspector', hora: '17/10/26 · 11:' + String(5 + i * 3).padStart(2, '0'), gps: [-0.1807, -78.4678], prueba: true, tipo: 'foto' }))
+      .concat([{ paso: 'documentos_cedula_frontal', canal: 'App del inspector', hora: '17/10/26 · 11:40', prueba: true, tipo: 'foto' }, { paso: 'documentos_cedula_posterior', canal: 'App del inspector', hora: '17/10/26 · 11:42', prueba: true, tipo: 'foto' }]); /* P-6g-2c: calevidplegable con 18 fotos y 2 documentos (pasos del grupo Documentos: cédula del representante) */
+    casos.forEach((c) => { X.eventos[c.id] = [{ hora: c.registrado, accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = g250 && (c.id === '50040' || c.id === '50046') ? fotos(c.id).concat(escena === 'calevidplegable' && c.id === '50040' ? fotos6(c.id) : []) : []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });
     return X; };
   const baseCC = CC.cxSim.bind(CC), baseAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : baseCC(escena); };

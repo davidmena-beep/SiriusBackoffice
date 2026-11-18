@@ -1,4 +1,5 @@
 // SIRIUS · Calificación con garantías: nueva distribución (v1.0 · etapa P-6g-2b · DEC-250, propuesta aprobada SIRIUS_propuesta_calificacion_garantias.png).
+// P-6g-2c · DEC-250: las cuatro secciones del panel usan una sola sección plegable (C.plegable).
 // La dibuja Calificacion.dc.html (modos n1, n2 y veh, un solo riesgo) con su propio estado y sus reglas: barra de decisión en una línea (veredicto,
 // plazo global, fecha límite, próximo vencimiento y facultad), la tabla de garantías como protagonista (origen, texto para el asegurado en línea,
 // plazo con «vence», prioridad, estado y «⋯» con Quitar con motivo y Ver historial; lo quitado queda tachado con «↺ Deshacer» hasta grabar), pie fijo y
@@ -17,7 +18,7 @@
   const C = {};
   C.panelInicial = (usuario, preset) => { let x = null; try { x = JSON.parse(window.localStorage.getItem(CLAVE(usuario)) || 'null'); } catch (e) { x = null; }
     const b = JSON.parse(JSON.stringify(PANEL0)); if (x && typeof x === 'object') { b.plegado = !!x.plegado; Object.assign(b.abiertas, x.abiertas || {}); }
-    if (preset === 'g250-plegada') b.plegado = true; else if (preset === 'g250-nueva') b.plegado = false; return b; }; /* las escenas calgarplegada y calgarnueva fijan el panel; las demás usan lo recordado */
+    if (preset === 'g250-plegada') b.plegado = true; else if (preset === 'g250-nueva') b.plegado = false; else if (preset === 'g250-evid') { b.plegado = false; b.abiertas = { rec: false, inf: false, ev: false, pun: false }; } /* P-6g-2c: calevidplegable, las cuatro plegadas: cada una con su encabezado, su ▸ y su contador (Evidencias «18 fotos · 2 doc.») */ return b; }; /* las escenas calgarplegada y calgarnueva fijan el panel; las demás usan lo recordado */
   C.guardarPanel = (usuario, v) => { try { window.localStorage.setItem(CLAVE(usuario), JSON.stringify(v)); } catch (e) { /* sin almacenamiento: vale para esta vista */ } };
   const ORIGEN_TONO = { Inspector: 'brand', Calificador: 'teal', 'Nivel 2': 'warning' };
   const TONO_EST = { Pendiente: 'warning', Cumplido: 'success', Vencido: 'danger' };
@@ -102,10 +103,15 @@
     const cnt = { rec: recs.length || (k.props.mode === 'veh' && k.props.motivoInspector ? 1 : 0), ev: nFotos + ' fotos · ' + nDocs + ' doc.' };
     return h('aside', { className: 'cg-panel', 'aria-label': 'Panel de contexto', 'data-cg-panel': 'expandido' },
       h('div', { className: 'cg-pcab' }, h('span', { style: { fontWeight: 700, color: 'var(--text-strong)' } }, 'Contexto del caso'), h('button', { type: 'button', className: 'cg-lk', 'data-cg-plegar': '1', onClick: () => setP({ plegado: true, abiertas: P.abiertas }) }, '» Plegar el panel')),
-      SEC.map(([id, t]) => { const ab = !!P.abiertas[id]; return h('section', { key: id, id: 'cg-sec-' + id, className: 'cg-psec', 'data-cg-sec': id },
-        h('button', { type: 'button', className: 'cg-psec-b', 'aria-expanded': ab ? 'true' : 'false', 'aria-controls': 'cg-cuerpo-' + id, onClick: () => setP({ plegado: false, abiertas: Object.assign({}, P.abiertas, { [id]: !ab }) }) },
-          h('span', null, t, cnt[id] != null ? h('span', { className: 'cg-pill' }, String(cnt[id])) : null), h('span', { 'aria-hidden': 'true', className: 'cg-car' }, ab ? '▾' : '▸')),
-        ab ? h('div', { id: 'cg-cuerpo-' + id, className: 'cg-pbody' }, cuerpo[id]()) : null); })); };
+      SEC.map(([id, t]) => C.plegable({ id, titulo: t, contador: cnt[id], abierta: !!P.abiertas[id], cuerpo: cuerpo[id], alternar: () => { const cur = (k.state.panel || P).abiertas || {}; setP({ plegado: false, abiertas: Object.assign({}, cur, { [id]: !cur[id] }) }); } /* lee el estado del momento del clic, no el del último dibujo */ }))); };
+  // P-6g-2c · DEC-250: una sola sección plegable para las cuatro del panel (Recomendaciones del inspector, Resumen del informe, Evidencias y
+  // Puntaje y controles): el mismo encabezado (botón con aria-expanded), el mismo indicador ▾/▸ y el estado recordado por usuario (setP guarda
+  // en sirius.cal.panel.<usuario>). Plegada, la sección muestra solo su contador (Evidencias: «18 fotos · 2 doc.»); el cuerpo no se dibuja.
+  C.plegable = (o) => { const ab = !!o.abierta, id = o.id;
+    return h('section', { key: id, id: 'cg-sec-' + id, className: 'cg-psec', 'data-cg-sec': id, 'data-cg-plegable': ab ? 'abierta' : 'plegada' },
+      h('button', { type: 'button', className: 'cg-psec-b', 'aria-expanded': ab ? 'true' : 'false', 'aria-controls': 'cg-cuerpo-' + id, onClick: (e) => { if (e && e.stopPropagation) e.stopPropagation(); o.alternar(); } },
+        h('span', null, o.titulo, o.contador != null ? h('span', { className: 'cg-pill', 'data-cg-cnt': id }, String(o.contador)) : null), h('span', { 'aria-hidden': 'true', className: 'cg-car' }, ab ? '▾' : '▸')),
+      ab ? h('div', { id: 'cg-cuerpo-' + id, className: 'cg-pbody' }, o.cuerpo()) : null); };
   // ---------- Página completa ----------
   C.render = (k, v) => { const s = k.state, isVeh = v.isVeh, noAprob = !isVeh && s.estado === 'No aprobado';
     const motivoNo = noAprob ? h('div', { key: 'mot', className: 'cg-motno' }, h('label', { htmlFor: 'cal-mot-no', className: 'cg-lbl' }, 'Motivo de no aprobación (catálogo) ', h('span', { 'aria-hidden': 'true', style: { color: 'var(--color-danger)' } }, '*')),

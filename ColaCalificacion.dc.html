@@ -10,7 +10,7 @@
 <helmet>
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
-<script src="datos-compania.js"></script><script src="sirius-compania.js"></script><script src="sirius-monto.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-honorarios.js"></script><script src="sirius-honorarios.js"></script><script src="sirius-liquidaciones.js"></script><script src="sirius-modal.js"></script><script src="sirius-honorarios-ui.js"></script><script src="motor-calificacion.js"></script><script src="sirius-calificacion.js"></script>
+<script src="datos-compania.js"></script><script src="sirius-compania.js"></script><script src="sirius-monto.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-honorarios.js"></script><script src="sirius-honorarios.js"></script><script src="sirius-liquidaciones.js"></script><script src="sirius-modal.js"></script><script src="sirius-honorarios-ui.js"></script><script src="motor-calificacion.js"></script><script src="sirius-calificacion.js"></script><script src="sirius-cola-calificacion.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}
 .cal-ind{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
 .cal-card{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF}
@@ -26,6 +26,7 @@
 <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
 <h1 id="cal-h1" style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0;outline:none">Calificación</h1>
 <p style="font-size:14px;color:var(--text-muted);margin:0;text-wrap:pretty">{{ subtitle }}</p>
+<p data-cola-resumen="1" title="{{ resumenTitle }}" style="font-size:14px;color:var(--text-body);margin:4px 0 0"><strong style="color:var(--text-strong)">{{ resumenLbl }}</strong> {{ resumenTxt }}</p>
 </div>
 <div class="cal-ind" role="group" aria-label="Indicadores de calificación"><sc-for list="{{ ind }}" as="k" hint-placeholder-count="4"><button type="button" class="cal-card cal-kpi" aria-pressed="{{ k.pressed }}" aria-label="{{ k.aria }}" title="{{ k.title }}" onClick="{{ k.go }}" style="border-left-color:{{ k.color }}"><span style="font-size:14px;font-weight:700;color:var(--text-strong);line-height:1.3">{{ k.titulo }}</span><span class="cal-nw" style="font-size:40px;font-weight:300;line-height:1;color:{{ k.numColor }}">{{ k.n }}</span><span style="font-size:13px;line-height:1.4;color:var(--text-muted);min-height:18px">{{ k.sub }}</span></button></sc-for></div>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Tabs" tabs="{{ tabs }}" active="{{ tab }}" on-change="{{ onTab }}" hint-size="100%,44px"></x-import>
@@ -113,24 +114,27 @@ class Component extends DCLogic {
   badge(label, tone, title) { return { label, tone: tone || 'neutral', title: title || undefined }; }
   renderVals() {
     const d = this.d(), st = this.state, SC = this.SCm(), H = this.HN(), usd = (n) => window.SIRIUS_COMPANIA.formatoMonto(n), opt = (a, b) => ({ v: a, l: b });
-    const v = { subtitle: '', ind: [], tabs: [], tab: 0, onTab: () => {}, rows: [], cols: [], rowActions: [], selectable: false, bulkActions: [], onBulk: () => {}, onAction: () => {}, noun: ['riesgo', 'riesgos'], storageKey: 'sirius.cal', empty: { t: '', x: '' }, snack: st.snack, hasSnack: !!st.snack, hasUndo: !!st.undo, undo: () => { const u = this.state.undo; clearTimeout(this._st); this.setState({ snack: '', undo: null }); if (u) u(); }, pnOpen: false, pn: {}, obOpen: false, ob: {}, txW: 0, hnOpen: false, fk: st.fk };
+    const v = { subtitle: '', resumenLbl: '', resumenTxt: '', resumenTitle: '', ind: [], tabs: [], tab: 0, onTab: () => {}, rows: [], cols: [], rowActions: [], selectable: false, bulkActions: [], onBulk: () => {}, onAction: () => {}, noun: ['riesgo', 'riesgos'], storageKey: 'sirius.cal', empty: { t: '', x: '' }, snack: st.snack, hasSnack: !!st.snack, hasUndo: !!st.undo, undo: () => { const u = this.state.undo; clearTimeout(this._st); this.setState({ snack: '', undo: null }); if (u) u(); }, pnOpen: false, pn: {}, obOpen: false, ob: {}, txW: 0, hnOpen: false, fk: st.fk };
     if (!SC || !d.cola) return v;
     const tabs = this.tabsList(d), tab = tabs.includes(st.tab) ? st.tab : this.T_POR, mias = (L) => L.filter(x => x.mio), C = d.cola;
-    const nPor = (st.scope === 'todos' ? C.porCalificar : mias(C.porCalificar)).length, nSus = (st.scope === 'todos' ? C.suscripcion : mias(C.suscripcion)).length, nCtl = (st.scope === 'todos' ? C.control : mias(C.control)).length;
+    // P-6g-2c · DEC-252: «por calificar» sale de una sola función (SiriusColaCalificacion): cabecera, indicadores y pestañas cuentan informes con la misma regla que la bandeja, el Inicio y la campana.
+    const QC = window.SiriusColaCalificacion, rq = (o) => QC ? QC.resumen(C, d.rolBase, o) : { informes: 0, casos: 0, vencidos: 0, porVencer: 0, items: [], texto: '' }, Rver = rq({ ver: st.scope }), Rrol = rq();
+    const nPor = rq({ ver: st.scope, nivel: 1 }).informes, nSus = rq({ ver: st.scope, nivel: 2 }).informes, nCtl = (st.scope === 'todos' ? C.control : mias(C.control)).length;
     const nHon = d.puedeHon ? this.hons(st).length : 0, nCal = (st.scope === 'todos' ? C.calificados : mias(C.calificados)).length;
     const cuenta = { [this.T_POR]: nPor, [this.T_SUS]: nSus, [this.T_CTL]: C.control.filter(x => (st.scope === 'todos' || x.mio) && x.estadoCtl === 'Pendiente').length, [this.T_HON]: nHon, [this.T_CAL]: nCal };
     v.tabs = tabs.map(t => t + ' (' + cuenta[t] + ')'); v.tab = tabs.indexOf(tab); v.onTab = (i) => this.setState(s => ({ tab: tabs[i], fRamo: 'all', fSuc: 'all', fLlego: 'all', fSla: 'all', fk: s.fk + 1, panel: null }));
     v.subtitle = d.esAdmin ? 'Cola de trabajo de todos los calificadores: reasigna riesgos con motivo y revisa lo pendiente.' : d.rolBase === 'Suscriptor' ? 'Casos que esperan tu calificación de suscripción, con su SLA.' : 'Tus riesgos por calificar, las revisiones de control, los honorarios por aprobar y lo que calificaste en los últimos 30 días.';
     // Indicadores (de la cola que se ve; un clic filtra la lista)
     const colaTrabajo = d.rolBase === 'Suscriptor' ? [this.T_SUS] : d.esAdmin ? [this.T_POR, this.T_SUS] : [this.T_POR];
-    const baseL = colaTrabajo.reduce((a, t) => a.concat(this.lista(t, st).map(x => Object.assign({}, x, { _t: t }))), []);
+    const baseL = Rver.items.map(x => Object.assign({}, x.fila, { _t: x.nivel === 2 ? this.T_SUS : this.T_POR })).filter(x => colaTrabajo.includes(x._t));
     const venc = baseL.filter(x => SC.vencido(x)), pven = baseL.filter(x => SC.porVencer(x));
+    v.resumenLbl = d.esAdmin ? 'Cola de todos:' : d.rolBase === 'Suscriptor' ? 'Tu cola de nivel 2:' : d.rolBase === 'Ejecutivo de inspecciones' ? 'Tu cola de nivel 1:' : 'Cola:'; v.resumenTxt = Rrol.texto; v.resumenTitle = 'Informes por calificar de ' + (d.esAdmin ? 'todos los niveles y responsables' : 'tu nivel') + ', con la misma regla de la bandeja, el Inicio y la campana';
     const nCtlPend = C.control.filter(x => (st.scope === 'todos' || x.mio) && x.estadoCtl === 'Pendiente').length;
     const primera = (L) => L.length ? L[0]._t : colaTrabajo[0];
     const go = (t, sla) => () => this.setState(s => ({ tab: t, fSla: sla || 'all', fRamo: 'all', fSuc: 'all', fLlego: 'all', fk: s.fk + 1, panel: null }));
     const kp = (titulo, n, tono, sub, t, sla, on) => ({ titulo, n: String(n), color: n && tono === 'danger' ? 'var(--color-danger)' : n && tono === 'warning' ? 'var(--color-warning)' : 'var(--border-subtle)', numColor: n && tono === 'danger' ? 'var(--color-danger)' : 'var(--text-strong)', sub, aria: titulo + ': ' + n + '. ' + sub + '. Filtra la lista.', title: 'Filtra la lista: ' + titulo, pressed: on ? 'true' : 'false', go: go(t, sla) });
     const tabCola = colaTrabajo[0];
-    v.ind = [kp(d.rolBase === 'Suscriptor' ? 'En suscripción' : 'Por calificar', d.rolBase === 'Suscriptor' ? nSus : nPor, venc.length ? 'danger' : pven.length ? 'warning' : null, this.nTxt(this.lista(tabCola, st)) + (st.scope === 'todos' ? ' · todos los responsables' : ' · tuyos'), tabCola, 'all', tab === tabCola && st.fSla === 'all'),
+    v.ind = [kp(d.rolBase === 'Suscriptor' ? 'En suscripción' : 'Por calificar', Rver.informes, venc.length ? 'danger' : pven.length ? 'warning' : null, (Rver.informes === 1 ? 'Informe en ' : 'Informes en ') + this.plural(Rver.casos, 'caso', 'casos') + (st.scope === 'todos' ? ' · todos los responsables' : ' · tuyos'), tabCola, 'all', tab === tabCola && st.fSla === 'all'),
       kp('Vencidos', venc.length, 'danger', venc.length ? 'SLA vencido' : 'Nada vencido', primera(venc), 'vencido', st.fSla === 'vencido' && colaTrabajo.includes(tab)),
       kp('Por vencer', pven.length, 'warning', pven.length ? 'SLA por vencer' : 'Nada por vencer', primera(pven), 'porvencer', st.fSla === 'porvencer' && colaTrabajo.includes(tab))]
       .concat(d.verCtl ? [kp('Revisión de control pendiente', nCtlPend, 'warning', 'Determinados por el inspector', this.T_CTL, 'all', tab === this.T_CTL)] : []);

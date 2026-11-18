@@ -4,6 +4,109 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-6g-2c
+
+Publiqué la versión 300 de SIRIUS. Las cuatro secciones del panel de Calificación usan ahora una sola sección plegable (DEC-250). «Por calificar» sale de una sola función compartida, con la misma regla y la misma unidad en la bandeja, el menú Calificación, el Inicio y la campana (DEC-252).
+
+**Mapa de impacto (DEC-252, hecho antes de cambiar nada)**
+
+| Lugar | Qué mostraba antes | Qué muestra ahora |
+|---|---|---|
+| Bandeja › pestaña «En calificación» | Casos en «Pendiente calificación» o «de suscripción», más casos con un vehículo por calificar (solo con la conexión). Sin nivel y sin informes | Casos con al menos un informe por calificar de tu nivel (N) |
+| Bandeja › «En suscripción» (Suscriptor) | Casos en «Pendiente calificación de suscripción» | Casos con informes de nivel 2 del Suscriptor |
+| Bandeja › línea bajo las pestañas (nueva) | — | «Por calificar: N casos · M informes · V vencidos». Con filtros, dice también la cifra sin filtros |
+| Bandeja › cada fila | «1 por calificar» solo con la conexión y fuera de calificación | «M por calificar» en toda fila con informes en tu cola; el título dice cuántos están vencidos |
+| Bandeja › «SLA vencido» | SLA del caso | Además, los casos con un informe de tu cola con el SLA de calificación vencido |
+| Bandeja › qué casos ve el Ejecutivo de inspecciones y el Suscriptor | Solo «su» ejecutivo o sus ramos | También los casos que tienen informes en su cola (si no, la bandeja contaba menos que el menú) |
+| Menú Calificación › cabecera (nueva) | — | «Tu cola de nivel 1 / de nivel 2 / Cola de todos: N casos · M informes · V vencidos» |
+| Menú Calificación › indicadores y pestañas | «Por calificar» = filas de nivel 1 (en casos o en informes según la conexión); «Vencidos» por su cuenta | «Por calificar» o «En suscripción» = M informes, «en N casos»; Vencidos = V; pestañas «Por calificar (M1)» y «En suscripción (M2)». «Ver: Mis riesgos / Todos» sigue filtrando |
+| Menú Calificación › filas | El SLA del caso (con la conexión, el de coordinación) | Con la conexión, el SLA de calificación de cada informe (desde que quedó completo) |
+| Inicio › Ejecutivo de inspecciones, tarjeta «Por calificar» y «Para hoy» | Filas «mías» de nivel 1 y «N con SLA vencido» | M informes y «Informes en N casos · V vencidos»; «Para hoy», una fila por caso |
+| Inicio › Suscriptor, tarjeta «En suscripción» | Casos (no informes) y el grupo | M informes y «Informes en N casos · V vencidos» |
+| Inicio › Administrador | No tiene tarjeta de calificación; «Casos por estado» cuenta casos por estado del flujo | Sin cambios: «Casos por estado» lleva su propio nombre |
+| Campana (nueva línea) | — | Ejecutivo de inspecciones, Suscriptor y Administrador: «Por calificar · N casos · M informes · V vencidos» y «Calificación ›». No cuenta como aviso sin leer |
+| Caso › pestaña Riesgos, columna de calificación | «Por calificar» a todo vehículo inspeccionado sin veredicto | Con la conexión, la misma regla: «Por calificar», «Determinado por el inspector · Dentro de su facultad» o «Esperando informe» |
+| Monitor del proceso, Historial, PDF, app del inspector, portal del cliente | No muestran «por calificar» | Sin cambios |
+| Menú lateral › Calificación | Sin contador | Sin cambios |
+| Datos de la conexión | informes[] (estado, decision, fueraFacultad, completadoEn) y calificaciones[] (nivel, hora) | Los mismos campos; el contrato no cambia |
+
+**Qué cambió**
+- **Evidencias plegable (DEC-250):**
+  - Las cuatro secciones (Recomendaciones del inspector, Resumen del informe, Evidencias, Puntaje y controles) se dibujan con la misma sección plegable, `SiriusCalGar.plegable`.
+  - Las cuatro comparten el encabezado (botón con aria-expanded), el indicador ▾/▸ y el estado recordado por usuario.
+  - Plegada, una sección muestra solo su contador; Evidencias, por ejemplo, «18 fotos · 2 doc.».
+  - El clic lee el estado del momento, no el del último dibujo.
+- **Una sola fuente (DEC-252):**
+  - `sirius-cola-calificacion.js` (`SiriusColaCalificacion`) toma la cola de `SiriusCalificacion.cola`.
+  - Da `resumen(cola, rol)`: N casos, M informes, V vencidos, por caso y por nivel, y el texto «N casos · M informes · V vencidos».
+  - La usan la bandeja, el menú, el Inicio y la campana. `cxNPorCal` salió.
+- **Regla:**
+  - Por calificar = informe completo sin el veredicto del nivel que le toca, en un caso no cancelado ni emitido.
+  - Llega por estar fuera de facultad o porque se envió a calificación. Un informe completado dentro de la facultad de quien lo completó ya no está por calificar.
+  - Nivel 1 = Ejecutivo de inspecciones; nivel 2 = Suscriptor.
+  - Cada usuario ve los de su nivel que son suyos (responsable, cola compartida o grupo); el Administrador y los roles sin nivel ven todos.
+- **SLA de calificación con la conexión:** corre desde que el informe quedó completo (nivel 1) o desde la calificación de nivel 1 (nivel 2), con el plazo de la etapa del flujo.
+
+**Verificado**
+- Prueba cruzada a 1280×720 y 1920×1080, con y sin la conexión (tabla abajo): todas las cifras coinciden en cada lugar.
+- `calevidplegable` y `calgarnueva`:
+  - Cada sección se pliega y se abre con un clic; Evidencias, también con dos clics seguidos.
+  - Plegada, se ve su contador.
+  - El estado queda en `sirius.cal.panel.<usuario>` y sigue igual al recargar.
+- Caso 50051, pestaña Riesgos: PBA5101 «Por calificar», PBA5102 «Determinado por el inspector», PBA5103 «Esperando informe».
+- Sin errores en `calcola`, `calsusc`, `calreasignar`, `calcolatodos`, `calctl`, `calgarplegada`, `calgarnivel2`, `calgarrg`, `cxgarantiaspropuestas`, `cxr0dcalificar`, `cxr0dadmin`, `cxlimpio`, `inicio` y `notif`.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**Prueba cruzada (mismos datos, mismo usuario)**
+
+| Lugar | Ejecutivo · con conexión | Suscriptor · con conexión | Administrador · con conexión | Ejecutivo · sin conexión | Suscriptor · sin conexión | Administrador · sin conexión |
+|---|---|---|---|---|---|---|
+| Bandeja › pestaña | En calificación 4 | En suscripción 2 | En calificación 6 | En calificación 8 | En suscripción 1 | En calificación 10 |
+| Bandeja › línea | 4 casos · 6 informes · 2 vencidos | 2 · 2 · 1 | 6 · 8 · 3 | 8 · 12 · 2 | 1 · 1 · 0 | 10 · 14 · 2 |
+| Bandeja › filas con «M por calificar» | 4 (1+2+2+1) | 2 (1+1) | 6 | 8 | 1 | 10 |
+| Menú › cabecera | 4 · 6 · 2 | 2 · 2 · 1 | 6 · 8 · 3 | 8 · 12 · 2 | 1 · 1 · 0 | 10 · 14 · 2 |
+| Menú › indicador y Vencidos | 6 en 4 casos · 2 | 2 en 2 casos · 1 | 8 en 6 casos · 3 | 12 en 8 casos · 2 | 1 en 1 caso · 0 | 14 en 10 casos · 2 |
+| Menú › pestañas | Por calificar (6) | En suscripción (2) | Por calificar (6) · En suscripción (2) | Por calificar (12) | En suscripción (1) | Por calificar (13) · En suscripción (1) |
+| Inicio › tarjeta | Por calificar 6 · en 4 casos · 2 vencidos | En suscripción 2 · en 2 casos · 1 vencido | No tiene tarjeta | Por calificar 12 · en 8 casos · 2 vencidos | En suscripción 1 · en 1 caso · 0 vencidos | No tiene tarjeta |
+| Campana | 4 · 6 · 2 | 2 · 2 · 1 | 6 · 8 · 3 | 8 · 12 · 2 | 1 · 1 · 0 | 10 · 14 · 2 |
+
+- Con la conexión se usó `colacalconsistente`. Sin la conexión, `calcola` (Verónica Lema), `calsusc` (Ricardo Almeida) y `calreasignar` (Andrea Salazar), con la bandeja sin filtros.
+- `cxr0emodulo` y `cxr0ebandeja` (50012): 1 caso · 1 informe · 0 vencidos en el menú, el indicador y la bandeja, como Ejecutivo y como Administrador.
+- La versión anterior con los mismos datos de `colacalconsistente`, como Ejecutivo, daba:
+  - bandeja 5 casos (incluía 50055 y 50056, de nivel 2, y dejaba fuera 50052);
+  - menú e Inicio, 7 informes con 0 vencidos (incluía PBA5102, completado dentro de facultad).
+  - Sin la conexión: bandeja 9 casos y menú 8 casos.
+
+**No verificado**
+- La prueba con la base real en GitHub. En nuestras escenas, Evidencias ya se plegaba antes de este cambio, así que no reproduje la falla. Ahora las cuatro secciones son el mismo componente; si en GitHub sigue sin plegarse, necesito el caso y el navegador.
+- El SLA de calificación con la base usa `completadoEn` o `enviadoEn` del informe y `hora` de la calificación de nivel 1. Si la base no los manda, no hay vencidos (como antes).
+
+**Diferencias**
+- La pestaña «En calificación» ya no cuenta:
+  - casos en «Pendiente calificación» sin un informe completo por calificar;
+  - casos de nivel 2 para el Ejecutivo de inspecciones.
+  El estado del caso («En calificación») se sigue viendo en su etiqueta.
+- La bandeja del Ejecutivo de inspecciones y la del Suscriptor muestran también los casos con informes en su cola, aunque el ejecutivo del caso sea otro (50052 es de Verónica Lema).
+- «SLA vencido» de la bandeja suma los casos con el SLA de calificación vencido.
+- El indicador del Administrador en el menú cuenta los dos niveles (antes, solo el nivel 1).
+- La línea de la campana es un resumen, no un aviso: no suma «sin leer».
+- `calevidplegable` empieza con las cuatro secciones plegadas para que se vean juntas a 1280×720.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `calevidplegable` | Verónica Lema · Ejecutivo de inspecciones | 50040: las cuatro secciones con el mismo encabezado y ▸; Evidencias plegada con «18 fotos · 2 doc.» |
+| `colacalconsistente` | Daniela Ruiz · Ejecutivo de inspecciones | 6 casos y 9 informes: bandeja, menú (`?fvista=calificacion`), Inicio (`?fvista=inicio`) y campana (`?fcampana=1`), con 4 casos · 6 informes · 2 vencidos |
+| `colacalconsistente&frol=sus` | Ricardo Almeida · Suscriptor | Los de nivel 2: 2 casos · 2 informes · 1 vencido |
+| `colacalconsistente&frol=admin` | Andrea Salazar · Administrador | Todos: 6 casos · 8 informes · 3 vencidos |
+
+También abrí `cxr0emodulo`, `cxr0ebandeja`, `calgarnueva`, `calcola`, `calsusc`, `calreasignar` y el Inicio de cada rol.
+
+**Tiempo de la etapa: inicio 17/11/2026 21:54 · fin 17/11/2026 22:31 · 37 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-6g-2b
 
 Publiqué la versión 296 de SIRIUS. La calificación con garantías tiene la distribución de la propuesta aprobada (DEC-250): una barra de decisión arriba, la tabla de garantías como protagonista, un panel de contexto que se pliega y el pie fijo.

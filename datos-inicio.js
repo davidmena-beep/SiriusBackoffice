@@ -60,7 +60,7 @@ window.SIRIUS_INICIO = {
     },
     'Ejecutivo de inspecciones': {
       indicadores: [
-        ['Por calificar', 'Riesgos por calificar del usuario (una fila por vehículo; una por caso en Ramos Generales), de la cola de Calificación. Debajo (etapa 12d-3b): «N con alertas altas sin revisar» de la autoinspección, que lleva a la bandeja de controles', 'Calificación › Por calificar (Mis riesgos)', 'warning si alguno por vencer; danger si vencido'],
+        ['Por calificar', 'Informes de nivel 1 por calificar del usuario (uno por vehículo; uno por caso en Ramos Generales), de SiriusColaCalificacion (DEC-252: la misma cifra de la bandeja, el menú Calificación y la campana); debajo, «Informes en N casos · V vencidos». Debajo (etapa 12d-3b): «N con alertas altas sin revisar» de la autoinspección, que lleva a la bandeja de controles', 'Calificación › Por calificar (Mis riesgos)', 'warning si alguno por vencer; danger si vencido'],
         ['Revisión de control', 'Riesgos determinados por el inspector, seleccionados por el muestreo de Niveles de calificación y sin revisar', 'Calificación › Revisión de control (Mis riesgos)', 'warning'],
         ['Respaldos por validar', 'Respaldos de garantía cargados y sin revisar de sus casos', 'Garantías › Respaldos', 'warning'],
         ['Ampliaciones por aprobar', 'Solicitudes de ampliación donde es el calificador final', 'Garantías › Solicitudes', 'warning'],
@@ -71,7 +71,7 @@ window.SIRIUS_INICIO = {
     },
     'Suscriptor': {
       indicadores: [
-        ['En suscripción', 'Pendiente calificación de suscripción de sus grupos de ramo, de la cola de Calificación', 'Calificación › En suscripción (Mis riesgos)', 'warning si alguno por vencer; danger si vencido'],
+        ['En suscripción', 'Informes de nivel 2 por calificar de sus grupos de ramo, de SiriusColaCalificacion (DEC-252: la misma cifra de la bandeja, el menú Calificación y la campana); debajo, «Informes en N casos · V vencidos»', 'Calificación › En suscripción (Mis riesgos)', 'warning si alguno por vencer; danger si vencido'],
         ['Ampliaciones por aprobar', 'Solicitudes de ampliación donde es el calificador final', 'Garantías › Solicitudes', 'warning'],
         ['Emitidos por excepción (mes)', 'Riesgos con resultado de emisión «Emitido por excepción» en el mes del reloj', 'Bandeja › filtro emisión', null],
         ['Calificados por mí (mes)', 'Dictámenes del usuario en el mes del reloj', 'Bandeja › filtro calificador', null],
