@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="datos-compania.js"></script><script src="sirius-motivo.js"></script>
 <script src="sirius-fecha.js"></script>
-<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-campos.js"></script><script src="datos-notificaciones.js"></script><script src="sirius-notif-cola.js"></script><script src="sirius-variables.js"></script><script src="datos-conflictos.js"></script><script src="sirius-conflictos.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
 </helmet>
 <section data-screen-label="BO-25 Notificaciones" style="font-family:var(--font-brand);color:var(--text-body);min-width:0;width:100%;background:#FFFFFF;display:flex;flex-direction:column;gap:16px">
@@ -77,18 +77,8 @@
 <p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ consRegla }}</p></section>
 </div>
 </sc-if>
-<sc-if value="{{ tabBit }}" hint-placeholder-val="{{ false }}">
-<div style="display:flex;flex-direction:column;gap:12px;min-width:0">
-<div role="search" aria-label="Filtrar la bitácora" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
-<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-canal" style="font-size:14px;font-weight:700;color:var(--text-strong)">Canal</label><select id="nt-b-canal" key="{{ fk }}-nt-b-canal" defaultValue="{{ bCanal }}" onChange="{{ onBCanal }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ canalFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
-<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-estado" style="font-size:14px;font-weight:700;color:var(--text-strong)">Estado</label><select id="nt-b-estado" key="{{ fk }}-nt-b-estado" defaultValue="{{ bEstado }}" onChange="{{ onBEstado }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:150px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ estadoFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
-<span style="display:inline-flex;align-items:center;gap:8px"><label for="nt-b-caso" style="font-size:14px;font-weight:700;color:var(--text-strong)">Caso</label><select id="nt-b-caso" key="{{ fk }}-nt-b-caso" defaultValue="{{ bCaso }}" onChange="{{ onBCaso }}" style="height:40px;padding:0 8px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);min-width:130px" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><sc-for list="{{ casoFiltOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></span>
-<sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ clearFilters }}" style="height:40px;padding:0 12px;border:none;background:transparent;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);cursor:pointer;text-decoration:underline;text-underline-offset:3px" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">Limpiar filtros</button></sc-if>
-</div>
-<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-body);text-wrap:pretty">{{ bitIntro }}</p>
-<dc-import name="DataTable" fill="{{ true }}" columns="{{ bitCols }}" rows="{{ bitRows }}" row-actions="{{ bitActions }}" compact-actions="{{ true }}" selectable="{{ false }}" on-row-action="{{ onBitAction }}" page-size="{{ 25 }}" item-noun="{{ bitNoun }}" storage-key="sirius.adm.notif.bitacora" empty-title="Sin envíos" empty-text="No hay envíos con esos filtros." hint-size="100%,420px"></dc-import>
-</div>
-</sc-if>
+<sc-if value="{{ tabEnv }}" hint-placeholder-val="{{ false }}"><div data-nc-tab="config" style="min-width:0">{{ envNode }}</div></sc-if>
+<sc-if value="{{ tabBit }}" hint-placeholder-val="{{ false }}"><div data-nc-tab="bitacora" style="min-width:0">{{ colaNode }}</div></sc-if>
 <sc-if value="{{ pn.open }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;inset:0;z-index:70;display:flex;justify-content:flex-end"><div onClick="{{ pn.close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.2)"></div>
 <aside role="dialog" aria-modal="true" aria-labelledby="nt-pn-t" style="position:relative;width:{{ pn.width }};max-width:100%;height:100%;display:flex;flex-direction:column;background:#FFFFFF;box-shadow:var(--shadow-modal)">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:24px 24px 12px"><h2 id="nt-pn-t" style="margin:0;font-size:20px;font-weight:700;color:var(--text-strong);text-wrap:pretty">{{ pn.title }}</h2><button type="button" aria-label="Cerrar" onClick="{{ pn.close }}" style="flex:none;width:36px;height:36px;border:none;border-radius:50%;background:transparent;cursor:pointer;font-size:20px;color:var(--text-strong)" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">×</button></div>
@@ -110,9 +100,9 @@
 </sc-if>
 </section>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;reglas&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;userName&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;casos&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;valoresCaso&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onCrumb&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;ir&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;onIr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any&quot;},&quot;stickyTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;envios&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;any[]&quot;},&quot;onReenviar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;escena&quot;: {&quot;editor&quot;: null, &quot;default&quot;: &quot;reglas&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;userName&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;casos&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onOpenCase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;valoresCaso&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onCrumb&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;ir&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;onIr&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any&quot;}, &quot;stickyTop&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;envios&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;onReenviar&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(id:string)=&gt;void&quot;}, &quot;cola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;any[]&quot;}, &quot;colaBase&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;onCola&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;(tipo:string,datos:any)=&gt;any&quot;}, &quot;rol&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}}">
 class Component extends DCLogic {
-  TABS = ['Reglas', 'Plantillas', 'Variables', 'Canales', 'Bitácora'];
+  TABS = ['Reglas', 'Plantillas', 'Variables', 'Canales', 'Configuración de envío', 'Bitácora']; // N-2 · DEC-256: «Configuración de envío» (4) y la Bitácora es la cola de correos (5)
   TIPOS = [['estado', 'Por estado'], ['regla', 'Por regla de tiempo'], ['evento', 'Por evento']];
   FECHAS = [['garantias.fechaLimite', 'Fecha límite de garantías', 'de la fecha límite de garantías'], ['visita.fecha', 'Visita', 'de la visita'], ['enlace.envio', 'Envío del enlace', 'del envío del enlace'], ['enlace.ultimaAccion', 'Última acción del cliente en el enlace', 'de la última acción del cliente en el enlace'], ['enlace.vence', 'Vencimiento del enlace', 'del vencimiento del enlace'], ['sla.vence', 'Vencimiento del SLA', 'del vencimiento del SLA']];
   CONDS = ['Conjunto Pendiente', 'Conjunto Vencido'];
@@ -125,7 +115,7 @@ class Component extends DCLogic {
     const e = this.props.escena || '', N = this.N();
     const st = { tab: 0, panel: null, step: 'edit', f: null, orig: null, errs: {}, showErr: false, motivo: '', motErr: false, histFor: null, prevId: null, prevCanal: null, bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: 0, snack: '', nonce: 0, vGrupo: 'all', vClase: 'all', vDisp: 'all', vQ: '', vCaso: '20178', vk: 0 };
     if (!N) return st;
-    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 4, cxbitacora: 4 }; if (tabs[e] != null) st.tab = tabs[e];
+    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 5, cxbitacora: 5, poraprobar: 5, enviar: 5, verkorreo: 5, cxcola: 5, config: 4 }; if (tabs[e] != null) st.tab = tabs[e];
     if (e === 'regla') { st.panel = 'regla'; st.orig = 'R02'; st.f = this.draftFrom(N.regla('R02')); }
     if (e === 'nueva') { st.panel = 'regla'; st.f = Object.assign(this.blank(), { tipo: 'evento' }); }
     if (e === 'ver') { st.panel = 'ver'; st.prevId = 'gar_recordatorio'; st.prevCanal = 'whatsapp'; }
@@ -283,7 +273,8 @@ class Component extends DCLogic {
     const hacer = () => { if (go.k === 'var') { const SV = this.SV(), x = SV && SV.info(go.clave); this.setState({ tab: 2, vQ: x ? x.etiqueta : '', vk: this.state.vk + 1 }); if (x) setTimeout(() => this.openPanel('var', { id: x.clave, row: x.etiqueta, how: 'Disponible' }), 60); }
       else if (go.k === 'editor') { this.setState({ tab: 1 }); this.abrirEditor({ id: go.id, canal: go.canal || '', ret: 'Editar · ' + ((N.plantilla(go.id) || {}).nombre || go.id) }); }
       else if (go.k === 'regla') { const r = N.regla(go.id); this.setState({ tab: 0 }); if (r) setTimeout(() => this.openPanel('regla', { id: r.id, row: r.nombre, how: 'Editar' }), 60); }
-      else if (go.k === 'cuentas') this.setState({ tab: 3 }); };
+      else if (go.k === 'cuentas') this.setState({ tab: 3 });
+      else if (go.k === 'porAprobar') this.setState(s => ({ tab: 5, colaPre: { filtro: { estado: 'Por aprobar' } }, colaKey: (s.colaKey || 0) + 1 })); /* N-2: desde la campana */ };
     if (this.state.editor) { this.setState({ editor: null }); if (this.props.onCrumb) this.props.onCrumb(''); setTimeout(hacer, 60); } else hacer(); }
   componentDidUpdate() { if (this.props.ir) this.conIr(this.props.ir); }
   componentDidMount() {
@@ -320,7 +311,7 @@ class Component extends DCLogic {
     this.sincronizar(st.panel === 'var' ? (SVx => { const x = SVx && SVx.info(st.orig); return (x && x.disponible ? 'Activó' : 'Apagó') + ' «Disponible» de {{' + st.orig + '}}'; })(this.SV()) : st.panel === 'inact' ? 'Inactivó la regla ' + st.orig : st.panel === 'react' ? 'Activó la regla ' + st.orig : st.orig ? 'Editó la regla ' + st.orig : 'Agregó una regla');
     this.setState({ panel: null }); this.restoreFocus();
     /* Etapa C2-10 · DEC-187: con la conexión, el cambio se publica en la base (SIRIUS_NOTIFICACIONES completo, sin funciones); con { ok: false } se revierte */
-    const SP = window.SiriusPublicar, panel = st.panel, ref = st.orig; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: N, motivo, pantalla: 'Notificaciones',
+    const SP = window.SiriusPublicar, panel = st.panel, ref = st.orig; if (SP && SP.activo()) SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones',
       revertir: () => { N.reglas.splice(0, N.reglas.length, ...snap); H.splice(0, H.length - h0); if (panel === 'var') { const SV = this.SV(), x = SV && SV.info(ref); if (x) SV.setDisponible(x.clave, !x.disponible); } this.forceUpdate(); },
       alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: ref || '', accion: 'Publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } });
   }
@@ -332,12 +323,12 @@ class Component extends DCLogic {
   // ---------- Pantalla ----------
   renderVals() {
     const st = this.state, NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {}, N = this.N(), F = this.F();
-    const v = { tabs: this.TABS, tab: st.tab, onTab: (i) => this.setState({ tab: i }), snack: st.snack, pn: { open: false } };
+    const v = { tabs: this.TABS, tab: st.tab, onTab: (i) => this.setState({ tab: i, colaPre: null }), snack: st.snack, pn: { open: false } };
     v.noEditor = !st.editor; v.isEditor = !!st.editor;
     if (st.editor) { const ed = st.editor; v.ed = { key: 'ed-' + ed.n, id: ed.id, dup: ed.dup, escena: ed.escena, canal: ed.canal || '', ir: this.props.onIr || null, user: this.user(), casos: (this.props.casos || []).map(c => ({ id: c.id, asegurado: c.asegurado })).sort((a, b) => a.id < b.id ? -1 : 1), valores: this.props.valoresCaso || null, stickyTop: this.props.stickyTop || '16px',
       volver: () => this.cerrarEditor(), guardado: (id) => { if (id) this._edSaved = id; this.forceUpdate(); }, crumb: (n) => { if (this.props.onCrumb) this.props.onCrumb(n); } }; }
-    v.tabReglas = st.tab === 0; v.tabPlant = st.tab === 1; v.tabVar = st.tab === 2; v.tabCan = st.tab === 3; v.tabBit = st.tab === 4;
-    if (!N || !F) return Object.assign(v, { regRows: [], regCols: [], plRows: [], plCols: [], cueRows: [], cueCols: [], bitRows: [], bitCols: [], varRows: [], varCols: [] });
+    v.tabReglas = st.tab === 0; v.tabPlant = st.tab === 1; v.tabVar = st.tab === 2; v.tabCan = st.tab === 3; v.tabEnv = st.tab === 4; v.tabBit = st.tab === 5;
+    if (!N || !F) return Object.assign(v, { regRows: [], regCols: [], plRows: [], plCols: [], cueRows: [], cueCols: [], varRows: [], varCols: [], colaNode: null, envNode: null });
     if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
     v.plusIcon = this.plusIcon || null;
     v.histIcon = this.histIcon || (this.histIcon = React.createElement('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l4 2' })));
@@ -402,34 +393,39 @@ class Component extends DCLogic {
       { nombre: 'SMS', lines: li(['Sin tildes (GSM): ' + L.sms.gsm + ' caracteres por segmento', 'Con tildes o ñ: ' + L.sms.unicode + ' caracteres por segmento', 'Enlaces: hasta ' + L.sms.enlaces, L.sms.nota + '.']) },
     ];
     v.consRegla = N.consentimiento.regla;
-    // ----- Bitácora -----
-    const btone = { 'Enviado': 'neutral', 'Entregado': 'brand', 'Leído': 'success', 'Fallido': 'danger', 'Omitido': 'warning', 'Prueba': 'brand' }, opt = (a, b) => ({ v: a, l: b });
-    // P-6g-2: con la conexión, la bitácora lee los envíos de la base (notificacionesEnvio[]) y un envío fallido se puede reenviar.
-    const BASE = Array.isArray(this.props.envios), BIT = BASE ? this.props.envios : N.bitacora;
-    const casos = Array.from(new Set(BIT.map(b => b.caso))).filter(c => c !== '—').sort(), hayInv = BIT.some(b => b.caso === '—');
-    v.canalFiltOpts = [opt('all', 'Todos')].concat(N.canales.map(c => opt(c.id, c.nombre))); v.estadoFiltOpts = [opt('all', 'Todos')].concat(this.ENVIOS.map(e => opt(e, e))); v.casoFiltOpts = [opt('all', 'Todos')].concat(casos.map(c => opt(c, c)), hayInv ? [opt('—', 'Sin caso (invitaciones)')] : []);
-    v.fk = st.fk; v.bCanal = st.bCanal; v.bEstado = st.bEstado; v.bCaso = st.bCaso;
-    v.onBCanal = (e) => this.setState({ bCanal: e.target.value }); v.onBEstado = (e) => this.setState({ bEstado: e.target.value }); v.onBCaso = (e) => this.setState({ bCaso: e.target.value });
-    v.hasFilters = st.bCanal !== 'all' || st.bEstado !== 'all' || st.bCaso !== 'all'; v.clearFilters = () => this.setState({ bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: st.fk + 1 });
-    const bl = BIT.map((b, i) => Object.assign({ ix: i }, b)).filter(b => (st.bCanal === 'all' || b.canal === st.bCanal) && (st.bEstado === 'all' || b.estado === st.bEstado) && (st.bCaso === 'all' || b.caso === st.bCaso)).sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : a.ix - b.ix);
-    v.bitIntro = 'Mostrando ' + bl.length + ' de ' + BIT.length + (BASE ? ' envíos de la base. Un envío «Fallido» se puede reenviar.' : ' envíos de ejemplo.') + ' Pasa el cursor por «Fallido» u «Omitido» para ver el motivo.';
-    v.bitNoun = ['envío', 'envíos'];
-    v.bitCols = [
-      { key: 'fecha', label: 'Fecha', width: 140, wrap: false, sticky: true },
-      { key: 'caso', label: 'Caso', width: 90 },
-      { key: 'regla', label: 'Regla', type: 'sub', minWidth: 190, flex: true, ellipsis: true },
-      { key: 'canal', label: 'Canal', width: 100 },
-      { key: 'dest', label: 'Destinatario', minWidth: 170, flex: true },
-      { key: 'rem', label: 'Remitente', minWidth: 300, flex: true },
-      { key: 'estado', label: 'Estado', type: 'badge', width: 120 },
-    ];
-    v.bitRows = bl.map(b => { const rg = N.regla(b.regla), pp = !b.regla && b.plantilla ? N.plantilla(b.plantilla) : null, inv = b.tipo === 'invitacion'; return { id: 'b' + b.ix, envId: b.id, hideActions: BASE && b.estado === 'Fallido' ? [] : ['reenviar'], casoId: b.caso, ariaName: inv ? 'Invitación a ' + b.a : (b.regla ? 'Envío de ' + b.regla : 'Prueba de plantilla') + ' del caso ' + b.caso, fecha: { label: this.fmtT(b.fecha), noBreak: true }, caso: inv ? { label: '—', dim: true } : { label: b.caso, link: true, linkAction: 'caso' },
-      regla: inv ? { label: 'Invitación a SIRIUS', sub: 'Usuarios y roles' } : b.regla ? { label: rg ? rg.nombre : b.regla, sub: b.regla } : { label: 'Prueba de plantilla', sub: pp ? pp.nombre : (b.plantilla || 'Plantilla nueva') }, canal: this.canalNombre(b.canal), dest: b.a, rem: { label: b.remitente, title: b.nota || undefined }, estado: { label: b.estado + (b.reenvios ? ' · reenviado' : ''), tone: btone[b.estado] || 'neutral', title: b.motivo ? 'Motivo: ' + b.motivo : undefined } }; });
-    v.bitActions = BASE ? [{ id: 'reenviar', label: 'Reenviar', icon: 'history' }] : [];
-    v.onBitAction = (a, row) => { if (a === 'caso' && this.props.onOpenCase) this.props.onOpenCase(row.casoId); if (a === 'reenviar' && this.props.onReenviar) this.props.onReenviar(row.envId); };
+    // ----- Bitácora: la cola de correos (N-2 · DEC-256) y la configuración de envío -----
+    Object.assign(v, this.colaVals());
     v.pn = this.panelVals();
     return v;
   }
+  // ---------- N-2 · DEC-256: cola de correos y configuración de envío (SiriusNotifCola) ----------
+  NC() { return window.SiriusNotifCola || null; }
+  // Si sirius-notif-cola.js llega después del primer dibujo (U-3a2), se espera cada 150 ms hasta 20 s y se vuelve a dibujar.
+  glEsperar(nom) { this._glE = this._glE || {}; if (this._glE[nom] || window[nom]) return; this._glE[nom] = true; const t0 = Date.now(); const paso = () => { if (window[nom] || Date.now() - t0 >= 20000) { this._glE[nom] = false; try { this.setState(st => ({ gl: (st.gl || 0) + 1 })); } catch (e) {} return; } setTimeout(paso, 150); }; setTimeout(paso, 150); }
+  cargando(txt) { return React.createElement('p', { role: 'status', 'data-cargando': 'cola', style: { margin: 0, padding: '16px 0', fontSize: 14, color: 'var(--text-muted)' } }, txt); }
+  rolActual() { return this.props.rol || 'Administrador'; }
+  // Escenas: lo que abre la bitácora la primera vez (después, cada vez que se vuelve a la pestaña, empieza limpia).
+  colaPreset() { const e = this.props.escena || '', P = { bitacora: { filtro: { caso: '20178' } }, poraprobar: { filtro: { estado: 'Por aprobar' } }, enviar: { auto: 'enviar', filtro: { desde: '2026-10-18' } }, verkorreo: { dlg: { k: 'ver', id: 'NE-3101' } }, cxcola: { filtro: { estado: 'Por aprobar' } } };
+    if (this.state.colaPre) return this.state.colaPre; if (this._preUsado) return {}; return P[e] || {}; }
+  accionCola(tipo, datos) { const NCx = this.NC(); if (this.props.onCola) return this.props.onCola(tipo, datos); /* sin el Back-office: la cola de ejemplo con la misma regla */
+    const r = NCx.ops(NCx.copia(), tipo, datos, { por: this.user(), rol: this.rolActual() }); this.forceUpdate(); return Promise.resolve(r); }
+  datosPub() { const N = this.N(), o = Object.assign({}, N); delete o.cola; delete o.colaEjemplo; return o; } // la cola no es configuración
+  guardarEnvio(nuevo, motivo) { const N = this.N(), antes = JSON.parse(JSON.stringify(N.envio || {})), H = this.hist(), h0 = H.length, by = this.user();
+    N.envio = nuevo; H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Cambió la configuración de envío', motivo }); this.forceUpdate();
+    const SP = window.SiriusPublicar; if (!SP || !SP.activo()) return Promise.resolve({ ok: true, mensaje: 'Configuración de envío guardada en esta sesión (sin la conexión).' });
+    return SP.publicar({ clave: 'SIRIUS_NOTIFICACIONES', datos: this.datosPub(), motivo, pantalla: 'Notificaciones · Configuración de envío', aviso: 'Configuración de envío guardada en la base',
+      revertir: () => { N.envio = antes; H.splice(0, H.length - h0); this.forceUpdate(); },
+      alPublicar: (i) => { H.unshift({ fecha: this.nowIso(), por: by, regla: '', accion: 'Configuración de envío publicada en la base: versión ' + i.version, motivo }); this.forceUpdate(); } })
+      .then(r => r && r.ok === false ? r : { ok: true, mensaje: 'Guardado en la base (versión ' + ((r || {}).version || '') + ').' }); }
+  colaVals() { const NCx = this.NC(), v = {}, base = !!this.props.colaBase, N = this.N();
+    if (!NCx) { this.glEsperar('SiriusNotifCola'); v.colaNode = this.cargando('Cargando la cola de correos…'); v.envNode = this.cargando('Cargando la configuración de envío…'); v.tabs = this.TABS; return v; }
+    const L = Array.isArray(this.props.cola) ? this.props.cola : NCx.lista(), k = NCx.cuenta(L), h = React.createElement;
+    v.tabs = this.TABS.map((t, i) => i === 5 && k.porAprobar ? 'Bitácora (' + k.porAprobar + ' por aprobar)' : t);
+    if (this.state.tab === 5) { const pre = this.colaPreset(); this._preUsado = true;
+      v.colaNode = h(NCx.Bitacora, { key: 'cola-' + (this.state.colaKey || 0), lista: L, base, rol: this.rolActual(), preset: pre, autoKey: this.props.escena || '', verAcciones: this.props.escena === 'cxcola',
+        onAccion: (t, d) => this.accionCola(t, d), onCaso: (id) => { if (this.props.onOpenCase) this.props.onOpenCase(id); }, valores: this.props.valoresCaso || null, canalNombre: (c) => this.canalNombre(c) }); }
+    if (this.state.tab === 4) v.envNode = h(NCx.ConfigEnvio, { key: 'env-' + (this.state.envKey || 0), cola: L, base, rol: this.rolActual(), onGuardar: (nuevo, mot) => this.guardarEnvio(nuevo, mot) });
+    return v; }
   // Etapa 10n-variables: diccionario de variables (SiriusVariables) con disponibilidad, clasificación LOPDP y uso.
   SV() { return window.SiriusVariables || null; }
   ejemploVar(x, caso) { if (x.clave.startsWith('campo.')) { const C = window.SIRIUS_CAMPOS, y = C && C.valor ? C.valor(caso, x.clave.slice(6)) : null; return window.SiriusVariables ? window.SiriusVariables.textoCampo(x.clave.slice(6), y) : (y == null || y === '' ? '' : (typeof y === 'boolean' ? (y ? 'Sí' : 'No') : String(y))); } const f = this.props.valoresCaso, r = f ? f(caso) : null, y = r && r.vals ? r.vals[x.clave] : ''; return y == null ? '' : String(y); }

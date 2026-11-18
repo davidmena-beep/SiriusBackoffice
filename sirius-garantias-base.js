@@ -105,7 +105,8 @@
       e.estado = d.estado; e.actualizado = ctx.fecha; if (d.motivo) e.motivo = sd(d.motivo).trim(); ev(g, 'Endoso de ' + GB.ENDOSOS[d.tipo].toLowerCase() + ': ' + d.estado.toLowerCase(), ctx);
       return { ok: true, mensaje: 'Endoso ' + d.estado.toLowerCase() }; }
     return no('Acción desconocida: ' + sd(tipo)); };
-  GB.opsEnvio = (E, d, ctx) => { ctx = Object.assign({ fecha: GB.ahoraIso() }, ctx || {}); const n = (E || []).find((x) => sd(x.id) === sd((d || {}).id)); if (!n) return { ok: false, mensaje: 'El envío ' + sd((d || {}).id) + ' no existe' };
+  // N-2 · DEC-256: reenviar es la regla de la cola de correos (vuelve a la cola); si SiriusNotifCola está, se usa la misma función.
+  GB.opsEnvio = (E, d, ctx) => { if (window.SiriusNotifCola) return window.SiriusNotifCola.ops(E, 'reenviarNotificacion', d, ctx); ctx = Object.assign({ fecha: GB.ahoraIso() }, ctx || {}); const n = (E || []).find((x) => sd(x.id) === sd((d || {}).id)); if (!n) return { ok: false, mensaje: 'El envío ' + sd((d || {}).id) + ' no existe' };
     if (n.estado !== 'Fallido') return { ok: false, mensaje: 'Solo se reenvía un envío fallido' };
     n.estado = 'Enviado'; n.errorPrevio = n.error || ''; n.error = ''; n.fecha = ctx.fecha; n.reenvios = (n.reenvios || 0) + 1; return { ok: true, mensaje: 'Notificación reenviada' }; };
 

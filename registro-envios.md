@@ -4,6 +4,104 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-2
+
+Publiqué la versión 314 de SIRIUS. La Bitácora de Notificaciones ahora es la cola real de correos: con la conexión lee `notificacionesEnvio[]` y desde ahí se aprueba, se rechaza, se reenvía y se envía ahora. La configuración de envío y las plantillas se guardan en la base con la publicación de configuración que ya existía.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué toma de la cola o de la configuración | Antes | Ahora |
+|---|---|---|---|
+| Notificaciones › Bitácora | La cola (`notificacionesEnvio[]`) | Lista de envíos con «Reenviar» solo en fallidos; reenviar lo dejaba «Enviado» | Cola con filtros (estado, regla, canal, caso y fecha), selección, «Aprobar», «Rechazar…», «Reenviar», «Ver correo» y «Enviar ahora» |
+| Notificaciones › pestañas | Cuenta de «Por aprobar» | — | «Bitácora (N por aprobar)», con la misma cuenta que la campana |
+| Notificaciones › Configuración de envío (nueva) | `SIRIUS_NOTIFICACIONES.envio` | No existía | Remitente (solo lectura), correo sin destinatario, aprobación de clientes y brókeres, y aprobación por regla |
+| Notificaciones › Plantillas (editor) | `SIRIUS_NOTIFICACIONES.plantillas` | Se guardaba solo en la sesión | Con la conexión se publica en la base; además, «Enviar prueba a mi correo» |
+| Notificaciones › Reglas | `SIRIUS_NOTIFICACIONES` | Se publicaba el objeto completo | Igual, pero sin la cola de ejemplo |
+| Historial del caso | Correos del caso | No aparecían | Sección «Correos del caso» con su estado |
+| Campana | Por aprobar y fallidos | No aparecían | Arriba, para el Administrador: «Correos de la cola», con la misma cuenta, y el enlace a la Bitácora |
+| Coordinar visita (agendar y enviar el enlace) | La base genera R05 y R19 | — | Tras agendarVisita, ofertarVisita y enviarEnlace se vuelve a leer la cola si la conexión sabe recargar |
+| Cancelar la solicitud | La base genera «Solicitud cancelada» | — | Igual: tras cancelarSolicitud y cancelarVisita |
+| Garantías (recordatorios R01 a R04) | La base genera los correos | «Reenviar» dejaba el envío «Enviado» | «Reenviar» usa la regla de la cola (vuelve a la cola) y se vuelve a leer la cola tras las acciones de garantías |
+
+**Qué cambió**
+- **Módulo nuevo `sirius-notif-cola.js` (`SiriusNotifCola`):**
+  - Una sola función lee la cola (`lista`) y la cuenta (`cuenta`, `deCaso`, `campana`). La Bitácora, la pestaña, el Historial y la campana usan esa misma.
+  - `ops` aplica las reglas de las cuatro acciones. La usan la base simulada y el Back-office, que aplica lo mismo a su copia cuando la base responde `{ ok: true }`.
+- **Bitácora:**
+  - Filtros por estado («Por aprobar» primero y con su contador), regla, canal, caso y fecha.
+  - Columnas: hora, caso, regla, destinatario (nombre, rol y correo), asunto, estado, intentos y motivo. «[Sin destinatario]» aparece resaltado.
+  - Selección múltiple con «Aprobar» y «Rechazar…»; el motivo del rechazo es obligatorio.
+  - En cada fila: «Ver correo», «Aprobar», «Rechazar…» y, si falló, fue rechazado u omitido, «Reenviar».
+  - Arriba, «Enviar ahora» con el resultado («3 enviados · 1 fallido» y «Ver el fallido»).
+  - Las filas de WhatsApp, SMS y En SIRIUS llevan «Simulado»: no salen todavía.
+- **Ver correo:** De, Para y Asunto, y el correo armado con la plantilla y los datos del caso (banner, texto, tabla libre o de datos, botón y pie). Un dato que falta se marca «Sin dato».
+- **Configuración de envío (pestaña nueva):**
+  - Remitente en solo lectura: david.mena.coordinador@gmail.com.
+  - Correo para notificaciones sin destinatario.
+  - «Los mensajes a clientes y brókeres requieren aprobación» (Sí o No).
+  - Por regla, «Requiere aprobación» (Heredar, Sí o No), con el resultado de cada una.
+  - Los cambios se resaltan con «antes: …». La barra muestra «N cambios sin guardar · Motivo · Descartar · Guardar en la base».
+- **Plantillas:**
+  - Con la conexión, guardar una plantilla la publica en la base; con `{ ok: false }` se revierte.
+  - «Enviar prueba a mi correo» pide la acción `enviarPruebaNotificacion` para el usuario actual, con la plantilla guardada y el caso de la vista previa. La base todavía no la tiene: la pantalla avisa y no la simula. Sin la conexión, queda «Pendiente» en la cola de ejemplo.
+- **Reenviar:** un correo fallido, rechazado u omitido vuelve a la cola: «Pendiente» si ya estaba aprobado, o «Por aprobar» si necesita aprobación.
+
+**Prueba cruzada** (`cxnotifcola`, conexión simulada: aprobar el R05 del cliente del caso 50012, ENV-5801)
+
+| Dónde | Antes | Después de «Aprobar» | Después de «Enviar ahora» |
+|---|---|---|---|
+| Base (`notificacionesEnvio[]`) | Por aprobar | Pendiente | Enviado |
+| Bitácora (fila ENV-5801) | Por aprobar | Pendiente («Aprobó Andrea Salazar») | Enviado |
+| Pestaña | Bitácora (4 por aprobar) | Bitácora (3 por aprobar) | Bitácora (3 por aprobar) |
+| Historial del caso 50012 | Por aprobar | Pendiente | Enviado |
+| Campana | «4 correos por aprobar · 1 fallido», con el R05 al cliente | «3 correos por aprobar · 1 fallido», sin ese R05 | Igual: el R05 ya no espera al Administrador |
+
+Lo que se envió a la base en la escena:
+- `aprobarNotificacion { ids: ['ENV-5801'] }` → `{ ok: true, mensaje: '1 correo aprobado: sale en el siguiente minuto' }`
+- `enviarNotificacionesAhora {}` → `{ ok: true, enviados: 3, fallidos: 0 }`
+- `rechazarNotificacion { ids: ['ENV-5804'], motivo: 'La cancelación la comunica el ejecutivo' }` → Rechazado
+- `reenviarNotificacion { id: 'ENV-5807' }` → de Fallido a Pendiente
+- `publicarConfiguracion { clave: 'SIRIUS_NOTIFICACIONES', … }` con `envio` dentro y sin la cola
+- `enviarPruebaNotificacion` → la base respondió «Acción desconocida» y la pantalla avisó sin crear nada
+
+**Verificado (1280×720 y 1920×1080)**
+- Las 5 escenas nuevas y 16 que ya existían (Notificaciones, el P-6g-2 `cxnotificaciones`, Garantías, Coordinar visita e Inicio) abren sin error de página: 21 por tamaño.
+- `notifporaprobar`: elegí 3 y «Aprobar» los dejó «Pendiente». La pestaña bajó a cero y la campana pasó de «4 por aprobar · 1 fallido» a «1 fallido». «Rechazar…» sin motivo muestra el error; con motivo queda «Rechazado».
+- `notifenviar`: «3 enviados · 1 fallido». El R01 a una dirección no válida queda «Fallido» con el motivo, y «Reenviar» lo devuelve a «Pendiente».
+- `notifverkorreo`: el correo del R05 del caso 20137 con De, Para, Asunto («…agendada para el 11/10/26») y la tabla de la visita con los datos del caso.
+- `notifconfig`: dos cambios con «antes: …»; sin motivo no guarda; con motivo queda en `SIRIUS_NOTIFICACIONES.envio`. Con la conexión simulada sale `publicarConfiguracion` con `envio` y sin la cola.
+- «Enviar prueba a mi correo»: con la conexión avisa sin simular; sin ella deja una prueba «Pendiente».
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real en GitHub (SQL 58 y la función sirius-notificar): el envío real cada minuto, los motivos reales de «Fallido» y el nombre exacto de la regla de cancelación. Aquí uso «Solicitud cancelada» como identificador de la regla.
+- `enviarPruebaNotificacion`: el nombre y la forma `{ plantilla, caso, destinatario, destinatarioNombre, asunto }` son una propuesta.
+- Que tras agendar, enviar el enlace o cancelar aparezcan los correos nuevos sin recargar la página. Depende de que la conexión tenga `recargar('notificacionesEnvio')`; si no lo tiene, aparecen al volver a abrir SIRIUS.
+
+**Diferencias**
+- **«Configuración de envío»** es una pestaña de Notificaciones, no una entrada aparte del menú de Administración.
+- **«Reenviar»** ahora devuelve el correo a la cola en lugar de marcarlo «Enviado». También aplica en la escena `cxnotificaciones` de P-6g-2.
+- **Sin la conexión**, la Bitácora muestra la cola de ejemplo junto con la bitácora antigua (entregados, leídos, invitaciones y pruebas). Esas filas antiguas no tienen acciones.
+- **La campana** no cuenta los correos como «sin leer»: es un resumen arriba, como el de Calificación.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `notifporaprobar` | Andrea Salazar · Administrador | Bitácora en «Por aprobar» (2 R05, 1 R19 y 1 cancelada), para aprobar 3 y rechazar 1 con motivo |
+| `notifenviar` | Andrea Salazar · Administrador | «Enviar ahora» con «3 enviados · 1 fallido» y la fila «Fallido» con «Reenviar» |
+| `notifverkorreo` | Andrea Salazar · Administrador | «Ver correo» del R05 del caso 20137 con los datos del caso |
+| `notifconfig` | Andrea Salazar · Administrador | Configuración de envío y aprobación por regla |
+| `cxnotifcola` | Andrea Salazar · Administrador (conexión simulada) | La cola de la base del caso 50012, lo que se envía en cada acción y la prueba cruzada |
+
+También abrí `notifreglas`, `notifregla`, `notifnueva`, `notifplant`, `notifver`, `notifcanales`, `notifbitacora`, `notifeditor`, `notifprueba`, `notifvariables`, `notifcasoaviso`, `cxnotificaciones`, `cxgarantiacumplir`, `cxvisitacancelar`, `coordagendada` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 11:29 · fin 18/11/2026 12:03 · 34 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa U-3a2
 
 Publiqué la versión 312 de SIRIUS. Usuarios y roles ya no falla si `sirius-usuarios-ficha.js` termina de cargar después del primer dibujo: muestra «Cargando usuarios…» y, cuando el archivo llega, vuelve a dibujar y aparece la lista. Apliqué la misma corrección que ya está en GitHub y revisé las demás páginas.
