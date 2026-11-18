@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 18/11/2026 · U-1: al crear, reinvitar o cambiar el correo de un invitado, la invitación sale por correo con la función sirius-invitar (el mensaje dice si salió; si no, se copia el enlace como antes).
 // 17/11/2026 · P-6g-2 · SQL 55: SIRIUS_CONEXION.garantias[] y .notificacionesEnvio[] con el contrato de SiriusGarantiasBase (sin el SQL 55, quedan sin definir y siguen los datos de demostración).
 // 16/11/2026 · P-6g · Corrección: SIRIUS_CONEXION.usuario con agenciaRuc, identificacion y tipo (Liquidaciones reconoce al proveedor: Finanzas de agencia o independiente).
 // 16/11/2026 · P-6g · SQL 53: SIRIUS_CONEXION.honorarios[], .liquidaciones[] y .facturas[] con el contrato de SiriusLiqProceso (si la base aún no tiene el SQL 53, quedan sin definir y el módulo sigue en demostración).
@@ -252,6 +253,14 @@
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
+        if (r.ok && r.activacion && /^(crearUsuario|reinvitarUsuario|editarUsuario)$/.test(tipo)) {   // U-1: la invitación sale por correo (función sirius-invitar)
+          var dd = datos || {}, cb = dd.cambios || {}, correo = String(dd.nuevoEmail || cb.email || dd.email || '').trim().toLowerCase();
+          return renovar().then(function () { return fetch(URLB + '/functions/v1/sirius-invitar', { method: 'POST', headers: cab(), body: JSON.stringify({ email: correo, redirectTo: r.activacion, nombre: dd.nombre || cb.nombre || '' }) }); })
+            .then(function (x) { return x.json().catch(function () { return { ok: false, mensaje: 'La función de correo no respondió (¿está publicada?)' }; }); })
+            .catch(function () { return { ok: false, mensaje: 'La función de correo no respondió (¿está publicada?)' }; })
+            .then(function (m) { r.correo = m; r.mensaje = (r.mensaje || '') + (m && m.ok ? ' · ' + m.mensaje : ' · El correo no salió: ' + ((m && m.mensaje) || 'sin respuesta') + '. Copia el enlace y envíalo tú.'); })
+            .then(function () { return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); });   // como el resto de las acciones: recarga y avisa
+        }
       if (tipo === 'publicarConfiguracion' && r.ok) { try { publicado(datos); } catch (e) { console.warn('[SIRIUS] configuración publicada:', e); } }
       return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
     cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; },
