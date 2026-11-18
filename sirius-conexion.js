@@ -274,7 +274,8 @@
             .then(function (m) { r.correo = m; r.mensaje = (r.mensaje || '') + (m && m.ok ? ' · ' + m.mensaje : ' · El correo no salió: ' + ((m && m.mensaje) || 'sin respuesta') + '. Copia el enlace y envíalo tú.'); })
             .then(function () { return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); });   // como el resto de las acciones: recarga y avisa
         }
-      if (tipo === 'publicarConfiguracion' && r.ok) { try { publicado(datos); } catch (e) { console.warn('[SIRIUS] configuración publicada:', e); } }
+      if (tipo === 'publicarConfiguracion' && r.ok) { try { if (r.version) datos = Object.assign({}, datos, { version: r.version }); publicado(datos); }   // 59e: la versión que asignó la base
+        /* */ catch (e) { console.warn('[SIRIUS] configuración publicada:', e); } }
       return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
     cerrarSesion: function () { localStorage.removeItem(CLAVE); location.href = INGRESO; },
     // Diagnóstico en la consola: SIRIUS_CONEXION.configuracion() → clave, versión y origen de lo vigente en la base, y la plantilla vigente que se aplicó.
