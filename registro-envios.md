@@ -4,6 +4,79 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-2d
+
+Publiqué la versión 324 de SIRIUS. Esta etapa corrige N-2c: con la conexión, la vista previa del editor y «Ver correo» arman el correo con los mismos datos que la base. El aviso «Este caso no tiene enlace activo…» ya sale solo cuando, en el contexto de la base, el botón queda sin dirección.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Editor › vista previa del correo | Contexto armado con los datos de la pantalla (el 50013 salía sin enlace aunque la base sí lo tenía) | Con la conexión, `contextoNotificacion(caso, plantilla)` y `sirius-correo-render.js`; mientras llega, «Cargando los datos del caso…» |
+| Editor › aviso del botón y línea «Destino» | Según la pantalla | Según el contexto de la base: el aviso sale solo si el destino queda vacío |
+| Editor › quién lo recibe | No se decía | «Así lo verá: Asegurado o contacto (nombre)», con el destinatario del contexto |
+| Editor › «Enviar prueba a mi correo» | El asunto salía de la pantalla | El asunto sale del contexto de la base y la ventana dice «Lo recibirás como …» |
+| Bitácora › «Ver correo» | Se armaba con los datos de la pantalla | Con `notificacionContexto(id)`: plantilla, asunto y contexto que guardó la base; «Cargando…» o el error |
+| Errores de la base | Ya salían solo con su mensaje en las acciones | También al leer el contexto (`SiriusNotifCola.msg`) |
+| Sin la conexión (o sin esas funciones) | Datos de la pantalla | Igual |
+
+**Qué cambió**
+- **`sirius-notif-cola.js` (v1.3):**
+  - `contextoBase` y `notifBase` leen `SIRIUS_CONEXION.contextoNotificacion` y `notificacionContexto`. Cada una da `cargando`, `ok`, `error` o `sin` (la base no tiene datos).
+  - `completar` deja el contexto de la base listo para armar el correo: enlace, enlaces, tablas, compañía, mensaje y destinatario. Se respeta el destinatario de la base `{ nombre, rol, sinDestino }`.
+  - `htmlCtx`, `asuntoCtx`, `avisosCtx` y `quien` arman el correo, el asunto, los avisos y la línea «Así lo verá».
+  - `msg` saca solo el mensaje de un error de la base, aunque llegue como JSON.
+- **Editor de plantillas:**
+  - `baseCtx()` hace una lectura por caso y plantilla; al cambiar el caso de ejemplo se vuelve a leer.
+  - «Cargando los datos del caso…» mientras llega. Si la base responde un error, se ve solo su mensaje y no se arma el correo con otros datos. Si la base no tiene datos del caso, se usan los de la pantalla y no se dice «Así lo verá».
+  - La prueba usa el mismo contexto para el asunto.
+- **«Ver correo»:** cuando la notificación viene de la base se pide su contexto; muestra «Cargando los datos del correo…», el correo tal como se envió o se enviará, o el mensaje del error. El texto de la ventana dice «los datos que guardó la base para este correo».
+- **Base simulada** (`datos-cx-notif.js`, `SIRIUS Back-office.dc.html`):
+  - La conexión simulada trae las dos funciones nuevas. Con `?cxok=0` responden `{ ok: false }`; con `?cxctx=error`, el JSON crudo de un error; con `?cxctx=sin`, sin datos.
+  - Cada notificación y cada prueba que llega a la cola guarda su contexto; la prueba lo guarda con el destinatario típico de la plantilla.
+
+**Prueba cruzada** (conexión simulada, plantilla «Visita agendada»; la misma plantilla guardada en las tres vistas)
+
+| Caso | Vista previa del editor | «Ver correo» de la prueba enviada | «Ver correo» de la cola | Iguales |
+|---|---|---|---|---|
+| 50013 (enlace activo) | Botón «Cambiar la fecha» → `https://clientes.asur.ec/caso/50013?token=PC-50013-X7K2`; sin aviso; huella f632b7a0; «Así lo verá: Asegurado o contacto (Mónica Andrade)» | Mismo botón y destino; sin aviso; huella f632b7a0 | ENV-6001: mismo botón y destino; huella f632b7a0 | Sí |
+| 50012 (sin enlace) | Sin botón; aviso «Este caso no tiene enlace activo: el botón «Cambiar la fecha» no saldrá.»; huella 5eacbe2f; «Así lo verá: Asegurado o contacto (Fernanda Prueba)» | Sin botón; mismo aviso; huella 5eacbe2f | ENV-6002: sin botón; mismo aviso; huella 5eacbe2f | Sí |
+
+La ventana de la prueba dice «Lo recibirás como Asegurado o contacto (Mónica Andrade)» (caso 50013) y «… (Fernanda Prueba)» (caso 50012), con el asunto «[Prueba] Tu inspección está agendada para el 22/10/26» y «… para el 19/10/26».
+
+**Verificado (1280×720 y 1920×1080)**
+- `vistapreviabase`: el 50013 muestra el botón con el portal del caso y «Así lo verá: Asegurado o contacto (Mónica Andrade)»; al elegir el 50012, a los 100 ms se ve «Cargando los datos del caso…» y después el aviso, sin botón. La línea «Destino» dice lo mismo que la vista previa.
+- `vercorreobase`: ENV-6001 abre con su botón; ENV-6002 sin botón y con su aviso; ENV-6003 muestra solo «El contexto de la notificación ENV-6003 ya no está disponible» (el JSON crudo no se ve).
+- `?cxctx=error` en la vista previa: se ve solo «No se pudo armar el contexto del caso 50013». Con `?cxctx=sin` se usan los datos de la pantalla y no aparece «Así lo verá».
+- `botondestino`, `plantillapublicada` y `notifprueba` siguen bien. La prueba cruzada de N-2c (publicar la versión 4, recargar, editor, vista previa, historial y prueba) da lo mismo, ahora con los datos de la base.
+- El resto del barrido (`notifverkorreo`, `notifporaprobar`, `cxnotifcola`, `bitacoraorden`, `correoigual`, `notifinterruptor`, `enlacebloqueado`, `historialreloj`, `notifeditor` e `inicio`) abre sin error de página en los dos tamaños.
+- `sirius-correo-render.js` no cambió (sigue funcionando en Node, sin navegador) y `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real: que `contextoNotificacion` y `notificacionContexto` devuelvan exactamente esa forma. En esta etapa la plantilla de `notificacionContexto` se acepta como objeto o como identificador; si la base la manda de otra forma, «Ver correo» usa la plantilla vigente.
+- Si la base devuelve el destinatario de la prueba como el del destinatario de la regla (el cliente): aquí se simula así.
+- Con la base real, el tiempo de respuesta de `contextoNotificacion` al cambiar de caso en la vista previa: hay una lectura por caso y plantilla.
+
+**Diferencias**
+- **La condición de la regla** («Este caso no cumple la condición de R05…») y las variables del campo Asunto siguen con los datos de la pantalla: no se tocaron en esta etapa.
+- **Si la base responde un error**, la vista previa no muestra un correo (solo el mensaje), para no enseñar datos distintos a los del envío.
+- **Sin la conexión:** todo sigue como en N-2c.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `vistapreviabase` | Andrea Salazar · Administrador (conexión simulada) | La vista previa de «Visita agendada» con los datos de la base: 50013 con botón y 50012 sin botón y con aviso, con «Así lo verá: …» |
+| `vercorreobase` | Andrea Salazar · Administrador (conexión simulada) | «Ver correo» de ENV-6001 con el contexto guardado de la base; ENV-6002 sin botón; ENV-6003 con el error |
+
+También abrí `botondestino`, `plantillapublicada`, `notifprueba`, `notifverkorreo`, `notifporaprobar`, `cxnotifcola`, `bitacoraorden`, `correoigual`, `notifinterruptor`, `enlacebloqueado`, `historialreloj`, `notifeditor` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 17:51 · fin 18/11/2026 18:07 · 16 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-2c
 
 Publiqué la versión 321 de SIRIUS. Esta etapa corrige N-2b en cuatro puntos. El botón del correo lleva al destino que se elige y, si el caso no tiene esa dirección, no sale. La plantilla publicada es la que se ve al reabrir y al recargar. Con la conexión, la Bitácora muestra solo la cola de la base, de la más reciente a la más antigua, con la hora real. La prueba va al correo del usuario de la conexión.

@@ -96,11 +96,15 @@
   NC.contexto = (caso, valores, fila) => { const V = (valores ? valores(caso) : null) || {}, vals = V.vals || {}, ctx = {}, C = W.SIRIUS_COMPANIA || {};
     Object.keys(vals).forEach((k) => { if (vals[k] == null || vals[k] === '') return; const p = k.split('.'); let o = ctx; for (let i = 0; i < p.length - 1; i++) { if (typeof o[p[i]] !== 'object' || o[p[i]] == null) o[p[i]] = {}; o = o[p[i]]; } if (typeof o[p[p.length - 1]] !== 'object') o[p[p.length - 1]] = vals[k]; });
     ctx.tablas = {}; Object.keys(V.filas || {}).forEach((k) => { ctx.tablas[k] = (V.filas[k] || []).map((r) => Object.assign({}, r)); });
+    return NC.completar(ctx, fila, fila ? fila.plantilla : ''); };
+  // N-2d · DEC-258: lo que le falta a un contexto (el de la pantalla o el que entrega la base) para armar el correo: enlace, enlaces, tablas, compañía, mensaje y destinatario.
+  NC.completar = (ctx, fila, plantillaId) => { const C = W.SIRIUS_COMPANIA || {}; ctx = JSON.parse(JSON.stringify(ctx || {})); if (typeof ctx.tablas !== 'object' || !ctx.tablas) ctx.tablas = {};
     const enl = ctx.enlace || {}; ctx.enlace = { url: enl.url || '', vence: enl.vence || '' }; /* N-2c: el enlace activo del cliente de ESE caso; vacío si no hay (nunca el portal general) */
     const env0 = ((NC.N() || {}).envio || {}).enlaces || {}; ctx.enlaces = Object.assign({ autoagendamiento: '', autoinspeccion: '', caso: '', portal: env0.portal || '', backoffice: env0.backoffice || '' }, typeof ctx.enlaces === 'object' ? ctx.enlaces : {});
     ctx.compania = Object.assign({ nombre: C.nombre || 'Aseguradora del Sur' }, typeof ctx.compania === 'object' ? ctx.compania : {});
     ctx.mensaje = typeof ctx.mensaje === 'string' ? ctx.mensaje : '';
-    const n = fila || {}; ctx.destinatario = fila ? { nombre: n.destinatarioNombre || '', rol: n.rolDestino || '', sinDestino: NC.sinDestinatario(n) } : { nombre: (ctx.contacto || {}).nombre || '', rol: NC.rolDe(n.plantilla), sinDestino: false };
+    const n = fila || {}, dBase = ctx.destinatario && typeof ctx.destinatario === 'object' && (ctx.destinatario.rol || ctx.destinatario.nombre || ctx.destinatario.sinDestino != null) ? ctx.destinatario : null; /* N-2d: el destinatario de la base se respeta */
+    ctx.destinatario = dBase ? { nombre: dBase.nombre || '', rol: dBase.rol || '', sinDestino: !!(dBase.sinDestino || dBase.sinDestinatario) } : fila ? { nombre: n.destinatarioNombre || '', rol: n.rolDestino || '', sinDestino: NC.sinDestinatario(n) } : { nombre: (ctx.contacto || {}).nombre || '', rol: NC.rolDe(plantillaId || n.plantilla), sinDestino: false };
     return JSON.parse(JSON.stringify(ctx)); }; // como lo recibe la función de envío (JSON)
   // Opciones del armado: salen de la configuración de envío publicada (la función de envío lee las mismas).
   NC.opciones = () => { const N = NC.N() || {}, e = N.envio || {}; return { enlaces: Object.assign({ portal: '', backoffice: '' }, e.enlaces || {}), assets: e.assets || '', archivos: Array.isArray(e.archivos) ? e.archivos.slice() : undefined, logo: e.logo || null, faltante: '—' }; };
@@ -108,6 +112,25 @@
   NC.htmlDe = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && plantilla ? R.html(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : ''; };
   NC.asuntoPl = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && plantilla ? R.asunto(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : ''; };
   NC.avisosDe = (plantilla, caso, valores, fila) => { const R = NC.R(); return R && R.avisos && plantilla ? R.avisos(plantilla, NC.contexto(caso, valores, fila), NC.opciones()) : []; };
+  // ---------- N-2d · DEC-258: el correo se arma con los mismos datos que la base ----------
+  // Con la conexión, SIRIUS_CONEXION.contextoNotificacion(caso, plantilla) entrega el contexto con que la base arma el correo de ese caso (enlace { url, vence },
+  // enlaces { autoagendamiento, autoinspeccion, caso, portal, backoffice }, caso, asegurado, contacto, visita, garantias, tablas y destinatario { nombre, rol, sinDestino }
+  // —el destinatario típico de la plantilla—) y SIRIUS_CONEXION.notificacionContexto(id) el de una notificación de la cola ({ contexto, asunto, plantilla }).
+  // Sin esas funciones (o sin conexión) todo sigue con el contexto de la pantalla (NC.contexto).
+  NC.msg = (m) => { if (m && typeof m === 'object') return NC.msg(m.message || m.mensaje || m.error || m.details || ''); let t = sd(m).trim(); const i = t.indexOf('{');
+    if (i >= 0 && /"(message|mensaje)"\s*:/.test(t)) { try { const o = JSON.parse(t.slice(i)), x = o.message || o.mensaje || (o.error && (o.error.message || o.error)) || ''; if (x) return NC.msg(x); } catch (e) { const mm = /"(?:message|mensaje)"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(t); if (mm) return mm[1]; } }
+    return t; }; // solo el mensaje de la base, nunca el JSON crudo
+  NC.baseCx = (nombre) => { const X = W.SIRIUS_CONEXION; return X && X.activo === true && typeof X[nombre || 'contextoNotificacion'] === 'function' ? X : null; };
+  const resp = (p, ok) => Promise.resolve(p).then((r) => { if (r == null) return { estado: 'sin' }; if (r.ok === false) return { estado: 'error', msg: NC.msg(r.mensaje || r.message || r.error) || 'La base no respondió' }; return ok(r); }, (e) => ({ estado: 'error', msg: NC.msg(e && e.message ? e.message : e) || 'La base no respondió' }));
+  NC.contextoBase = (caso, plantilla) => { const X = NC.baseCx('contextoNotificacion'); if (!X) return Promise.resolve({ estado: 'sin' }); let p; try { p = X.contextoNotificacion(String(caso), plantilla || ''); } catch (e) { p = Promise.reject(e); }
+    return resp(p, (r) => { const c = r.contexto && typeof r.contexto === 'object' && !r.caso ? r.contexto : r; return { estado: 'ok', ctx: NC.completar(c, null, plantilla) }; }); };
+  NC.notifBase = (id) => { const X = NC.baseCx('notificacionContexto'); if (!X) return Promise.resolve({ estado: 'sin' }); let p; try { p = X.notificacionContexto(String(id)); } catch (e) { p = Promise.reject(e); }
+    return resp(p, (r) => r.contexto ? { estado: 'ok', ctx: NC.completar(r.contexto, null, ''), asunto: sd(r.asunto), plantilla: r.plantilla || null } : { estado: 'sin' }); };
+  NC.plantillaDe = (x) => { if (x && typeof x === 'object') return x; const N = NC.N(); return x && N && N.plantilla ? N.plantilla(x) : null; };
+  NC.htmlCtx = (plantilla, ctx) => { const R = NC.R(); return R && plantilla && ctx ? R.html(plantilla, ctx, NC.opciones()) : ''; };
+  NC.asuntoCtx = (plantilla, ctx) => { const R = NC.R(); return R && plantilla && ctx ? R.asunto(plantilla, ctx, NC.opciones()) : ''; };
+  NC.avisosCtx = (plantilla, ctx) => { const R = NC.R(); return R && R.avisos && plantilla && ctx ? R.avisos(plantilla, ctx, NC.opciones()) : []; };
+  NC.quien = (ctx) => { const d = (ctx && ctx.destinatario) || {}; return 'Así lo verá: ' + (d.rol || 'Destinatario') + (d.nombre ? ' (' + d.nombre + ')' : '') + (d.sinDestino ? ' · sin destinatario: va al correo de respaldo' : ''); };
   // N-2c: versión vigente de la configuración en la base (configuracion_vigente). La conexión la entrega en configuracion[clave] { version, fecha, por, datos };
   // si no, la que dejó la última publicación en esta sesión. Se publica siempre sobre la vigente (versión nueva = vigente + 1).
   NC.vigente = (clave) => { clave = clave || 'SIRIUS_NOTIFICACIONES'; const X = W.SIRIUS_CONEXION, c = X && X.activo === true && X.configuracion ? X.configuracion[clave] : null, o = W[clave] || {};
@@ -119,13 +142,20 @@
     React.useEffect(() => { const t = setTimeout(medir, 250); return () => clearTimeout(t); }, [props.html, ancho]);
     return h('div', { className: 'nc-frame', style: { overflow: 'hidden', maxWidth: '100%' } }, h('div', { style: { zoom: props.zoom || 1, width: ancho, margin: '0 auto' } },
       h('iframe', { ref, title: props.titulo || 'Vista previa del correo', srcDoc: props.html || '', onLoad: medir, 'data-nc-srcdoc': NC.huella(props.html || ''), style: { display: 'block', width: ancho, height: alto, border: 0, background: '#F2F4F7' } }))); };
-  NC.Correo = function (props) { const h = React.createElement, N = NC.N() || {}, n = props.fila || {}, p = props.plantilla || (N.plantilla ? N.plantilla(n.plantilla) : null), env = NC.envio();
-    const asunto = n.asunto || (p && p.correo ? NC.asuntoPl(p, n.caso, props.valores, n) : '');
+  NC.Correo = function (props) { const h = React.createElement, N = NC.N() || {}, n = props.fila || {}, env = NC.envio();
+    // N-2d · DEC-258: con la conexión, el correo se arma con el contexto que guardó la base (notificacionContexto), tal como se envió o se enviará.
+    const usaBase = !!(n.id && !n.antigua && !/^(bit-|NE-)/.test(String(n.id)) && NC.baseCx('notificacionContexto')), [bb, setBb] = React.useState({ id: '', r: null });
+    React.useEffect(() => { if (!usaBase) return undefined; let vivo = true; NC.notifBase(n.id).then((r) => { if (vivo) setBb({ id: n.id, r }); }); return () => { vivo = false; }; }, [n.id, usaBase]);
+    const rb = usaBase ? (bb.id === n.id && bb.r ? bb.r : { estado: 'cargando' }) : { estado: 'sin' };
+    const p = props.plantilla || (rb.estado === 'ok' && rb.plantilla ? NC.plantillaDe(rb.plantilla) : null) || (N.plantilla ? N.plantilla(n.plantilla) : null);
+    const asunto = rb.estado === 'ok' && (rb.asunto || n.asunto) ? (rb.asunto || n.asunto) : n.asunto || (p && p.correo && rb.estado !== 'ok' ? NC.asuntoPl(p, n.caso, props.valores, n) : rb.estado === 'ok' && p && p.correo ? NC.asuntoCtx(p, rb.ctx) : '');
     const cab = h('dl', { className: 'nc-mh' }, h('dt', null, 'De'), h('dd', null, (env.nombreRemitente ? env.nombreRemitente + ' · ' : '') + (env.remitente || '—')), h('dt', null, 'Para'), h('dd', null, NC.sinDestinatario(n, env) ? h('span', null, h('span', { className: 'nc-sindest' }, '[Sin destinatario]'), ' ' + NC.rolSinDest(n) + ' no tiene correo · va a ' + n.destinatario) : (n.destinatarioNombre ? n.destinatarioNombre + ' · ' : '') + (n.rolDestino ? n.rolDestino + ' · ' : '') + n.destinatario), h('dt', null, 'Asunto'), h('dd', { className: 'nc-as' }, asunto || '—'));
+    if (rb.estado === 'cargando') return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('p', { className: 'nc-txt', role: 'status', 'data-nc-cargando': '', style: { padding: 16 } }, 'Cargando los datos del correo…'));
+    if (rb.estado === 'error') return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('div', { className: 'nc-res err', role: 'alert', 'data-nc-error': '', style: { borderRadius: 0 } }, rb.msg));
     if (!p || !p.correo) return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('div', { className: 'nc-mb' }, h('p', { className: 'nc-txt' }, n.contenido || 'Este correo no usa plantilla: la base arma el texto.')));
     if (!NC.R()) return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, h('p', { className: 'nc-txt', style: { padding: 16 } }, 'Cargando el armado del correo…'));
-    const av = NC.avisosDe(p, n.caso, props.valores, n);
-    return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '' }, cab, av.length ? h('div', { className: 'nc-res err', role: 'note', 'data-nc-aviso-boton': '', style: { borderRadius: 0 } }, av.join(' ')) : null, h(NC.CorreoFrame, { html: NC.htmlDe(p, n.caso, props.valores, n), ancho: 640, zoom: props.zoom || 0.95, titulo: 'Correo: ' + (asunto || '') })); };
+    const deBase = rb.estado === 'ok', av = deBase ? NC.avisosCtx(p, rb.ctx) : NC.avisosDe(p, n.caso, props.valores, n), html = deBase ? NC.htmlCtx(p, rb.ctx) : NC.htmlDe(p, n.caso, props.valores, n);
+    return h('div', { className: 'nc-mail', 'data-nc-correo': n.id || '', 'data-nc-origen': deBase ? 'base' : 'pantalla' }, cab, av.length ? h('div', { className: 'nc-res err', role: 'note', 'data-nc-aviso-boton': '', style: { borderRadius: 0 } }, av.join(' ')) : null, h(NC.CorreoFrame, { html, ancho: 640, zoom: props.zoom || 0.95, titulo: 'Correo: ' + (asunto || '') })); };
   // Escena correoigual: la vista previa (la misma función del editor) y el HTML que arma sirius-correo-render.js con el contexto en JSON, lado a lado.
   NC.Comparar = function (props) { NC.estilos(); const h = React.createElement, N = NC.N() || {}, R = NC.R(), p = N.plantilla ? N.plantilla(props.plantilla) : null, [caso, setCaso] = React.useState(props.caso || ((props.casos || [])[0] || {}).id || '');
     if (!p || !R) return h('p', null, 'Cargando…'); NC._valores = props.valores; // para la verificación
@@ -226,7 +256,7 @@
     const selbar = admin && selOk.length ? h('div', { className: 'nc-selbar', 'data-nc-seleccion': String(selOk.length) }, h('strong', null, pl(selOk.length, 'correo elegido', 'correos elegidos')), h('button', { type: 'button', className: 'nc-btn1', 'data-nc-aprobar-sel': '', onClick: () => aprobar(selOk) }, 'Aprobar'), h('button', { type: 'button', className: 'nc-btn2', 'data-nc-rechazar-sel': '', onClick: () => setDlg({ k: 'rechazar', ids: selOk, motivo: '' }) }, 'Rechazar…'), h('button', { type: 'button', className: 'nc-btn3', onClick: () => setSel([]) }, 'Quitar la selección')) : null;
     let dialogo = null;
     if (dlg && dlg.k === 'ver') { const n = L.find((x) => x.id === dlg.id); if (n) dialogo = h(Dialogo, { k: 'ver', titulo: 'Correo · ' + NC.reglaNombre(n.regla) + (n.caso ? ' · caso ' + n.caso : ''), onClose: () => setDlg(null), pie: h(React.Fragment, null, admin && n.estado === 'Por aprobar' && !n.antigua ? h('button', { type: 'button', className: 'nc-btn2', onClick: () => { setDlg(null); aprobar([n.id]); } }, 'Aprobar') : null, h('button', { type: 'button', className: 'nc-btn1', onClick: () => setDlg(null) }, 'Cerrar')) },
-      h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Se arma con la plantilla «' + ((NC.N() && NC.N().plantilla && NC.N().plantilla(n.plantilla) || {}).nombre || 'sin plantilla') + '» y los datos del caso ' + (n.caso || '—') + ': es lo mismo que se enviará. Estado: ' + n.estado + (n.simulado ? ' (simulado: no sale todavía)' : '') + '.'),
+      h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Se arma con la plantilla «' + ((NC.N() && NC.N().plantilla && NC.N().plantilla(n.plantilla) || {}).nombre || 'sin plantilla') + '» y ' + (NC.baseCx('notificacionContexto') && n.id && !n.antigua && !/^(bit-|NE-)/.test(String(n.id)) ? 'los datos que guardó la base para este correo (caso ' + (n.caso || '—') + '): es exactamente como se envió o se enviará' : 'los datos del caso ' + (n.caso || '—') + ': es lo mismo que se enviará') + '. Estado: ' + n.estado + (n.simulado ? ' (simulado: no sale todavía)' : '') + '.'),
       h(NC.Correo, { fila: n, valores: props.valores })); }
     if (dlg && dlg.k === 'rechazar') { const mot = sd(dlg.motivo), err = dlg.tried && mot.trim().length < 5;
       dialogo = h(Dialogo, { k: 'rechazar', titulo: dlg.ids.length === 1 ? 'Rechazar el correo' : 'Rechazar ' + dlg.ids.length + ' correos', onClose: () => setDlg(null), pie: h(React.Fragment, null, h('button', { type: 'button', className: 'nc-btn2', onClick: () => setDlg(null) }, 'Cancelar'),

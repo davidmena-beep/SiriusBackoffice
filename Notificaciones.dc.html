@@ -116,7 +116,7 @@ class Component extends DCLogic {
     const e = this.props.escena || '', N = this.N();
     const st = { tab: 0, panel: null, step: 'edit', f: null, orig: null, errs: {}, showErr: false, motivo: '', motErr: false, histFor: null, prevId: null, prevCanal: null, bCanal: 'all', bEstado: 'all', bCaso: 'all', fk: 0, snack: '', nonce: 0, vGrupo: 'all', vClase: 'all', vDisp: 'all', vQ: '', vCaso: '20178', vk: 0 };
     if (!N) return st;
-    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 5, cxbitacora: 5, poraprobar: 5, enviar: 5, verkorreo: 5, cxcola: 5, config: 4 }; if (tabs[e] != null) st.tab = tabs[e];
+    const tabs = { plant: 1, ver: 1, variables: 2, varoff: 2, varsens: 2, polizaoff: 2, canales: 3, bitacora: 5, cxbitacora: 5, poraprobar: 5, enviar: 5, verkorreo: 5, cxcola: 5, cxvercorreo: 5, config: 4 }; if (tabs[e] != null) st.tab = tabs[e];
     if (e === 'regla') { st.panel = 'regla'; st.orig = 'R02'; st.f = this.draftFrom(N.regla('R02')); }
     if (e === 'nueva') { st.panel = 'regla'; st.f = Object.assign(this.blank(), { tipo: 'evento' }); }
     if (e === 'ver') { st.panel = 'ver'; st.prevId = 'gar_recordatorio'; st.prevCanal = 'whatsapp'; }
@@ -126,7 +126,7 @@ class Component extends DCLogic {
     if (e === 'polizaoff') { st.tab = 2; st.panel = 'var'; st.orig = 'caso.poliza'; st.vQ = 'póliza'; }
     // Etapa 10n-plantillas: el editor ocupa la página (EditorPlantilla.dc.html).
     if (this.EDIT_ESC.includes(e)) { st.tab = 1; st.editor = { id: '', dup: '', escena: e === 'nuevaplant' ? '' : e, n: 1 }; }
-    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo', cxboton: 'botondestino', cxvigente: 'vigente' }; /* N-2c: botondestino y plantillapublicada abren el editor */ if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
+    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo', cxboton: 'botondestino', cxvigente: 'vigente', cxvistabase: 'vistapreviabase' }; /* N-2c: botondestino y plantillapublicada abren el editor */ if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
     if (e === 'correoigual') st.tab = 1; if (e === 'interruptor' || e === 'cxorden') st.tab = 5;
     return st;
   })();
@@ -408,7 +408,7 @@ class Component extends DCLogic {
   cargando(txt) { return React.createElement('p', { role: 'status', 'data-cargando': 'cola', style: { margin: 0, padding: '16px 0', fontSize: 14, color: 'var(--text-muted)' } }, txt); }
   rolActual() { return this.props.rol || 'Administrador'; }
   // Escenas: lo que abre la bitácora la primera vez (después, cada vez que se vuelve a la pestaña, empieza limpia).
-  colaPreset() { const e = this.props.escena || '', P = { bitacora: { filtro: { caso: '20178' } }, poraprobar: { filtro: { estado: 'Por aprobar' } }, enviar: { auto: 'enviar', filtro: { desde: '2026-10-18' } }, verkorreo: { dlg: { k: 'ver', id: 'NE-3101' } }, cxcola: { filtro: { estado: 'Por aprobar' } } };
+  colaPreset() { const e = this.props.escena || '', P = { bitacora: { filtro: { caso: '20178' } }, poraprobar: { filtro: { estado: 'Por aprobar' } }, enviar: { auto: 'enviar', filtro: { desde: '2026-10-18' } }, verkorreo: { dlg: { k: 'ver', id: 'NE-3101' } }, cxcola: { filtro: { estado: 'Por aprobar' } }, cxvercorreo: { dlg: { k: 'ver', id: 'ENV-6001' } } };
     if (this.state.colaPre) return this.state.colaPre; if (this._preUsado) return {}; return P[e] || {}; }
   accionCola(tipo, datos) { const NCx = this.NC(); if (this.props.onCola) return this.props.onCola(tipo, datos); /* sin el Back-office: la cola de ejemplo con la misma regla */
     const r = NCx.ops(NCx.copia(), tipo, datos, { por: this.user(), rol: this.rolActual() }); this.forceUpdate(); return Promise.resolve(r); }

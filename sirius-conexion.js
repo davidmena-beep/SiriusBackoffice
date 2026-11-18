@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 19/11/2026 · N-1c · SQL 61: SIRIUS_CONEXION.avisos[] = { id, caso, regla, titulo, texto, fecha, leido, rol } (canal App del usuario actual); acciones marcarAvisoLeido { ids } y marcarAvisosLeidos {}.
 // 19/11/2026 · N-2d: contextoNotificacion(caso, plantilla) y notificacionContexto(id) para la vista previa y «Ver correo»; salir() conserva ?caso.
 // 19/11/2026 · Configuración publicada escrita dentro del objeto de cada archivo de datos (las funciones de ayuda del archivo ven lo publicado).
 // 18/11/2026 · N-2c: SIRIUS_CONEXION.configuracion = { clave: { version, fecha, por, datos } } (versión vigente de cada configuración).
@@ -315,6 +316,7 @@
       ,get('facturas?select=id,proveedor_tipo,clave,numero,fecha,sri,liquidaciones,honorarios,subtotal,estado,motivo,pago,historial,agencia:agencias(nombre,ruc),usuario:usuarios(nombre,identificacion)&order=creado').catch(function () { return null; })
       ,get('garantias?select=id,caso,riesgo,codigo,titulo,texto,ramo,prioridad,plazo_dias,vence,estado,origen,respaldo,cumplida_en,ampliaciones,endosos,historial&order=id').catch(function () { return null; })
       ,get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,asunto,plantilla,destinatario_nombre,rol_destino,requiere_aprobacion,aprobado_por,aprobado_en,intentos,creado,caso:casos(numero)&order=creado.desc&limit=300').catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,error,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return get('notificaciones?select=id,regla,canal,destinatario,estado,contenido,enviado_en,caso:casos(numero)&order=enviado_en.desc&limit=300'); }).catch(function () { return null; })
+      ,(CX.usuario && CX.usuario.email ? get('notificaciones?select=id,regla,estado,asunto,contenido,creado,rol_destino,caso:casos(numero)&canal=eq.App&destinatario=eq.' + encodeURIComponent(String(CX.usuario.email).toLowerCase()) + '&order=creado.desc&limit=60').catch(function () { return null; }) : Promise.resolve(null))
     ]).then(function (res) {
       var casos = res[0], evs = res[1], porCaso = {};
       if (Array.isArray(res[3])) CX.usuarios = res[3].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase(), al = d.alcance || {};
@@ -354,6 +356,8 @@
           estado: n.estado === 'Simulado' ? 'Enviado' : n.estado, contenido: n.contenido || '', fecha: n.enviado_en ? isoLocal(n.enviado_en) : (n.creado ? isoLocal(n.creado) : null), error: n.error || null,
           asunto: n.asunto || '', plantilla: n.plantilla || null, destinatarioNombre: n.destinatario_nombre || '', rolDestino: n.rol_destino || '', simulado: n.estado === 'Simulado',
           requiereAprobacion: !!n.requiere_aprobacion, aprobadoPor: n.aprobado_por || null, aprobadoEn: n.aprobado_en ? isoLocal(n.aprobado_en) : null, intentos: n.intentos || 0 }; });   // N-1 · SQL 58: la cola real
+      if (Array.isArray(res[10])) CX.avisos = res[10].map(function (a) { return { id: a.id, caso: a.caso ? String(a.caso.numero) : '', regla: a.regla || '', titulo: a.asunto || '', texto: a.contenido || a.asunto || '',
+          fecha: a.creado ? isoLocal(a.creado) : null, leido: a.estado === 'Leído', rol: a.rol_destino || '' }; });   // N-1c · SQL 61: avisos de la campana (canal App) del usuario actual
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
                  zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',

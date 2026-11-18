@@ -7,13 +7,13 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro últimas
+  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const ADM = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] };
   const prevSim = CC.cxSim.bind(CC), prevAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
   const iso = (min) => new Date(Date.now() - min * 60000).toISOString(); // horas reales, como las devuelve la base (UTC con zona)
   const CFG = 'sirius.sim.config.SIRIUS_NOTIFICACIONES', leerCfg = () => { try { return JSON.parse(sessionStorage.getItem(CFG) || 'null'); } catch (e) { return null; } }, guardarCfg = (c) => { try { sessionStorage.setItem(CFG, JSON.stringify(c)); } catch (e) { /* sin almacenamiento */ } };
-  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
+  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' || escena === 'vistapreviabase' || escena === 'vercorreobase' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
     const cli = ct.nombre || c.asegurado || 'Cliente del caso 50012', mail = ct.correo || ct.email || 'cliente.50012@correo.ec';
     const n = (id, regla, destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, hora, extra) => Object.assign({ id, caso: '50012', regla, canal: 'correo', destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, contenido: '', fecha: hoy + 'T' + hora, error: '', simulado: false, requiereAprobacion: estado === 'Por aprobar', aprobadoPor: null, aprobadoEn: null, intentos: 0 }, extra || {});
     X.usuario = clon(ADM);
@@ -60,10 +60,21 @@
       n('ENV-5906', 'R23', 'lucia.vera@austrobrokers.ec', 'Lucía Vera', 'Bróker (APS)', 'Enviado', 'Caso 50012: se canceló la solicitud de PRB1213', 'solicitud_cancelada', '', { fecha: iso(5), enviadoEn: iso(4), intentos: 1 }),
       n('ENV-5907', 'R04', 'Ricardo Almeida', 'Ricardo Almeida', 'Ejecutivo de inspecciones', 'Enviado', 'Caso 50012: garantías vencidas.', 'gar_vencidas', '', { canal: 'app', simulado: true, fecha: iso(600), enviadoEn: iso(599), intentos: 1 }),
       n('ENV-5908', 'R05', 'santiago.ortiz@asur.ec', 'Santiago Ortiz', 'Ejecutivo comercial', 'Pendiente', 'Visita agendada · caso 50012', 'visita_confirmada', '', { fecha: iso(1) })]; }
-    if (escena === 'casoporenlace' || escena === 'botondestino') X.notificacionesEnvio = [];
+    if (escena === 'casoporenlace' || escena === 'botondestino' || escena === 'vistapreviabase') X.notificacionesEnvio = [];
     // N-2c · botondestino: 30031 (autoinspección con enlace vigente) y 50012 (sin enlace activo) para ver el botón con y sin dirección.
     if (escena === 'botondestino') { const c1 = (X.casos || []).find((x) => String(x.id) === '30031'), v1 = c1 && (c1.visitasBase || [])[0]; if (v1 && v1.enlace) { v1.estado = 'Enlace enviado'; v1.enlace.estado = 'Vigente'; } }
-    if (escena === 'botondestino') { const X2 = prevSim('cxestadoparcial'), c2 = (X2.casos || []).find((x) => String(x.id) === '50012'); if (c2 && !(X.casos || []).some((x) => String(x.id) === '50012')) { X.casos = (X.casos || []).concat([c2]); ['detalles', 'eventos', 'evidencias', 'controles', 'informes', 'calificaciones'].forEach((k) => { X[k] = X[k] || {}; if (X2[k] && X2[k]['50012'] !== undefined) X[k]['50012'] = X2[k]['50012']; }); X.inspectores = (X.inspectores || []).concat((X2.inspectores || []).filter((i) => !(X.inspectores || []).some((j) => j.nombre === i.nombre))); } }
+    if (escena === 'botondestino' || escena === 'vistapreviabase' || escena === 'vercorreobase') { const X2 = prevSim('cxestadoparcial'), c2 = (X2.casos || []).find((x) => String(x.id) === '50012'); if (c2 && !(X.casos || []).some((x) => String(x.id) === '50012')) { X.casos = (X.casos || []).concat([c2]); ['detalles', 'eventos', 'evidencias', 'controles', 'informes', 'calificaciones'].forEach((k) => { X[k] = X[k] || {}; if (X2[k] && X2[k]['50012'] !== undefined) X[k]['50012'] = X2[k]['50012']; }); X.inspectores = (X.inspectores || []).concat((X2.inspectores || []).filter((i) => !(X.inspectores || []).some((j) => j.nombre === i.nombre))); } }
+    // N-2d · DEC-258: la base arma el correo con su propio contexto. enlacesBase = enlace activo del cliente por caso (50013 tiene uno; 50012 no); contextoEjemplo = lo que la base
+    // sabe de la visita de ese caso. contextosNotif = el contexto guardado de cada notificación (notificacionContexto), igual al que se usó al encolarla.
+    if (escena === 'vistapreviabase' || escena === 'vercorreobase') { X.usuario = clon(ADM);
+      X.enlacesBase = { '50013': { url: 'https://clientes.asur.ec/caso/50013?token=PC-50013-X7K2', vence: iso(-60 * 24 * 6) } };
+      X.contextoEjemplo = { '50013': { visita: { fecha: '22/10/26', franja: '09:00 y 10:00', modalidad: 'Presencial', inspector: 'Diana Cárdenas', direccion: 'Av. de los Shyris y Naciones, Quito' } } };
+      if (escena === 'vistapreviabase') X.notificacionesEnvio = [];
+      if (escena === 'vercorreobase') { const mk = (id, caso, nombre, correo, estado, asunto, min, extra) => Object.assign({ id, caso, regla: 'R05', canal: 'correo', destinatario: correo, destinatarioNombre: nombre, rolDestino: 'Cliente', estado, asunto, plantilla: 'visita_confirmada', contenido: '', fecha: iso(min), error: '', simulado: false, requiereAprobacion: false, aprobadoPor: null, aprobadoEn: null, intentos: 0 }, extra || {});
+        X.notificacionesEnvio = [mk('ENV-6001', '50013', 'Mónica Andrade', 'monica.andrade@correo.ec', 'Pendiente', 'No 50013 · Tu inspección está agendada para el 22/10/26', 3),
+          mk('ENV-6002', '50012', 'Fernanda Prueba', 'flota.50012@prueba.sirius.ec', 'Enviado', 'No 50012 · Tu inspección está agendada para el 19/10/26', 40, { enviadoEn: iso(39), intentos: 1 }),
+          mk('ENV-6003', '50013', 'Mónica Andrade', 'monica.andrade@correo.ec', 'Pendiente', 'No 50013 · Tu inspección está agendada para el 22/10/26', 8)];
+        X.contextosNotif = { 'ENV-6003': { error: '{"code":"P0001","details":null,"hint":null,"message":"El contexto de la notificación ENV-6003 ya no está disponible"}' } }; } }
     return X; };
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : prevSim(escena); };
   const TIPOS = ['aprobarNotificacion', 'rechazarNotificacion', 'reenviarNotificacion', 'enviarNotificacionesAhora', 'enviarPruebaNotificacion', 'configurarEnvioNotificaciones'];
@@ -83,9 +94,31 @@
     // SQL 59: enviarPruebaNotificacion { plantilla, caso, destinatario?, destinatarioNombre?, asunto? } → la prueba entra a la cola («Pendiente»; «Simulado» si están apagadas).
     if (tipo === 'enviarPruebaNotificacion') { d = d || {}; if (!d.plantilla) return { ok: false, mensaje: 'Falta la plantilla' }; const u = X.usuario || {}, L = X.notificacionesEnvio, id = 'ENV-P' + String(L.length + 1).padStart(3, '0');
       const fila = { id, caso: String(d.caso || ''), regla: '', canal: 'correo', destinatario: d.destinatario || u.email || '', destinatarioNombre: d.destinatarioNombre || u.nombre || '', rolDestino: 'Prueba', estado: act ? 'Pendiente' : 'Simulado', asunto: d.asunto || '[Prueba]', plantilla: d.plantilla, contenido: '', fecha: (window.SiriusNotifCola || { ahoraIso: () => '' }).ahoraIso(), error: '', simulado: false, requiereAprobacion: false, aprobadoPor: null, aprobadoEn: null, intentos: 0 };
-      L.unshift(fila); return { ok: true, mensaje: 'Prueba en la cola: «' + fila.estado + '»', id, estado: fila.estado, notificacion: clon(fila) }; }
+      L.unshift(fila); const N0 = window.SIRIUS_NOTIFICACIONES, cx = ctxCaso(X, fila.caso, fila.plantilla, null); if (cx) { X.contextosNotif = X.contextosNotif || {}; X.contextosNotif[id] = { contexto: cx, asunto: fila.asunto, plantilla: N0 && N0.plantilla ? clon(N0.plantilla(fila.plantilla)) : fila.plantilla }; } /* N-2d: la prueba llega como la recibe el destinatario de la regla */
+      return { ok: true, mensaje: 'Prueba en la cola: «' + fila.estado + '»', id, estado: fila.estado, notificacion: clon(fila) }; }
     const NC = window.SiriusNotifCola; if (!NC) return { ok: false, mensaje: 'Sin el módulo de la cola' };
     const u = X.usuario || {}, r = NC.ops(X.notificacionesEnvio, tipo, clon(d || {}), { por: u.nombre || '', rol: rol, fecha: NC.ahoraIso() });
     return r; };
+  // ---------- N-2d · DEC-258: la base simulada entrega el contexto con que arma el correo ----------
+  const z2 = (n) => String(n).padStart(2, '0'), fd = (t) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(String(t || '')); return m ? m[3] + '/' + m[2] + '/' + m[1].slice(2) : ''; }, hm = (t) => { const m = /[T ](\d{2}:\d{2})/.exec(String(t || '')); return m ? m[1] : ''; };
+  const ctxCaso = (X, caso, plantilla, n) => { caso = String(caso || ''); const c = (X.casos || []).find((x) => String(x.id) === caso); if (!c) return null;
+    const ct = c.contacto || {}, vb = (c.visitasBase || []).filter((v) => v.estado !== 'Cancelada'), v0 = vb.find((v) => v.inicio || v.fecha) || vb[0] || null, ej = ((X.contextoEjemplo || {})[caso]) || {};
+    const act = (X.enlacesBase || {})[caso] || (() => { const v = vb.find((y) => y.enlace && y.enlace.estado === 'Vigente' && y.enlace.url); return v ? { url: v.enlace.url, vence: v.enlace.vence, tipo: v.enlace.tipo } : null; })();
+    const venc = act ? (/^\d{4}-/.test(String(act.vence || '')) ? fd(act.vence) + ' · ' + hm(act.vence) : String(act.vence || '')) : '';
+    const dom = 'https://clientes.asur.ec/', bo = 'https://sirius.asur.ec/SiriusBackoffice/';
+    const visita = v0 ? { fecha: fd(v0.inicio || v0.fecha), franja: hm(v0.inicio || v0.fecha) + (hm(v0.fin) ? ' y ' + hm(v0.fin) : ''), modalidad: v0.modalidad || '', inspector: v0.inspector || '', direccion: v0.direccion || '' } : {};
+    const NC = window.SiriusNotifCola, rol = n && n.rolDestino && n.rolDestino !== 'Prueba' ? n.rolDestino : (NC && NC.rolDe ? NC.rolDe(plantilla) : 'Asegurado o contacto'), ext = /asegurado|cliente|contacto|bróker|broker/i.test(rol);
+    const dest = n && n.rolDestino && n.rolDestino !== 'Prueba' ? { nombre: n.destinatarioNombre || '', rol: n.rolDestino, sinDestino: !!(NC && NC.sinDestinatario && NC.sinDestinatario(n)) } : { nombre: ext ? (ct.nombre || '') : (c.responsable || ''), rol, sinDestino: false };
+    return clon({ caso: { numero: caso, estado: c.estado || '', ramo: c.ramo || '', sucursal: c.sucursal || '', tipo: c.tipoRiesgo || '', enlace: bo + '?caso=' + caso }, asegurado: { nombre: c.asegurado || '', correo: ct.correo || '', celular: ct.cel || '' }, contacto: { nombre: ct.nombre || '', celular: ct.cel || '', correo: ct.correo || '' },
+      visita: Object.assign(visita, ej.visita || {}), garantias: {}, tablas: { visitas: [Object.assign({ fecha: visita.fecha || '', franja: visita.franja || '', modalidad: visita.modalidad || '', inspector: visita.inspector || '', direccion: visita.direccion || '' }, ej.visita || {})].filter((r) => r.fecha) },
+      enlace: { url: act ? act.url : '', vence: venc }, enlaces: { autoagendamiento: act && /autoagend/i.test(act.tipo || '') ? act.url : '', autoinspeccion: act && /autoinsp/i.test(act.tipo || '') ? act.url : '', caso: bo + '?caso=' + caso, portal: dom + 'caso/' + caso, backoffice: bo },
+      compania: { nombre: 'Aseguradora del Sur' }, destinatario: dest }); };
+  const falla = (X) => { try { return new URLSearchParams(location.search).get('cxctx'); } catch (e) { return ''; } }; // ?cxctx=error: la base responde con el JSON crudo de un error; ?cxctx=sin: no tiene datos del caso
+  CC.contextoNotificacion = function (X, caso, plantilla) { const f = falla(); if (f === 'error') return Promise.reject(new Error('{"code":"P0001","details":null,"hint":null,"message":"No se pudo armar el contexto del caso ' + caso + '"}')); if (f === 'sin') return Promise.resolve(null);
+    return new Promise((ok) => setTimeout(() => ok(ctxCaso(X, caso, plantilla || '', null)), 350)); }; // la demora deja ver «Cargando los datos del caso…»
+  CC.notificacionContexto = function (X, id) { const g = (X.contextosNotif || {})[id], N = window.SIRIUS_NOTIFICACIONES;
+    if (g && g.error) return Promise.reject(new Error(g.error)); if (g) return Promise.resolve(clon(g));
+    const n = (X.notificacionesEnvio || []).find((x) => x.id === id); if (!n || n.canal !== 'correo') return Promise.resolve(null); const ctx = ctxCaso(X, n.caso, n.plantilla, n); if (!ctx) return Promise.resolve(null);
+    return new Promise((ok) => setTimeout(() => ok({ contexto: ctx, asunto: n.asunto, plantilla: N && N.plantilla ? clon(N.plantilla(n.plantilla)) : n.plantilla }), 250)); };
   CC.cxNotif = { escenas: ESC };
 })();
