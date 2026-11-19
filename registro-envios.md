@@ -4,6 +4,74 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-1d
+
+Publiqué la versión 329 de SIRIUS. Esta etapa reproduce en el artifact la corrección que la asesoría ya aplicó en GitHub: la Bitácora vuelve a leer `notificacionesEnvio` cuando la conexión trae una lista nueva. Antes se quedaba en «La cola está vacía · Mostrando 0 de 0» si la lista llegaba después del primer dibujo.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| `NC.cargar` | Guardaba la copia y el objeto `SIRIUS_CONEXION` (`NC._X`) | Guarda también `NC._arr = X.notificacionesEnvio`, la lista de la que salió la copia |
+| `NC.copia` | Recargaba solo si cambiaba `SIRIUS_CONEXION` o si `NC.E` no era una lista | Recarga también si `NC._arr !== X.notificacionesEnvio` (llegó tarde o la trajo el sondeo) |
+| Bitácora, Historial del caso, campana (cuenta de «por aprobar» y fallidos), «Enviar ahora» | Leían `NC.lista()` / `NC.copia()` | Igual; ahora esa lectura ya sigue a la lista nueva |
+| Campana (`NC.avisos`, `SIRIUS_CONEXION.avisos`) | Lee la lista de la conexión en cada llamada; lo leído en la sesión (`NC._leidos`) solo se descartaba si cambiaba el objeto de la conexión | Misma regla: guarda la lista de la que sacó lo leído (`NC._la`); si `avisos` es otra lista, lo leído de la sesión se descarta y manda la base |
+| Cola de ejemplo (`N.cola`, sin la conexión) | Copia propia | Sin cambios |
+| Contexto del correo (N-2d) | Se lee por caso y plantilla | Sin cambios |
+| `sirius-conexion.js` | Línea mínima | Sin cambios (70 bytes) |
+
+**Qué cambió**
+- **`sirius-notif-cola.js` (v1.5):** las dos líneas de la corrección de GitHub, igual que ahí.
+  - `cargar` guarda `NC._arr = X.notificacionesEnvio` (y `null` sin la conexión).
+  - `copia` recarga si `NC._X !== X`, si `NC.E` no es una lista o si `NC._arr !== X.notificacionesEnvio`.
+- **Campana:** `NC.avisos` aplica la misma regla a su lista. Cuando la conexión trae otra lista de avisos, lo que se marcó como leído en esta sesión se descarta y vale lo que dice la base. Con la misma lista (la base que aún no se relee, `?cxpasivo=1`) se conserva.
+- **Base simulada** (`datos-cx-notif.js`, `SIRIUS Back-office.dc.html`): la escena `bitacoratardia` trae la conexión sin `notificacionesEnvio`. Cuando la Bitácora ya está a la vista, 1,5 s después la base entrega la lista (una lista nueva) y el Back-office solo vuelve a dibujar, sin pasar por `ncRecargar`.
+
+**Prueba cruzada** (misma página, sin recargar; módulo anterior frente al corregido)
+
+| Paso | Módulo anterior | Módulo corregido |
+|---|---|---|
+| `bitacoratardia`: la Bitácora a la vista, sin la lista | «Mostrando 0 de 0» · «La cola está vacía» | Igual |
+| La base entrega la lista (1,5 s después) | Sigue «Mostrando 0 de 0» | «Mostrando 8 de 8» y «Estado: Todos (8)», en menos de 1,5 s |
+| `bitacoraorden`: la base cambia a una lista de 3 filas y el Back-office se vuelve a dibujar | Sigue «Mostrando 8 de 8» | «Mostrando 3 de 3» |
+| La base cambia a una lista vacía | Sigue «Mostrando 8 de 8» | «Mostrando 0 de 0» |
+| `campanaavisos`: marcar AV-7001 | 1 sin leer | 1 sin leer |
+| La base trae otra lista de 3 avisos sin leer | 2 sin leer (arrastra lo leído) | 3 sin leer |
+| Marcar un aviso de esa lista | — | 2 sin leer |
+
+**Verificado (1280×720 y 1920×1080)**
+- `bitacoratardia`: primero la cola vacía, ya sin «Preparando tu espacio de trabajo», y 1,4 s después las 8 filas con su orden y su hora real. La página no se recarga (una marca puesta en la ventana sigue ahí). Con el módulo anterior la cola se queda vacía.
+- `bitacoraorden`: 8 filas ordenadas, como en N-2c. `ENV-5907` (canal app con «Simulado» explícito) sigue «Enviado» y «Simulado».
+- `campanaavisos`: la prueba cruzada de N-1c sale igual (número 2; abrir AV-7001 abre «Caso 50013» y el número pasa a 1; Bitácora con ENV-7101 y ENV-7103 en «Leído» y ENV-7102 «Entregado»; «Marcar todas» deja el número en blanco y las tres filas en «Leído»; la base recibe `marcarAvisoLeido { ids: ['AV-7001'] }` y `marcarAvisosLeidos {}`). También con `?cxpasivo=1`. `campanavacia` dice «No tienes avisos nuevos».
+- `notifporaprobar` (sin la conexión): cola de ejemplo con «Bitácora (4 por aprobar)» y la campana con su número.
+- `monitorcampana`, `cxnotifcola`, `vistapreviabase`, `vercorreobase`, `colacalconsistente`, `cxnotificaciones` e `inicio` abren sin error de página en los dos tamaños.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real: la corrección ya la probó la asesoría en GitHub; aquí no la corrí con la conexión real, solo con la base simulada.
+- La regla compara la lista por identidad (`!==`). Si la base real agrega filas al mismo arreglo (por ejemplo con `push`) sin cambiar el arreglo, la copia no se entera hasta `ncRecargar` (cada 60 s, al volver a la pestaña y tras las acciones).
+- La copia se vuelve a leer cuando algo dibuja la pantalla; si la base entrega la lista y nada la vuelve a dibujar, la Bitácora se actualiza en el siguiente dibujo o en el sondeo de 60 s.
+- En la simulación, el sondeo de 60 s (`ncRecargar`) ya llamaba a `NC.cargar()`; no reproduje el fallo del sondeo que se vio en GitHub.
+
+**Diferencias**
+- **La campana (`NC.avisos`) no estaba en la corrección de GitHub:** la agregué por la definición 2 (misma regla para otras listas). Si la asesoría prefiere dejar solo las dos líneas de `cargar` y `copia`, se quita sin tocar lo demás.
+- **La escena** no usa el sondeo de 60 s: la base entrega la lista y el Back-office solo se vuelve a dibujar, para que la prueba dure segundos.
+- **Contexto del correo (N-2d):** su lectura por caso y plantilla no depende de la lista de la conexión; no se tocó.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `bitacoratardia` | Andrea Salazar · Administrador (conexión simulada) | Notificaciones › Bitácora con la cola vacía y, 1,5 s después, las 8 filas de la base, sin recargar |
+
+También abrí `bitacoraorden`, `campanaavisos`, `campanavacia`, `notifporaprobar`, `monitorcampana`, `cxnotifcola`, `vistapreviabase`, `vercorreobase`, `colacalconsistente`, `cxnotificaciones` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 21:54 · fin 18/11/2026 22:10 · 16 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-1c
 
 Publiqué la versión 326 de SIRIUS. La campana ahora muestra los avisos que la base deja con el canal «App» (SQL 61), junto con lo que ya mostraba. Abrir un aviso lo marca leído y abre el caso; las filas «En SIRIUS» de la Bitácora pasan de «Entregado» a «Leído» con la misma lista.

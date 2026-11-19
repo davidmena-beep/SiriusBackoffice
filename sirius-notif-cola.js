@@ -44,11 +44,10 @@
     return NC.norm({ id: 'bit-' + i, caso: b.caso === '—' ? '' : b.caso, regla: b.regla || '', canal: b.canal, destinatario: b.a, destinatarioNombre: b.a, rolDestino: b.tipo === 'invitacion' ? 'Usuario invitado' : '', estado: b.estado,
       asunto: b.tipo === 'invitacion' ? 'Invitación a SIRIUS' : (b.nota || (rg ? rg.nombre : 'Prueba de plantilla')), plantilla: b.plantilla || (rg ? rg.plantilla : ''), fecha: b.fecha, error: b.motivo || '', intentos: 1, antigua: true, remitente: b.remitente }); };
   NC.E = null; NC.fuente = '';
-  NC.cargar = () => { const X = NC.X(); if (X) { NC.E = clon(Array.isArray(X.notificacionesEnvio) ? X.notificacionesEnvio : []).filter((n) => n && n.id).map(NC.norm); NC.fuente = 'base'; NC._X = X; NC._arr = X.notificacionesEnvio; } else { NC.E = null; NC.fuente = 'ejemplo'; NC._X = null; } NC.v = (NC.v || 0) + 1; return NC.E; };
+  NC.cargar = () => { const X = NC.X(); if (X) { NC.E = clon(Array.isArray(X.notificacionesEnvio) ? X.notificacionesEnvio : []).filter((n) => n && n.id).map(NC.norm); NC.fuente = 'base'; NC._X = X; NC._arr = X.notificacionesEnvio; /* N-1d: la lista de la conexión de la que salió esta copia */ } else { NC.E = null; NC.fuente = 'ejemplo'; NC._X = null; NC._arr = null; } NC.v = (NC.v || 0) + 1; return NC.E; };
   NC.reiniciar = (real) => { const N = NC.N(), X = W.SIRIUS_CONEXION; if (N) { N.cola = clon(N.colaEjemplo || []); if (!real) { if (!N._envioBase) N._envioBase = clon(N.envio || {}); N.envio = clon(N._envioBase); const cv = X && X.activo === true && X.configuracion && X.configuracion.SIRIUS_NOTIFICACIONES; if (cv && cv.datos && cv.datos.envio) Object.assign(N.envio, clon(cv.datos.envio)); /* N-2c: la versión vigente de la base */ if (X && X.activo === true && X.envio && typeof X.envio === 'object') Object.assign(N.envio, clon(X.envio)); } } NC._log = []; Object.keys(NC).filter((k) => /^_auto/.test(k)).forEach((k) => { delete NC[k]; }); NC.cargar(); };
   NC.base = () => !!NC.X();
-  // Corrección (19/11): también se recarga cuando la conexión trae una lista nueva (la primera carga puede llegar después del primer dibujo, y cada sondeo trae una lista nueva).
-  NC.copia = () => { const X = NC.X(); if (X && (NC._X !== X || !Array.isArray(NC.E) || NC._arr !== X.notificacionesEnvio)) NC.cargar(); if (X) return NC.E; const N = NC.N(); if (!N) return []; if (!Array.isArray(N.cola)) N.cola = clon(N.colaEjemplo || []); return N.cola; };
+  NC.copia = () => { const X = NC.X(); if (X && (NC._X !== X || !Array.isArray(NC.E) || NC._arr !== X.notificacionesEnvio)) NC.cargar(); /* N-1d: también cuando la conexión trae una lista nueva (llegó tarde o el sondeo la cambió) */ if (X) return NC.E; const N = NC.N(); if (!N) return []; if (!Array.isArray(N.cola)) N.cola = clon(N.colaEjemplo || []); return N.cola; };
   NC.lista = () => { const L = NC.copia().map(NC.norm).map(NC.conAviso); if (NC.base()) return L; const N = NC.N(); return L.concat(((N && N.bitacora) || []).map(NC.deBitacora)); };
   NC.cuando = (n) => NC.ec(n.enviadoEn || n.fecha || ''); // fecha real del registro: enviado o, si no salió, creado
   NC.fila = (id) => NC.lista().find((n) => n.id === sd(id)) || null;
@@ -68,7 +67,7 @@
   // Una sola función (NC.avisos): la campana (lista y contador), la Bitácora (estado «Entregado» o «Leído» de las filas En SIRIUS) y el Historial del caso leen la misma lista.
   NC.TIPO_AVISO = { R04: 'exc', R08: 'exc', R09: 'reject', R10: 'reject', R11: 'adj', R16: 'exc', R17: 'visita' };
   NC.avisosBase = () => { const X = W.SIRIUS_CONEXION; return X && X.activo === true && Array.isArray(X.avisos) ? X.avisos : null; };
-  NC.avisos = () => { const A = NC.avisosBase(), X = W.SIRIUS_CONEXION; if (!A) return []; if (NC._lx !== X) { NC._lx = X; NC._leidos = {}; } const ov = NC._leidos || {};
+  NC.avisos = () => { const A = NC.avisosBase(), X = W.SIRIUS_CONEXION; if (!A) return []; if (NC._lx !== X || NC._la !== A) { NC._lx = X; NC._la = A; NC._leidos = {}; } /* N-1d: lo leído en esta sesión se descarta cuando la conexión trae una lista nueva (la base manda) */ const ov = NC._leidos || {};
     return A.filter((a) => a && a.id != null).map((a) => ({ id: sd(a.id), caso: sd(a.caso), regla: sd(a.regla), titulo: sd(a.titulo), texto: sd(a.texto), fecha: NC.ec(a.fecha || ''), leido: !!(a.leido || ov[sd(a.id)]), rol: sd(a.rol) }))
       .sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0).slice(0, 60); };
   NC.avisosSinLeer = () => NC.avisos().filter((a) => !a.leido).length;

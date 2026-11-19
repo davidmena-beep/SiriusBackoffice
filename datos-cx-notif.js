@@ -1,4 +1,4 @@
-// SIRIUS · Cola de correos con la conexión simulada (v1.0 · provisional · etapa N-2 · DEC-256 · 18/11/2026)
+// SIRIUS · Cola de correos con la conexión simulada (v1.0 · provisional · etapa N-2 · DEC-256 · 18/11/2026; N-1d: escena bitacoratardia)
 // Escena cxnotifcola: arma SIRIUS_CONEXION con el caso 50012 de coordinación (la misma base de cxestadoparcial) y notificacionesEnvio[] con la forma
 // del contrato (SQL 58): 4 «Por aprobar» (2 R05, 1 R19 y 1 R23 «Solicitud cancelada»), 2 «Pendiente», 1 «Fallido», 1 «Enviado» y 1 WhatsApp simulado.
 // La base simulada aplica aprobarNotificacion, rechazarNotificacion, reenviarNotificacion y enviarNotificacionesAhora con SiriusNotifCola.ops (la misma
@@ -7,7 +7,7 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase', 'campanaavisos', 'campanavacia']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
+  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase', 'campanaavisos', 'campanavacia', 'bitacoratardia']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const ADM = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] };
   const prevSim = CC.cxSim.bind(CC), prevAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
@@ -51,7 +51,7 @@
       X.configuracion = { SIRIUS_NOTIFICACIONES: c }; if (N && c && c.datos) Object.keys(c.datos).forEach((k) => { if (typeof N[k] !== 'function') N[k] = JSON.parse(JSON.stringify(c.datos[k])); });
       if (N) { N.__version = c.version; N.__fecha = c.fecha; N.__por = c.por; } }
     // N-2c · bitacoraorden: correos y «Simulado» (WhatsApp, SMS, En SIRIUS) con horas reales, desordenados como llegan de la base.
-    if (escena === 'bitacoraorden') { X.notificacionesEnvio = [
+    if (escena === 'bitacoraorden' || escena === 'bitacoratardia') { X.notificacionesEnvio = [
       n('ENV-5901', 'R05', mail, cli, 'Cliente', 'Enviado', 'Tu inspección está agendada', 'visita_confirmada', '', { fecha: iso(240), enviadoEn: iso(239), intentos: 1 }),
       n('ENV-5902', 'R05', ct.cel || '0990000012', cli, 'Cliente', 'Pendiente', 'Visita agendada por WhatsApp', 'visita_confirmada', '', { canal: 'whatsapp', simulado: true, fecha: iso(240) }),
       n('ENV-5903', 'R19', mail, cli, 'Cliente', 'Enviado', 'Agenda la inspección de tu caso 50012', 'enlace_autoagendamiento', '', { fecha: iso(30), enviadoEn: iso(29), intentos: 1 }),
@@ -84,6 +84,9 @@
           av('AV-7003', '50013', 'R11', 'Ampliación de plazo · caso 50013', 'El cliente pidió 5 días más para cumplir las garantías: la solicitud espera tu respuesta.', 60 * 5, true)];
         const fila = (a, i, estado) => ({ id: 'ENV-710' + (i + 1), caso: a.caso, regla: a.regla, canal: 'app', destinatario: 'andrea.salazar', destinatarioNombre: 'Andrea Salazar', rolDestino: 'Administrador', estado, asunto: a.titulo, plantilla: '', contenido: a.texto, fecha: a.fecha, enviadoEn: a.fecha, error: '', simulado: false, requiereAprobacion: false, aprobadoPor: null, aprobadoEn: null, intentos: 1, aviso: a.id });
         X.notificacionesEnvio = X.avisos.map((a, i) => fila(a, i, a.leido ? 'Leído' : 'Entregado')); } }
+    // N-1d · bitacoratardia: la conexión está activa pero notificacionesEnvio todavía no llegó (como en GitHub con la base). Las filas de bitacoraorden quedan en X.__tardia y
+    // el Back-office las entrega 1,5 s después del primer dibujo con una lista nueva (X.notificacionesEnvio = [...]); la Bitácora debe pasar de vacía a mostrar las filas sin recargar.
+    if (escena === 'bitacoratardia') { X.usuario = clon(ADM); X.__tardia = X.notificacionesEnvio; delete X.notificacionesEnvio; }
     return X; };
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : prevSim(escena); };
   const TIPOS = ['aprobarNotificacion', 'rechazarNotificacion', 'reenviarNotificacion', 'enviarNotificacionesAhora', 'enviarPruebaNotificacion', 'configurarEnvioNotificaciones'];
