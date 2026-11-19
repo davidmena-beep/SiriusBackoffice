@@ -7,13 +7,13 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase', 'campanaavisos', 'campanavacia', 'bitacoratardia']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
+  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase', 'campanaavisos', 'campanavacia', 'bitacoratardia', 'plantillasubirimagen', 'plantillaimagenerror']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const ADM = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] };
   const prevSim = CC.cxSim.bind(CC), prevAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
   const iso = (min) => new Date(Date.now() - min * 60000).toISOString(); // horas reales, como las devuelve la base (UTC con zona)
   const CFG = 'sirius.sim.config.SIRIUS_NOTIFICACIONES', leerCfg = () => { try { return JSON.parse(sessionStorage.getItem(CFG) || 'null'); } catch (e) { return null; } }, guardarCfg = (c) => { try { sessionStorage.setItem(CFG, JSON.stringify(c)); } catch (e) { /* sin almacenamiento */ } };
-  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' || escena === 'vistapreviabase' || escena === 'vercorreobase' || escena === 'campanaavisos' || escena === 'campanavacia' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
+  const datos = (escena) => { if (escena === 'plantillasubirimagen' || escena === 'plantillaimagenerror') escena = 'vistapreviabase'; /* N-2e: los mismos datos de la base que vistapreviabase (caso 50013 con enlace activo) */ const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' || escena === 'vistapreviabase' || escena === 'vercorreobase' || escena === 'campanaavisos' || escena === 'campanavacia' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
     const cli = ct.nombre || c.asegurado || 'Cliente del caso 50012', mail = ct.correo || ct.email || 'cliente.50012@correo.ec';
     const n = (id, regla, destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, hora, extra) => Object.assign({ id, caso: '50012', regla, canal: 'correo', destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, contenido: '', fecha: hoy + 'T' + hora, error: '', simulado: false, requiereAprobacion: estado === 'Por aprobar', aprobadoPor: null, aprobadoEn: null, intentos: 0 }, extra || {});
     X.usuario = clon(ADM);
@@ -88,6 +88,18 @@
     // el Back-office las entrega 1,5 s después del primer dibujo con una lista nueva (X.notificacionesEnvio = [...]); la Bitácora debe pasar de vacía a mostrar las filas sin recargar.
     if (escena === 'bitacoratardia') { X.usuario = clon(ADM); X.__tardia = X.notificacionesEnvio; delete X.notificacionesEnvio; }
     return X; };
+  // ---------- N-2e: almacén público «correo» de Supabase (SQL 64) ----------
+  // subirImagenCorreo(archivo, nombre) → Promise de { ok, mensaje, url, ruta }. Ver: todos; subir: solo el Administrador; PNG, JPG, GIF o WebP hasta 2 MB. La base simulada guarda lo que se sube en memoria
+  // (X.imagenesSim[url] = data URL) para que la pantalla lo muestre; la base real devuelve una dirección pública de Supabase. La escena plantillaimagenerror responde { ok: false, mensaje: 'La imagen pesa más de 2 MB' }.
+  CC.subirImagenCorreo = function (X, archivo, nombre) { let esc = ''; try { esc = new URLSearchParams(location.search).get('escena') || ''; } catch (er) { /* nada */ }
+    try { window.__sirImgUltima = (window.__sirImgUltima || []).concat([{ nombre: nombre || (archivo && archivo.name) || '', tipo: archivo && archivo.type, bytes: archivo && archivo.size }]); } catch (er) { /* registro de prueba */ }
+    const rol = window.__sirRolActivo || (X.usuario || {}).rol || ''; if (rol && rol !== 'Administrador') return Promise.resolve({ ok: false, mensaje: 'Solo el Administrador sube imágenes' });
+    if (esc === 'plantillaimagenerror') return new Promise((ok) => setTimeout(() => ok({ ok: false, mensaje: 'La imagen pesa más de 2 MB' }), 900));
+    if (!archivo || ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].indexOf(archivo.type) < 0) return Promise.resolve({ ok: false, mensaje: 'Solo se aceptan imágenes PNG, JPG, GIF o WebP' });
+    if (archivo.size > 2 * 1048576) return Promise.resolve({ ok: false, mensaje: 'La imagen pesa más de 2 MB' });
+    return new Promise((ok) => { const rd = new FileReader(); rd.onerror = () => ok({ ok: false, mensaje: 'No se pudo leer la imagen' });
+      rd.onload = () => { const limpio = String(nombre || archivo.name || 'imagen').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'imagen', ruta = Date.now() + '-' + limpio, url = 'https://sirius-sim.supabase.co/storage/v1/object/public/correo/' + ruta;
+        X.imagenesSim = X.imagenesSim || {}; X.imagenesSim[url] = rd.result; setTimeout(() => ok({ ok: true, mensaje: 'Imagen subida', url, ruta }), 1200); }; rd.readAsDataURL(archivo); }); }; // la demora deja ver «Subiendo…»
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : prevSim(escena); };
   const TIPOS = ['aprobarNotificacion', 'rechazarNotificacion', 'reenviarNotificacion', 'enviarNotificacionesAhora', 'enviarPruebaNotificacion', 'configurarEnvioNotificaciones'];
   CC.aplicar = function (X, tipo, d) {

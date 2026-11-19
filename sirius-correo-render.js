@@ -43,8 +43,10 @@
   // Avisos de la vista previa (lo mismo que hará el envío): botones que no saldrán porque su destino no tiene dirección para este caso.
   R.avisos = (plantilla, contexto, opciones) => { const out = []; (R.cuerpo(plantilla).bloques || []).forEach((b, i) => { if (b.tipo !== 'boton' || R.destino(b.destino, contexto, opciones, b.url)) return; const t = R.tipoDestino(b.destino, contexto), txt = R.llenar(b.texto || 'Abrir', contexto, opciones, true);
     out.push(t === 'cliente' ? 'Este caso no tiene enlace activo: el botón «' + txt + '» no saldrá.' : t === 'url' ? 'La dirección del botón «' + txt + '» no es válida para este caso: el botón no saldrá.' : '«' + R.nombreDestino(t) + '» no tiene dirección para este caso: el botón «' + txt + '» no saldrá.'); }); return out; };
-  // Imagen de un banner o pie: la propia (b.img, solo en el editor), la del almacén (assets + archivo) o el logo.
+  // Imagen de un banner o pie: la propia (b.img, solo en el editor), una dirección completa (https://…, la que da la base al subir una imagen: N-2e), la del almacén (assets + archivo) o el logo.
+  R.esUrlImagen = (a) => /^https:\/\/./i.test(sd(a).trim());
   R.imagen = (b, op) => { op = op || {}; if (b.img) return { src: b.img, alt: b.alt || '' };
+    if (R.esUrlImagen(b.archivo)) return { src: sd(b.archivo).trim(), alt: b.alt || '' }; // N-2e: tal cual, sin opciones.assets ni opciones.archivos
     const existe = b.archivo && op.assets && (!Array.isArray(op.archivos) || op.archivos.indexOf(b.archivo) >= 0);
     if (existe) return { src: sd(op.assets).replace(/\/?$/, '/') + encodeURIComponent(b.archivo), alt: b.alt || '' };
     return op.logo && op.logo.src ? { src: op.logo.src, alt: op.logo.alt || b.alt || '', logo: true } : null; };

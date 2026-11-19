@@ -4,6 +4,88 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-2e
+
+Publiqué la versión 331 de SIRIUS. Los bloques Banner y Pie del editor de plantillas, y el logo de la configuración de envío, ahora suben su imagen al almacén público «correo» de Supabase (`subirImagenCorreo`). La plantilla guarda la dirección completa y la vista previa, «Ver correo» y la prueba enviada muestran la misma imagen.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Editor › bloques Banner y Pie | «Subir PNG o JPG» solo en pantalla (`b.img`, 1 MB); para una imagen nueva había que subirla a GitHub (`assets/correo`) y cambiar la plantilla por SQL | Con la conexión: «Subir imagen» / «Cambiar imagen» → `subirImagenCorreo`; `archivo` = la dirección completa, sin `b.img` |
+| Editor › miniatura y nombre | Miniatura solo de `b.img`; el nombre era el del archivo local | Miniatura y nombre también de la dirección completa; «Quitar imagen» vuelve al logo |
+| `sirius-correo-render.js` › `R.imagen` | `b.img`, o `opciones.assets` + nombre (si está en `opciones.archivos`), o el logo | `b.img`, o una dirección `https://` tal cual, o `opciones.assets` + nombre, o el logo; sigue sin navegador y lo usa también la función de envío |
+| Vista previa del editor y «Ver correo» | Armaban el correo con `R.html` | Igual; ahora dibujan la imagen subida |
+| «Enviar prueba a mi correo» | Armaba con la plantilla guardada | Igual; la plantilla ya trae la dirección |
+| Configuración de envío › logo | Se leía de `envio.logo`, sin pantalla para cambiarlo | Sección «Logo de los correos»: subir, cambiar y quitar; se guarda con la configuración |
+| `NC.envio()` | No devolvía `logo`, `assets` ni `archivos`: al guardar la configuración de envío se perdían | Los conserva |
+| WhatsApp (imagen del encabezado) | Solo en pantalla | Sin cambios |
+| Sin la conexión | Imagen solo en pantalla | Igual, con el aviso «Sin la conexión, la imagen se ve solo en esta pantalla: no se guarda con la plantilla.» |
+| `sirius-conexion.js` | Línea mínima | Sin cambios (70 bytes) |
+
+**Qué cambió**
+- **`sirius-correo-render.js`:** `R.imagen` usa tal cual la dirección que empieza con `https://` (sin `opciones.assets` ni `opciones.archivos`); `http://` y `javascript:` no valen. Los nombres de siempre (`banner-inspeccion.jpg`, …) siguen con `opciones.assets`. Nuevo `R.esUrlImagen`.
+- **Editor de plantillas:**
+  - Con la conexión, el botón dice «Subir imagen» («Cambiar imagen» si ya hay una); acepta PNG, JPG, GIF o WebP hasta 2 MB y revisa tipo y peso antes de subir.
+  - Mientras sube, «Subiendo…» y el botón no responde. Al terminar guarda `archivo` = `url`, quita `b.img` y mide el ancho (aviso si no son 600 px).
+  - Si falla, el mensaje de la conexión queda junto al botón y la plantilla no cambia.
+  - «Quitar imagen» deja el bloque sin imagen: usa el logo. La estructura de la izquierda y la miniatura muestran el nombre del archivo, no la dirección.
+- **`sirius-notif-cola.js` (v1.6):** `subirImagen(archivo)` llama a `SIRIUS_CONEXION.subirImagenCorreo(archivo, nombre)` y entrega `{ ok, mensaje, url, ruta }` (un error de la base sale solo con su mensaje); `validarImagen`, `puedeSubirImagen`, `esUrlImagen` y `nombreImagen`. La **Configuración de envío** suma «Logo de los correos» (miniatura, nombre, subir o cambiar, «Quitar logo»), con la barra «cambios sin guardar» y el motivo de siempre.
+- **Base simulada** (`datos-cx-notif.js`, `SIRIUS Back-office.dc.html`): la conexión simulada trae `subirImagenCorreo`. Tarda 1,2 s para ver «Subiendo…», guarda la imagen en memoria y devuelve una dirección con la forma de la real. Solo el Administrador sube; `?cxok=0` responde `{ ok: false }`; la escena de error responde «La imagen pesa más de 2 MB».
+
+**Prueba cruzada** (`plantillasubirimagen`, «Enlace de autoinspección», caso 50013; se sube `banner600.png`, se guarda la plantilla con motivo, se envía la prueba y se abre «Ver correo» en la Bitácora)
+
+| Dónde | Resultado |
+|---|---|
+| Editor, al terminar de subir | Botón «Cambiar imagen», nombre `banner600.png`, miniatura y «Quitar imagen»; «Cambios sin guardar» |
+| Plantilla en memoria antes de guardar | Sin cambios (se guarda al publicar) |
+| Vista previa | Imagen de 600 px, texto alternativo «Inspección de tu vehículo», huella 67902c3e |
+| Plantilla guardada | Bloque 1 `banner`, `archivo` = `https://…/storage/v1/object/public/correo/…-banner600.png`, sin `b.img`, ancho 600 |
+| Vista previa tras guardar | La misma huella 67902c3e |
+| «Enviar prueba a mi correo» | «Prueba en la cola · Para andrea.salazar@asur.ec · Lo recibirás como Asegurado o contacto (Mónica Andrade)» |
+| Bitácora › «Ver correo» de la prueba | La misma huella 67902c3e y la misma imagen (600 px) |
+
+Los dos tamaños dan lo mismo. La simulación dibuja la imagen desde la memoria: la dirección guardada es la que va en el correo.
+
+**Verificado (1280×720 y 1920×1080)**
+- `plantillasubirimagen`: la prueba cruzada de arriba; además un `.txt` («Usa una imagen PNG, JPG, GIF o WebP.»), un PNG de 4,1 MB («La imagen pesa 4,1 MB; el máximo es 2 MB.») y una de 480 px («Aviso: la imagen mide 480 px de ancho; se recomienda 600 px.») no cambian la plantilla ni llaman a la base más que con las dos imágenes válidas.
+- `plantillaimagenerror`: «Subiendo…» y luego «La imagen pesa más de 2 MB» junto al botón; el bloque queda «Sin imagen», sin «Quitar imagen», y el editor sigue sin cambios por guardar.
+- «Quitar imagen»: el bloque vuelve a «Sin imagen» y la vista previa deja de mostrar la imagen. Con `?cxok=0` aparece «La base rechazó la acción (prueba)» y la plantilla no cambia.
+- Configuración de envío (`cxnotifcola`): «Subir imagen» → «Subiendo…» → «Cambiar imagen» con miniatura y «1 cambio sin guardar»; al guardar, `envio.logo` = la dirección completa y `NC.opciones().logo` la trae; «Quitar logo» lo deja «Sin logo».
+- Sin la conexión (`notifeditor`): el botón sigue «Subir PNG o JPG», la imagen se ve en la miniatura con su nombre y el aviso «Sin la conexión, la imagen se ve solo en esta pantalla…».
+- `sirius-correo-render.js` sin `window` ni `document` (Node): banner y pie con dirección completa (con y sin opciones, y aunque no esté en `opciones.archivos`) usan esa dirección; un banner con `banner-inspeccion.jpg` usa `opciones.assets`; un nombre que no está en `opciones.archivos` cae al logo; `http://` y `javascript:` no dan imagen; las comillas van escapadas. El archivo anterior falla las cuatro primeras comprobaciones.
+- Regresión: `correoigual`, `vistapreviabase` y `notifprueba` (y la prueba cruzada de N-2d con los casos 50013 y 50012, huella vista previa = «Ver correo» de la prueba), `botondestino`, `plantillapublicada`, `vercorreobase`, `notifeditor`, `cxnotifcola`, `bitacoraorden`, `bitacoratardia`, `campanaavisos`, `notifporaprobar` e `inicio` abren sin error de página.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real: no subí ninguna imagen a Supabase. Lo que sí está probado es el código de la pantalla con la forma `{ ok, mensaje, url, ruta }` de la simulación.
+- Que `subirImagenCorreo(archivo, nombre)` reciba el objeto `File` tal cual y que `url` sea la dirección pública completa; si la base devolviera solo la ruta, la pantalla muestra «La base no devolvió la dirección de la imagen».
+- La función de envío de la base con el archivo nuevo: `sirius-correo-render.js` funciona sin navegador, pero no corrí `sirius-notificar`.
+- Que los clientes de correo muestren la imagen: algunos no admiten WebP ni GIF animado, y varios bloquean las imágenes externas hasta que la persona las autoriza.
+- El permiso real del almacén: aquí la base simulada solo deja subir al Administrador; en la real lo decide SQL 64.
+
+**Diferencias**
+- **Nombre mostrado:** se quita el prefijo numérico con que la base simulada arma la ruta (`1795…-banner600.png` → `banner600.png`). Solo es lo que se ve; `archivo` guarda la dirección completa.
+- **Aviso sin la conexión:** es un texto nuevo; antes no había aviso.
+- **`NC.envio()` conserva `logo`, `assets` y `archivos`:** no estaba pedido. Sin esto, guardar la configuración de envío los descartaba.
+- **Imagen del encabezado de WhatsApp:** sigue solo en pantalla; no se tocó.
+- **Plantillas con nombres de siempre** (`pie-aseguradora.png`): se leen igual con `opciones.assets`.
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `plantillasubirimagen` | Andrea Salazar · Administrador (conexión simulada) | «Enlace de autoinspección» con un Banner sin imagen: «Subir imagen», «Subiendo…», miniatura, vista previa con la imagen y, al guardar, la plantilla con `archivo` = https://… |
+| `plantillaimagenerror` | Andrea Salazar · Administrador (conexión simulada) | La conexión responde «La imagen pesa más de 2 MB»: el mensaje junto al botón y la plantilla sin cambios |
+
+También abrí `correoigual`, `vistapreviabase`, `notifprueba`, `vercorreobase`, `botondestino`, `plantillapublicada`, `notifeditor`, `cxnotifcola`, `bitacoraorden`, `bitacoratardia`, `campanaavisos`, `notifporaprobar` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 22:57 · fin 18/11/2026 23:16 · 19 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-1d
 
 Publiqué la versión 329 de SIRIUS. Esta etapa reproduce en el artifact la corrección que la asesoría ya aplicó en GitHub: la Bitácora vuelve a leer `notificacionesEnvio` cuando la conexión trae una lista nueva. Antes se quedaba en «La cola está vacía · Mostrando 0 de 0» si la lista llegaba después del primer dibujo.

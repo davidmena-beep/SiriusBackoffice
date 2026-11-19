@@ -26,7 +26,7 @@
   // ---------- Configuración de envío ----------
   NC.envio = () => { const N = NC.N() || {}, e = N.envio || {}; return { canal: e.canal || 'correo', remitente: e.remitente || '', nombreRemitente: e.nombreRemitente || '', sinDestinatario: e.sinDestinatario || '',
     aprobacion: { clientes: !e.aprobacion || e.aprobacion.clientes !== false, reglas: Object.assign({}, (e.aprobacion || {}).reglas || {}) }, enlaces: Object.assign({ backoffice: '', portal: '' }, e.enlaces || {}),
-    activo: e.activo !== false, cambio: e.cambio || null }; }; // N-2b · DEC-257: activo = interruptor «Notificaciones» (encendido: todo correo nuevo sale solo; apagado: queda «Simulado»)
+    activo: e.activo !== false, cambio: e.cambio || null, logo: e.logo && e.logo.src ? { src: sd(e.logo.src), alt: sd(e.logo.alt) } : null, assets: sd(e.assets), archivos: Array.isArray(e.archivos) ? e.archivos.slice() : undefined }; }; // N-2e: logo, assets y archivos también viajan con la configuración de envío. N-2b · DEC-257: activo = interruptor «Notificaciones» (encendido: todo correo nuevo sale solo; apagado: queda «Simulado»)
   NC.esExterno = (rol) => /cliente|asegurado|contacto|br[oó]ker|aps/i.test(sd(rol));
   // Requiere aprobación: la regla manda si tiene true/false; si no, hereda (clientes y brókeres según aprobacion.clientes; los internos salen solos).
   NC.requiere = (regla, rolDestino, env) => { env = env || NC.envio(); if (env.activo) return false; /* N-2b: encendidas, todo sale solo */ const r = env.aprobacion.reglas[sd(regla)]; return r === true || r === false ? r : (env.aprobacion.clientes && NC.esExterno(rolDestino)); };
@@ -138,6 +138,19 @@
   NC.msg = (m) => { if (m && typeof m === 'object') return NC.msg(m.message || m.mensaje || m.error || m.details || ''); let t = sd(m).trim(); const i = t.indexOf('{');
     if (i >= 0 && /"(message|mensaje)"\s*:/.test(t)) { try { const o = JSON.parse(t.slice(i)), x = o.message || o.mensaje || (o.error && (o.error.message || o.error)) || ''; if (x) return NC.msg(x); } catch (e) { const mm = /"(?:message|mensaje)"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(t); if (mm) return mm[1]; } }
     return t; }; // solo el mensaje de la base, nunca el JSON crudo
+  // ---------- N-2e: imágenes de las plantillas (banner, pie y logo) guardadas en el almacén público «correo» de Supabase (SQL 64) ----------
+  // SIRIUS_CONEXION.subirImagenCorreo(archivo, nombre) → Promise de { ok, mensaje, url, ruta } (url: la dirección pública completa). Ver: todos; subir: solo el Administrador; PNG, JPG, GIF o WebP hasta 2 MB.
+  NC.IMG_TIPOS = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']; NC.IMG_MAX = 2 * 1048576;
+  NC.puedeSubirImagen = () => !!NC.baseCx('subirImagenCorreo');
+  NC.esUrlImagen = (a) => { const R = NC.R(); return R && R.esUrlImagen ? R.esUrlImagen(a) : /^https:\/\/./i.test(sd(a).trim()); };
+  NC.validarImagen = (f) => { if (!f) return 'Elige una imagen.'; if (NC.IMG_TIPOS.indexOf(f.type) < 0) return 'Usa una imagen PNG, JPG, GIF o WebP.'; if (f.size > NC.IMG_MAX) return 'La imagen pesa ' + (f.size / 1048576).toFixed(1).replace('.', ',') + ' MB; el máximo es 2 MB.'; return ''; };
+  NC.nombreImagen = (a) => { a = sd(a).trim(); if (!NC.esUrlImagen(a)) return a; let n; try { n = decodeURIComponent(a.split('?')[0].split('/').pop() || a); } catch (e) { n = a.split('/').pop() || a; } return n.replace(/^\d{10,}-/, '') || n; }; // se ve el nombre del archivo, sin el prefijo numérico con que la base arma la ruta
+  NC.subirImagen = (f) => { const X = NC.baseCx('subirImagenCorreo'), mal = (m) => ({ ok: false, mensaje: NC.msg(m) || 'No se pudo subir la imagen' }); if (!X) return Promise.resolve(mal('Sin la conexión no se puede subir la imagen'));
+    let p; try { p = Promise.resolve(X.subirImagenCorreo(f, f.name)); } catch (er) { return Promise.resolve(mal(er)); }
+    return p.then((r) => { r = r || {}; if (r.ok === false) return mal(r.mensaje || r.error || r.message); if (!NC.esUrlImagen(r.url)) return mal('La base no devolvió la dirección de la imagen'); return { ok: true, mensaje: sd(r.mensaje), url: sd(r.url).trim(), ruta: sd(r.ruta) }; }, mal); };
+  // Solo en la simulación: la base simulada guarda en memoria lo que se sube (X.imagenesSim[url] = data URL) y aquí se muestra desde ahí; la base real devuelve una dirección pública.
+  NC.vistaImg = (src) => { const X = W.SIRIUS_CONEXION, m = X && X.simulada && X.imagenesSim; return m && m[src] ? m[src] : src; };
+  NC.vistaHtml = (html) => { const X = W.SIRIUS_CONEXION, m = X && X.simulada && X.imagenesSim; if (!m || !html) return html || ''; let t = html; Object.keys(m).forEach((u) => { if (t.indexOf(u) >= 0) t = t.split(u).join(m[u]); }); return t; };
   NC.baseCx = (nombre) => { const X = W.SIRIUS_CONEXION; return X && X.activo === true && typeof X[nombre || 'contextoNotificacion'] === 'function' ? X : null; };
   const resp = (p, ok) => Promise.resolve(p).then((r) => { if (r == null) return { estado: 'sin' }; if (r.ok === false) return { estado: 'error', msg: NC.msg(r.mensaje || r.message || r.error) || 'La base no respondió' }; return ok(r); }, (e) => ({ estado: 'error', msg: NC.msg(e && e.message ? e.message : e) || 'La base no respondió' }));
   NC.contextoBase = (caso, plantilla) => { const X = NC.baseCx('contextoNotificacion'); if (!X) return Promise.resolve({ estado: 'sin' }); let p; try { p = X.contextoNotificacion(String(caso), plantilla || ''); } catch (e) { p = Promise.reject(e); }
@@ -159,7 +172,7 @@
     const medir = () => { try { const d = ref.current && ref.current.contentDocument; if (d && d.documentElement) setAlto(Math.max(120, d.documentElement.scrollHeight)); } catch (e) { /* nada */ } };
     React.useEffect(() => { const t = setTimeout(medir, 250); return () => clearTimeout(t); }, [props.html, ancho]);
     return h('div', { className: 'nc-frame', style: { overflow: 'hidden', maxWidth: '100%' } }, h('div', { style: { zoom: props.zoom || 1, width: ancho, margin: '0 auto' } },
-      h('iframe', { ref, title: props.titulo || 'Vista previa del correo', srcDoc: props.html || '', onLoad: medir, 'data-nc-srcdoc': NC.huella(props.html || ''), style: { display: 'block', width: ancho, height: alto, border: 0, background: '#F2F4F7' } }))); };
+      h('iframe', { ref, title: props.titulo || 'Vista previa del correo', srcDoc: NC.vistaHtml(props.html || ''), onLoad: medir, 'data-nc-srcdoc': NC.huella(props.html || ''), style: { display: 'block', width: ancho, height: alto, border: 0, background: '#F2F4F7' } }))); };
   NC.Correo = function (props) { const h = React.createElement, N = NC.N() || {}, n = props.fila || {}, env = NC.envio();
     // N-2d · DEC-258: con la conexión, el correo se arma con el contexto que guardó la base (notificacionContexto), tal como se envió o se enviará.
     const usaBase = !!(n.id && !n.antigua && !/^(bit-|NE-)/.test(String(n.id)) && NC.baseCx('notificacionContexto')), [bb, setBb] = React.useState({ id: '', r: null });
@@ -289,9 +302,9 @@
   // ---------- Configuración de envío ----------
   NC.ConfigEnvio = function (props) { NC.estilos(); const h = React.createElement, ini = NC.envio(), admin = props.rol === 'Administrador', reglas = NC.reglasCorreo(props.cola);
     const [d, setD] = React.useState(() => { const x = clon(ini); if (props.preset && props.preset.d) Object.assign(x.aprobacion.reglas, props.preset.d.reglas || {}); return x; });
-    const [mot, setMot] = React.useState(''), [tried, setTried] = React.useState(false), [ocup, setOcup] = React.useState(false), [msg, setMsg] = React.useState(null);
+    const [mot, setMot] = React.useState(''), [tried, setTried] = React.useState(false), [ocup, setOcup] = React.useState(false), [msg, setMsg] = React.useState(null), [lg, setLg] = React.useState({ sube: false, err: '' }), lgRef = React.useRef(null);
     const okMail = NC.MAIL.test(sd(d.sinDestinatario)), cambios = [];
-    if (d.sinDestinatario !== ini.sinDestinatario) cambios.push('sinDestinatario'); if (d.aprobacion.clientes !== ini.aprobacion.clientes) cambios.push('clientes');
+    if (sd(d.logo && d.logo.src) !== sd(ini.logo && ini.logo.src)) cambios.push('logo'); /* N-2e */ if (d.sinDestinatario !== ini.sinDestinatario) cambios.push('sinDestinatario'); if (d.aprobacion.clientes !== ini.aprobacion.clientes) cambios.push('clientes');
     reglas.forEach((r) => { if ((d.aprobacion.reglas[r.id] == null ? 'h' : String(d.aprobacion.reglas[r.id])) !== (ini.aprobacion.reglas[r.id] == null ? 'h' : String(ini.aprobacion.reglas[r.id]))) cambios.push('regla:' + r.id); });
     const vtxt = (v) => v === true ? 'Sí' : v === false ? 'No' : 'Heredar';
     const efecto = (r, dd) => { const ext = r.a.filter(NC.esExterno), int = r.a.filter((x) => !NC.esExterno(x)), v = dd.aprobacion.reglas[r.id];
@@ -300,13 +313,28 @@
     const guardar = () => { setTried(true); if (!okMail || mot.trim().length < 10 || !cambios.length) return; const nuevo = clon(d); Object.keys(nuevo.aprobacion.reglas).forEach((k) => { if (nuevo.aprobacion.reglas[k] == null) delete nuevo.aprobacion.reglas[k]; });
       setOcup(true); Promise.resolve(props.onGuardar ? props.onGuardar(nuevo, mot.trim()) : { ok: true }).then((r) => { setOcup(false); r = r || {}; if (r.ok === false) setMsg({ ok: false, txt: r.mensaje || 'No se guardó' }); else { setMsg({ ok: true, txt: r.mensaje || 'Guardado' }); setMot(''); setTried(false); setD(clon(NC.envio())); } }); };
     const antes = (t) => h('span', { className: 'nc-antes' }, 'antes: ' + t);
+    // N-2e: logo de los correos (el que sale cuando un banner o pie no tiene imagen), subido al almacén «correo» con la conexión.
+    const logoSrc = d.logo && d.logo.src ? d.logo.src : '', puedeSub = !!props.base && admin && NC.puedeSubirImagen();
+    const subirLogo = (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; const er = NC.validarImagen(f); if (er) { setLg({ sube: false, err: er }); return; } setLg({ sube: true, err: '' });
+      NC.subirImagen(f).then((r) => { if (r.ok) { const x = clon(d); x.logo = { src: r.url, alt: (d.logo && d.logo.alt) || 'Aseguradora del Sur' }; setD(x); setLg({ sube: false, err: '' }); } else setLg({ sube: false, err: r.mensaje }); }); };
+    const seccionLogo = h('section', { key: 'logo', className: cambios.indexOf('logo') >= 0 ? 'nc-sec nc-cambio' : 'nc-sec', style: { paddingLeft: cambios.indexOf('logo') >= 0 ? 10 : 0 }, 'data-nc-logo': '' }, h('h2', null, 'Logo de los correos'),
+      h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Sale en los banners y pies que no tienen imagen propia. PNG, JPG, GIF o WebP, hasta 2 MB.'),
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 } },
+        logoSrc ? h('img', { src: NC.vistaImg(logoSrc), alt: (d.logo && d.logo.alt) || 'Logo de los correos', 'data-nc-logo-img': '', style: { maxHeight: 56, maxWidth: 220, objectFit: 'contain', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: 4, background: '#FFFFFF' } }) : null,
+        h('span', { 'data-nc-logo-nombre': '', style: { fontSize: 14, color: 'var(--text-strong)' } }, logoSrc ? NC.nombreImagen(logoSrc) : 'Sin logo'),
+        puedeSub ? h('button', { type: 'button', className: 'nc-btn2', 'data-nc-logo-subir': '', 'aria-disabled': lg.sube ? 'true' : 'false', onClick: () => { if (!lg.sube && lgRef.current) lgRef.current.click(); } }, lg.sube ? 'Subiendo…' : logoSrc ? 'Cambiar imagen' : 'Subir imagen') : null,
+        puedeSub ? h('input', { ref: lgRef, type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp', onChange: subirLogo, tabIndex: -1, 'aria-hidden': 'true', 'data-nc-logo-archivo': '', style: { display: 'none' } }) : null,
+        admin && logoSrc ? h('button', { type: 'button', className: 'nc-btn2', 'data-nc-logo-quitar': '', onClick: () => { const x = clon(d); x.logo = null; setD(x); setLg({ sube: false, err: '' }); } }, 'Quitar logo') : null),
+      !puedeSub ? h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, !props.base ? 'Para subir el logo hace falta la conexión.' : !admin ? 'Solo el Administrador sube imágenes.' : 'La conexión no ofrece subir imágenes.') : null,
+      lg.err ? h('span', { className: 'nc-err', role: 'alert', 'data-nc-logo-error': '' }, lg.err) : null,
+      cambios.indexOf('logo') >= 0 ? antes(ini.logo && ini.logo.src ? NC.nombreImagen(ini.logo.src) : 'sin logo') : null);
     const filaR = (r) => { const v = d.aprobacion.reglas[r.id], v0 = ini.aprobacion.reglas[r.id], cam = cambios.indexOf('regla:' + r.id) >= 0, id = 'nc-ap-' + String(r.id).replace(/\W+/g, '-');
       return h('tr', { key: r.id, className: cam ? 'nc-cambio' : '', 'data-nc-regla': r.id }, h('td', null, r.nombre, h('span', { className: 'nc-sub' }, (r.porNombre ? 'Regla de la base' : r.id) + (r.conCorreo ? '' : ' · hoy no usa correo'))), h('td', null, r.a.join(', ')),
         h('td', null, h('select', { id, 'aria-label': 'Requiere aprobación · ' + r.nombre, disabled: !admin, value: v === true ? 'si' : v === false ? 'no' : 'h', onChange: (e) => { const x = clon(d), val = e.target.value; if (val === 'h') delete x.aprobacion.reglas[r.id]; else x.aprobacion.reglas[r.id] = val === 'si'; setD(x); }, style: { height: 36, padding: '0 8px', border: '1.5px solid var(--input-outlined-border,#98A2B3)', borderRadius: 8, font: '400 14px var(--font-brand)' } },
           h('option', { value: 'h' }, 'Heredar'), h('option', { value: 'si' }, 'Sí'), h('option', { value: 'no' }, 'No')), cam ? h('span', { style: { display: 'block' } }, antes(vtxt(v0))) : null), h('td', null, efecto(r, d))); };
     return h('div', { className: 'nc nc-cfg', 'data-nc-config': '' },
       h('p', { style: { margin: 0, fontSize: 14, lineHeight: 1.5, maxWidth: 980 } }, 'La función de envío de la base lee esta configuración. ' + (props.base ? 'Se guarda en la base con la publicación de la configuración de Notificaciones.' : 'Sin la conexión, los cambios valen en esta sesión.')),
-      h('section', { className: 'nc-sec', 'aria-labelledby': 'nc-h-rem' }, h('h2', { id: 'nc-h-rem' }, 'Remitente'), h('div', { className: 'nc-ro' }, h('b', null, d.nombreRemitente || 'SIRIUS'), h('span', null, d.remitente || '—'), h('span', { className: 'nc-pill mute' }, 'Solo lectura en la prueba'))),
+      h('section', { className: 'nc-sec', 'aria-labelledby': 'nc-h-rem' }, h('h2', { id: 'nc-h-rem' }, 'Remitente'), h('div', { className: 'nc-ro' }, h('b', null, d.nombreRemitente || 'SIRIUS'), h('span', null, d.remitente || '—'), h('span', { className: 'nc-pill mute' }, 'Solo lectura en la prueba'))), seccionLogo,
       h('section', { className: cambios.indexOf('sinDestinatario') >= 0 ? 'nc-sec nc-cambio' : 'nc-sec', style: { paddingLeft: cambios.indexOf('sinDestinatario') >= 0 ? 10 : 0 } }, h('label', { className: 'nc-f', htmlFor: 'nc-sindest', style: { fontSize: 18 } }, 'Correo para notificaciones sin destinatario'),
         h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Si un rol no tiene correo, el mensaje llega aquí con «[Sin destinatario: …]» en el asunto.'),
         h('input', { id: 'nc-sindest', type: 'email', value: d.sinDestinatario, disabled: !admin, 'aria-invalid': !okMail ? 'true' : 'false', onChange: (e) => setD(Object.assign(clon(d), { sinDestinatario: e.target.value.trim() })), style: { height: 40, maxWidth: 420, padding: '0 10px', border: '1.5px solid ' + (!okMail ? 'var(--color-danger)' : 'var(--input-outlined-border,#98A2B3)'), borderRadius: 8, font: '400 14px var(--font-brand)' } }),

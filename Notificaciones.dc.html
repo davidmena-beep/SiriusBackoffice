@@ -126,7 +126,7 @@ class Component extends DCLogic {
     if (e === 'polizaoff') { st.tab = 2; st.panel = 'var'; st.orig = 'caso.poliza'; st.vQ = 'póliza'; }
     // Etapa 10n-plantillas: el editor ocupa la página (EditorPlantilla.dc.html).
     if (this.EDIT_ESC.includes(e)) { st.tab = 1; st.editor = { id: '', dup: '', escena: e === 'nuevaplant' ? '' : e, n: 1 }; }
-    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo', cxboton: 'botondestino', cxvigente: 'vigente', cxvistabase: 'vistapreviabase' }; /* N-2c: botondestino y plantillapublicada abren el editor */ if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
+    const alias = { probarenvio: 'prueba', cxprueba: 'pruebacorreo', cxboton: 'botondestino', cxvigente: 'vigente', cxvistabase: 'vistapreviabase', cxsubirimg: 'plantillasubirimagen', cximgerror: 'plantillaimagenerror' }; /* N-2c: botondestino y plantillapublicada abren el editor */ if (alias[e]) { st.tab = 1; st.editor = { id: '', dup: '', escena: alias[e], n: 1 }; } // N-2b: notifprobarenvio (antes notifprueba) y notifprueba con la base
     if (e === 'correoigual') st.tab = 1; if (e === 'interruptor' || e === 'cxorden') st.tab = 5;
     return st;
   })();
