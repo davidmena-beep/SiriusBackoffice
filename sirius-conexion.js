@@ -11,6 +11,7 @@
 // 12/11/2026 · P-6e: cada caso trae formularios[], carrocerias[], anios[] y sumaAsegurada (de sus riesgos) para elegir la plantilla y aplicar los criterios.
 // 12/11/2026 · C2-21: casos con registrado (fecha de creación en la base) y visita { estado, inicio, fin, agendadoEn, origen, llegada… }; informes con plantillaClave y plantillaVersion (vacía si la app no envió un número, p. ej. «local»).
 // 16/11/2026 · P-6g · SQL 53b: los honorarios se leen con liq_honorarios() (con caso, asegurado, línea, sucursal, ramo y placa aunque el usuario no vea los casos); si la base no la tiene, se leen de la tabla.
+// 19/11/2026 · SQL 64: subirImagenCorreo(archivo, nombre) → { ok, url } en el almacén público «correo».
 // 19/11/2026 · SQL 62: CX.usuarios trae sucursal, modalidades, ramos, recibeOfertas y jornada (todos los campos de la ficha única).
 // 19/11/2026 · N-1c · SQL 61: SIRIUS_CONEXION.avisos[] = { id, caso, regla, titulo, texto, fecha, leido, rol } (canal App del usuario actual); acciones marcarAvisoLeido { ids } y marcarAvisosLeidos {}.
 // 19/11/2026 · N-2d: contextoNotificacion(caso, plantilla) y notificacionContexto(id) para la vista previa y «Ver correo»; salir() conserva ?caso.
@@ -265,6 +266,20 @@
   var CX = window.SIRIUS_CONEXION = { activo: true, usuario: null, casos: [], inspectores: [], usuarios: [], agencias: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {},
     suscribir: function (fn) { if (typeof fn === 'function') oyentes.push(fn); },
     // P-6c · las acciones se guardan en la base (función bo_accion) y luego se vuelve a leer y a dibujar.
+    // 64: sube una imagen de plantilla (banner, pie, logo) al almacén público «correo» y devuelve su dirección completa
+    subirImagenCorreo: function (archivo, nombre) {
+      if (!archivo) return Promise.resolve({ ok: false, mensaje: 'Elige una imagen' });
+      if (!/^image\/(png|jpeg|gif|webp)$/.test(archivo.type || '')) return Promise.resolve({ ok: false, mensaje: 'La imagen debe ser PNG, JPG, GIF o WebP' });
+      if (archivo.size > 2 * 1024 * 1024) return Promise.resolve({ ok: false, mensaje: 'La imagen pesa más de 2 MB' });
+      var limpio = String(nombre || archivo.name || 'imagen').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '') || 'imagen';
+      var ruta = 'plantillas/' + new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '') + '-' + limpio;
+      return renovar().then(function () { var h = cab(); h['Content-Type'] = archivo.type; h['x-upsert'] = 'true';
+          return fetch(URLB + '/storage/v1/object/correo/' + ruta, { method: 'POST', headers: h, body: archivo }); })
+        .then(function (r) { if (!r.ok) return r.text().then(function (t) { var m = t; try { m = JSON.parse(t).message || t; } catch (e) {}
+            return { ok: false, mensaje: /bucket/i.test(m) ? 'Falta el almacén de imágenes: ejecuta el SQL 64' : /security|policy|unauthor/i.test(m) ? 'Solo el Administrador sube imágenes' : 'No se pudo subir la imagen: ' + m }; });
+          return { ok: true, mensaje: 'Imagen subida', url: URLB + '/storage/v1/object/public/correo/' + ruta, ruta: ruta }; })
+        .catch(function (e) { return { ok: false, mensaje: 'No se pudo subir la imagen: ' + (e.message || e) }; });
+    },
     // 59f: los datos con que la base arma el correo de un caso (enlaces activos y destinatario típico de la plantilla), para la vista previa
     contextoNotificacion: function (caso, plantilla) { return rpc('notif_contexto', { p_caso: String(caso || ''), p_plantilla: String(plantilla || '') }).catch(function () { return null; }); },
     notificacionContexto: function (id) { return get('notificaciones?select=contexto,asunto,plantilla&id=eq.' + encodeURIComponent(id)).then(function (r) { return (r && r[0]) || null; }).catch(function () { return null; }); },
