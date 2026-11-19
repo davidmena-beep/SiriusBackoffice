@@ -7,13 +7,13 @@
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
+  const ESC = ['cxnotifcola', 'notifinterruptor', 'notifprueba', 'historialreloj', 'botondestino', 'plantillapublicada', 'bitacoraorden', 'casoporenlace', 'vistapreviabase', 'vercorreobase', 'campanaavisos', 'campanavacia']; // N-2b: notifinterruptor, notifprueba e historialreloj; N-2c: las cuatro siguientes; N-2d: vistapreviabase y vercorreobase
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const ADM = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] };
   const prevSim = CC.cxSim.bind(CC), prevAp = CC.aplicar ? CC.aplicar.bind(CC) : null;
   const iso = (min) => new Date(Date.now() - min * 60000).toISOString(); // horas reales, como las devuelve la base (UTC con zona)
   const CFG = 'sirius.sim.config.SIRIUS_NOTIFICACIONES', leerCfg = () => { try { return JSON.parse(sessionStorage.getItem(CFG) || 'null'); } catch (e) { return null; } }, guardarCfg = (c) => { try { sessionStorage.setItem(CFG, JSON.stringify(c)); } catch (e) { /* sin almacenamiento */ } };
-  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' || escena === 'vistapreviabase' || escena === 'vercorreobase' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
+  const datos = (escena) => { const X = prevSim(escena === 'botondestino' ? 'cxvisitaenlace' : escena === 'casoporenlace' || escena === 'vistapreviabase' || escena === 'vercorreobase' || escena === 'campanaavisos' || escena === 'campanavacia' ? 'lugarrg' : 'cxestadoparcial'), hoy = '2026-10-18', c = (X.casos || []).find((x) => String(x.id) === '50012') || {}, ct = c.contacto || {};
     const cli = ct.nombre || c.asegurado || 'Cliente del caso 50012', mail = ct.correo || ct.email || 'cliente.50012@correo.ec';
     const n = (id, regla, destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, hora, extra) => Object.assign({ id, caso: '50012', regla, canal: 'correo', destinatario, destinatarioNombre, rolDestino, estado, asunto, plantilla, contenido: '', fecha: hoy + 'T' + hora, error: '', simulado: false, requiereAprobacion: estado === 'Por aprobar', aprobadoPor: null, aprobadoEn: null, intentos: 0 }, extra || {});
     X.usuario = clon(ADM);
@@ -63,7 +63,7 @@
     if (escena === 'casoporenlace' || escena === 'botondestino' || escena === 'vistapreviabase') X.notificacionesEnvio = [];
     // N-2c · botondestino: 30031 (autoinspección con enlace vigente) y 50012 (sin enlace activo) para ver el botón con y sin dirección.
     if (escena === 'botondestino') { const c1 = (X.casos || []).find((x) => String(x.id) === '30031'), v1 = c1 && (c1.visitasBase || [])[0]; if (v1 && v1.enlace) { v1.estado = 'Enlace enviado'; v1.enlace.estado = 'Vigente'; } }
-    if (escena === 'botondestino' || escena === 'vistapreviabase' || escena === 'vercorreobase') { const X2 = prevSim('cxestadoparcial'), c2 = (X2.casos || []).find((x) => String(x.id) === '50012'); if (c2 && !(X.casos || []).some((x) => String(x.id) === '50012')) { X.casos = (X.casos || []).concat([c2]); ['detalles', 'eventos', 'evidencias', 'controles', 'informes', 'calificaciones'].forEach((k) => { X[k] = X[k] || {}; if (X2[k] && X2[k]['50012'] !== undefined) X[k]['50012'] = X2[k]['50012']; }); X.inspectores = (X.inspectores || []).concat((X2.inspectores || []).filter((i) => !(X.inspectores || []).some((j) => j.nombre === i.nombre))); } }
+    if (escena === 'botondestino' || escena === 'vistapreviabase' || escena === 'vercorreobase' || escena === 'campanaavisos' || escena === 'campanavacia') { const X2 = prevSim('cxestadoparcial'), c2 = (X2.casos || []).find((x) => String(x.id) === '50012'); if (c2 && !(X.casos || []).some((x) => String(x.id) === '50012')) { X.casos = (X.casos || []).concat([c2]); ['detalles', 'eventos', 'evidencias', 'controles', 'informes', 'calificaciones'].forEach((k) => { X[k] = X[k] || {}; if (X2[k] && X2[k]['50012'] !== undefined) X[k]['50012'] = X2[k]['50012']; }); X.inspectores = (X.inspectores || []).concat((X2.inspectores || []).filter((i) => !(X.inspectores || []).some((j) => j.nombre === i.nombre))); } }
     // N-2d · DEC-258: la base arma el correo con su propio contexto. enlacesBase = enlace activo del cliente por caso (50013 tiene uno; 50012 no); contextoEjemplo = lo que la base
     // sabe de la visita de ese caso. contextosNotif = el contexto guardado de cada notificación (notificacionContexto), igual al que se usó al encolarla.
     if (escena === 'vistapreviabase' || escena === 'vercorreobase') { X.usuario = clon(ADM);
@@ -75,6 +75,15 @@
           mk('ENV-6002', '50012', 'Fernanda Prueba', 'flota.50012@prueba.sirius.ec', 'Enviado', 'No 50012 · Tu inspección está agendada para el 19/10/26', 40, { enviadoEn: iso(39), intentos: 1 }),
           mk('ENV-6003', '50013', 'Mónica Andrade', 'monica.andrade@correo.ec', 'Pendiente', 'No 50013 · Tu inspección está agendada para el 22/10/26', 8)];
         X.contextosNotif = { 'ENV-6003': { error: '{"code":"P0001","details":null,"hint":null,"message":"El contexto de la notificación ENV-6003 ya no está disponible"}' } }; } }
+    // N-1c · DEC-259 (SQL 61): avisos del canal App. La base deja un aviso por destinatario que es usuario de SIRIUS; la bitácora tiene su fila (canal app) con estado Entregado o Leído.
+    if (escena === 'campanaavisos' || escena === 'campanavacia') { X.usuario = clon(ADM);
+      if (escena === 'campanavacia') { X.avisos = []; X.notificacionesEnvio = []; }
+      else { const av = (id, caso, regla, titulo, texto, min, leido) => ({ id, caso, regla, titulo, texto, fecha: iso(min), leido: !!leido, rol: 'Administrador' });
+        X.avisos = [av('AV-7001', '50013', 'R09', 'Caso 50013 devuelto al inspector', 'Mauricio Endara debe corregir el informe: faltan las fotos de la fachada y del tablero eléctrico.', 12, false),
+          av('AV-7002', '50012', 'R17', 'Solicitud del cliente desde el portal · caso 50012', 'Fernanda Prueba pidió cambiar la fecha de la visita del 19/10.', 35, false),
+          av('AV-7003', '50013', 'R11', 'Ampliación de plazo · caso 50013', 'El cliente pidió 5 días más para cumplir las garantías: la solicitud espera tu respuesta.', 60 * 5, true)];
+        const fila = (a, i, estado) => ({ id: 'ENV-710' + (i + 1), caso: a.caso, regla: a.regla, canal: 'app', destinatario: 'andrea.salazar', destinatarioNombre: 'Andrea Salazar', rolDestino: 'Administrador', estado, asunto: a.titulo, plantilla: '', contenido: a.texto, fecha: a.fecha, enviadoEn: a.fecha, error: '', simulado: false, requiereAprobacion: false, aprobadoPor: null, aprobadoEn: null, intentos: 1, aviso: a.id });
+        X.notificacionesEnvio = X.avisos.map((a, i) => fila(a, i, a.leido ? 'Leído' : 'Entregado')); } }
     return X; };
   CC.cxSim = function (escena) { return ESC.indexOf(escena) >= 0 ? datos(escena) : prevSim(escena); };
   const TIPOS = ['aprobarNotificacion', 'rechazarNotificacion', 'reenviarNotificacion', 'enviarNotificacionesAhora', 'enviarPruebaNotificacion', 'configurarEnvioNotificaciones'];
@@ -85,6 +94,14 @@
       const nueva = { version: v, fecha: iso(0), por: (X.usuario || {}).nombre || '', datos: JSON.parse(JSON.stringify(d.datos || {})), versiones: [{ version: v, fecha: iso(0), por: (X.usuario || {}).nombre || '', motivo: d.motivo || '' }].concat(c.versiones || []) };
       X.configuracion[d.clave] = nueva; guardarCfg(nueva); try { window.__sirNcUltima = (window.__sirNcUltima || []).concat([{ tipo, datos: { clave: d.clave, version: v, motivo: d.motivo } }]); } catch (e) { /* nada */ }
       return { ok: true, mensaje: 'Versión ' + v + ' publicada y vigente', version: v, fecha: nueva.fecha }; }
+    // N-1c · SQL 61: marcarAvisoLeido { ids } y marcarAvisosLeidos {} → { ok, mensaje, leidos }; marca el aviso y la fila de la bitácora (canal app) como «Leído».
+    if ((tipo === 'marcarAvisoLeido' || tipo === 'marcarAvisosLeidos') && X && Array.isArray(X.avisos)) { try { window.__sirNcUltima = (window.__sirNcUltima || []).concat([clon({ tipo, datos: d || {} })]); } catch (er) { /* registro de prueba */ }
+      if (tipo === 'marcarAvisoLeido' && !(d && Array.isArray(d.ids) && d.ids.length)) return { ok: false, mensaje: 'Falta el aviso que se marca como leído' };
+      const set = {}; ((d && d.ids) || []).forEach((i) => { set[String(i)] = true; }); let c = 0;
+      let pas = false; try { pas = new URLSearchParams(location.search).get('cxpasivo') === '1'; } catch (er) { /* nada */ } // ?cxpasivo=1: la base responde pero no cambia sus listas hasta que se vuelven a leer (como una conexión real sin recargar)
+      X.avisos.forEach((a) => { if (!a.leido && (tipo === 'marcarAvisosLeidos' || set[String(a.id)])) { if (!pas) a.leido = true; c++; } });
+      if (!pas) (X.notificacionesEnvio || []).forEach((n) => { if (n.canal === 'app' && n.estado !== 'Leído' && n.aviso && (tipo === 'marcarAvisosLeidos' || set[String(n.aviso)])) n.estado = 'Leído'; });
+      return { ok: true, mensaje: c === 1 ? '1 aviso marcado como leído' : c + ' avisos marcados como leídos', leidos: c }; }
     if (TIPOS.indexOf(tipo) < 0 || !X || !Array.isArray(X.notificacionesEnvio)) return prevAp ? prevAp(X, tipo, d) : null;
     try { window.__sirNcUltima = (window.__sirNcUltima || []).concat([clon({ tipo, datos: d || {} })]); } catch (er) { /* registro de prueba */ }
     const act = !X.envio || X.envio.activo !== false, rol = window.__sirRolActivo || (X.usuario || {}).rol || '';

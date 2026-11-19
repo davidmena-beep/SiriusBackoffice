@@ -4,6 +4,82 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa N-1c
+
+Publiqué la versión 326 de SIRIUS. La campana ahora muestra los avisos que la base deja con el canal «App» (SQL 61), junto con lo que ya mostraba. Abrir un aviso lo marca leído y abre el caso; las filas «En SIRIUS» de la Bitácora pasan de «Entregado» a «Leído» con la misma lista.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Campana (cabecera de todas las pantallas) | Solo `notificaciones[]` de la base, las del Monitor y los conflictos | Suma `SIRIUS_CONEXION.avisos[]` con `SiriusNotifCola.avisos`, sin duplicar; cada aviso con su texto, el caso, la regla y la hora real «dd/mm/aa · hh:mm» |
+| Número de la campana | Contaba lo no leído de esa lista | Cuenta también los avisos no leídos; el mismo número en todas las pantallas |
+| Abrir un aviso | — | `marcarAvisoLeido { ids }` y abre el caso |
+| «Marcar todas como leídas» | Marcaba las de la pantalla | También llama a `marcarAvisosLeidos {}` |
+| Campana sin avisos | «Sin notificaciones» | «No tienes avisos nuevos» (con `avisos[]` vacío) |
+| Notificaciones › Bitácora | Las filas del canal App eran «Simulado» | Estado «Entregado» o «Leído», con la nota «Aviso en la campana»; «Enviar ahora» no las toca |
+| Historial del caso | Solo los correos | Suma «Avisos en SIRIUS» con el mismo estado |
+| Inicio | No muestra avisos | Sin cambios |
+| Sin la conexión | — | La campana queda como hoy |
+
+**Qué cambió**
+- **`sirius-notif-cola.js` (v1.4):** una sola lista de avisos.
+  - `avisos()`: los de la base, del más reciente al más antiguo (hasta 60), con la hora de Ecuador; la usan la campana, la Bitácora y el Historial.
+  - `avisosSinLeer()`, `avisoDeFila()`, `conAviso()` y `avisosDeCaso()`.
+  - `marcarAvisos(ids)` marca en la lista de la conexión, en las filas En SIRIUS de la cola y en lo leído de esta sesión.
+- **Campana:**
+  - Los avisos se suman a lo que ya mostraba. No se duplica un aviso que tenga el mismo id, ni el que tenga el mismo caso y el mismo texto.
+  - Cada aviso muestra título, texto, «Caso N · Rxx · dd/mm/aa · hh:mm»; los no leídos van destacados (fondo y punto) y se cuentan en el número.
+  - El icono depende de la regla: R04, R08 y R16 alerta; R09 y R10 rechazo; R11 adjunto; R17 visita.
+- **Acciones:**
+  - `avisoAccion`: con `{ ok: true }` se marca en la copia; con `{ ok: false }` no cambia nada y se ve el mensaje de la base.
+  - `ncRecargar` (cada 60 s, al volver a la pestaña y tras las acciones que generan avisos) también vuelve a leer `avisos`.
+- **Bitácora:** las filas del canal app ya no son «Simulado» por defecto. La fila y el aviso se unen por `aviso`, por el mismo id o por caso + regla + texto; si el aviso está leído, la fila dice «Leído».
+
+**Prueba cruzada** (`campanaavisos`, conexión simulada: R09 y R17 sin leer, R11 leído)
+
+| Paso | Campana (número y avisos) | Bitácora (filas En SIRIUS) | Historial del caso 50013 | Acciones a la base |
+|---|---|---|---|---|
+| Al abrir | 2 sin leer: R09 y R17 con punto; R11 leído | ENV-7101 y ENV-7102 Entregado; ENV-7103 Leído (según los datos de la escena) | — | — |
+| Abrir el aviso R09 (caso 50013) | Abre «Caso 50013»; número 1 | ENV-7101 Leído · ENV-7102 Entregado · ENV-7103 Leído | R09 Leído · R11 Leído | `marcarAvisoLeido { ids: ['AV-7001'] }` |
+| Ir a Bitácora y a Solicitudes | Número 1 en las dos pantallas | — | — | — |
+| «Marcar todas como leídas» | Sin número; «Sin leer (0)» | ENV-7102 Leído (las tres en Leído) | — | `marcarAvisosLeidos {}` |
+
+El mismo resultado sale con la base que no cambia sus listas hasta que se vuelven a leer (`?cxpasivo=1`), porque la copia aplica la misma regla.
+
+**Verificado (1280×720 y 1920×1080)**
+- `campanaavisos`: la campana con 3 avisos y el número 2; texto, caso, regla y hora real en cada uno; la prueba cruzada de arriba (abrir un aviso, ir a la Bitácora y a Solicitudes, «Marcar todas»).
+- `campanavacia`: «No tienes avisos nuevos», sin número.
+- `monitorcampana` (sin la conexión): la campana sigue igual, con los avisos del Monitor.
+- `bitacoraorden`: 8 filas de la base, del más reciente al más antiguo y en un solo formato (la fila En SIRIUS de esa escena sigue marcada «Simulado» porque así llega).
+- `notifporaprobar`, `cxnotifcola`, `notifverkorreo`, `vistapreviabase`, `vercorreobase`, `colacalconsistente`, `cxnotificaciones` e `inicio` abren sin error de página.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- La base real (SQL 61): que `avisos[]` llegue con esos campos y que la fila del canal App de `notificacionesEnvio[]` traiga `aviso` (o el mismo id, o el mismo caso, regla y texto); si no, la fila no cambia a «Leído» hasta que la base la actualice.
+- Que `marcarAvisoLeido` y `marcarAvisosLeidos` respondan `{ ok, mensaje, leidos }` como en la simulación, y que `recargar('avisos')` exista; sin él, los avisos nuevos aparecen al volver a abrir SIRIUS.
+- La regla de «sin duplicar»: se probó con id y con caso + texto; la base real puede mandar avisos y notificaciones con otros textos.
+
+**Diferencias**
+- **Texto de la Bitácora:** el aviso de arriba dice ahora «WhatsApp y SMS están simulados» (antes, «WhatsApp, SMS y En SIRIUS»).
+- **Inicio** no muestra avisos: no se tocó.
+- **Al abrir un aviso** siempre se abre el caso en Resumen, también si la regla es de garantías (R04 y R10).
+
+**Escenas**
+
+| Escena | Quién | Qué muestra |
+|---|---|---|
+| `campanaavisos` | Andrea Salazar · Administrador (conexión simulada) | La campana con 3 avisos (R09 y R17 sin leer, R11 leído) y el número 2; abrir uno lo marca leído y abre el caso; «Marcar todas como leídas» |
+| `campanavacia` | Andrea Salazar · Administrador (conexión simulada) | La campana sin avisos: «No tienes avisos nuevos» |
+
+También abrí `monitorcampana`, `bitacoraorden`, `notifporaprobar`, `cxnotifcola`, `notifverkorreo`, `vistapreviabase`, `vercorreobase`, `colacalconsistente`, `cxnotificaciones` e `inicio`.
+
+Registré la respuesta completa en `registro-envios.md` y actualicé `inventario-proyecto.md`.
+
+**Tiempo de la etapa: inicio 18/11/2026 18:26 · fin 18/11/2026 18:38 · 12 min**
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-2d
 
 Publiqué la versión 324 de SIRIUS. Esta etapa corrige N-2c: con la conexión, la vista previa del editor y «Ver correo» arman el correo con los mismos datos que la base. El aviso «Este caso no tiene enlace activo…» ya sale solo cuando, en el contexto de la base, el botón queda sin dirección.

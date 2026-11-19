@@ -38,7 +38,7 @@
   // ---------- Filas ----------
   NC.norm = (n) => { n = n || {}; const canal = n.canal || 'correo';
     return Object.assign({ caso: '', regla: '', destinatario: '', destinatarioNombre: '', rolDestino: '', estado: 'Pendiente', asunto: '', plantilla: '', contenido: '', fecha: '', error: '', requiereAprobacion: false, aprobadoPor: '', aprobadoEn: '', intentos: 0 }, n,
-      { id: sd(n.id), caso: sd(n.caso), canal, fecha: NC.ec(n.fecha || ''), enviadoEn: n.enviadoEn ? NC.ec(n.enviadoEn) : n.enviadoEn, aprobadoEn: n.aprobadoEn ? NC.ec(n.aprobadoEn) : n.aprobadoEn, simulado: n.simulado != null ? !!n.simulado : canal !== 'correo', intentos: Number(n.intentos) || 0 }); };
+      { id: sd(n.id), caso: sd(n.caso), canal, fecha: NC.ec(n.fecha || ''), enviadoEn: n.enviadoEn ? NC.ec(n.enviadoEn) : n.enviadoEn, aprobadoEn: n.aprobadoEn ? NC.ec(n.aprobadoEn) : n.aprobadoEn, simulado: n.simulado != null ? !!n.simulado : canal !== 'correo' && canal !== 'app', intentos: Number(n.intentos) || 0 }); };
   // La bitácora antigua (filas de ejemplo y las que agregan el portal, las invitaciones y las pruebas de plantilla) se lee con la misma forma.
   NC.deBitacora = (b, i) => { const N = NC.N(), rg = b.regla && N && N.regla ? N.regla(b.regla) : null;
     return NC.norm({ id: 'bit-' + i, caso: b.caso === '—' ? '' : b.caso, regla: b.regla || '', canal: b.canal, destinatario: b.a, destinatarioNombre: b.a, rolDestino: b.tipo === 'invitacion' ? 'Usuario invitado' : '', estado: b.estado,
@@ -48,7 +48,7 @@
   NC.reiniciar = (real) => { const N = NC.N(), X = W.SIRIUS_CONEXION; if (N) { N.cola = clon(N.colaEjemplo || []); if (!real) { if (!N._envioBase) N._envioBase = clon(N.envio || {}); N.envio = clon(N._envioBase); const cv = X && X.activo === true && X.configuracion && X.configuracion.SIRIUS_NOTIFICACIONES; if (cv && cv.datos && cv.datos.envio) Object.assign(N.envio, clon(cv.datos.envio)); /* N-2c: la versión vigente de la base */ if (X && X.activo === true && X.envio && typeof X.envio === 'object') Object.assign(N.envio, clon(X.envio)); } } NC._log = []; Object.keys(NC).filter((k) => /^_auto/.test(k)).forEach((k) => { delete NC[k]; }); NC.cargar(); };
   NC.base = () => !!NC.X();
   NC.copia = () => { const X = NC.X(); if (X && (NC._X !== X || !Array.isArray(NC.E))) NC.cargar(); if (X) return NC.E; const N = NC.N(); if (!N) return []; if (!Array.isArray(N.cola)) N.cola = clon(N.colaEjemplo || []); return N.cola; };
-  NC.lista = () => { const L = NC.copia().map(NC.norm); if (NC.base()) return L; const N = NC.N(); return L.concat(((N && N.bitacora) || []).map(NC.deBitacora)); };
+  NC.lista = () => { const L = NC.copia().map(NC.norm).map(NC.conAviso); if (NC.base()) return L; const N = NC.N(); return L.concat(((N && N.bitacora) || []).map(NC.deBitacora)); };
   NC.cuando = (n) => NC.ec(n.enviadoEn || n.fecha || ''); // fecha real del registro: enviado o, si no salió, creado
   NC.fila = (id) => NC.lista().find((n) => n.id === sd(id)) || null;
   NC.sinDestinatario = (n, env) => { env = env || NC.envio(); return /^\[Sin destinatario/i.test(sd(n.asunto)) || (!!env.sinDestinatario && n.destinatario === env.sinDestinatario && !n.destinatarioNombre); };
@@ -61,6 +61,24 @@
   // Campana del Administrador: los correos que esperan algo de él (por aprobar y fallidos), con la misma cuenta de la pestaña.
   NC.campana = () => { const L = NC.lista(), k = NC.cuenta(L), att = L.filter((n) => n.estado === 'Por aprobar' || (n.estado === 'Fallido' && !n.antigua)).sort((a, b) => a.fecha < b.fecha ? 1 : -1);
     return { k, texto: NC.textoCuenta(k), items: att.map((n) => ({ id: n.id, caso: n.caso, estado: n.estado, txt: (n.regla ? (/^R\d+$/.test(n.regla) ? n.regla + ' · ' : '') + NC.reglaNombre(n.regla) : 'Prueba') + (n.caso ? ' · caso ' + n.caso : '') + ' · ' + (n.destinatarioNombre || n.destinatario) })) }; };
+  // ---------- N-1c · DEC-259: avisos de SIRIUS (canal «En SIRIUS» / App, SQL 61) ----------
+  // La base deja un aviso por destinatario que es usuario de SIRIUS (no clientes ni brókeres) cuando se dispara una regla con el canal App. SIRIUS_CONEXION.avisos[] trae los del usuario actual
+  // { id, caso, regla, titulo, texto, fecha, leido, rol }, del más reciente al más antiguo (hasta 60); marcarAvisoLeido { ids } y marcarAvisosLeidos {} → { ok, mensaje, leidos }.
+  // Una sola función (NC.avisos): la campana (lista y contador), la Bitácora (estado «Entregado» o «Leído» de las filas En SIRIUS) y el Historial del caso leen la misma lista.
+  NC.TIPO_AVISO = { R04: 'exc', R08: 'exc', R09: 'reject', R10: 'reject', R11: 'adj', R16: 'exc', R17: 'visita' };
+  NC.avisosBase = () => { const X = W.SIRIUS_CONEXION; return X && X.activo === true && Array.isArray(X.avisos) ? X.avisos : null; };
+  NC.avisos = () => { const A = NC.avisosBase(), X = W.SIRIUS_CONEXION; if (!A) return []; if (NC._lx !== X) { NC._lx = X; NC._leidos = {}; } const ov = NC._leidos || {};
+    return A.filter((a) => a && a.id != null).map((a) => ({ id: sd(a.id), caso: sd(a.caso), regla: sd(a.regla), titulo: sd(a.titulo), texto: sd(a.texto), fecha: NC.ec(a.fecha || ''), leido: !!(a.leido || ov[sd(a.id)]), rol: sd(a.rol) }))
+      .sort((a, b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0).slice(0, 60); };
+  NC.avisosSinLeer = () => NC.avisos().filter((a) => !a.leido).length;
+  // Fila de la Bitácora (canal app) ↔ aviso: por n.aviso, por el mismo id o por caso + regla + el mismo texto.
+  NC.avisoDeFila = (n, L) => { if (!n || n.canal !== 'app') return null; L = L || NC.avisos(); const k = sd(n.aviso || n.avisoId || ''); return L.find((a) => (k && a.id === k) || a.id === sd(n.id) || (a.caso === sd(n.caso) && a.regla === sd(n.regla) && (sd(n.asunto) === a.titulo || (sd(n.contenido) && sd(n.contenido) === a.texto)))) || null; };
+  NC.conAviso = (n) => { if (n.canal !== 'app' || n.estado === 'Leído') return n; const a = NC.avisoDeFila(n); return a && a.leido ? Object.assign({}, n, { estado: 'Leído' }) : n; };
+  NC.avisosDeCaso = (caso, L) => (L || NC.lista()).filter((n) => n.caso === sd(caso) && n.canal === 'app').sort((a, b) => NC.cuando(a) < NC.cuando(b) ? 1 : -1);
+  // Marca leídos (ids; sin ids, todos): en la lista de la conexión, en la copia de la cola (filas En SIRIUS) y en lo que ya se leyó en esta sesión. Devuelve cuántos cambiaron.
+  NC.marcarAvisos = (ids) => { const A = NC.avisosBase(); if (!A) return 0; NC.avisos(); const ov = NC._leidos || (NC._leidos = {}), todos = !ids, set = {}; (ids || []).forEach((i) => { set[sd(i)] = true; }); let c = 0;
+    const L = NC.avisos(); A.forEach((a) => { if (!a || a.id == null || a.leido) return; if (todos || set[sd(a.id)]) { a.leido = true; ov[sd(a.id)] = true; c++; } });
+    const cp = NC.base() ? NC.copia() : []; cp.forEach((n) => { if (n.canal !== 'app' || n.estado === 'Leído') return; const a = NC.avisoDeFila(NC.norm(n), L); if (a && (todos || set[a.id])) n.estado = 'Leído'; }); NC.v = (NC.v || 0) + 1; return c; };
   // ---------- Reglas de las acciones (base simulada y copia del Back-office) ----------
   NC.motivoFallo = (n) => n.falla ? sd(n.falla) : !NC.MAIL.test(sd(n.destinatario)) ? 'Dirección rechazada por el servidor de correo: «' + n.destinatario + '» no es una dirección válida' : '';
   NC.ops = (E, tipo, d, ctx) => { d = d || {}; ctx = Object.assign({ fecha: NC.ahoraIso(), por: '', rol: '' }, ctx || {}); const no = (m) => ({ ok: false, mensaje: m }), F = (id) => (E || []).find((x) => sd(x.id) === sd(id));
@@ -78,8 +96,8 @@
       const vuelve = n.requiereAprobacion && (n.estado === 'Rechazado' || !n.aprobadoEn) ? 'Por aprobar' : 'Pendiente';
       n.errorPrevio = n.error || ''; n.error = ''; n.estado = vuelve; n.reenvios = (n.reenvios || 0) + 1; n.reenviadoPor = ctx.por; n.reenviadoEn = ctx.fecha;
       return { ok: true, mensaje: vuelve === 'Pendiente' ? 'Volvió a la cola: sale en el siguiente minuto' : 'Volvió a la cola «Por aprobar»', estado: vuelve }; }
-    // enviarNotificacionesAhora: manda los correos «Pendiente» sin esperar el minuto (WhatsApp, SMS y En SIRIUS siguen simulados: no salen todavía).
-    let env = 0, fal = 0; (E || []).forEach((n) => { if (n.estado !== 'Pendiente' || (n.simulado != null ? n.simulado : (n.canal || 'correo') !== 'correo')) return; n.intentos = (Number(n.intentos) || 0) + 1; const m = NC.motivoFallo(n);
+    // enviarNotificacionesAhora: manda los correos «Pendiente» sin esperar el minuto (WhatsApp y SMS siguen simulados: no salen todavía; En SIRIUS ya llega a la campana).
+    let env = 0, fal = 0; (E || []).forEach((n) => { if (n.estado !== 'Pendiente' || n.canal === 'app' || (n.simulado != null ? n.simulado : (n.canal || 'correo') !== 'correo')) return; n.intentos = (Number(n.intentos) || 0) + 1; const m = NC.motivoFallo(n);
       if (m) { n.estado = 'Fallido'; n.error = m; fal++; } else { n.estado = 'Enviado'; n.error = ''; n.enviadoEn = ctx.fecha; env++; } });
     return { ok: true, enviados: env, fallidos: fal, mensaje: env + fal ? pl(env, 'enviado', 'enviados') + ' · ' + pl(fal, 'fallido', 'fallidos') : 'No había correos pendientes' }; };
   // Prueba de una plantilla: la base aún no tiene la acción; el Back-office la intenta y, si la base no responde { ok: true }, solo avisa (no la simula).
@@ -230,7 +248,7 @@
       hayF ? h('button', { type: 'button', className: 'nc-btn3', style: { height: 40 }, onClick: () => setF({ estado: 'all', regla: 'all', canal: 'all', caso: 'all', desde: '' }) }, 'Quitar filtros') : null,
       h('span', { style: { flex: '1 1 auto' } }),
       admin ? h('button', { type: 'button', className: 'nc-btn1', 'data-nc-enviar': '', 'aria-disabled': ocupado ? 'true' : 'false', onClick: enviar, title: 'Manda los correos «Pendiente» sin esperar el minuto' }, ocupado ? 'Enviando…' : 'Enviar ahora (' + k.pendientes + ')') : null);
-    const intro = h('p', { style: { margin: 0, fontSize: 14, lineHeight: 1.5 } }, (base ? 'La cola de correos de la base: ' : 'Cola de ejemplo (sin la conexión): ') + (env.activo ? 'con las notificaciones encendidas, cada correo nuevo nace «Pendiente» y sale solo en el siguiente minuto' : 'con las notificaciones apagadas, cada correo nuevo queda «Simulado» y no sale') + '. Los «Por aprobar» que ya estaban los aprueba el Administrador. WhatsApp, SMS y En SIRIUS están simulados: no salen todavía. Mostrando ' + vis.length + ' de ' + L.length + '.',
+    const intro = h('p', { style: { margin: 0, fontSize: 14, lineHeight: 1.5 } }, (base ? 'La cola de correos de la base: ' : 'Cola de ejemplo (sin la conexión): ') + (env.activo ? 'con las notificaciones encendidas, cada correo nuevo nace «Pendiente» y sale solo en el siguiente minuto' : 'con las notificaciones apagadas, cada correo nuevo queda «Simulado» y no sale') + '. Los «Por aprobar» que ya estaban los aprueba el Administrador. WhatsApp y SMS están simulados: no salen todavía. En SIRIUS es el canal App: sus avisos llegan a la campana (Entregado o Leído). Mostrando ' + vis.length + ' de ' + L.length + '.',
       k.porAprobar ? h('strong', { style: { color: '#93370D' } }, ' ' + pl(k.porAprobar, 'correo espera', 'correos esperan') + ' tu aprobación.') : null);
     const resultado = res ? h('div', { className: 'nc-res' + (res.ok ? '' : ' err'), role: 'status', 'data-nc-resultado': '' }, h('span', null, res.txt), res.fallidos ? h('button', { type: 'button', className: 'nc-btn3', onClick: () => setF(Object.assign({}, f, { estado: 'Fallido' })) }, 'Ver ' + (res.fallidos === 1 ? 'el fallido' : 'los fallidos')) : null, h('button', { type: 'button', className: 'nc-btn3', 'aria-label': 'Cerrar el resultado', onClick: () => setRes(null) }, 'Cerrar')) : null;
     const th = (t, w) => h('th', { scope: 'col', style: w ? { width: w } : null }, t);
@@ -239,14 +257,14 @@
       if (admin && !n.antigua && pa) acc.push(h('button', { key: 'a', type: 'button', className: 'nc-btn3', 'data-nc-aprobar': n.id, onClick: () => aprobar([n.id]) }, 'Aprobar'));
       if (admin && !n.antigua && (pa || (n.estado === 'Pendiente' && !sim))) acc.push(h('button', { key: 'r', type: 'button', className: 'nc-btn3 peligro', 'data-nc-rechazar': n.id, onClick: () => setDlg({ k: 'rechazar', ids: [n.id], motivo: '' }) }, 'Rechazar…'));
       if (admin && !n.antigua && ['Fallido', 'Rechazado', 'Omitido'].indexOf(n.estado) >= 0) acc.push(h('button', { key: 'e', type: 'button', className: 'nc-btn3', 'data-nc-reenviar': n.id, onClick: () => correr('reenviarNotificacion', { id: n.id }, (r) => setRes({ txt: r.ok === false ? r.mensaje : (r.mensaje || 'Volvió a la cola'), ok: r.ok !== false })) }, 'Reenviar'));
-      return h('tr', { key: n.id, className: (on ? 'sel ' : '') + (sim ? 'sim ' : '') + (pa ? 'pa' : ''), 'data-nc-fila': n.id, 'data-nc-estado': n.estado },
+      return h('tr', { key: n.id, className: (on ? 'sel ' : '') + (sim ? 'sim ' : '') + (pa ? 'pa' : ''), 'data-nc-fila': n.id, 'data-nc-estado': n.estado, 'data-nc-canal': n.canal },
         h('td', null, pa && admin ? h('input', { type: 'checkbox', checked: on, 'aria-label': 'Elegir el correo ' + n.id, onChange: () => setSel((s) => on ? s.filter((x) => x !== n.id) : s.concat([n.id])) }) : null),
         h('td', { style: { whiteSpace: 'nowrap' } }, NC.fecha(NC.cuando(n)), n.enviadoEn && n.enviadoEn !== n.fecha ? h('span', { className: 'nc-sub' }, 'Creado ' + NC.fecha(n.fecha)) : null),
         h('td', null, n.caso ? h('button', { type: 'button', className: 'nc-btn3', onClick: () => props.onCaso && props.onCaso(n.caso) }, n.caso) : '—'),
         h('td', null, NC.reglaNombre(n.regla), h('span', { className: 'nc-sub' }, (n.regla && /^R\d+$/.test(n.regla) ? n.regla + ' · ' : '') + (props.canalNombre ? props.canalNombre(n.canal) : n.canal))),
         h('td', null, sinD ? h('span', { className: 'nc-sindest' }, '[Sin destinatario]') : (n.destinatarioNombre || n.destinatario), h('span', { className: 'nc-sub' }, sinD ? NC.rolSinDest(n) + ' · va a ' + n.destinatario : [n.rolDestino, n.canal === 'correo' && n.destinatarioNombre ? n.destinatario : ''].filter(Boolean).join(' · '))),
         h('td', null, NC.asuntoDe(n, props.valores)),
-        h('td', null, Pill(h, n.estado), sim && n.estado !== 'Simulado' ? h('span', { className: 'nc-pill sim', style: { marginTop: 4 }, title: 'WhatsApp, SMS y En SIRIUS: no salen todavía' }, 'Simulado') : null, n.aprobadoPor && n.estado !== 'Por aprobar' ? h('span', { className: 'nc-sub' }, 'Aprobó ' + n.aprobadoPor) : null, n.rechazadoPor ? h('span', { className: 'nc-sub' }, 'Rechazó ' + n.rechazadoPor) : null),
+        h('td', null, Pill(h, n.estado), n.canal === 'app' ? h('span', { className: 'nc-sub', 'data-nc-app': '' }, 'Aviso en la campana') : null, sim && n.estado !== 'Simulado' ? h('span', { className: 'nc-pill sim', style: { marginTop: 4 }, title: 'WhatsApp y SMS: no salen todavía' }, 'Simulado') : null, n.aprobadoPor && n.estado !== 'Por aprobar' ? h('span', { className: 'nc-sub' }, 'Aprobó ' + n.aprobadoPor) : null, n.rechazadoPor ? h('span', { className: 'nc-sub' }, 'Rechazó ' + n.rechazadoPor) : null),
         h('td', { style: { textAlign: 'center' } }, String(n.intentos || 0)),
         h('td', { style: { color: n.estado === 'Fallido' ? '#912018' : 'inherit' } }, n.error || (n.errorPrevio ? h('span', { className: 'nc-sub' }, 'Antes: ' + n.errorPrevio) : '—')),
         h('td', null, h('div', { className: 'nc-acc' }, acc))); });
@@ -318,8 +336,11 @@
         err ? h('span', { className: 'nc-err' }, 'Escribe el motivo (al menos 10 caracteres).') : null, dlg.err ? h('span', { className: 'nc-err', role: 'alert' }, dlg.err) : null); }
     return h('span', { className: 'nc', style: { display: 'inline-flex', flexDirection: 'row' } }, btn, d); };
   // ---------- Historial del caso: los correos del caso en la cola ----------
-  NC.HistorialCaso = function (props) { NC.estilos(); const h = React.createElement, L = NC.deCaso(props.caso, props.lista); if (!L.length) return null;
-    return h('section', { className: 'nc-hc', 'aria-label': 'Correos del caso', 'data-nc-historial': props.caso }, h('h3', null, 'Correos del caso'), h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'De la cola de envíos (la misma de Notificaciones › Bitácora).'),
+  NC.HistorialCaso = function (props) { NC.estilos(); const h = React.createElement, L = NC.deCaso(props.caso, props.lista), AV = NC.avisosDeCaso(props.caso, props.lista); if (!L.length && !AV.length) return null;
+    const avisosNode = AV.length ? h('section', { 'aria-label': 'Avisos en SIRIUS del caso', 'data-nc-historial-avisos': props.caso }, h('h3', null, 'Avisos en SIRIUS'), h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Avisos de la campana (canal En SIRIUS), con el mismo estado de Notificaciones › Bitácora.'),
+      h('ol', null, AV.map((n) => h('li', { key: n.id, 'data-nc-hc': n.id, 'data-nc-estado': n.estado }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: '1 1 320px' } }, h('span', { style: { fontWeight: 600, color: 'var(--text-strong)' } }, NC.reglaNombre(n.regla) + ' · ' + (n.destinatarioNombre || n.destinatario) + (n.rolDestino ? ' · ' + n.rolDestino : '')), h('span', { className: 'nc-sub' }, NC.fecha(NC.cuando(n)) + ' · ' + NC.asuntoDe(n, props.valores))), Pill(h, n.estado))))) : null;
+    if (!L.length) return h('div', { className: 'nc-hc', 'data-nc-historial': props.caso }, avisosNode);
+    return h('section', { className: 'nc-hc', 'aria-label': 'Correos del caso', 'data-nc-historial': props.caso }, avisosNode, h('h3', null, 'Correos del caso'), h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'De la cola de envíos (la misma de Notificaciones › Bitácora).'),
       h('ol', null, L.map((n) => h('li', { key: n.id, 'data-nc-hc': n.id, 'data-nc-estado': n.estado }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: '1 1 320px' } }, h('span', { style: { fontWeight: 600, color: 'var(--text-strong)' } }, NC.reglaNombre(n.regla) + ' · ' + (NC.sinDestinatario(n) ? '[Sin destinatario: ' + NC.rolSinDest(n) + ']' : (n.destinatarioNombre || n.destinatario) + (n.rolDestino ? ' · ' + n.rolDestino : ''))),
         h('span', { className: 'nc-sub' }, NC.fecha(n.fecha) + ' · ' + NC.asuntoDe(n, props.valores) + (n.error ? ' · ' + n.error : '') + (n.aprobadoPor && n.estado !== 'Por aprobar' ? ' · aprobó ' + n.aprobadoPor : ''))), Pill(h, n.estado))))); };
   W.SiriusNotifCola = NC;
