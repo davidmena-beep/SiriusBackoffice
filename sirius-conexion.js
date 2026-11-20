@@ -33,6 +33,14 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 20/11/2026 · R-2 · DEC-262: SIRIUS_CONEXION.red (Red de inspectores, SQL 68) = { listo, puedeGestionar, hoy, inspectores: [{ nombre, tipo, tipoInspector, agencia, estado, cuenta,
+//   operacion: { modalidades, ramos, recibeOfertas ('red'|'coord'|'no'), jornada: { dias, desde, hasta }, capacidadDia, fuente, actualizado },
+//   cobertura: [{ id, nivel ('todas'|'sucursal'|'ciudad'|'zona'), sucursal, ciudad, zona, desde, hasta, vigente, origen, motivo, creado, creadoPor }],
+//   bloqueos: [{ id, desde, hasta, motivo, origen }] }], historial: [{ inspector, accion, detalle, motivo, por, hora }] } (null si la base no tiene el SQL 68)
+//   y SIRIUS_CONEXION.redAccion(tipo, datos) → red_accion (asignar, retirar, operacion, bloquear, desbloquear) → { ok, mensaje }.
+//   usuarios[] e inspectores[] reciben coberturaFilas (vigentes), coberturaMixta y, desde el perfil, jornada, recibeOfertas, capacidadDia
+//   (y modalidades y ramos si tienen); cobertura conserva su forma (modo único) para las pantallas actuales.
+// 19/11/2026 · G-3b · DEC-224: visitasBase[].oferta incluye la oferta dirigida que pidió el cliente desde el portal (origen 'Cliente', SQL 46), con porCliente: true.
 // 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
 // 14/11/2026 · G-2a2 · DEC-222: SIRIUS_CONEXION.buscarDireccion(texto, codCiudad) con OpenStreetMap (Nominatim): espera al teclear, 1 consulta por segundo, memoria de búsquedas y respaldo en el diccionario de prueba.
 // 14/11/2026 · G-2b · DEC-223: usuarios[].cobertura e inspectores[].cobertura (datos.cobertura; SQL 37 la guarda con editarUsuario y crearUsuario).
@@ -218,10 +226,10 @@
                direccion: v.direccion && typeof v.direccion === 'object' && v.direccion.direccion ? String(v.direccion.direccion) : undefined,   // P-6f-0f · DEC-232
                lugar: v.lugar && typeof v.lugar === 'object' ? v.lugar : undefined,   // G-2c · DEC-222 (SQL 38)
                fueraCobertura: v.fuera_cobertura && v.fuera_cobertura.motivo ? { motivo: v.fuera_cobertura.motivo, inspector: v.fuera_cobertura.inspector || '' } : null,   // G-2c · DEC-225
-               oferta: (function () { var ab = (v.ofertas_red || []).filter(function (o) { return o.estado === 'Abierta' && o.origen === 'Coordinador' && new Date(o.vence) > new Date(); });   // G-2c2 · DEC-237 (SQL 39)
+               oferta: (function () { var ab = (v.ofertas_red || []).filter(function (o) { return o.estado === 'Abierta' && (o.origen === 'Coordinador' || o.origen === 'Cliente') && new Date(o.vence) > new Date(); });   // G-2c2 · DEC-237 (SQL 39) · G-3b: también la pedida por el cliente (SQL 46)
                  if (!ab.length) return undefined; var o0 = ab[0];
                  return { inspectores: ab.map(function (o) { return o.inspector ? o.inspector.nombre : ''; }).filter(Boolean), desde: o0.desde || '', hasta: o0.hasta || '', minutos: o0.minutos || 45,
-                          nota: o0.nota || '', vence: o0.vence, vigenciaHoras: null }; })() }; });
+                          nota: o0.nota || '', vence: o0.vence, vigenciaHoras: null, porCliente: o0.origen === 'Cliente' }; })() }; });
     if (vv) x.visita = { estado: vv.estado || '', inicio: isoLocal(vv.inicio), fin: isoLocal(vv.fin), agendadoEn: isoLocal(vv.agendado_en), origen: vv.origen || '', llegada: isoLocal(vv.llegada && vv.llegada.hora), modalidad: vv.modalidad || '', quienRecibe: (vv.direccion && vv.direccion.quien) || '', inspector: vv.inspector ? vv.inspector.nombre : '' };
     if (!base) { x.placa = placas[0] || ''; x.bien = r0.descripcion || ''; if (placas.length > 1) x.placas = placas;
       if (rs.length > 1) x.riesgos = rs.map(function (r, i) { var dd = r.datos || {}; var rEst = estadoRiesgo(k, r);   // G-2c8 · DEC-238: estado de coordinación y visita de cada riesgo
@@ -285,6 +293,8 @@
     // 59f: los datos con que la base arma el correo de un caso (enlaces activos y destinatario típico de la plantilla), para la vista previa
     contextoNotificacion: function (caso, plantilla) { return rpc('notif_contexto', { p_caso: String(caso || ''), p_plantilla: String(plantilla || '') }).catch(function () { return null; }); },
     notificacionContexto: function (id) { return get('notificaciones?select=contexto,asunto,plantilla&id=eq.' + encodeURIComponent(id)).then(function (r) { return (r && r[0]) || null; }).catch(function () { return null; }); },
+    redAccion: function (tipo, datos) { return rpc('red_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };   // R-2 · DEC-262
+      return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
   // N-2c: la versión vigente de cada configuración, para publicar «vigente + 1» y mostrarla en los editores: { clave: { version, fecha, por, datos } }
   try { Object.defineProperty(CX, 'configuracion', { configurable: true, enumerable: true, get: function () { var o = {};
@@ -318,7 +328,59 @@
   function avisar() { oyentes.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } }); }
   function salir(motivo) { localStorage.removeItem(CLAVE); var cs = (location.search.match(/[?&]caso=(\d{3,10})/) || [])[1]; location.href = INGRESO + '?motivo=' + encodeURIComponent(motivo) + (cs ? '&caso=' + cs : ''); }   // N-2d: conserva el caso del enlace
 
+  // ---------- R-2 · DEC-262: Red de inspectores (SQL 68) ----------
+  var huellaRed = '';
+  function hoyEc() { var d = new Date(Date.now() - 5 * 3600000); return d.toISOString().slice(0, 10); }
+  function hhmm(t) { return String(t || '').slice(0, 5); }
+  function cargarRed() {
+    return Promise.all([
+      get('usuarios?select=id,nombre,rol,tipo_inspector,estado,auth_id,datos,agencia:agencias(nombre)&order=nombre'),
+      get('inspector_operacion?select=usuario_id,modalidades,ramos,recibe_ofertas,jornada_dias,jornada_desde,jornada_hasta,capacidad_dia,fuente,actualizado'),
+      get('inspector_cobertura?select=id,usuario_id,nivel,sucursal,ciudad,zona,desde,hasta,origen,motivo,creado,autor:usuarios!inspector_cobertura_creado_por_fkey(nombre)&retirado=is.null&order=creado'),
+      get('inspector_bloqueos?select=id,usuario_id,desde,hasta,motivo,origen&retirado=is.null&order=desde'),
+      get('red_historial?select=id,usuario_id,accion,detalle,motivo,hora,autor:usuarios!red_historial_por_fkey(nombre)&order=hora.desc&limit=300').catch(function () { return []; })
+    ]).then(function (r) {
+      var hoy = hoyEc(), porId = {}, ops = {}, cob = {}, blq = {};
+      (r[0] || []).forEach(function (u) { porId[u.id] = u; });
+      (r[1] || []).forEach(function (o) { ops[o.usuario_id] = o; });
+      (r[2] || []).forEach(function (c) { (cob[c.usuario_id] = cob[c.usuario_id] || []).push({ id: c.id, nivel: c.nivel, sucursal: c.sucursal || null, ciudad: c.ciudad || null, zona: c.zona || null,
+        desde: c.desde, hasta: c.hasta || null, vigente: c.desde <= hoy && (!c.hasta || c.hasta >= hoy), origen: c.origen, motivo: c.motivo || '', creado: c.creado, creadoPor: c.autor ? c.autor.nombre : '' }); });
+      (r[3] || []).forEach(function (b) { (blq[b.usuario_id] = blq[b.usuario_id] || []).push({ id: b.id, desde: b.desde, hasta: b.hasta, motivo: b.motivo || '', origen: b.origen }); });
+      var esIns = function (u) { var rs = (u.datos && Array.isArray(u.datos.roles)) ? u.datos.roles : []; return u.rol === 'Inspector' || rs.indexOf('Inspector') >= 0; };
+      var yo = CX.usuario || {}, rolesYo = (yo.roles || []).concat([yo.rol]);
+      CX.red = { listo: true, hoy: hoy, puedeGestionar: rolesYo.indexOf('Administrador') >= 0 || rolesYo.indexOf('Coordinador de inspecciones') >= 0,
+        inspectores: (r[0] || []).filter(esIns).map(function (u) { var o = ops[u.id], t = String(u.tipo_inspector || '').toLowerCase();
+          return { nombre: u.nombre, tipoInspector: t || null, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
+            estado: u.estado || 'Activo', cuenta: !!u.auth_id,
+            operacion: o ? { modalidades: o.modalidades || [], ramos: o.ramos || [], recibeOfertas: o.recibe_ofertas, jornada: { dias: o.jornada_dias || [], desde: hhmm(o.jornada_desde), hasta: hhmm(o.jornada_hasta) },
+              capacidadDia: o.capacidad_dia, fuente: o.fuente, actualizado: o.actualizado } : null,
+            cobertura: cob[u.id] || [], bloqueos: blq[u.id] || [] }; }),
+        historial: (r[4] || []).map(function (h) { return { inspector: porId[h.usuario_id] ? porId[h.usuario_id].nombre : '', accion: h.accion, detalle: h.detalle || '', motivo: h.motivo || '', por: h.autor ? h.autor.nombre : '', hora: h.hora }; }) };
+      ponerRedEnUsuarios();
+    }).catch(function (e) { if (CX.red !== null) console.warn('[SIRIUS] Red de inspectores (¿falta el SQL 68?):', e.message); CX.red = null; });
+  }
+  // La forma de siempre para las pantallas actuales: cobertura de un solo modo (con filas mixtas, la parte geográfica; coberturaMixta: true).
+  function coberturaLegada(filas) {
+    var v = filas.filter(function (c) { return c.vigente; }); if (!v.length) return { modo: 'ciudad', sucursales: [], ciudades: [] };
+    if (v.some(function (c) { return c.nivel === 'todas'; })) return { modo: 'todas', sucursales: [], ciudades: [] };
+    var geo = v.filter(function (c) { return c.nivel === 'ciudad' || c.nivel === 'zona'; });
+    if (!geo.length) return { modo: 'sucursales', sucursales: v.map(function (c) { return c.sucursal; }), ciudades: [] };
+    var m = {}; geo.forEach(function (c) { var x = m[c.ciudad] = m[c.ciudad] || { cod: c.ciudad, zonas: [], todas: false }; if (c.nivel === 'ciudad') x.todas = true; else x.zonas.push(c.zona); });
+    return { modo: 'ciudad', sucursales: [], ciudades: Object.keys(m).map(function (k) { return { cod: k, zonas: m[k].todas ? [] : m[k].zonas }; }) };
+  }
+  function ponerRedEnUsuarios() {
+    if (!CX.red) return; var por = {}; CX.red.inspectores.forEach(function (i) { por[i.nombre] = i; });
+    [CX.usuarios, CX.inspectores].forEach(function (lista) { (lista || []).forEach(function (u) { var i = por[u.nombre]; if (!i) return;
+      var vig = i.cobertura.filter(function (c) { return c.vigente; }), niveles = {}; vig.forEach(function (c) { niveles[c.nivel === 'zona' ? 'ciudad' : c.nivel] = 1; });
+      u.coberturaFilas = vig; u.coberturaMixta = Object.keys(niveles).length > 1; u.cobertura = coberturaLegada(i.cobertura);
+      if (i.operacion) { u.jornada = { dias: i.operacion.jornada.dias, desde: i.operacion.jornada.desde, hasta: i.operacion.jornada.hasta }; u.recibeOfertas = i.operacion.recibeOfertas; u.capacidadDia = i.operacion.capacidadDia;
+        if (i.operacion.modalidades.length) u.modalidades = i.operacion.modalidades; if (i.operacion.ramos.length) u.ramos = i.operacion.ramos; } }); });
+  }
   function cargarCasos() {
+    return Promise.all([cargarCasos0(), cargarRed()]).then(function (r) { ponerRedEnUsuarios(); var hr = JSON.stringify(CX.red); if (hr !== huellaRed) { huellaRed = hr; return true; } return r[0]; });
+  }
+
+  function cargarCasos0() {
     return Promise.all([
       get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,lugar,fuera_cobertura,no_inspeccionados,motivo_cierre,riesgos_enviados,riesgos_en_curso,ofertas_red(estado,origen,desde,hasta,minutos,nota,vence,inspector:usuarios!ofertas_red_inspector_id_fkey(nombre)),enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc').catch(function () { return get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,lugar,fuera_cobertura,no_inspeccionados,motivo_cierre,riesgos_enviados,ofertas_red(estado,origen,desde,hasta,minutos,nota,vence,inspector:usuarios!ofertas_red_inspector_id_fkey(nombre)),enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'); }).catch(function () { return get('casos?select=id,numero,grupo_ramo,ramo,estado,subestado,asegurado,origen,creado,datos,sla_vence,responsable:usuarios!casos_responsable_id_fkey(nombre),riesgos(id,descripcion,datos,composicion,suma_asegurada),visitas(estado,inicio,fin,llegada,modalidad,origen,agendado_en,direccion,creado,plantilla,riesgo_ids,lugar,fuera_cobertura,no_inspeccionados,motivo_cierre,ofertas_red(estado,origen,desde,hasta,minutos,nota,vence,inspector:usuarios!ofertas_red_inspector_id_fkey(nombre)),enlaces(tipo,estado,token,vence),inspector:usuarios!visitas_inspector_id_fkey(nombre,tipo_inspector,agencia:agencias(nombre)))&order=numero&riesgos.order=creado.asc,descripcion.asc'); }),   // P-6f-0: riesgos en orden fijo («Vehículo 1, 2, 3» no cambia entre cargas)
       get('eventos?select=caso_id,hora,accion,detalle,rol,actor_tipo,actor:usuarios!eventos_actor_id_fkey(nombre)&order=hora'),
