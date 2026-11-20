@@ -6,6 +6,10 @@
 // se quita al guardar). Migración sin cambio de comportamiento: las «zonas» actuales pasan a 'sucursales' con esos valores; sin zonas, 'todas'.
 // Fuente de la cobertura de un inspector: lo guardado en la sesión → con la conexión, SIRIUS_CONEXION.usuarios[].cobertura o inspectores[].cobertura
 // → la del objeto (red o disponibilidad) → migrar(zonas). La edita el Administrador con motivo (con la conexión, editarUsuario { email, cambios: { cobertura }, motivo }).
+// R-3a · DEC-262 (v1.1): una sola regla de cobertura. Si el usuario o inspector trae coberturaFilas (filas de la Red de inspectores: [{ id, nivel ('todas' | 'sucursal' | 'ciudad' | 'zona'),
+//   sucursal, ciudad (COD_CANTON), zona (id), desde, hasta, vigente, origen, motivo }]), cubre() decide solo con las filas vigentes y en el mismo orden que la base: «todas» → ciudad
+//   completa → zona (activa; si la ciudad ya no tiene zonas activas cuenta como la ciudad completa; sin zona conocida, «parcial» solo si se pide con { parcial: true }) → sucursal.
+//   resumen() y corto() enumeran todas las filas vigentes (cobertura mixta). Sin coberturaFilas todo sigue como antes (modo único).
 // Uso: SiriusCobertura.cubre(inspector, { sucursal, ciudad, zonaId }) → { nivel: 'zona' | 'ciudad' | 'sucursal' | 'todas' | null, por, faltaLugar? };
 //      resumen(inspector) (frase), corto(inspector) (para listas), avisos(inspector), migrar(inspector), de(inspector), guardar(...), SiriusCobertura.Editor (React).
 (function () {
@@ -47,13 +51,53 @@
     if (ins && typeof ins === 'object' && Array.isArray(ins.zonas)) return S.migrar(ins);
     return S.migrar({ zonas: S.zonasHeredadas(n) }); };
   // U-3a · DEC-254: ¿la cobertura deja al inspector sin inspecciones? (modo por sucursales sin sucursales o por ciudad sin ciudades).
-  S.sinCobertura = (c) => { c = (c && c.modo) ? S.normalizar(c) : S.de(c); return (c.modo === 'sucursales' && !c.sucursales.length) || (c.modo === 'ciudad' && !c.ciudades.length); };
+  S.sinCobertura = (c) => { const F0 = S.filasDe(c); if (F0) return !S.vigentes(F0).length; /* R-3a: sin filas vigentes */ c = (c && c.modo) ? S.normalizar(c) : S.de(c); return (c.modo === 'sucursales' && !c.sucursales.length) || (c.modo === 'ciudad' && !c.ciudades.length); };
   // Lo guardado solo en la sesión (no en la base): la ficha lo marca «Sin guardar en la base». deBase0 = lo que tiene la base.
   S.enSesion = (n) => { const e0 = edDe(n); return e0 ? S.normalizar(e0) : null; };
   S.deBase = (n) => deBase(n);
   S.quitarSesion = (n) => { let k = 0; Object.keys(S.ed).forEach((x) => { if (x === n || x === claveDe(n) || mismo(x, n)) { delete S.ed[x]; k++; } }); if (k) avisar(); return k; };
-  // ¿Cubre este lugar? lugar = { sucursal, ciudad (COD_CANTON), zonaId }.
-  S.cubre = (ins, lugar) => { const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins); lugar = lugar || {};
+  // ---------- R-3a · DEC-262: filas de cobertura (Red de inspectores) ----------
+  S.NIVELES = [['todas', 'Todas'], ['sucursal', 'Sucursal'], ['ciudad', 'Ciudad completa'], ['zona', 'Zona']];
+  S.nivelTxt = (n) => { const x = S.NIVELES.find((y) => y[0] === n); return x ? x[1] : String(n || ''); };
+  S.hoy = () => { const C = X(), r = C && C.activo === true && C.red && C.red.hoy; if (r) return String(r).slice(0, 10); const SC = W.SiriusCompania, iso = SC && SC.ahoraIso ? SC.ahoraIso() : null; if (iso) return String(iso).slice(0, 10);
+    const E = W.SIRIUS_EJEMPLO, d = E && typeof E.ahora === 'function' ? E.ahora() : new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  // Vigente: lo que diga la base (vigente) o, si no viene, desde ≤ hoy ≤ hasta (fechas AAAA-MM-DD).
+  S.filaVigente = (f, hoy) => { if (!f) return false; if (typeof f.vigente === 'boolean') return f.vigente; hoy = hoy || S.hoy(); const d = String(f.desde || '').slice(0, 10), a = String(f.hasta || '').slice(0, 10); return (!d || d <= hoy) && (!a || hoy <= a); };
+  // Filas del inspector: las que trae el objeto; si no, las del usuario de la base o del inspector de la conexión. null = no tiene filas (modo único de siempre).
+  S.filasDe = (ins) => { if (ins && typeof ins === 'object' && Array.isArray(ins.coberturaFilas)) return ins.coberturaFilas; const n = nombreDe(ins); if (!n || (ins && typeof ins === 'object' && ins.modo)) return null;
+    const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase() || (x.identificacion && x.identificacion === claveDe(n))); if (u && Array.isArray(u.coberturaFilas)) return u.coberturaFilas; }
+    const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) { const i = C.inspectores.find((x) => x && (x.nombre === n || (x.identificacion && x.identificacion === claveDe(n)))); if (i && Array.isArray(i.coberturaFilas)) return i.coberturaFilas; }
+    return null; };
+  S.vigentes = (F, hoy) => (Array.isArray(F) ? F : []).filter((f) => f && S.filaVigente(f, hoy));
+  S.ambitoTxt = (f) => { f = f || {}; if (f.nivel === 'todas') return 'Todas las inspecciones'; if (f.nivel === 'sucursal') return String(f.sucursal || '—');
+    const nom = f.ciudad ? S.ciudadNombre(f.ciudad) : '—'; return f.nivel === 'zona' ? nom + ' · Zona ' + S.zonaNombre(f.ciudad, String(f.zona || '')) : nom; };
+  S.cubreFilas = (F, lugar, op) => { lugar = lugar || {}; op = op || {}; const v = S.vigentes(F, op.hoy), ciu = lugar.ciudad ? String(lugar.ciudad) : '', nom = ciu ? S.ciudadNombre(ciu) : '';
+    if (!v.length) return { nivel: null, por: 'Sin cobertura vigente: no recibe inspecciones', sinCobertura: true };
+    if (v.some((f) => f.nivel === 'todas')) return { nivel: 'todas', por: 'Atiende todas las inspecciones' };
+    if (ciu && v.some((f) => f.nivel === 'ciudad' && String(f.ciudad) === ciu)) return { nivel: 'ciudad', por: 'Atiende toda ' + nom };
+    let faltaZona = false; const zs = ciu ? v.filter((f) => f.nivel === 'zona' && String(f.ciudad) === ciu) : [];
+    if (zs.length) { const act = activasCiudad(ciu); if (!act.length) return { nivel: 'ciudad', por: 'Atiende toda ' + nom + ' (la ciudad ya no tiene zonas activas)' };
+      const validas = zs.map((f) => String(f.zona || '')).filter((id) => act.some((z) => z.id === id));
+      if (lugar.zonaId) { if (validas.indexOf(String(lugar.zonaId)) >= 0) return { nivel: 'zona', por: 'Atiende la zona ' + S.zonaNombre(ciu, String(lugar.zonaId)) }; }
+      else if (validas.length) { if (op.parcial) return { nivel: 'parcial', por: 'Atiende ' + (validas.length === 1 ? 'la zona ' : 'las zonas ') + S.lista(validas.map((id) => S.zonaNombre(ciu, id))) + ' de ' + nom + '; falta la zona del lugar' }; faltaZona = true; } }
+    if (lugar.sucursal && v.some((f) => f.nivel === 'sucursal' && f.sucursal === lugar.sucursal)) return { nivel: 'sucursal', por: 'Atiende la sucursal ' + lugar.sucursal };
+    if (faltaZona) return { nivel: null, por: 'Falta la zona del lugar para saber si cubre', faltaLugar: true };
+    if (!ciu && v.some((f) => f.nivel === 'ciudad' || f.nivel === 'zona')) return { nivel: null, por: 'Falta el lugar de la inspección para saber si cubre', faltaLugar: true };
+    if (!ciu && !lugar.sucursal) return { nivel: null, por: 'Falta el lugar de la inspección para saber si cubre', faltaLugar: true };
+    return { nivel: null, por: ciu ? 'No atiende ' + (zs.length && lugar.zonaId ? 'la zona ' + S.zonaNombre(ciu, String(lugar.zonaId)) + ' de ' + nom : nom) + (lugar.sucursal ? ' ni la sucursal ' + lugar.sucursal : '') : 'No atiende la sucursal ' + lugar.sucursal }; };
+  const unirFrases = (p) => { if (p.length <= 1) return p.join(''); const u = p[p.length - 1], r = p.slice(0, -1); return r.join(', ') + (r[r.length - 1].indexOf(',') >= 0 ? ', y ' : ' y ') + u; };
+  S.resumenFilas = (F, hoy) => { const v = S.vigentes(F, hoy); if (!v.length) return 'Sin cobertura vigente: no recibe inspecciones.'; if (v.some((f) => f.nivel === 'todas')) return 'Atiende todas las inspecciones, en cualquier ciudad.';
+    const suc = [], ciu = [], zon = {}, out = []; v.forEach((f) => { if (f.nivel === 'sucursal' && suc.indexOf(f.sucursal) < 0) suc.push(f.sucursal); else if (f.nivel === 'ciudad') { const n = S.ciudadNombre(f.ciudad); if (ciu.indexOf(n) < 0) ciu.push(n); } else if (f.nivel === 'zona') { const k = String(f.ciudad); (zon[k] = zon[k] || []).push(S.zonaNombre(k, String(f.zona || ''))); } });
+    if (suc.length) out.push('los casos de ' + (suc.length === 1 ? 'la sucursal ' : 'las sucursales ') + S.lista(suc) + ', estén donde estén');
+    Object.keys(zon).forEach((k) => out.push((zon[k].length === 1 ? 'la zona ' : 'las zonas ') + S.lista(zon[k]) + ' de ' + S.ciudadNombre(k)));
+    if (ciu.length) out.push('cualquier lugar de ' + S.lista(ciu));
+    return 'Atiende ' + unirFrases(out) + '.'; };
+  S.cortoFilas = (F, hoy) => { const v = S.vigentes(F, hoy); if (!v.length) return 'Sin cobertura'; if (v.some((f) => f.nivel === 'todas')) return 'Todas';
+    const zon = {}, out = []; v.forEach((f) => { if (f.nivel === 'zona') { const k = String(f.ciudad); (zon[k] = zon[k] || []).push(S.zonaNombre(k, String(f.zona || ''))); } });
+    v.forEach((f) => { if (f.nivel === 'sucursal') out.push('Sucursal ' + f.sucursal); else if (f.nivel === 'ciudad') out.push(S.ciudadNombre(f.ciudad) + (v.length === 1 ? ' (toda la ciudad)' : '')); else if (f.nivel === 'zona' && zon[String(f.ciudad)]) { out.push(S.ciudadNombre(f.ciudad) + ' · ' + (zon[String(f.ciudad)].length === 1 ? 'Zona ' : 'Zonas ') + S.lista(zon[String(f.ciudad)])); delete zon[String(f.ciudad)]; } });
+    return out.filter((x, i, a) => a.indexOf(x) === i).join(' · '); };
+  // ¿Cubre este lugar? lugar = { sucursal, ciudad (COD_CANTON), zonaId }. op = { parcial } (solo con filas).
+  S.cubre = (ins, lugar, op) => { const F0 = S.filasDe(ins); if (F0) return S.cubreFilas(F0, lugar, op); const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins); lugar = lugar || {};
     if (c.modo === 'todas') return { nivel: 'todas', por: 'Atiende todas las inspecciones' };
     if (c.modo === 'sucursales') { const s = lugar.sucursal; if (!s) return { nivel: null, por: 'Falta la sucursal del caso para saber si cubre', faltaLugar: true };
       return c.sucursales.indexOf(s) >= 0 ? { nivel: 'sucursal', por: 'Atiende la sucursal ' + s } : { nivel: null, por: 'No atiende la sucursal ' + s }; }
@@ -75,11 +119,11 @@
     if (!x.zonas.length || p.sinZonas) return largo ? nom + ' (toda la ciudad)' : nom + ': toda la ciudad';
     if (!p.validas.length) return largo ? nom + ' (sus zonas están inactivas)' : nom + ': zonas inactivas';
     const t = S.lista(p.validas.map((id) => S.zonaNombre(x.cod, id))); return largo ? nom + ' (' + t + ')' : nom + ': ' + t; };
-  S.resumen = (ins) => { const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins);
+  S.resumen = (ins) => { const F0 = S.filasDe(ins); if (F0) return S.resumenFilas(F0); /* R-3a: cobertura mixta, todas las filas */ const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins);
     if (c.modo === 'todas') return 'Atiende todas las inspecciones, en cualquier ciudad.';
     if (c.modo === 'sucursales') return c.sucursales.length ? 'Atiende los casos que solicitan ' + (c.sucursales.length === 1 ? 'la sucursal ' : 'las sucursales ') + S.lista(c.sucursales) + ', estén donde estén.' : 'Sin sucursales: no recibe inspecciones.';
     return c.ciudades.length ? 'Atiende en ' + S.lista(c.ciudades.map((x) => ciudadTxt(x, true))) + '.' : 'Sin ciudades: no recibe inspecciones.'; };
-  S.corto = (ins) => { const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins);
+  S.corto = (ins) => { const F0 = S.filasDe(ins); if (F0) return S.cortoFilas(F0); const c = (ins && ins.modo) ? S.normalizar(ins) : S.de(ins);
     if (c.modo === 'todas') return 'Todas';
     if (c.modo === 'sucursales') return c.sucursales.length ? 'Sucursales: ' + c.sucursales.join(', ') : 'Sin sucursales';
     return c.ciudades.length ? c.ciudades.map((x) => ciudadTxt(x, false)).join(' · ') : 'Sin cobertura'; }; // U-3a: antes «Sin ciudades»

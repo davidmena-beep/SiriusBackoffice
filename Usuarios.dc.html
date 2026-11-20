@@ -90,7 +90,8 @@ class Component extends DCLogic {
     if (go.fId) this.setState(st => ({ tab: go.tab === 2 ? 2 : 0, fTipo: 'all', fRol: 'all', fEst: 'all', fAg: 'all', fId: go.fId, fk: st.fk + 1 })); // P-6f-b · DEC-214: «N fichas sin identificación»
     // Etapa 9 · desde Inicio: filtro de estado («pendiente» = Invitado o Invitación vencida) y «Invitar usuario».
     if (go.fEst) this.setState(st => ({ tab: 0, fTipo: 'all', fRol: 'all', fAg: 'all', fEst: go.fEst, fk: st.fk + 1 }));
-    if (go.panel === 'invitar') this.ufNuevo(); }
+    if (go.panel === 'invitar') this.ufNuevo();
+    if (go.panel === 'ficha' && go.usuario) this.ufAbrirO(go.usuario); } // R-3a · DEC-262: «Ver identidad y acceso en Usuarios» desde la Red de inspectores (sin la conexión)
   toast(m) { this.setState({ snack: '' }, () => this.setState({ snack: m })); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ snack: '' }), 5200); }
   abrir(p, extra) { this._ret = document.activeElement; this.setState(Object.assign({ panel: p, re: { casos: {}, flujo: {}, todos: '' } }, extra || {})); }
   cerrar() { this.setState({ panel: null }); const r = this._ret; setTimeout(() => { if (r && r.isConnected && r.focus) r.focus(); }, 60); }
@@ -268,6 +269,7 @@ class Component extends DCLogic {
     return d; }
   cxSeed() { const C = window.SIRIUS_CONEXION || {}, E = C.usuariosEscena, B = this.UB(); if (!E || !B || this._cxSeeded) return; this._cxSeeded = true;
     { const e0 = this.props.escena || '', fs = (() => { try { return new URLSearchParams(location.search).get('fsesion') || ''; } catch (er) { return ''; } })(); if (e0 === 'usrsinguardar' && fs === '1' && window.SiriusCobertura) window.SiriusCobertura.escena('cxusrsesion'); } // U-3a: cobertura solo en la sesión
+    if (E.panel === 'lista' && E.filtro) this.setState({ fq: E.filtro }); // U-6 · usmenuabajo: la lista con el filtro «ga» (tres filas)
     if (E.panel === 'ficha') this.ufAbrir(E.email, E.d || E.correo || E.guardar ? { preset: { d: this.ufDe(E.d), motivo: E.motivo || '', guardar: !!E.guardar, correo: E.correo || null } } : null); // U-3a: la ficha con su borrador
     if (E.panel === 'agencias') this.setState({ tab: 2 }); // P-6f-d
     if (E.panel === 'crear') { const d = Object.assign({}, E.d || {}); if (d.sucursales && !d.sucursal) d.sucursal = d.sucursales[0] || ''; this.cxAbrirCrear(d, E.motivo, { tried: !!E.toque, guardar: !!E.guardar }); }
@@ -559,9 +561,10 @@ class Component extends DCLogic {
     const filas = F0.filter(pasa), inv = F0.filter(f => f.estado === 'Invitado' || f.estado === 'Invitación vencida'), sc = F0.filter(f => f.sinCob), pv = inv.filter(f => { const n = this.ufVenceEn(f.vence); return n != null && n <= 3; });
     const alertas = []; if (inv.length) alertas.push({ k: 'invitados', txt: inv.length + (inv.length === 1 ? ' invitado' : ' invitados') + (pv.length ? ' (' + pv.length + ' por vencer)' : ''), tono: 'warning', titulo: inv.map(f => f.nombre + ' · ' + f.estadoTxt).join('\n'), ir: () => this.setState({ fEst: 'Invitado' }) });
     if (sc.length) alertas.push({ k: 'sincob', txt: sc.length + ' sin cobertura', tono: 'danger', titulo: sc.map(f => f.nombre).join(', ') + ': no reciben ofertas ni aparecen como candidatos en Coordinar visita', ir: () => this.setState({ fEst: 'sincob' }) });
+    const Ee = (window.SIRIUS_CONEXION || {}).usuariosEscena, menuInicial = Ee && Ee.menu === 'ultima' && Ee.filtro && st.fq === Ee.filtro && filas.length ? filas[filas.length - 1].id : ''; // U-6: escena con el menú de la última fila abierto
     const hay = !!q || fl.rol !== 'all' || fl.tipo !== 'all' || fl.agencia !== 'all' || fl.estado !== 'all' || st.fId === 'sin';
     return [st.fId === 'sin' ? h('p', { key: 'sid', style: { margin: 0, fontSize: 14 } }, 'Fichas sin identificación (DEC-214): complétalas en la ficha. ') : null,
-      h(F.Lista, { key: 'l', filas, total: F0.length, alertas, hayFiltro: hay, opc: this.ufOpc(), filtros: fl, onFiltro: (o) => this.setState(o ? { fq: o.q !== undefined ? o.q : st.fq, fRol: o.rol || st.fRol, fTipo: o.tipo || st.fTipo, fAg: o.agencia || st.fAg, fEst: o.estado || st.fEst } : { fq: '', fRol: 'all', fTipo: 'all', fAg: 'all', fEst: 'all', fId: 'all' }), onAbrir: (id) => this.ufAbrir(id), menu: (id) => this.ufMenu(F0.find(f => f.id === id)), onMenu: (id, a) => this.ufAccion(F0.find(f => f.id === id), a) })]; }
+      h(F.Lista, { key: 'l', filas, menuInicial, total: F0.length, alertas, hayFiltro: hay, opc: this.ufOpc(), filtros: fl, onFiltro: (o) => this.setState(o ? { fq: o.q !== undefined ? o.q : st.fq, fRol: o.rol || st.fRol, fTipo: o.tipo || st.fTipo, fAg: o.agencia || st.fAg, fEst: o.estado || st.fEst } : { fq: '', fRol: 'all', fTipo: 'all', fAg: 'all', fEst: 'all', fId: 'all' }), onAbrir: (id) => this.ufAbrir(id), menu: (id) => this.ufMenu(F0.find(f => f.id === id)), onMenu: (id, a) => this.ufAccion(F0.find(f => f.id === id), a) })]; }
   // ---------- Matriz de permisos ----------
   letraChip(l, key) {
     const h = React.createElement, bg = { C: 'var(--green-100,#DDF3E4)', V: 'var(--neutral-100,#EEF1F5)', E: 'var(--cyan-100)', A: 'var(--teal-100,#D3F0EF)', P: 'var(--yellow-100,#FFF1C2)' }[l];

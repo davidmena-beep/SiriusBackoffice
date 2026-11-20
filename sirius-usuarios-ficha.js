@@ -35,9 +35,8 @@
       '.uf-t td{padding:10px 10px;border-top:1px solid var(--border-subtle);vertical-align:middle;color:var(--text-body)}.uf-row{cursor:pointer}.uf-row:hover td{background:var(--table-row-hover,#F3F8FD)}' +
       '.uf-tag{display:inline-flex;align-items:center;white-space:nowrap;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700;margin:1px 4px 1px 0}.uf-tag.brand{background:var(--cyan-100);color:var(--cyan-800,#0B4F6C)}.uf-tag.neutral{background:var(--neutral-100,#EEF0F3);color:var(--text-body)}' +
       '.uf-tag.success{background:var(--alert-success-bg,#E6F4EA);color:var(--color-success,#1E7B34)}.uf-tag.warning{background:var(--alert-warning-bg,#FDF3DC);color:#7A4F0E}.uf-tag.danger{background:var(--alert-error-bg,#FDECEC);color:var(--color-danger,#B3261E)}' +
-      '.uf-mb{width:36px;height:32px;border:0;border-radius:8px;background:none;cursor:pointer;font:700 18px var(--font-brand);color:var(--text-strong)}.uf-mb:hover{background:var(--neutral-100,#EEF0F3)}' +
-      '.uf-menu{position:absolute;right:8px;top:100%;z-index:20;min-width:220px;display:flex;flex-direction:column;padding:6px;background:#fff;border:1px solid var(--border-subtle);border-radius:10px;box-shadow:var(--shadow-md)}' +
-      '.uf-menu button{text-align:left;border:0;background:none;border-radius:6px;padding:8px 10px;font:600 14px var(--font-brand);color:var(--text-strong);cursor:pointer}.uf-menu button:hover,.uf-menu button:focus{background:var(--cyan-100);outline:none}.uf-menu button[aria-disabled="true"]{color:var(--neutral-500,#8A8F98);cursor:not-allowed}.uf-menu button.peligro{color:var(--color-danger)}';
+      '.uf-mb{width:36px;height:32px;border:0;border-radius:8px;background:none;cursor:pointer;font:700 18px var(--font-brand);color:var(--text-strong)}.uf-mb:hover{background:var(--neutral-100,#EEF0F3)}';
+
     document.head.appendChild(s); };
 
   // ---------- Textos ----------
@@ -60,8 +59,7 @@
   const campoDeMsg = (m, campo) => { if (campo) return campo === 'identificacion' ? 'ident' : campo; const t = String(m || '').toLowerCase(); return /identificaci|c[eé]dula|pasaporte/.test(t) ? 'ident' : /correo/.test(t) ? 'email' : ''; };
 
   // ---------- Lista ----------
-  function Lista(p) { const React = R(); ponerCss(); const [menu, setMenu] = React.useState(null);
-    React.useEffect(() => { if (!menu) return; const f = (e) => { if (!e.target.closest || !e.target.closest('[data-uf-menu]')) setMenu(null); }, k = (e) => { if (e.key === 'Escape') setMenu(null); }; document.addEventListener('mousedown', f); document.addEventListener('keydown', k); return () => { document.removeEventListener('mousedown', f); document.removeEventListener('keydown', k); }; }, [menu]);
+  function Lista(p) { const React = R(); ponerCss(); const MF = window.SiriusMenuFila; // U-6: el menú de la fila es el componente compartido (capa flotante)
     const F = p.filtros, sel = (id, lab, val, opts, k) => h('span', { key: id, style: { display: 'inline-flex', alignItems: 'center', gap: 6 } }, h('label', { htmlFor: id, style: { fontSize: 14, fontWeight: 700, color: 'var(--text-link,var(--cyan-700))' } }, lab),
       h('select', { id, className: 'uf-in', value: val, onChange: (e) => p.onFiltro({ [k]: e.target.value }), style: { width: 'auto', minWidth: 110, maxWidth: 210, height: 38, fontWeight: 700, fontSize: 14 } }, opts.map((o) => h('option', { key: o[0], value: o[0] }, o[1]))));
     const filtros = h('div', { role: 'search', 'aria-label': 'Buscar y filtrar usuarios', 'data-uf-filtros': '', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 14px', padding: '10px 12px', border: '1px solid var(--border-subtle)', borderRadius: 12, background: '#fff' } },
@@ -82,8 +80,7 @@
         h('td', { style: { minWidth: 140 } }, f.sinCob ? h('span', { className: 'uf-tag danger', 'data-uf-sincob': '1' }, 'Sin cobertura') : f.esIns ? f.cobTxt : '—'),
         h('td', { style: { whiteSpace: 'nowrap' } }, h('span', { className: 'uf-tag ' + f.estadoTono }, f.estadoTxt)),
         h('td', { style: { whiteSpace: 'nowrap' } }, f.ultimo || '—'),
-        h('td', { style: { position: 'relative' }, 'data-uf-menu': '' }, h('button', { type: 'button', className: 'uf-mb', 'aria-label': 'Acciones de ' + f.nombre, 'aria-haspopup': 'menu', 'aria-expanded': menu === f.id ? 'true' : 'false', onClick: () => setMenu(menu === f.id ? null : f.id) }, '⋯'),
-          menu === f.id ? h('div', { className: 'uf-menu', role: 'menu', 'aria-label': 'Acciones de ' + f.nombre }, p.menu(f.id).map((m) => h('button', { key: m.id, type: 'button', role: 'menuitem', className: m.peligro ? 'peligro' : '', 'aria-disabled': m.razon ? 'true' : undefined, title: m.razon || undefined, 'data-uf-accion': m.id, onClick: () => { if (m.razon) return; setMenu(null); p.onMenu(f.id, m.id); } }, m.label))) : null)))
+        h('td', { style: { position: 'relative' }, 'data-uf-menu': '' }, MF ? h(MF.Boton, { claseBoton: 'uf-mb', etiqueta: 'Acciones de ' + f.nombre, items: () => p.menu(f.id), onElegir: (a) => p.onMenu(f.id, a), abrirInicial: !!p.menuInicial && p.menuInicial === f.id }) : null)))
         : h('tr', null, h('td', { colSpan: 8, style: { padding: 24, textAlign: 'center', color: 'var(--text-muted)' } }, 'Ningún usuario coincide. Prueba con otros filtros.')))));
     return h('div', { 'data-uf-lista': '', style: { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 } }, filtros, tabla); }
 

@@ -47,7 +47,7 @@
     return h('div', { key: 'barra', className: 'cg-barra', role: 'group', 'aria-label': 'Decisión de la calificación' }, items,
       v.plazoErr ? h('span', { key: 'pe', id: 'cg-plazo-h', role: 'alert', className: 'cg-err', style: { flexBasis: '100%' } }, v.plazoErrTxt) : null); };
   // ---------- Tabla de garantías ----------
-  C.tabla = (k, v) => { const s = k.state, isN2 = v.isN2, g = s.items.garantias, q = s.removed.garantias || [], ed = s.cgEd || {}, menu = s.cgMenu, hist = s.cgHist;
+  C.tabla = (k, v) => { const s = k.state, isN2 = v.isN2, g = s.items.garantias, q = s.removed.garantias || [], ed = s.cgEd || {}, hist = s.cgHist;
     const tuya = isN2 ? 'Nivel 2' : 'Calificador', n = (o) => g.filter((x) => C.origen(x, isN2) === o).length;
     const cab = h('div', { className: 'cg-gcab' }, h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } }, h('h3', { id: 'cg-gar-t', className: 'cg-h3' }, 'Garantías'),
       badge(g.length + ' de ' + (g.length + q.length), 'neutral', 'nm'), n('Inspector') ? badge(n('Inspector') + ' del inspector', 'brand', 'in') : null, isN2 && n('Calificador') ? badge(n('Calificador') + ' del calificador', 'teal', 'ca') : null,
@@ -56,7 +56,7 @@
     const nota = h('p', { className: 'cg-nota' }, h('strong', null, k.props.ramo || 'Ramo'), ' · plazo de la matriz por título; la fecha límite del caso es la de la garantía que vence más tarde (plazo global = el mayor).');
     const th = (t, w, cls) => h('th', { key: t, scope: 'col', style: w ? { width: w } : null, className: cls }, t);
     const filas = []; g.forEach((x, i) => { const o = C.origen(x, isN2), d = fecha(k.props.baseDate, Number(x.plazo) || 0), falta = v.PC && v.PC.falta.includes(x), id = x.id;
-      filas.push(h('tr', { key: id, 'data-cg-fila': id, className: menu === id ? 'cg-act' : '' },
+      filas.push(h('tr', { key: id, 'data-cg-fila': id, className: '' },
         h('td', { className: 'cg-n' }, String(i + 1)),
         h('td', null, h('div', { className: 'cg-tit' }, x.desc), h('div', { className: 'cg-sub' }, (C.codigo(x) || 'Sin código') + ' · ', h('span', { className: 'cg-or cg-or-' + (ORIGEN_TONO[o] || 'neutral'), 'data-cg-origen': o }, o))),
         h('td', null, h('textarea', { className: 'cg-txt', 'aria-label': 'Texto para el asegurado de ' + x.desc, rows: 1, ref: auto, onInput: (e) => auto(e.target), value: x.obs || '', placeholder: 'Qué debe hacer el asegurado', onChange: (e) => k.setItem('garantias', id, { obs: e.target.value }) })),
@@ -64,8 +64,7 @@
           h('div', { className: 'cg-vence' }, falta ? h('span', { className: 'cg-err' }, 'Falta el plazo') : 'vence ' + corto(d))),
         h('td', { className: 'cg-pr' }, C.prioridad(x)),
         h('td', null, badge(x.estado || 'Pendiente', TONO_EST[x.estado || 'Pendiente'], 'e')),
-        h('td', { className: 'cg-mas' }, h('div', { style: { position: 'relative' } }, h('button', { type: 'button', className: 'cg-dots', 'aria-haspopup': 'menu', 'aria-expanded': menu === id ? 'true' : 'false', 'aria-label': 'Más acciones de ' + x.desc, onClick: () => k.setState({ cgMenu: menu === id ? null : id }) }, '⋯'),
-          menu === id ? h('div', { role: 'menu', className: 'cg-menu' }, h('button', { type: 'button', role: 'menuitem', onClick: () => k.setState({ cgMenu: null, cgEd: { id, motivo: '' } }) }, 'Quitar con motivo'), h('button', { type: 'button', role: 'menuitem', onClick: () => k.setState({ cgMenu: null, cgHist: hist === id ? null : id }) }, hist === id ? 'Ocultar historial' : 'Ver historial')) : null))));
+        h('td', { className: 'cg-mas' }, window.SiriusMenuFila ? h(window.SiriusMenuFila.Boton, { claseBoton: 'cg-dots', etiqueta: 'Más acciones de ' + x.desc, items: () => [{ id: 'quitar', label: 'Quitar con motivo' }, { id: 'hist', label: hist === id ? 'Ocultar historial' : 'Ver historial' }], onElegir: (a) => { if (a === 'quitar') k.setState({ cgEd: { id, motivo: '' } }); else k.setState({ cgHist: hist === id ? null : id }); } }) : null)));
       if (ed.id === id) filas.push(h('tr', { key: id + '-q', className: 'cg-qrow' }, h('td', null), h('td', { colSpan: 6 }, h('div', { className: 'cg-qbox' }, h('label', { htmlFor: 'cg-mot-' + id, className: 'cg-lbl' }, 'Motivo para quitar «' + x.desc + '»'),
         h('input', { id: 'cg-mot-' + id, className: 'cg-in', value: ed.motivo, autoFocus: true, placeholder: 'Ej. ya existe, verificada en las fotos 12 y 13', onChange: (e) => k.setState({ cgEd: { id, motivo: e.target.value, tried: false } }), 'aria-invalid': ed.tried && String(ed.motivo).trim().length < 3 ? 'true' : undefined }),
         ed.tried && String(ed.motivo).trim().length < 3 ? h('span', { role: 'alert', className: 'cg-err' }, 'Escribe por qué se quita.') : null,
@@ -163,8 +162,6 @@
 .cg-vence{font-size:12px;color:var(--text-muted);margin-top:4px;white-space:nowrap}.cg-pr{white-space:nowrap}
 .cg-mas{text-align:right}.cg-dots{width:30px;height:30px;border:none;border-radius:999px;background:transparent;cursor:pointer;font-size:18px;line-height:1;color:var(--text-body)}
 .cg-dots:hover{background:var(--table-row-hover)}.cg-dots:focus-visible{outline:2px solid var(--color-brand)}
-.cg-menu{position:absolute;right:0;top:32px;z-index:30;display:flex;flex-direction:column;min-width:170px;padding:6px 0;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);box-shadow:var(--shadow-md)}
-.cg-menu button{border:none;background:transparent;padding:8px 14px;text-align:left;font:inherit;font-size:14px;color:var(--text-strong);cursor:pointer}.cg-menu button:hover,.cg-menu button:focus-visible{background:var(--table-row-hover);outline:none}
 .cg-quitada td{background:var(--surface-subtle)}.cg-tach{text-decoration:line-through;color:var(--text-muted)}.cg-qmot{font-size:13px;line-height:1.4}
 .cg-qbox{display:flex;flex-direction:column;gap:6px;padding:4px 0}.cg-lbl{font-size:13px;font-weight:700;color:var(--text-strong)}
 .cg-in{height:38px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);font:inherit;font-size:14px;min-width:0;flex:1}

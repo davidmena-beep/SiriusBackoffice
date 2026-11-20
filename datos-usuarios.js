@@ -1,4 +1,6 @@
-// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v2.0 · provisional · etapa C2-19 · 11/11/2026)
+// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v2.1 · provisional · etapa R-3a · 19/11/2026)
+// v2.1 (etapa R-3a · DEC-262): acción «Gestionar la red de inspectores» (grupo «Red de inspectores»: Administrador y Coordinador de inspecciones, Editar);
+//       el rol «Gestor de inspecciones» está pendiente de definir.
 // v2.0 (etapa C2-19 · DEC-198): acción «Ver los controles y confirmar que se vieron» (Administrador edita; inspector y Control de calidad, lo propio);
 //       «Calificar nivel 1» incluye revisar los controles del caso: Control de calidad e inspector ya no los marcan.
 // v1.9 (etapa C2-5): el Administrador puede todas las acciones (Liquidar honorarios y Aprobar cambios de cuenta bancaria en Aprobar).
@@ -70,6 +72,7 @@
       ['Coordinación', 'Reaperturar caso cancelado', 'E', 'E', '', '', '', '', '', '', ''],
       ['Coordinación', 'Ver visitas', 'V', 'V', 'V', 'P', 'V', 'V', '', '', ''],
       ['Agenda', 'Ver agenda', 'V', 'V', 'E', 'P', 'V', 'V', '', '', ''],
+      ['Red de inspectores', 'Gestionar la red de inspectores', 'E', '', 'E', '', '', '', '', '', ''], // R-3a · DEC-262: menú «Red de inspectores» (cobertura, operación, jornada y bloqueos). El rol «Gestor de inspecciones» está pendiente de definir.
       ['Informe', 'Registrar informe', 'E', '', '', 'P', 'P', '', '', '', ''],
       ['Informe', 'Determinar asegurabilidad desde el informe', '', '', '', 'P', '', '', '', '', ''],
       ['Informe', 'Completar el informe', 'E', '', '', 'P', 'P', '', '', '', 'P'], // etapa C2-3 · DEC-180 · P-6e-2 · DEC-207: el Ejecutivo de inspecciones completa (y califica) los de autoinspección con responsable Interno
@@ -108,6 +111,7 @@
       'Reaperturar caso cancelado': ['E', 'Solo motivos de coordinación y hasta 30 días'],
       'Ver visitas': ['VP', 'Lo propio: las visitas que le toca hacer'],
       'Ver agenda': ['VPE', 'Editar: mover visitas en la agenda'],
+      'Gestionar la red de inspectores': ['E', 'Cobertura, operación, jornada y bloqueos de cada inspector, con motivo. Pendiente: el rol «Gestor de inspecciones» está por definir'],
       'Registrar informe': ['PE', 'Lo propio: los informes de sus visitas'],
       'Determinar asegurabilidad desde el informe': ['P', 'Solo con la facultad de la ficha del inspector'],
       'Completar el informe': ['PE', 'Lo propio: el inspector, los de sus visitas si le toca completarlos; Control de calidad, los de los inspectores de su agencia; el Ejecutivo de inspecciones, los de autoinspección con responsable Interno (completa y califica en un paso)'],

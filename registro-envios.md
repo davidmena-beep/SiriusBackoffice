@@ -4,6 +4,235 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa U-6
+
+Publiqué la versión 342 de SIRIUS (los archivos subieron en la 341; esta versión cierra el registro con el tiempo de la etapa). El menú «…» de fila ya no se recorta: se dibuja en una capa flotante sobre la página, con un solo componente (`sirius-menu-fila.js`) que usan todas las tablas. Tres decisiones mías están en **Diferencias**: Agencias y Roles hoy no tienen menú «…», las acciones bloqueadas muestran su motivo debajo y la escena usa los datos de ejemplo.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| Usuarios › Usuarios (`Lista`, la de la captura) | El menú se abría dentro del contenedor con desplazamiento de la tabla (`overflow:auto`) y se recortaba. Ahora usa el componente compartido |
+| DataTable (Campos personalizados, Flujo, Notificaciones, Catálogos › Grupos, Formularios, Motores de IA, Documentos base, Conexiones, Documento PDF y las demás) | Ya era `position:fixed`, pero con su propia copia de la posición (estimaba la altura) y del teclado. Pasa al componente compartido |
+| Calificación › tabla de garantías | Tenía otro menú absoluto dentro de la tabla, que ni cerraba con Esc. Pasa al componente compartido |
+| Agencias y Roles | No tienen menú «…» hoy (Agencias: Ver ficha, Editar y Subir logo como botones; Roles es un rol a la vez). Si una acción suya pasa a `menu: true`, usa el componente sin tocar nada |
+| Menús de cabecera (Más acciones del caso, del informe, del catálogo y del motor) | No son de fila: sin cambios |
+| Back-office | Carga `sirius-menu-fila.js` y registra la escena `usmenuabajo` |
+| `sirius-conexion.js` | Sin cambios: 70 bytes |
+
+**Qué cambió**
+- **Componente único (`sirius-menu-fila.js`):** `SiriusMenuFila.abrir(...)` (sin React, lo usa DataTable) y `SiriusMenuFila.Boton` (React, lo usan Usuarios y Garantías). El menú vive en `document.body`, con `position:fixed` y z-index 1400, por encima de la tabla y de su desplazamiento.
+- **Posición desde el botón:** abre hacia abajo si cabe; si no, hacia arriba; si no cabe en ninguno, hacia donde haya más espacio, con desplazamiento dentro del menú. Queda alineado al borde derecho del botón y a 8 px del borde de la ventana. El ancho va de 220 a 340 px.
+- **Foco y teclado:** al abrir, el foco va a la primera acción disponible. ↑ ↓ (circulares), Inicio y Fin recorren. Esc y Tab cierran y devuelven el foco al botón. Clic fuera, desplazar la página y cambiar el tamaño cierran sin mover el foco. El clic del botón alterna y solo hay un menú abierto.
+- **Acciones bloqueadas:** llevan su motivo (visible debajo y en `title`), quedan `aria-disabled` y no se ejecutan.
+- **Código quitado:** la plantilla y la posición del menú en DataTable, el estado y el CSS `.uf-menu` de Usuarios, y `cgMenu` y `.cg-menu` de Garantías.
+- **Escena nueva `usmenuabajo`:** Usuarios con el filtro «ga» (tres filas) y el menú de la última fila abierto.
+
+**Prueba cruzada**
+
+| Comprobación | Resultado |
+|---|---|
+| Acciones de cada menú, antes y después, en 13 pantallas con «…» (todas las filas) | 117 menús y 283 acciones idénticas (texto, bloqueada y motivo). Única diferencia: los 9 menús de Garantías ahora tienen nombre accesible («Más acciones de …»); antes no |
+| Cálculo de la posición con 5 casos (cabe abajo, solo cabe arriba, no cabe en ninguno, borde izquierdo, borde derecho) | Los 5 con el resultado esperado |
+| ¿Queda otra implementación de menú de fila? | No: los únicos `role="menu"` restantes son los 4 menús de cabecera |
+| Texto visible antes y después en 15 pantallas (1280 × 720) y 8 (1920 × 1080) | 15 de 15 y 8 de 8 iguales |
+
+**Verificado**
+- **`usmenuabajo`, a 1280 × 720 y a 1920 × 1080:** el menú completo dentro de la ventana, sin desplazamiento lateral y con el foco en «Abrir ficha».
+- **Hacia arriba:** con la ventana a 560 y a 480 px de alto, el menú de la última fila abre hacia arriba y se ve completo.
+- **Menú de la primera fila (Usuarios), en ambos tamaños:** 23 de 23 comprobaciones.
+  - Posición: completo en la ventana.
+  - Teclado: flechas, Inicio, Fin, Esc, Tab y el foco devuelto al botón.
+  - Cierre y apertura: clic fuera, el botón que alterna, un solo menú abierto, desplazar la página y «Abrir ficha» que abre la ficha.
+- **Otras tablas:** el primer y el último «…» de 13 pantallas, a 1280 × 720 y a 1920 × 1080, 26 de 26 en cada tamaño. Cada uno se ve completo y visible de verdad (comprobado con `elementFromPoint`), `aria-expanded` correcto, Esc cierra y el foco vuelve.
+- **Acciones:** 9 de 9. En Garantías, «Quitar con motivo» abre el cuadro y «Ver historial» cambia a «Ocultar historial». En Flujo, «Ver casos» cierra el menú y actúa. En Usuarios, una acción bloqueada no cierra ni ejecuta, y su motivo se ve.
+- **Sin errores de consola** en ninguna de las pantallas probadas. `sirius-conexion.js` en 70 bytes.
+
+**No verificado**
+- **Otros navegadores y lector de pantalla:** probé en Chromium; no en Safari ni Firefox, y los roles (`menu`, `menuitem`, `aria-expanded`, `aria-disabled`) los comprobé por atributo, no con un lector.
+- **Pantallas táctiles:** arrastrar la página cierra el menú (igual que desplazar con la rueda); no lo probé con un dedo.
+- **Datos de la base real:** la escena usa los datos de ejemplo. No probé con la base real de Supabase.
+
+**Diferencias**
+- **Datos de la escena:** con el filtro «ga» salen Gabriela Toapanta, Carolina Vega y Sofía Arteaga (datos de ejemplo), no Gabriela Suárez ni Gabriela Torres de la captura (esos son de la base real). Son tres filas y el menú de la última queda abierto, como se pidió.
+- **Agencias y Roles:** hoy no tienen menú «…», así que no hay nada que cambiarles. Quedan cubiertos porque usan DataTable.
+- **Motivo de la acción bloqueada:** ahora se ve debajo de la acción, también en Usuarios y Garantías (antes solo en el tooltip). Por eso el menú puede llegar a 340 px de ancho.
+- **Garantías:** el menú ahora cierra con Esc y con clic fuera, y tiene nombre accesible.
+- **Desplazar la página cierra el menú**, en lugar de dejarlo flotando lejos del botón.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `usmenuabajo` | Usuarios con el filtro «ga» (tres filas) y el menú de la última fila abierto: Abrir ficha, Volver a invitar, Cambiar estado… e Inactivar…, completo sobre la página |
+
+También abrí `usrlista` (menú de la primera fila), `usrficha`, `roles`, `cxagenciasinspectores`, `cpers`, `flujo`, `notifreglas`, `grupos`, `form`, `motoresvl`, `iadocs`, `iacnx`, `dpdocs`, `calgarrg`, `calgarnivel2`, `usuarios`, `agendaok`, `zonas` y `catalogos`.
+
+La respuesta quedó en `project/registro-envios.md` y el inventario en `project/inventario-proyecto.md` (archivo nuevo, filas de los archivos tocados, componente compartido, escena y una sección nueva).
+
+Tiempo de la etapa: inicio 20/11/2026 00:21 · fin 20/11/2026 00:57 · 36 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa R-3a
+
+Publiqué la versión 340 de SIRIUS (los archivos subieron en la 339; esta versión cierra el registro con el tiempo de la etapa). Ya existe el menú «Red de inspectores» (después de Agenda) con la vista «Por inspector», según la maqueta aprobada (DEC-262). Lo ven el Administrador y el Coordinador de inspecciones, que tienen la acción nueva «Gestionar la red de inspectores». La cobertura, la operación, la jornada y los bloqueos de cada inspector se leen y se guardan solo ahí: con la conexión, en `SIRIUS_CONEXION.red` y `redAccion`; sin ella, en `datos-red.js`. Por zona y Por sucursal muestran «Llega en la próxima etapa».
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Menú lateral | Agenda, Calificación… | «Red de inspectores» (ícono de ubicación) después de Agenda, solo con «Gestionar la red de inspectores». El Ejecutivo comercial y los demás roles no lo ven; el menú del Inspector y del Control de calidad no cambia |
+| Matriz de permisos (`datos-usuarios.js`, `sirius-usuarios.js`) | Sin la acción | Grupo «Red de inspectores» con «Gestionar la red de inspectores» (Administrador y Coordinador, Editar) y la nota «el rol Gestor de inspecciones está pendiente de definir». Se ve en Roles y permisos |
+| `SiriusCobertura.cubre` (Coordinar visita, sugerencias por cobertura, ofertas, portal) | Un modo por inspector (todas, sucursales o ciudad y zonas) | Si el usuario o inspector trae `coberturaFilas`, decide con las filas vigentes en el orden de la base. **Sin `coberturaFilas`, igual que antes** |
+| `SiriusCobertura.resumen` / `corto` | Texto del modo único | Con filas, enumera todas (cobertura mixta). Sin filas, igual |
+| Usuarios de la base (`sirius-usuarios-base.js`) | `norm` descartaba campos desconocidos | Conserva `coberturaFilas` y `coberturaMixta` para que `cubre` los use |
+| Usuarios › ficha | — | Sin cambios visibles. `verIr` abre la ficha también sin la conexión cuando se llega desde «Ver identidad y acceso en Usuarios» |
+| Ciudades y zonas | — | Sin cambios; la Red lee sus nombres y zonas activas |
+| Agenda | — | Sin cambios (R-4). Sus bloqueos se ven en la Red como «Viene de la Agenda» |
+| Conexión simulada (`cxSimBoot`) | Sin `redAccion` | Trae `redAccion` (escena `redcx`; `?cxok=0` responde `{ ok: false }`) |
+| `sirius-conexion.js` | Línea mínima | Sin cambios (70 bytes) |
+
+**Qué cambió**
+- **Menú y permisos:** `pinIcon` y el ítem `red` en `navItems`; `SU.visible(rol, 'red')` lee el grupo «Red de inspectores» de la matriz; `isRed` monta `SiriusRedInspectores`.
+- **`sirius-red.js` (nuevo):**
+  - `SiriusRed` lee la red de la conexión o de la demostración y envía las acciones a `redAccion`, o a la sesión sin la conexión, siempre con motivo de 10 caracteres o más.
+  - `SiriusRedInspectores` arma la cabecera, la frase de propósito y las tres pestañas.
+  - Por inspector tiene lista con buscador (nombre, agencia o ciudad), filtros «Todos», «Sin cobertura» y «Solo red» (los que reciben ofertas de la red) y etiqueta «Sin cobertura».
+  - La ficha muestra tipo, agencia, estado, recibe ofertas, Cobertura (tabla con nivel, ámbito, vigencia, quién asignó y motivo; las no vigentes atenuadas con «Desde dd/mm» o «Venció el dd/mm»), Operación, Jornada con el aviso de única fuente, Bloqueos e Historial.
+  - Diálogos «Agregar cobertura» (nivel, sucursal, ciudad o zona activa, desde, hasta y motivo), «Quitar cobertura», «Agregar bloqueo» y «Quitar bloqueo».
+  - Barra con «Motivo del cambio (obligatorio)» y «Guardar cambios» solo para la operación y la jornada; queda fija abajo mientras hay cambios sin guardar.
+  - Las filas de la ficha y los bloqueos de la Agenda dicen «Viene de la ficha» y «Viene de la Agenda», sin «Quitar».
+- **`datos-red.js` (nuevo):** `SIRIUS_RED` con la forma del contrato y los 10 inspectores del ejemplo.
+  - Sofía Arteaga tiene cobertura mixta: sucursal Quito y Riobamba, ciudad completa.
+  - Cristian Vaca y Pedro Lasso no tienen cobertura; Diana Cárdenas tiene la zona Centro desde el 01/11 (aún no rige) y Renata Cobo una fila vencida.
+  - Paola Vinueza tiene una fila «Viene de la ficha» y los bloqueos de la Agenda.
+  - `aplicar()` es la base simulada de `redAccion`, con sus validaciones y mensajes (motivo, sucursal, ciudad, zona activa, fechas, repetida vigente, filas de la ficha y bloqueos de la Agenda).
+- **`sirius-cobertura.js` (v1.1):** `filasDe`, `filaVigente`, `cubreFilas` (todas → ciudad → zona activa → sucursal; sin zonas activas cuenta como la ciudad completa; sin zona conocida, «parcial» solo con `{ parcial: true }`), `resumenFilas`, `cortoFilas` y `ambitoTxt`.
+- **Escenas:** 6 nuevas con el área «Red de inspectores» (781 en el catálogo; `KNOWN_ESC` 738).
+
+**Prueba cruzada** (lo que muestra Por inspector = `SiriusCobertura.cubre` = la regla de la base)
+
+| Comprobación | Resultado |
+|---|---|
+| 10 inspectores × 48 lugares (Quito por las zonas Norte, Centro, Sur y Valles, Riobamba, Guayaquil, Ambato y Cuenca × 6 sucursales): nivel en Por inspector, en `SiriusCobertura.cubre({ coberturaFilas })` y en una implementación independiente de la regla de la base | 480 de 480 iguales, sin conexión y con la conexión simulada |
+| «Sin cobertura» de la lista contra las filas vigentes | Cristian Vaca, Pedro Lasso y Renata Cobo en los tres |
+| Resumen de Sofía Arteaga en la ficha y en `SiriusCobertura.resumen` con la conexión temporal | «Atiende los casos de la sucursal Quito, estén donde estén, y cualquier lugar de Riobamba.» en ambos |
+| Sofía Arteaga: sucursal Quito en Guayaquil / Riobamba con sucursal Ambato / Ambato / Quito Norte con sucursal Guayaquil | sucursal / ciudad / no cubre / no cubre |
+| Zona sin zona conocida | `nivel: null` con «Falta la zona del lugar…»; «parcial» solo con `{ parcial: true }` |
+| Inspector de la conexión sin `coberturaFilas` (Jorge Pazmiño) | Igual que antes: «Atiende la sucursal Ambato» |
+
+**Verificado**
+- **Escenas a 1280×720 y 1920×1080, sin desplazamiento lateral:** `red`, `redsincob`, `redasignar`, `redoperacion`, `redsinpermiso` y `redcx`.
+- **Sin la conexión:**
+  - Agregar una zona sin motivo dice «Escribe el motivo (mínimo 10 caracteres).»; con motivo agrega la fila y el resumen la enumera.
+  - Repetirla dice «Sofía Arteaga ya tiene esa cobertura vigente.».
+  - Quitar, agregar un bloqueo y cambiar la capacidad funcionan; sin motivo la barra lo pide y con motivo queda en el historial «Capacidad por día: 6 → 5».
+  - Los filtros (3 sin cobertura, 3 de la red) y la búsqueda por ciudad y por agencia responden bien.
+- **Con la conexión simulada:** cada acción llega a `redAccion` con la forma del contrato y la red de la conexión cambia; la fila de la ficha no tiene «Quitar». Con `?cxok=0` aparece el error de la base y nada cambia.
+- **Copia aparte con una conexión temporal** (activa, no simulada):
+  - La pantalla lee `SIRIUS_CONEXION.red`, sin el aviso de demostración, y el bloqueo llega a `redAccion`.
+  - Con `red: null` dice «La base todavía no tiene la red de inspectores».
+  - `SiriusCobertura.cubre('Sofía Arteaga', …)` usa las `coberturaFilas` de la conexión.
+- **«Ver identidad y acceso en Usuarios»:** como Administrador abre la ficha de Sofía Arteaga.
+- **Regresión, versión anterior contra la nueva**, texto visible sin el menú lateral:
+  - A 1280×720, 27 de 27 iguales: Coordinación con sugerencias por cobertura (`lugarbuscar`, `lugarlejos`, `lugarfuera`, `lugarrg`, `cxlugar`, `cxcoordins`, `cxcoordmismo`, `coordoferta`, `coordagendada`, `cxvisitacliente`), Usuarios (`usrficha`, `usrlista`, `cobertura`, `coberturalectura`, `cxusrcobertura`, `coberturazonainactiva`, `usrsinguardar`), Agenda (`agendaok`, `agendamover`, `agendadia`, `cxagenda`, `cxagendafiltros`) y Ciudades y zonas (`zonas`, `zonasagregar`, `zonaslectura`, `ciudadesbuscar`), más `usrroles`. Las escenas de Usuarios se repitieron después de tocar `verIr`.
+  - A 1920×1080, 7 de 7 iguales.
+- **Sintaxis y conexión:** revisión de sintaxis de todos los archivos tocados; `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- **Base real de Supabase:** la red, `redAccion` y sus mensajes reales. La base simulada usa mensajes propios con la misma idea.
+- **Refresco tras una acción con la base real:** depende de que la conexión vuelva a leer `red` (como con `suscribir`).
+- **Formato de fechas y horas:** en el navegador de prueba (inglés) los campos se vieron como mm/dd/aaaa y AM/PM; en un navegador en español salen dd/mm/aaaa y 24 h.
+
+**Diferencias con la maqueta y el pedido**
+- **Inspectora mixta:** es Sofía Arteaga, una inspectora del ejemplo, y no «Gabriela Suárez», para que el enlace a Usuarios abra una ficha que existe. La lista tiene los 10 inspectores del ejemplo y no 12.
+- **«Ver identidad y acceso en Usuarios»:** solo lo ve quien gestiona usuarios (Administrador). El Coordinador no puede abrir fichas de usuario, así que ve el texto «Identidad y acceso: en Usuarios y roles (los gestiona el Administrador)».
+- **«Solo red»:** lo interpreté como los inspectores que reciben ofertas de la red (`recibeOfertas: 'red'`).
+- **Coordinación sin la conexión:** sigue con la cobertura de siempre; la demostración de la red no la alimenta, para no cambiar Coordinación antes de R-4. Por eso Cristian Vaca sale «Sin cobertura» en la Red y en Coordinación cubre Quito como antes.
+- **Barra de «Guardar cambios»:** se queda al final de la ficha cuando no hay cambios y queda fija abajo solo mientras hay cambios sin guardar.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `red` | Coordinador · Por inspector con Sofía Arteaga (cobertura mixta) |
+| `redsincob` | Filtro «Sin cobertura» (3) con Cristian Vaca |
+| `redasignar` | «Agregar cobertura» abierto con nivel zona y Quito |
+| `redoperacion` | Capacidad 6 → 5 y jornada hasta 17:00, con el motivo pendiente |
+| `redsinpermiso` | Ejecutivo comercial: el menú no aparece |
+| `redcx` | Conexión simulada con la fila «Viene de la ficha» |
+
+También abrí `roles` (Roles y permisos muestra la acción nueva con la nota del rol pendiente), `lugarbuscar`, `usrficha`, `agendaok` y `zonas`, sin cambios.
+
+Registrado en `project/registro-envios.md`; `project/inventario-proyecto.md` con las filas de los archivos tocados y los dos nuevos, las 6 escenas y la sección «Red de inspectores › Por inspector (etapa R-3a · DEC-262)».
+
+Tiempo de la etapa: inicio 19/11/2026 23:19 · fin 19/11/2026 23:49 · 30 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa G-3c
+
+Publiqué la versión 336 de SIRIUS (los archivos subieron en la 335 y esta versión cierra el registro con el tiempo de la etapa). Con la conexión, Coordinación ya lee de `visitasBase[]` si la visita la agendó el cliente (DEC-260): la tarjeta muestra «Agendada por el cliente · agenda fija» o «· red», «Origen: cliente (GPS, mapa, dirección buscada o confirmó la de la solicitud)» y, si la oferta la pidió el cliente, «Oferta a inspectores (pedida por el cliente)». Las acciones, el orden de la tarjeta y lo que se ve sin la conexión no cambiaron.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Antes | Ahora |
+|---|---|---|
+| Coordinación › tarjeta de la visita (etiqueta «Agendada por el cliente · …») | Solo la encendía el portal simulado (`porCliente`, `origenCita`); con la conexión nunca salía | Sale de `visitasBase[].origen`: `'Cliente · agenda fija'` → «· agenda fija»; `'Cliente · red'` → «· red»; `'Coordinador'` (o vacío) → sin etiqueta. Se oculta si la visita está Cancelada, como hoy |
+| Coordinación › «Ciudad y zona» y «Origen: cliente (…)» | Con la conexión solo salía «Ciudad y zona»; «Origen» exigía `lugarCliente`, que solo ponía el portal simulado | Si la visita es del cliente y trae `lugar` (objeto con `ciudad`): `lugarCliente` → «Origen: cliente (GPS / mapa / dirección buscada / confirmó la de la solicitud)». Una visita del Coordinador con lugar no muestra «Origen» |
+| Coordinación › «Oferta a inspectores» | Siempre «Oferta a inspectores» | «Oferta a inspectores (pedida por el cliente)» si `oferta.porCliente` es `true`; si no, igual que antes |
+| Coordinación › campo «Agendada por el cliente: Desde el portal…» | Solo con el portal simulado (datos que la base no entrega: hora de agendamiento, organización, credencial) | Sin cambios para el portal; **no se agrega a las visitas de la base** (la etiqueta ya lo dice y esos datos no vienen) |
+| Coordinación › franja de resumen, acciones, orden de los campos | — | Sin cambios |
+| Agenda (`filasCx`, rejilla y detalle) | Lee `visitasBase[]` directo; no usa `porCliente` | Sin cambios (no necesitaba tocarse) |
+| Historial | Eventos de la base (`eventos`) | Sin cambios |
+| Portal del cliente simulado (G-2d) | Escribe `porCliente`, `origenCita` y `lugarCliente` en `visits` | Sin cambios |
+| Sin la conexión | Visitas de ejemplo | Sin cambios |
+| `sirius-conexion.js` | Línea mínima | Sin cambios (70 bytes) |
+
+**Qué cambió**
+- **`SIRIUS Back-office.dc.html`:** un solo conversor, `cxVisitasBase`, que arma todas las tarjetas de la base. Nueva función `cxPorCliente(vb)`: `'Cliente · agenda fija'` → `porCliente: true`, `origenCita: 'fija'`; `'Cliente · red'` → `porCliente: true`, `origenCita: 'red'`; en ambos, `lugarCliente: true` si `vb.lugar` es un objeto con `ciudad`. Cualquier otro origen no suma nada. La oferta de la tarjeta trae `porCliente` desde `visitasBase[].oferta.porCliente` (solo `true` vale). La escena nueva se registra en el enrutado de Coordinación y en `KNOWN_ESC` (732).
+- **`Coordinacion.dc.html`:** el campo «Oferta a inspectores» suma « (pedida por el cliente)» cuando `ofe.porCliente`; el campo «Agendada por el cliente: Desde el portal…» solo se agrega a las visitas que no vienen de la base. La etiqueta y «Origen» ya existían y no se tocaron.
+- **`datos-cx-coordinacion.js`:** escena nueva `cxvisitacliente` (caso 30041, conexión simulada, Coordinador): V1 «Agendada · Cliente · agenda fija» con Mauricio Endara, lugar con origen GPS en «Quito · Zona Norte»; V2 «Buscando inspector · Cliente · red» con la oferta `porCliente` a 1 inspector (Pablo Heredia) en Riobamba (dirección buscada).
+- **`datos-escenas.js`:** la escena en el catálogo (775 escenas).
+
+**Prueba cruzada** (`visitasBase[].origen`, `lugar` y `oferta.porCliente` leídos en cada lugar con la misma función)
+
+| Dato de la base | Tarjeta (etiqueta) | «Ciudad y zona» / «Origen» | «Oferta a inspectores» | Agenda | Historial |
+|---|---|---|---|---|---|
+| V1 · `Cliente · agenda fija` + lugar GPS | «Agendada por el cliente · agenda fija» | «Quito · Zona Norte» / «cliente (GPS)» | — | Igual que antes | Igual que antes |
+| V2 · `Cliente · red` + oferta `porCliente` | «Agendada por el cliente · red» | «Riobamba · Ciudad sin zonas» / «cliente (dirección buscada)» | «(pedida por el cliente): 1: Pablo Heredia» | Igual que antes | Igual que antes |
+| `Coordinador` con lugar (caso 30042 · V1) | Sin etiqueta | «Quito · Zona Norte» / sin «Origen» | — | Igual que antes | Igual que antes |
+| `Cliente · agenda fija` Cancelada (30042 · V2) | Etiqueta oculta | Sin «Origen» (no trae lugar) | — | Igual que antes | Igual que antes |
+
+**Verificado**
+- `cxvisitacliente` a 1280×720 y 1920×1080: V1 muestra «Agendada por el cliente · agenda fija», «Ciudad y zona: Quito · Zona Norte» y «Origen: cliente (GPS)»; V2 muestra «Agendada por el cliente · red» y «Oferta a inspectores (pedida por el cliente): 1: Pablo Heredia»; sin errores en la consola; las acciones de cada tarjeta son las de siempre (V1: Reagendar, Cambiar inspector, Cancelar visita; V2: Anular oferta).
+- Regresión, versión anterior contra la nueva, texto completo de la pantalla a 1280×720: 29 de 29 escenas iguales (Coordinación con visitas de la base: `cxvisitaenlace`, `cxvisitacancelar`, `cxcancelarvisitanumero`, `cxnumerocruce`, `cxcoordins`, `cxcoordmismo`, `cxvisitariesgos`, `cxlugar`, `lugarbuscar`, `lugarlejos`, `lugarfuera`, `coordoferta`, `coordofertaabierta`, `coordagendada`, `coordcancelavisitas`, `cxestadoparcial`, `cxcabecera`, `coordtabresumen`, `coordenlaceauto`, `cxestadofases`, `coordagrupar`; portal G-2d: `portallugargps`, `portallugarbuscar`, `portalsinubicar`, `portalsinhorarios`, `portalrgconfirmar`, `portalautoinsplugar`; y `portalagendado`, `portalredok`).
+- Copia de prueba con una conexión temporal (`activo: true`, sin `simulada`) con los casos 30041 y 30042: la tarjeta, «Origen» y la oferta salen igual que en la escena; la visita del Coordinador no lleva etiqueta; la cancelada del cliente la oculta. Pestañas Historial y Agenda de ambos casos, versión anterior contra nueva, a 1280×720 y 1920×1080: iguales.
+- Revisión de sintaxis de las dos pantallas y de `datos-cx-coordinacion.js`; `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+- Con la base real de Supabase: la prueba usó una conexión de prueba con la forma del contrato. Que la base entregue `origen`, `lugar` y `oferta.porCliente` como dice el contrato (SQL 46) se comprueba al conectarla.
+
+**Diferencias**
+- El campo «Agendada por el cliente: Desde el portal el …» **no** aparece en las visitas de la base: sus datos (hora de agendamiento, organización, credencial) no vienen en `visitasBase[]`. La etiqueta de arriba ya lo indica. Con el portal simulado sigue igual.
+- Una visita del cliente sin `lugar` muestra la etiqueta, pero no «Origen».
+- Una visita con `oferta` y estado «Buscando inspector» se muestra «Oferta enviada», como desde G-2c2.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `cxvisitacliente` | Caso 30041 (Coordinador, conexión simulada): V1 agendada por el cliente en la agenda fija, con GPS en Quito · Zona Norte; V2 en la red con la oferta pedida por el cliente a 1 inspector de Riobamba |
+
+También abrí `cxvisitaenlace`, `cxnumerocruce`, `coordoferta`, `portallugargps` y `portalagendado`, sin cambios.
+
+Registrado en `project/registro-envios.md`; `project/inventario-proyecto.md` con las filas de los cuatro archivos, la escena y la sección «Visita agendada por el cliente con la conexión (etapa G-3c)».
+
+Tiempo de la etapa: inicio 19/11/2026 10:48 · fin 19/11/2026 11:02 · 14 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa N-2e
 
 Publiqué la versión 331 de SIRIUS. Los bloques Banner y Pie del editor de plantillas, y el logo de la configuración de envío, ahora suben su imagen al almacén público «correo» de Supabase (`subirImagenCorreo`). La plantilla guarda la dirección completa y la vista previa, «Ver correo» y la prueba enviada muestran la misma imagen.

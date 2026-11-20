@@ -29,6 +29,13 @@
   const pres = (n, estado, ini, fin, ins, extra) => Object.assign({ n: n, modalidad: 'Presencial', estado: estado, inicio: ini, fin: fin, agendadoEn: '2026-10-17T16:30', origen: 'Coordinador', inspector: ins, enlace: null, enlaces: [] }, extra || {});
   visitas.cancelarnumero = [pres(1, 'Agendada', '2026-10-19T09:00', '2026-10-19T09:45', 'Mauricio Endara'), pres(2, 'Cancelada', '2026-10-19T14:00', '2026-10-19T14:45', 'Marco Tapia', { motivoCancelacion: 'El cliente cambió la fecha' }),
     pres(3, 'Agendada', '2026-10-20T10:00', '2026-10-20T10:45', 'Diana Cárdenas'), pres(4, 'Agendada', '2026-10-21T15:00', '2026-10-21T15:45', 'Cristian Vaca')];
+  // G-3c · DEC-260: caso 30041 con dos visitas pedidas por el cliente desde el portal. V1 «Agendada» en la agenda fija (lugar con GPS en Quito · Zona Norte); V2 «Buscando inspector» en la red, con la oferta
+  // pedida por el cliente a 1 inspector de Riobamba (visitasBase[].origen 'Cliente · agenda fija' | 'Cliente · red'; visitasBase[].oferta.porCliente).
+  visitas.cliente = [pres(1, 'Agendada', '2026-10-20T09:00', '2026-10-20T09:45', 'Mauricio Endara', { origen: 'Cliente · agenda fija', agendadoEn: '2026-10-18T19:42', direccion: 'Av. Amazonas N36-152 y Naciones Unidas, Quito',
+      lugar: { provincia: '17', ciudad: '1701', ciudadNombre: 'Quito', direccion: 'Av. Amazonas N36-152 y Naciones Unidas, Quito', referencia: 'Edificio Torre Azul, piso 3', punto: [-0.1765, -78.4845], zona: { id: 'z1701-1', nombre: 'Norte' }, estadoZona: 'Calculada', lejos: false, origen: 'GPS', texto: 'Quito · Zona Norte' } }),
+    pres(2, 'Buscando inspector', null, null, '', { origen: 'Cliente · red', agendadoEn: '2026-10-18T19:50', direccion: 'Av. Daniel León Borja y Juan de Velasco, Riobamba',
+      lugar: { provincia: '06', ciudad: '0601', ciudadNombre: 'Riobamba', direccion: 'Av. Daniel León Borja y Juan de Velasco, Riobamba', referencia: 'Frente al parque Sucre', punto: [-1.6636, -78.6546], zona: null, estadoZona: 'Sin zonas', lejos: false, origen: 'Búsqueda', texto: 'Riobamba · Ciudad sin zonas' },
+      oferta: { inspectores: ['Pablo Heredia'], desde: '2026-10-21', hasta: '2026-10-23', minutos: 45, vigenciaHoras: 2, nota: '', vence: '2026-10-18T21:50', porCliente: true } })];
   const sim = (id, vis, extra) => { const c = caso(id, Object.assign({ visitasBase: JSON.parse(JSON.stringify(vis)) }, extra || {}));
     const eventos = [
       { hora: '2026-10-17T16:05', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' },
@@ -37,7 +44,7 @@
   window.SIRIUS_CX_COORD = {
     version: '1.0',
     // escena → [caso, conjunto de visitas, pestaña del caso (1 = Coordinación)]
-    cxEscenas: { cxvisitaenlace: ['30031', 'autoinspeccion'], cxvisitacancelar: ['30031', 'autoinspeccion'], cxcancelarvisitanumero: ['50012', 'cancelarnumero'], cxnumerocruce: ['30007', 'autoagendamiento'] },
+    cxEscenas: { cxvisitaenlace: ['30031', 'autoinspeccion'], cxvisitacancelar: ['30031', 'autoinspeccion'], cxcancelarvisitanumero: ['50012', 'cancelarnumero'], cxnumerocruce: ['30007', 'autoagendamiento'], cxvisitacliente: ['30041', 'cliente'] },
     cxSim: function (escena) { const e = this.cxEscenas[escena]; if (!e) return null; let vv = visitas[e[1]], desfase = null;
       if (escena === 'cxcancelarvisitanumero') { const f = (function () { try { return new URLSearchParams(location.search).get('fvisita') || ''; } catch (er) { return ''; } })(); window.__sirCancelUltima = null;
         if (f === '2') { vv = JSON.parse(JSON.stringify(vv)); vv[1] = Object.assign(vv[1], { estado: 'Agendada', inicio: '2026-10-19T14:00', fin: '2026-10-19T14:45', inspector: 'Marco Tapia', motivoCancelacion: undefined }); desfase = { n: 2 }; /* la pantalla aún la ve «Agendada»; en la base otra persona ya la canceló */ } }

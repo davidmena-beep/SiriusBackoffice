@@ -65,7 +65,7 @@
   };
   SU.permiso = function (rol, accion) { var u = U(); return u ? u.permiso(rol, accion) : ''; };
   // Módulos que se ven por el grupo de la matriz (etapa 9): basta un permiso no vacío en cualquiera de sus acciones.
-  var GRUPO_MOD = { agenda: 'Agenda', calificacion: 'Calificación', garantias: 'Garantías', liquidaciones: 'Liquidaciones', reportes: 'Reportes' };
+  var GRUPO_MOD = { red: 'Red de inspectores' /* R-3a · DEC-262 */, agenda: 'Agenda', calificacion: 'Calificación', garantias: 'Garantías', liquidaciones: 'Liquidaciones', reportes: 'Reportes' };
   SU.accionesDe = function (grupo) { if (GRUPO_MOD[grupo]) return SU.filas().filter(function (a) { return a[0] === GRUPO_MOD[grupo]; }).map(function (a) { return a[1]; }); return A_[grupo] || []; };
   SU.puede = function (rol, grupo) { return SU.accionesDe(grupo).some(function (a) { return SU.permiso(rol, a) !== ''; }); };
   var ADMIN_CFG = ['catalogos', 'formularios', 'campos', 'niveles', 'flujo', 'modelos', 'garpol', 'motores', 'notificaciones'];
@@ -74,6 +74,7 @@
     if (mod === 'solicitudes') return child === 'nueva' ? SU.puede(rol, 'nueva') : child === 'bandeja' ? SU.puede(rol, 'bandeja') : (SU.puede(rol, 'bandeja') || SU.puede(rol, 'nueva'));
     if (mod === 'informes') return SU.puede(rol, 'informes'); // etapa C2-3
     if (mod === 'agenda') return SU.puede(rol, 'agenda');
+    if (mod === 'red') return SU.puede(rol, 'red'); // R-3a · DEC-262: «Gestionar la red de inspectores»
     if (mod === 'calificacion') return SU.puede(rol, 'calificacion');
     if (mod === 'garantias') return SU.puede(rol, 'garantias');
     if (mod === 'liquidaciones') return SU.puede(rol, 'liquidaciones');
@@ -95,7 +96,7 @@
     SU._nc.set(items, { k: key, v: out }); return out;
   };
   SU.moduloNombres = function (rol) {
-    var L = [['Solicitudes › Bandeja', 'solicitudes', 'bandeja'], ['Solicitudes › Nueva solicitud', 'solicitudes', 'nueva'], ['Agenda', 'agenda'], ['Calificación', 'calificacion'], ['Garantías', 'garantias'], ['Liquidaciones', 'liquidaciones'], ['Reportes', 'reportes'], ['Administración › Usuarios y roles', 'administracion', 'usuarios'], ['Administración › Conflictos', 'administracion', 'conflictos'], ['Administración › Configuración general', 'administracion', 'configuracion'], ['Administración › Configuración (formularios, niveles, flujo, catálogos…)', 'administracion', 'catalogos']];
+    var L = [['Solicitudes › Bandeja', 'solicitudes', 'bandeja'], ['Solicitudes › Nueva solicitud', 'solicitudes', 'nueva'], ['Agenda', 'agenda'], ['Red de inspectores', 'red'], ['Calificación', 'calificacion'], ['Garantías', 'garantias'], ['Liquidaciones', 'liquidaciones'], ['Reportes', 'reportes'], ['Administración › Usuarios y roles', 'administracion', 'usuarios'], ['Administración › Conflictos', 'administracion', 'conflictos'], ['Administración › Configuración general', 'administracion', 'configuracion'], ['Administración › Configuración (formularios, niveles, flujo, catálogos…)', 'administracion', 'catalogos']];
     return L.filter(function (x) { return SU.visible(rol, x[1], x[2] || null); }).map(function (x) { return x[0]; });
   };
   SU.filas = function () { return (U() || { acciones: [] }).acciones; };
