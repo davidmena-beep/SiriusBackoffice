@@ -7,7 +7,7 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxSim) return;
   const q = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
   const clon = (x) => JSON.parse(JSON.stringify(x));
-  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror', 'calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg', 'calevidplegable']; // P-6g-2b · DEC-250: las 5 últimas; P-6g-2c: calevidplegable
+  const ESC = ['cxgarantiaspropuestas', 'cxgarantiacumplir', 'cxgarantiaampliacion', 'cxgarantiacierre', 'cxnotificaciones', 'cxgarantiaserror', 'calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg', 'calevidplegable', 'garsincaso']; // G-3d: garsincaso · P-6g-2b · DEC-250: las 5 últimas; P-6g-2c: calevidplegable
   const G250 = ['calgarnueva', 'calgarplegada', 'calgarnoaprobado', 'calgarnivel2', 'calgarrg', 'calevidplegable'];
   ESC.forEach((k) => { CC.cxEscenas[k] = ['', 'ninguna']; });
   const hoy = () => { const GB = window.SiriusGarantiasBase; return GB ? GB.hoy() : '2026-10-18'; }, mas = (n) => { const GB = window.SiriusGarantiasBase; return GB ? GB.sumar(hoy(), n) : hoy(); };
@@ -20,6 +20,7 @@
     cxnotificaciones: { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] },
     cxgarantiaserror: { nombre: SO, email: 'santiago.ortiz.comercial@gmail.com', rol: 'Ejecutivo comercial', roles: ['Ejecutivo comercial'] },
   };
+  USR.garsincaso = { nombre: VL, email: 'veronica.lema.ejecutiva@gmail.com', rol: 'Ejecutivo de inspecciones', roles: ['Ejecutivo de inspecciones', 'Suscriptor'] };
   G250.forEach((k) => { USR[k] = k === 'calgarnivel2' ? { nombre: 'Ricardo Almeida', email: 'ricardo.almeida.suscriptor@gmail.com', rol: 'Suscriptor', roles: ['Suscriptor'] } : { nombre: VL, email: 'veronica.lema.ejecutiva@gmail.com', rol: 'Ejecutivo de inspecciones', roles: ['Ejecutivo de inspecciones', 'Suscriptor'] }; });
   const caso = (id, estado, extra) => Object.assign({ id, orden: 'EMI-2026-120' + id.slice(-3), origen: 'BPM de Emisión', ramo: 'Incendio y líneas aliadas', ramos: ['Incendio y líneas aliadas'], tipoRiesgo: 'Ramos Generales', broker: 'Seguros Pacífico Brokers',
     asegurado: 'Comercial de prueba ' + id, ident: '17920' + id + '001', placa: '', bien: 'Bodega · Quito', fecha: '2026-10-05', registrado: '2026-10-05T10:00', sucursal: 'Quito', backoffice: 'Andrea Salazar', estado, responsable: VL,
@@ -36,6 +37,7 @@
       caso('50042', 'Emitida', { asegurado: 'Textiles Andinos Cía. Ltda.', emi: { poliza: 'POL-2026-120042' }, comercial: escena === 'cxgarantiaampliacion' ? VL : SO }),
       caso('50043', 'Emitida', { asegurado: 'Panificadora San Blas S.A.', emi: { poliza: 'POL-2026-120043' } }),
       caso('50044', 'Inspeccionado', { asegurado: 'Imprenta Gráficas del Norte', orden: '' })];
+    if (escena === 'garsincaso') casos.forEach((c) => { c.ejecutivo = VL; }); // G-3d: Inicio de Verónica cuenta los respaldos de sus casos
     const garantias = [
       // 50040: 3 recomendaciones del inspector, aún «Propuesta» (se definen al calificar).
       ...(g250 ? [G('50040', 1, 'GAR-INC-02', 'Extintores vigentes y recargados', 'Recargar los 4 extintores PQS de la bodega y colocar su etiqueta de vigencia.', '', { prioridad: 'Alta' }),
@@ -65,7 +67,9 @@
       // 50044: una pendiente sin respaldo (cumplir sin respaldo → { ok: false }).
       G('50044', 1, 'GAR-INC-01', 'Permiso de bomberos vigente del año en curso', 'Permiso 2026', 'Pendiente', pend(45, mas(3))),
       // 50045 no existe: vencida de un caso del dashboard no; 50041-3 vencida para los recordatorios.
-      G('50041', 3, 'GAR-ROB-05', 'Alarma contra robo', 'Con monitoreo', 'Pendiente', pend(30, mas(-2)))];
+      G('50041', 3, 'GAR-ROB-05', 'Alarma contra robo', 'Con monitoreo', 'Pendiente', pend(30, mas(-2))),
+      // G-3d · DEC-261: garantía de un caso que no está en la lista (50099): se omite en Garantías, Inicio y los contadores.
+      ...(escena === 'garsincaso' && q('huerfana') !== '0' ? [G('50099', 1, 'GAR-INC-02', 'Extintores vigentes y recargados', 'Recarga anual', 'Pendiente', pend(30, mas(4), { riesgo: '50099-R1' }))] : [])];
     const envio = (id, caso, regla, canal, destinatario, estado, fecha, error, contenido) => ({ id, caso, regla, canal, destinatario, estado, contenido: contenido || '', fecha, error: error || '' });
     const notificacionesEnvio = [
       envio('ENV-9001', '50042', 'R02', 'correo', 'Lucía Vera (APS)', 'Leído', hoy() + 'T08:00', '', 'Faltan 5 días para la garantía Guardianía del caso 50042'),
@@ -78,7 +82,7 @@
     const notificaciones = [{ id: 'cxn1', aud: '*', kind: 'exc', text: 'La garantía Alarma contra robo del caso 50041 venció', caseId: '50041', ts: hoy() + 'T08:01', read: false },
       { id: 'cxn2', aud: '*', kind: 'adj', text: 'Faltan 5 días para la garantía Guardianía del caso 50042', caseId: '50042', ts: hoy() + 'T08:00', read: false }];
     const X = { usuario: clon(USR[escena]), casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: [], garantias, notificacionesEnvio, notificaciones,
-      cxRespaldos: escena === 'cxgarantiacumplir' ? { 'GAR-50041-1': [{ name: 'foto-extintores-recargados.jpg', by: SO, at: '18/10/26 · 09:10', ts: hoy() + 'T09:10' }] } : {} };
+      cxRespaldos: escena === 'cxgarantiacumplir' || escena === 'garsincaso' ? Object.assign({ 'GAR-50041-1': [{ name: 'foto-extintores-recargados.jpg', by: SO, at: '18/10/26 · 09:10', ts: hoy() + 'T09:10' }] }, escena === 'garsincaso' && q('huerfana') !== '0' ? { 'GAR-50099-1': [{ name: 'recarga-extintores-50099.pdf', by: SO, at: '18/10/26 · 09:40', ts: hoy() + 'T09:40' }] } : {}) : {} };
     const PASOS = ['Fachada', 'Acceso principal', 'Bodega · vista general', 'Mezanine', 'Tablero eléctrico', 'Extintores', 'Salida de emergencia', 'Patio de carga', 'Oficina', 'Techo y cubierta', 'Señalética', 'Cámaras de seguridad'], fotos = (id) => PASOS.map((p, i) => ({ paso: p, canal: 'App del inspector', hora: '17/10/26 · 10:' + String(5 + i * 3).padStart(2, '0'), gps: [-0.1807, -78.4678], prueba: true, tipo: 'foto' }));
     const fotos6 = () => ['Bodega · pasillo norte', 'Bodega · pasillo sur', 'Rociadores', 'Detector de humo', 'Gabinete contra incendio', 'Puerta cortafuego'].map((p, i) => ({ paso: p, canal: 'App del inspector', hora: '17/10/26 · 11:' + String(5 + i * 3).padStart(2, '0'), gps: [-0.1807, -78.4678], prueba: true, tipo: 'foto' }))
       .concat([{ paso: 'documentos_cedula_frontal', canal: 'App del inspector', hora: '17/10/26 · 11:40', prueba: true, tipo: 'foto' }, { paso: 'documentos_cedula_posterior', canal: 'App del inspector', hora: '17/10/26 · 11:42', prueba: true, tipo: 'foto' }]); /* P-6g-2c: calevidplegable con 18 fotos y 2 documentos (pasos del grupo Documentos: cédula del representante) */

@@ -4,6 +4,74 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-3d
+
+Publiqué la versión 359 de SIRIUS (los archivos subieron en la 358; esta versión cierra el registro con el tiempo de la etapa). Garantías e Inicio ya no se detienen cuando la base trae una garantía sin su caso (DEC-261): se omite, no se muestra y no se cuenta. Antes del cambio la escena nueva fallaba con «Cannot read properties of null (reading 'asegurado')»; ahora carga sin errores y los números son los mismos con y sin la garantía huérfana. No cambió ninguna regla de Garantías.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Cómo usaba `state.gar` | Qué se hizo |
+|---|---|---|
+| `garVals` (lista, pestañas y contadores) | `infos` con `c: caseById(id)`; las filas leían `i.c.asegurado`, `ident`, `ramo`, `broker` y `fecha` | Los ids salen de `garIdsConCaso()`; filas, pestañas y contadores cuentan la misma lista |
+| Lista `garantias` de `inicioCtx` (tarjetas de Inicio) | `byId[id] \|\| caseById(id) \|\| {}`: la garantía sin caso entraba con datos vacíos | Misma función: se omite |
+| Contador de respaldos por revisar de Inicio | Recorría todas las claves de `state.gar` | Misma función |
+| Ícono de Garantías de la barra lateral | Recorría todas las claves de `state.gar` | Misma función |
+| Aviso de lista vacía («Sin garantías en seguimiento») | Contaba las claves de `state.gar` | Cuenta `garIdsConCaso()`: con solo una huérfana dice lo mismo que sin garantías |
+| Solicitud `smI` (solicitar inspección) | Exigía la garantía, no el caso | Exige también el caso |
+| Panel `gpI`, `cxFalta`, notificaciones, portal y monitor | Ya exigían el caso o leen solo `garInfo` | Sin cambios |
+| Sin cambios | Reglas, pestañas, acciones, archivos de configuración vigilados, `sirius-conexion.js` (70 bytes), `SiriusGarantiasBase` | — |
+
+**Qué cambió**
+
+- `garIdsConCaso()` en el Back-office: devuelve los ids de `state.gar` cuyo caso existe. Es la única regla; la usan `garVals`, `inicioCtx`, el contador de respaldos de Inicio, el ícono de la barra lateral, el aviso de lista vacía y `smI`.
+- Escena nueva `garsincaso` (conexión simulada, Verónica Lema): la base trae GAR-50099-1, con un respaldo, de un caso que no está en la lista. `?fvista=inicio` abre Inicio y `?huerfana=0` quita la garantía para comparar.
+
+**Prueba cruzada**
+
+| Punto | Con la garantía huérfana | Sin ella |
+|---|---|---|
+| Pendientes: contador = filas | 2 = 2 (50044, 50042) | 2 = 2 |
+| Vencidas | 1 = 1 (50041) | 1 = 1 |
+| Por revisar | 1 = 1 (50041) | 1 = 1 |
+| Cumplidas | 1 = 1 (50043) | 1 = 1 |
+| Todas | 4 = 4 | 4 = 4 |
+| Ícono de Garantías en la barra lateral | 1 | 1 |
+| «Respaldos por validar» de Inicio | 1 en 1 caso | 1 en 1 caso |
+
+Antes del cambio, con la misma escena, el Back-office fallaba (también en Inicio, porque `garVals` se arma siempre).
+
+**Verificado**
+
+- `garsincaso` a 1280×720 y 1920×1080, en Garantías y en Inicio: sin errores de consola y sin desplazamiento lateral.
+- Regresión de 24 escenas de Garantías, Inicio y campana a 1280×720 y 1920×1080 contra la versión anterior: 23 de 24 iguales en cada resolución. La diferente (`campanaavisos`) cambia solo por la hora real que escribe el aviso («15:49» contra «15:50»): la versión anterior contra sí misma da la misma diferencia.
+- Sintaxis del Back-office y de los datos.
+
+**No verificado**
+
+- Con la base real (SQL 55): una garantía cuyo caso llega en la recarga siguiente. El cambio hace que aparezca cuando el caso exista, pero no lo probé con datos reales.
+- Firefox y Safari.
+
+**Diferencias**
+
+- La campana del encabezado no lee `state.gar` (sus avisos vienen de `notificaciones`), así que no cambió; sí cambió el contador de respaldos de la barra lateral y el de Inicio.
+- Para que Inicio de Verónica cuente respaldos, los casos de la escena llevan a Verónica Lema como ejecutivo.
+- `?huerfana=0` es un parámetro agregado solo para la comparación de la escena.
+- Con solo una garantía huérfana, la lista vacía dice «Sin garantías en seguimiento» (igual que sin garantías), no «No hay casos en esta pestaña».
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `garsincaso` | Garantías con 4 casos y pestañas 2 · 1 · 1 · 1 · 4; la garantía del caso 50099 no aparece ni se cuenta |
+| `garsincaso` con `?fvista=inicio` | Inicio: «Respaldos por validar 1 en 1 caso» e ícono de Garantías en 1 |
+| `garsincaso` con `?huerfana=0` | Los mismos números sin la garantía huérfana |
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (escena `garsincaso` y sección «Garantías sin su caso en pantalla»).
+
+Tiempo de la etapa: inicio 21/11/2026 15:50 · fin 21/11/2026 16:03 · 13 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-3b
 
 Publiqué la versión 357 de SIRIUS (los archivos subieron en la 356; esta versión cierra el registro con el tiempo de la etapa). Red de inspectores ya tiene las vistas «Por zona» y «Por sucursal», además de un solo diálogo «Asignar inspectores» para zonas, ciudades, sucursales y todas las sucursales. Las listas salen de `redLugar` con la regla de DEC-265: con la conexión, de la función `red_lugar` de la base; sin ella, de una base simulada con la misma forma. La prueba cruzada dio igual en los cinco puntos. Por inspector, Coordinación y los archivos vigilados no cambiaron. En este mensaje no llegó la maqueta, así que armé las vistas según la descripción (ver **Diferencias**).
