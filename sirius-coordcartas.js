@@ -1,4 +1,3 @@
-// U-7 · 21/11/2026: «Agrupar por» sin esquinas cortadas (margen interior y botones con sus propias esquinas).
 // SIRIUS · Pestaña Coordinación en cartas (etapa G-4 · maqueta aprobada) · v1.0
 // Una pila por riesgo (o por visita): arriba la visita vigente con sus datos y acciones; detrás asoman hasta dos capas con las
 // visitas anteriores del mismo riesgo. «N visitas anteriores» las despliega en una línea de tiempo (de la más nueva a la más

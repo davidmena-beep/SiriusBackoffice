@@ -4,6 +4,70 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa U-7
+
+Publiqué la versión 355 de SIRIUS (los archivos subieron en la 354; esta versión cierra el registro con el tiempo de la etapa). El selector «Agrupar por» (Riesgo | Visita) de Coordinación › cartas ya no recorta el resaltado del botón elegido en las esquinas exteriores: reproduje el cambio de `sirius-coordcartas.js` tal como lo pasó la asesoría. Encontré un segundo selector con el mismo patrón, el de nivel de cada permiso en Usuarios › Roles y permisos, y le apliqué la misma corrección. Los dos se ven completos en los dos estados y con el foco del teclado. Una diferencia mía queda en **Diferencias**.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| `sirius-coordcartas.js`, `.cc-seg` | Contenedor con 3 px de relleno y 2 px de separación, sin `overflow:hidden`; botones de 36 px con esquina de 7 px y fondo transparente; `.cc-seg button:focus-visible` con contorno de 2 px. Se quita `.cc-seg button+button`. `[aria-checked="true"]` queda igual. |
+| `Usuarios.dc.html`, nivel por permiso | El contenedor de los radios (Sin acceso, Ver, Editar…) usa el mismo patrón: sin recorte, relleno de 3 px, separación de 2 px, botones de 28 px con esquina de 7 px y sin raya entre botones. El elegido conserva su contorno interior de 2 px. |
+| Revisados, sin cambio | `.cg-seg` (Calificación › Garantías) y `.scv-seg` (Modalidad en Coordinar visita): el elegido se rellena por completo y el recorte sigue la esquina del contenedor; no tienen contorno interior. |
+| Sin cambios | Resto de Coordinación, `sirius-conexion.js` (70 bytes) y los archivos de configuración vigilados (no sube ninguna versión). |
+
+**Qué cambió**
+
+- **«Agrupar por»:** antes el botón elegido era cuadrado dentro de un contenedor de esquina de 10 px con recorte, y el contorno interior de 2 px quedaba cortado en las esquinas exteriores. Ahora el botón tiene su propia esquina de 7 px, dentro del relleno de 3 px del contenedor, y el contorno se ve completo en los dos botones.
+- **Foco por teclado:** `.cc-seg button:focus-visible` pinta el contorno de 2 px con 2 px de separación; como el contenedor ya no recorta, el anillo se ve entero.
+- **Selector de nivel por permiso (Usuarios):** misma corrección. Para que la fila no crezca, el botón pasa de 32 a 28 px; el selector queda 2 px más alto que antes.
+
+**Prueba cruzada**
+
+| Punto | Antes | Ahora |
+|---|---|---|
+| «Agrupar por», Riesgo elegido (1280 y 1920) | Esquinas exteriores izquierdas del botón cortadas | Contorno completo con esquinas redondeadas |
+| «Agrupar por», Visita elegido | Esquinas exteriores derechas cortadas | Contorno completo |
+| Altura del selector «Agrupar por» | 42 px | 44 px |
+| Nivel por permiso, Sin acceso y Ver elegidos | Esquinas exteriores cortadas | Contorno completo |
+| Altura del selector de nivel | 35 px | 37 px |
+| Cambio de agrupación y de nivel | Funciona con clic y con flechas | Igual: las flechas cambian la opción y el foco acompaña |
+| Resto de las dos pantallas | — | Sin diferencias de píxeles fuera de la franja del selector; en 1280 × 720 el contenido de Coordinación queda 2 px más abajo |
+
+**Verificado**
+
+- `coordcartas` y `coordcartasvisita` a 1280 × 720 y 1920 × 1080, sin desplazamiento horizontal ni errores en consola.
+- Vista ampliada (3×) del selector «Agrupar por» en los dos estados (Riesgo y Visita) y con el foco del teclado, en las dos resoluciones.
+- `monitorpermiso` (nivel por permiso, con el contorno de la fila resaltada) a 1280 × 720 y 1920 × 1080 con la vista ampliada en los dos estados y con el foco; la escena `roles` carga sin errores.
+- Comparación píxel a píxel de las capturas «antes» y «después»: solo cambia la zona de los selectores (y, en 1280 × 720, el contenido de Coordinación baja 2 px).
+- `sirius-conexion.js` sigue en 70 bytes. El catálogo tiene 796 escenas.
+
+**No verificado**
+
+- Firefox y Safari.
+- Lector de pantalla: el selector conserva `role="radiogroup"` y `aria-checked`, sin cambios.
+
+**Diferencias**
+
+- **Color del foco:** el contorno de foco que se ve en «Agrupar por» es el de todo el Back-office (celeste, 3 px), no el azul de 2 px de la regla nueva. Dejé la regla de la asesoría tal cual; con el foco en un radio ya elegido, el anillo celeste rodea al azul sin recortarse.
+- **Selector de nivel en Usuarios:** lo corregí además del pedido, porque tenía el mismo patrón (contenedor con recorte, botón cuadrado, contorno interior de 2 px). Usé botones de 28 px, no de 36, para no estirar las filas de la lista.
+- `.cg-seg` y `.scv-seg` no se tocaron: se rellenan por completo al elegir y no tienen contorno interior, así que no pierden nada en las esquinas.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `coordcartas` | Caso 20196 agrupado por riesgo, con «Riesgo» elegido |
+| `coordcartasvisita` | El mismo caso agrupado por visita, con «Visita» elegida |
+| `monitorpermiso` | Roles y permisos con el selector de nivel de «Ver el monitor del proceso» |
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «Selectores segmentados sin esquinas cortadas»).
+
+Tiempo de la etapa: inicio 21/11/2026 11:48 · fin 21/11/2026 11:55 · 7 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa S-1b
 
 Publiqué la versión 353 de SIRIUS (los archivos subieron en la 352; esta versión cierra el registro con el tiempo de la etapa). Nueva solicitud ya envía a la base todo lo que pide el formulario. El Resumen muestra a la persona completa y la póliza. «Editar solicitud» y «Duplicar» funcionan, y el enlace del cliente sale por uno, dos o tres canales. En Administración hay una entrada «Portal del cliente». Cuatro decisiones mías están en **Diferencias**.
