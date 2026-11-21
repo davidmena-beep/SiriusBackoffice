@@ -78,7 +78,7 @@
       if (escena === 'usrsinguardar' && q('fsesion') === '1') { delete ue.d; delete ue.guardar; }
       if (escena === 'usrcorreonuevo' && q('fpaso') === 'panel') ue.correo.enviar = false; }
     const redX = escena === 'usfichaoperacion' && window.SIRIUS_RED ? JSON.parse(JSON.stringify({ listo: true, hoy: window.SIRIUS_RED.hoy, puedeGestionar: true, inspectores: window.SIRIUS_RED.inspectores, historial: window.SIRIUS_RED.historial })) : null; /* R-4: SIRIUS_CONEXION.red */
-    if (ue.coord) { const X0 = baseCC('cxestadoparcial'); /* U-3a: el caso 50012 de coordinación (con su agenda) para la prueba cruzada */
+    if (ue.coord) { const X0 = baseCC('cxestadoparcial'); /* U-3a: el caso 50012 de coordinación (con su agenda) para la prueba cruzada */ if (!redX) delete X0.red; /* R-5a: la ficha sigue sin la Red de la base, como antes */
       return Object.assign(X0, { usuario: ADM, inspectores: X0.inspectores.filter((i) => !usu.some((u) => u.nombre === i.nombre)).concat(insp), usuarios: usu, agencias: JSON.parse(JSON.stringify(AGENCIAS)), usuariosEscena: ue }, redX ? { red: redX } : {}); }
     return { usuario: ADM, casos: [], detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: insp, usuarios: usu, agencias: JSON.parse(JSON.stringify(AGENCIAS)), usuariosEscena: ue, red: redX || undefined }; };
   // U-3a: el inspector de la base que corresponde a un usuario (la base lo deriva de usuarios: tipo, agencia, cobertura y estado).

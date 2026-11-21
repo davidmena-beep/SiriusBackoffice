@@ -3,7 +3,7 @@
 // Una sola fuente: la cobertura, la operación, la jornada y los bloqueos de cada inspector se leen y se guardan solo aquí. Con la conexión: SIRIUS_CONEXION.red y
 // SIRIUS_CONEXION.redAccion(tipo, datos) → { ok, mensaje }; sin la conexión: SIRIUS_RED (datos-red.js), con redAccion simulada en la sesión (SIRIUS_RED.aplicar).
 // La cobertura se resume y se decide con SiriusCobertura (resumenFilas, cortoFilas, cubreFilas): lo que muestra Por inspector = SiriusCobertura.cubre = la base.
-// Filas que vienen de la ficha del usuario o bloqueos de la Agenda: «Viene de la ficha» / «Viene de la Agenda», sin «Quitar» (se cambian allí durante la transición).
+// Filas que vienen de la ficha del usuario: «Viene de la ficha», sin «Quitar» (se cambian allí durante la transición). R-5a · DEC-266: los bloqueos son todos de la Red (con «Quitar»).
 // Componente: window.SiriusRedInspectores({ rol, usuario, escena, rev, onIr, inspector }). Escenas: red, redsincob, redasignar, redoperacion y redcx; R-3b: redzona, redzonasinzonas, redzonaprobar, redzonaconfirmar, redzonaasignar, redsucursal, redsucursalasignar, redzonacx y redzonacxerror. Lógica: window.SiriusRed.
 (function () {
   'use strict';
@@ -41,7 +41,7 @@
     const seguidos = d.every((x, i) => i === 0 || x === d[i - 1] + 1), cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
     if (d.length === 1) return cap(DIA_L[d[0]]); if (seguidos) return cap(DIA_L[d[0]]) + ' a ' + DIA_L[d[d.length - 1]];
     const n = d.map((x) => DIA_L[x]); return cap(n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1]); };
-  S.jornadaTxt = (op) => { const j = (op || {}).jornada || {}, c = (op || {}).capacidadDia; if (!j.desde) return 'Sin jornada' + (c ? ' · capacidad ' + c + ' por día' : '');
+  S.jornadaTxt = (op) => { const j = (op || {}).jornada || {}, c = (op || {}).capacidadDia; if (!j.desde) { const SF = window.SiriusFecha, G = SF && SF.jornadaDefecto ? SF.jornadaDefecto() : null; return 'Sin jornada propia' + (G ? ': usa la jornada por defecto (' + S.diasTxt(G.dias) + ', ' + G.desde + ' a ' + G.hasta + ')' : '') + (c ? ' · capacidad ' + c + ' por día' : ''); } /* R-5a · DEC-268 */
     return S.diasTxt(j.dias) + ', ' + j.desde + ' a ' + j.hasta + ' · ' + (c ? 'capacidad ' + c + ' por día' : 'sin límite de visitas por día'); };
   // Resumen de cobertura para la ficha: como el corto de la Red, pero con «(ciudad completa)» en cada ciudad entera, por ejemplo «Sucursal Quito · Riobamba (ciudad completa)».
   S.coberturaTxt = (i, hoy) => { const C = COB(); if (!C) return ''; const v = C.vigentes(i.cobertura || [], hoy); if (!v.length) return 'Sin cobertura vigente'; if (v.some((f) => f.nivel === 'todas')) return 'Todas las inspecciones';
@@ -196,6 +196,7 @@
         h('div', { role: 'group', 'aria-label': 'Días de la jornada', style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, DIAS.map(([d, l, t]) => h('button', { key: d, type: 'button', className: 'rdi-tg', disabled: ro, 'aria-label': t, title: t, 'aria-pressed': (jv.dias || []).indexOf(d) >= 0 ? 'true' : 'false', onClick: () => setDr('jornada', Object.assign({}, jv, { dias: toggle(jv.dias || [], d).sort((a, b) => a - b) })) }, l))),
         h('span', { style: { display: 'flex', alignItems: 'center', gap: 10 } }, h('label', { htmlFor: 'rdi-jd', style: { font: '700 15px var(--font-brand)', color: 'var(--text-strong)' } }, 'Desde'), h('input', { id: 'rdi-jd', type: 'time', className: 'rdi-in', style: { width: 130 }, disabled: ro, value: jv.desde || '', onChange: (e) => setDr('jornada', Object.assign({}, jv, { desde: e.target.value })) }),
           h('label', { htmlFor: 'rdi-jh', style: { font: '700 15px var(--font-brand)', color: 'var(--text-strong)' } }, 'Hasta'), h('input', { id: 'rdi-jh', type: 'time', className: 'rdi-in', style: { width: 130 }, disabled: ro, value: jv.hasta || '', onChange: (e) => setDr('jornada', Object.assign({}, jv, { hasta: e.target.value })) }))),
+      !(op0.jornada && op0.jornada.desde) && !dr.jornada ? h('p', { 'data-red-jornada-defecto': '', style: { margin: '14px 0 0', fontSize: 14.5, color: 'var(--text-muted)' } }, S.jornadaTxt({ jornada: null }) + '. Marca los días y las horas para darle una jornada propia.') : null, /* R-5a · DEC-268 */
       h('p', { style: { margin: '14px 0 0', padding: '10px 14px', borderRadius: 8, background: '#E9F5F1', color: 'var(--text-strong)', fontSize: 14.5 } }, 'Única fuente: la base, Coordinar visita, la Agenda, las ofertas y el portal del cliente usan esta jornada.'));
     const bl = actual.bloqueos || [];
     const bloq = h('section', { key: 'bl', className: 'rdi-card', 'aria-labelledby': 'rdi-h-bl', 'data-red-bloqueos': '' },
@@ -204,7 +205,7 @@
       bl.length ? h('ul', { style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 } }, bl.map((b) => h('li', { key: b.id, 'data-red-bloqueo': b.id, style: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: 'var(--surface-subtle,#F5F6F8)', borderRadius: 8, padding: '10px 14px', fontSize: 15 } },
         h('span', { style: { minWidth: 0 } }, h('b', { style: { color: 'var(--text-strong)' } }, b.motivo || 'Bloqueo'), ' · ' + bloqTxt(b)),
         h('span', { style: { display: 'flex', alignItems: 'center', gap: 12 } }, b.por ? h('span', { style: { fontSize: 13.5, color: 'var(--text-muted)' } }, 'Registró ' + b.por) : null,
-          b.origen === 'Agenda' ? h('span', { className: 'rdi-vie' }, 'Viene de la Agenda') : ro ? null : h('button', { type: 'button', className: 'rdi-q', 'aria-label': 'Quitar bloqueo ' + (b.motivo || '') + ' ' + bloqTxt(b), onClick: (e) => { retRef.current = e.currentTarget; setDlg({ k: 'desbloquear', id: b.id, txt: (b.motivo || 'Bloqueo') + ' · ' + bloqTxt(b), motivo: '' }); } }, 'Quitar'))))) :
+          ro ? null : h('button', { type: 'button', className: 'rdi-q', 'aria-label': 'Quitar bloqueo ' + (b.motivo || '') + ' ' + bloqTxt(b), onClick: (e) => { retRef.current = e.currentTarget; setDlg({ k: 'desbloquear', id: b.id, txt: (b.motivo || 'Bloqueo') + ' · ' + bloqTxt(b), motivo: '' }); } }, 'Quitar'))))) :
         h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Sin bloqueos.'));
     const HI = (red.historial || []).filter((x) => x && x.inspector === actual.nombre).slice().sort((a, b) => String(b.hora || '').localeCompare(String(a.hora || ''))), HIv = verHist ? HI : HI.slice(0, 4);
     const hist = h('section', { key: 'hi', className: 'rdi-card', 'aria-labelledby': 'rdi-h-hi', 'data-red-historial': '' }, h('h3', { id: 'rdi-h-hi', className: 'rdi-h3', style: { marginBottom: 12 } }, 'Historial'),

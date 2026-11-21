@@ -47,7 +47,7 @@
     casos.push(caso('50014', 'Agendado', { asegurado: 'Fernando Alvear Mena', placa: 'PDK0014', visitasBase: [vis(1, 'Gabriela Toapanta', p.fecha, hm(p.hIni, 120), hm(p.hIni, 165)), vis(2, 'Gabriela Toapanta', p.fecha, hm(p.hIni, 180), hm(p.hIni, 225))] }));
     casos.push(caso('50016', 'Agendado', { asegurado: 'Patricia Garcés Ortiz', placa: 'PDK0016', visitasBase: [vis(1, 'Luis Andrade', p.fecha, hm(p.hIni, 120), hm(p.hIni, 165)), vis(2, 'Mauricio Endara', p.fecha, hm(p.hIni, 180), hm(p.hIni, 225))] }));
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)), relojReal: true,
-      coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', disponibilidad: [], lugar: e[1]() } };
+      coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', lugar: e[1]() } };
     casos.forEach((c) => { X.eventos[c.id] = [{ hora: '2026-10-17T15:20', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });
     return X; };
   // Base simulada: además de lo de datos-cx-inspectores (inspector, hora, vehículos y dirección), guarda el lugar y la alerta de cobertura y deja la línea en el historial.

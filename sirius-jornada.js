@@ -1,5 +1,5 @@
 // SIRIUS · Jornada por defecto de las visitas (v1.0 · etapa P-6f-0f2 · DEC-232 · 18/10/2026).
-// Es la jornada que Coordinación usa para agendar, reagendar y validar cuando el inspector no tiene jornada propia en SIRIUS_AGENDA.disponibilidad.
+// Es la jornada que Coordinación usa para agendar, reagendar y validar cuando el inspector no tiene jornada propia en la Red de inspectores (R-5a; antes SIRIUS_AGENDA.disponibilidad).
 // Parametrizable: vive en SIRIUS_AGENDA.jornadaDefecto = { dias: [1…7] (1 = lunes), desde: 'HH:MM', hasta: 'HH:MM' } (datos-agenda-liquidaciones.js; valor inicial lun a sáb, 08:30–17:30).
 // Lectura: SiriusFecha.jornadaDefecto() (primero lo editado en la sesión, después SIRIUS_AGENDA.jornadaDefecto, al final el valor inicial).
 // Edición: Administración › Configuración general › Agenda (solo el Administrador) con SiriusJornada.guardar(); pide motivo y queda en el historial.

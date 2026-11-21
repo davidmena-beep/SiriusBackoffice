@@ -302,15 +302,17 @@
   function horizonte(n) { const f = F(), A = eje(), out = []; const d = new Date(A.now.getFullYear(), A.now.getMonth(), A.now.getDate()); for (let k = 0; k < 20 && out.length < n; k++) { d.setDate(d.getDate() + 1); if (f.esHabil(d)) out.push(new Date(d)); } return out; }
   SM.horizonte = horizonte;
   const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  // Capacidad de una persona en un día: jornada de Agenda (inspectores, menos 1 h de almuerzo) o la jornada hábil; menos bloqueos y ausencias.
-  function capacidad(p, d) { const AG = window.SIRIUS_AGENDA || {}, f = F(), k = isoD(d), disp = (AG.disponibilidad || []).find(x => x.inspector === p), per = (X().personas || {})[p];
+  // Capacidad de una persona en un día: jornada de la Red de inspectores (inspectores con jornada propia, menos 1 h de almuerzo) o la jornada hábil; menos bloqueos y ausencias.
+  // R-5a · DEC-266: jornada y bloqueos por el lector único (SiriusRedFuente).
+  const RF = () => window.SiriusRedFuente || null;
+  function capacidad(p, d) { const R = RF(), f = F(), k = isoD(d), disp = R ? R.disp(p) : null, per = (X().personas || {})[p];
     if (per && (per.ausencias || []).some(([a, b]) => k >= a && k <= b)) return { cap: 0, ausente: (per.ausencias.find(([a, b]) => k >= a && k <= b) || [])[2] || 'Ausente' };
     let cap = f.calendario.horasDia || 8; if (disp) { if (!disp.dias.includes(d.getDay())) return { cap: 0, ausente: 'No laborable' }; cap = Math.max(0, (mmOf(disp.jornada[1]) - mmOf(disp.jornada[0])) / 60 - 1); }
-    let motivo = ''; (AG.bloqueos || []).filter(b => b.inspector === p).forEach(b => { const a = String(b.desde).slice(0, 10), c = String(b.hasta).slice(0, 10); if (k < a || k > c) return; if (String(b.desde).length <= 10) { cap = 0; motivo = b.motivo; } else { const h0 = mmOf(String(b.desde).slice(11, 16)), h1 = mmOf(String(b.hasta).slice(11, 16)); cap = Math.max(0, cap - (h1 - h0) / 60); motivo = b.motivo + ' (parcial)'; } });
+    let motivo = ''; (R ? R.bloqueosDe(p) : []).forEach(b => { const a = String(b.desde).slice(0, 10), c = String(b.hasta).slice(0, 10); if (k < a || k > c) return; if (String(b.desde).length <= 10) { cap = 0; motivo = b.motivo; } else { const h0 = mmOf(String(b.desde).slice(11, 16)), h1 = mmOf(String(b.hasta).slice(11, 16)); cap = Math.max(0, cap - (h1 - h0) / 60); motivo = b.motivo + ' (parcial)'; } });
     return cap ? { cap, nota: motivo } : { cap: 0, ausente: motivo || 'Ausente' }; }
   // Disponibilidad que se muestra en Responsables: el próximo bloqueo o ausencia desde hoy.
-  function disponibilidad(p) { const AG = window.SIRIUS_AGENDA || {}, hoy = isoD(eje().now), per = (X().personas || {})[p], L = [];
-    (AG.bloqueos || []).filter(b => b.inspector === p && String(b.hasta).slice(0, 10) >= hoy).forEach(b => { const a = String(b.desde), c = String(b.hasta); L.push([a.slice(0, 10), b.motivo + ' ' + (a.length > 10 ? a.slice(8, 10) + '/' + a.slice(5, 7) + (+a.slice(11, 13) >= 12 ? ' tarde' : ' mañana') : a.slice(8, 10) + '–' + c.slice(8, 10) + '/' + c.slice(5, 7))]); });
+  function disponibilidad(p) { const R = RF(), hoy = isoD(eje().now), per = (X().personas || {})[p], L = [];
+    (R ? R.bloqueosDe(p) : []).filter(b => String(b.hasta).slice(0, 10) >= hoy).forEach(b => { const a = String(b.desde), c = String(b.hasta); L.push([a.slice(0, 10), b.motivo + ' ' + (a.length > 10 ? a.slice(8, 10) + '/' + a.slice(5, 7) + (+a.slice(11, 13) >= 12 ? ' tarde' : ' mañana') : a.slice(8, 10) + '–' + c.slice(8, 10) + '/' + c.slice(5, 7))]); });
     ((per || {}).ausencias || []).filter(([a, b]) => b >= hoy).forEach(([a, b, m]) => L.push([a, m + ' ' + a.slice(8, 10) + '–' + b.slice(8, 10) + '/' + b.slice(5, 7)]));
     L.sort((x, y) => x[0] < y[0] ? -1 : 1); return L.length ? L[0][1] : 'Disponible'; }
 

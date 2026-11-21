@@ -185,7 +185,8 @@
     if (window.SiriusCoordEstado) window.SiriusCoordEstado.aplicarBase(c, U.nombre); // G-2c8 · DEC-238: la base calcula estado, subestado, responsable y el estado y la visita de cada riesgo
     const cfg = e[1](); if (cfg.ofertaIns) cfg.ofertaIns = cfg.ofertaIns.slice();
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)),
-      coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', disponibilidad: JSON.parse(JSON.stringify(DISP)), lugar: {}, fases: cfg } };
+      coordEscena: { inspector: '', motivo: '', rechazar: '', dir: '', hIni: '00:00', hFin: '00:45', lugar: {}, fases: cfg } };
+    if (window.SiriusRedFuente) X.red = window.SiriusRedFuente.conJornadas(DISP); // R-5a · DEC-266: la jornada de estas escenas va en la Red de la escena (antes coordEscena.disponibilidad)
     casos.forEach((k) => { X.eventos[k.id] = [{ hora: '2026-10-13T09:02', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[k.id] = []; X.controles[k.id] = []; X.informes[k.id] = []; X.calificaciones[k.id] = []; });
     // G-2c3: historial del caso 50012 con la asignación, los intentos y la visita V1 (filtros Contacto, Visitas y Estado del cajón «Historial del caso»).
     X.eventos['50012'] = [{ hora: '2026-10-15T16:40', accion: 'Intento de contacto', detalle: 'Llamada · Buzón de voz · a Fernanda Prueba (contacto para la coordinación) · 0990000012 · 0:48 · «Dejé mensaje de voz»', actor: U.nombre, rol: U.rol },
@@ -298,7 +299,7 @@
   CC.cxSim = function (escena) {
     if (escena !== 'cxresponsableobjeto') return prev(escena);
     const X = prev('coordfases'), ins = () => ({ nombre: 'Valeria Cevallos', tipo: 'agencia', agencia: 'Eurosurvey S.A.' });
-    delete X.coordEscena;
+    delete X.coordEscena; delete X.red; // R-5a: sin la Red de la escena, como antes sin coordEscena
     const c = (X.casos || []).find((x) => x && String(x.id) === '50012'); if (!c) return X;
     c.estado = 'Agendado'; delete c.responsable; c.inspector = ins();
     (c.riesgos || []).forEach((r) => { r.estado = 'Agendado'; }); // los tres vehículos en la visita V1: el caso queda de verdad en Agendado

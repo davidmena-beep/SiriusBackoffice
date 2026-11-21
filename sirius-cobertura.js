@@ -39,8 +39,8 @@
   // P-6f-b · DEC-214: la cobertura guardada en la sesión va por la identificación del inspector (clave); lo anterior guardado por nombre se sigue leyendo.
   const MX = () => W.SiriusMaestros || null, claveDe = (n) => (MX() ? MX().clave(n) : n), mismo = (a, b) => (MX() ? MX().mismo(a, b) : a === b);
   const edDe = (n) => { if (!n) return null; const M0 = MX(); const v = M0 ? M0.buscar(S.ed, n) : S.ed[n]; return v || null; };
-  // Zonas heredadas de un inspector del ejemplo (lo que hoy usan la Agenda y la red): la red, si no, la disponibilidad.
-  S.zonasHeredadas = (n) => { const A = W.SIRIUS_AGENDA || {}, r = (A.red || []).find((x) => mismo(x.inspector, n)), d = (A.disponibilidad || []).find((x) => mismo(x.inspector, n));
+  // Zonas heredadas de un inspector del ejemplo (lo que hoy usan la Agenda y la red): la red de ofertas, si no, la agenda fija. R-5a: las lee el lector único (SiriusRedFuente).
+  S.zonasHeredadas = (n) => { const RF = W.SiriusRedFuente, r = RF ? RF.deRed(n) : null, d = RF ? RF.disp(n) : null;
     const AP = W.SiriusAppInspectorLogic, ov = AP && AP.perfilDe ? AP.perfilDe(n) : null; return arr(ov && ov.zonas && ov.zonas.length ? ov.zonas : r ? r.zonas : d ? d.zonas : []); };
   // Con la conexión: el usuario de la base (por nombre o correo) o el inspector de SIRIUS_CONEXION.inspectores.
   const deBase = (n) => { const B = UB(); if (B && B.activo && B.activo()) { const u = B.lista().find((x) => x.nombre === n || x.email === String(n).toLowerCase() || (x.identificacion && x.identificacion === claveDe(n))); if (u) return u.cobertura ? S.normalizar(u.cobertura) : (arr(u.zonas).length || !B.esInspector(u.roles) ? S.migrar(u) : { modo: 'ciudad', sucursales: [], ciudades: [] }); } /* U-3a · DEC-254: un inspector de la base sin cobertura ni zonas no recibe inspecciones (antes se migraba a «Todas») */
@@ -154,8 +154,8 @@
     if (e === 'usrsinguardar' || e === 'cxusrsesion') S.ed['Alexandre Abascal'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] }; /* U-3a: la cobertura de Alexandre Abascal quedó solo en la sesión (no en la base) */
     avisar(); };
   // Etapa G-2a2 · DEC-235: a quién afecta eliminar una zona y cómo sale de las coberturas al publicar.
-  S.inspectores = () => { const out = [], add = (n) => { if (n && out.indexOf(n) < 0) out.push(n); }, A = W.SIRIUS_AGENDA || {};
-    Object.keys(S.ed).forEach(add); (A.disponibilidad || []).forEach((x) => add(x.inspector)); (A.red || []).forEach((x) => add(x.inspector));
+  S.inspectores = () => { const out = [], add = (n) => { if (n && out.indexOf(n) < 0) out.push(n); }, RF = W.SiriusRedFuente;
+    Object.keys(S.ed).forEach(add); if (RF) { RF.agenda().forEach((x) => add(x.inspector)); RF.ofertas().forEach((x) => add(x.inspector)); } /* R-5a: agenda fija y red de ofertas de la Red */
     const SU = W.SiriusUsuarios; if (SU && SU.usuarios) (SU.usuarios() || []).forEach((u) => { if ((u.roles || []).some((r) => (SU.base ? SU.base(r) : r) === 'Inspector')) add(u.nombre); });
     const B = UB(); if (B && B.activo && B.activo()) B.lista().forEach((u) => { if (B.esInspector(u.roles)) add(u.nombre); });
     const C = X(); if (C && C.activo === true && Array.isArray(C.inspectores)) C.inspectores.forEach((i) => add(i && i.nombre)); return out; };

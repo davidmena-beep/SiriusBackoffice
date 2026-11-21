@@ -1,39 +1,57 @@
-// SIRIUS · Red de inspectores sin la conexión (v1.1 · etapa R-3b · DEC-265 · 21/11/2026; v1.0 en R-3a · DEC-262). Demostración con la misma forma que SIRIUS_CONEXION.red:
+// SIRIUS · Red de inspectores sin la conexión (v1.2 · etapa R-5a · DEC-266 y DEC-268 · 21/11/2026; v1.1 en R-3b · DEC-265; v1.0 en R-3a · DEC-262). Demostración con la misma forma que SIRIUS_CONEXION.red:
 // { listo, hoy ('AAAA-MM-DD' de Ecuador; aquí el reloj del prototipo), puedeGestionar, inspectores: [{ nombre, tipo ('Interno' | 'Agencia' | 'Independiente'), tipoInspector, agencia,
 //   estado, cuenta, operacion: { modalidades [] (vacío = todas), ramos [] (vacío = todos), recibeOfertas ('red' | 'coord' | 'no'), jornada: { dias [1..7], desde, hasta }, capacidadDia, fuente, actualizado },
 //   cobertura: [{ id, nivel ('todas' | 'sucursal' | 'ciudad' | 'zona'), sucursal, ciudad (código INEC), zona (id), desde, hasta, vigente, origen ('Ficha de usuario' | 'Red de inspectores'), motivo, creado, creadoPor }],
-//   bloqueos: [{ id, desde, hasta, motivo, origen ('Agenda' | 'Red de inspectores') }] }], historial: [{ inspector, accion, detalle, motivo, por, hora }] }.
-// Los inspectores son los del ejemplo (datos-usuarios.js); la operación, la jornada y los bloqueos de la Agenda salen de SIRIUS_AGENDA. Sofía Arteaga tiene cobertura mixta
+//   bloqueos: [{ id, desde, hasta, motivo, origen, por }], ficha: { credencial, ciudadBase, base, zonas, red } }], historial: [{ inspector, accion, detalle, motivo, por, hora }] }.
+// R-5a: la Red es la única fuente de la operación (la leen todos por SiriusRedFuente). Los valores están escritos aquí: los mismos que antes resultaban en la Agenda,
+// Coordinar visita, la ficha y el portal (antes en SIRIUS_AGENDA.disponibilidad, .red y .bloqueos). Sin jornada propia (jornada: null): la «Jornada por defecto de las visitas».
+// Los bloqueos traídos de la Agenda son filas normales de la Red (se pueden quitar); su origen queda en el historial. `ficha` = datos de transición hasta R-5b
+// (credencial, ciudad base, ubicación base, zonas heredadas y, para la red de ofertas, organización). Sofía Arteaga tiene cobertura mixta
 // (sucursal Quito y Riobamba, ciudad completa); Cristian Vaca y Pedro Lasso, ninguna; Diana Cárdenas, una fila que aún no rige (zona Centro desde el 01/11); Renata Cobo, una vencida.
 // aplicar(red, tipo, datos, por) es la base simulada de redAccion: la usa SiriusRed sin la conexión (en la sesión) y la conexión simulada de la escena redcx. Mismos mensajes que la base.
 // lugar(datos, red) (R-3b · DEC-265) es la base simulada de redLugar (vista 'ciudad', 'sucursales' o 'probar'); la usan SiriusRed sin la conexión y la conexión simulada (redzonacx, redzonacxerror).
 // redcx: se suma a SIRIUS_CX_COORD (conexión simulada) con la fila sucursal Quito de Sofía Arteaga «Viene de la ficha».
 (function () {
   const HOY = '2026-10-18', POR = 'Andrea Salazar';
-  const op = (modalidades, ramos, recibeOfertas, dias, desde, hasta, capacidadDia) => ({ modalidades, ramos, recibeOfertas, jornada: { dias, desde, hasta }, capacidadDia, fuente: 'Red de inspectores', actualizado: '2026-10-15T10:20' });
+  const op = (modalidades, ramos, recibeOfertas, dias, desde, hasta, capacidadDia) => ({ modalidades, ramos, recibeOfertas, jornada: dias ? { dias, desde, hasta } : null, capacidadDia, fuente: 'Red de inspectores', actualizado: '2026-10-15T10:20' }); // R-5a: sin días = sin jornada propia
   let nf = 0; const fila = (nivel, o) => Object.assign({ id: 'rc-' + String(++nf).padStart(3, '0'), nivel, sucursal: '', ciudad: '', zona: '', desde: '2026-10-01', hasta: '', origen: 'Red de inspectores', motivo: '', creado: '2026-10-01T09:00', creadoPor: POR }, o);
   let nb = 0; const bloq = (desde, hasta, motivo, origen, por) => ({ id: 'rb-' + String(++nb).padStart(3, '0'), desde, hasta, motivo, origen: origen || 'Red de inspectores', por: por || '' });
-  const P = ['Presencial'], PV = ['Presencial', 'Virtual guiada'], V = ['Vehículos'], RG = ['Ramos Generales'], VR = ['Vehículos', 'Ramos Generales'], LV = [1, 2, 3, 4, 5], LS = [1, 2, 3, 4, 5, 6];
+  const P = ['Presencial'], PV = ['Presencial', 'Virtual guiada'], V = ['Vehículos'], RG = ['Ramos Generales'], VR = ['Vehículos', 'Ramos Generales'], VRE = ['Vehículos', 'Ramos Generales', 'Equipo y maquinaria'], LV = [1, 2, 3, 4, 5], LS = [1, 2, 3, 4, 5, 6];
   const ins = (nombre, tipo, agencia, estado, operacion, cobertura, bloqueos) => ({ nombre, tipo, tipoInspector: tipo, agencia: agencia || '', estado, cuenta: estado !== 'Invitación vencida', operacion, cobertura, bloqueos: bloqueos || [] });
   const inspectores = [
-    ins('Sofía Arteaga', 'Agencia', 'andinas', 'Activo', op(PV, VR, 'red', LS, '08:00', '18:00', 6),
+    ins('Sofía Arteaga', 'Agencia', 'andinas', 'Activo', op(P, VRE, 'red', null, '', '', null),
       [fila('sucursal', { sucursal: 'Quito', motivo: 'Atiende los casos de la sucursal Quito', creado: '2026-10-01T09:00' }), fila('ciudad', { ciudad: '0601', motivo: 'Red en Riobamba', desde: '2026-10-05', creado: '2026-10-05T11:40' })],
       [bloq('2026-12-22T00:00', '2027-01-02T23:59', 'Vacaciones', 'Red de inspectores', POR)]),
-    ins('Mauricio Endara', 'Agencia', 'eurosurvey', 'Activo', op(PV, VR, 'red', LV, '08:00', '17:00', 6), [fila('ciudad', { ciudad: '1701', motivo: 'Cubre todo Quito para Eurosurvey' })]),
+    ins('Mauricio Endara', 'Agencia', 'eurosurvey', 'Activo', op(PV, VR, 'red', null, '', '', null), [fila('ciudad', { ciudad: '1701', motivo: 'Cubre todo Quito para Eurosurvey' })]),
     ins('Diana Cárdenas', 'Agencia', 'eurosurvey', 'Activo', op(PV, V, 'coord', LV, '08:00', '16:00', 5),
       [fila('zona', { ciudad: '1701', zona: 'z1701-1', motivo: 'Zona habitual de la agencia' }), fila('zona', { ciudad: '1701', zona: 'z1701-2', desde: '2026-11-01', motivo: 'Refuerzo del centro desde noviembre', creado: '2026-10-16T15:10' })],
-      [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Capacitación de la agencia', 'Agenda')]),
+      [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Capacitación de la agencia')]),
     ins('Luis Andrade', 'Independiente', '', 'Activo', op(P, VR, 'red', LS, '09:00', '18:00', 4),
       [fila('zona', { ciudad: '1701', zona: 'z1701-5', motivo: 'Vive en Cumbayá' }), fila('sucursal', { sucursal: 'Ambato', motivo: 'Atiende la sucursal Ambato' })]),
     ins('Marco Tapia', 'Interno', '', 'Activo', op(PV, [], 'coord', LV, '08:00', '17:00', 6), [fila('sucursal', { sucursal: 'Quito', motivo: 'Inspector interno de Quito' })],
-      [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Peritaje en el juzgado de tránsito', 'Agenda'), bloq('2026-10-21T13:00', '2026-10-21T17:00', 'Capacitación', 'Agenda')]),
+      [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Peritaje en el juzgado de tránsito'), bloq('2026-10-21T13:00', '2026-10-21T17:00', 'Capacitación')]),
     ins('Paola Vinueza', 'Interno', '', 'Activo', op(PV, [], 'coord', LV, '08:30', '17:30', 6), [fila('sucursal', { sucursal: 'Guayaquil', origen: 'Ficha de usuario', motivo: 'Migrada de la ficha del usuario' })],
-      [bloq('2026-10-26T00:00', '2026-10-30T23:59', 'Vacaciones', 'Agenda')]),
-    ins('Cristian Vaca', 'Interno', '', 'Activo', op(PV, [], 'coord', LS, '08:00', '17:00', 5), [], [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Capacitación', 'Agenda')]),
+      [bloq('2026-10-26T00:00', '2026-10-30T23:59', 'Vacaciones')]),
+    ins('Cristian Vaca', 'Interno', '', 'Activo', op(PV, [], 'coord', LS, '08:00', '17:00', 5), [], [bloq('2026-10-20T08:00', '2026-10-20T12:30', 'Capacitación')]),
     ins('Jorge Pazmiño', 'Agencia', 'andinas', 'Activo', op(P, [], 'coord', LV, '08:00', '17:00', 5), [fila('sucursal', { sucursal: 'Ambato', motivo: 'Sucursal de la agencia' }), fila('sucursal', { sucursal: 'Cuenca', motivo: 'Sucursal de la agencia' })]),
-    ins('Pedro Lasso', 'Agencia', 'pacifico', 'Invitación vencida', op(P, RG, 'no', LV, '08:00', '17:00', null), []),
-    ins('Renata Cobo', 'Independiente', '', 'Inactivo', op(P, V, 'no', LV, '08:00', '17:00', 4), [fila('sucursal', { sucursal: 'Quito', desde: '2026-03-01', hasta: '2026-09-30', motivo: 'Temporada de renovaciones' })]),
+    ins('Pedro Lasso', 'Agencia', 'pacifico', 'Invitación vencida', op(P, RG, 'no', null, '', '', null), []),
+    ins('Renata Cobo', 'Independiente', '', 'Inactivo', op(P, V, 'no', null, '', '', null), [fila('sucursal', { sucursal: 'Quito', desde: '2026-03-01', hasta: '2026-09-30', motivo: 'Temporada de renovaciones' })]),
   ];
+  // R-5a: ficha de transición (antes en SIRIUS_AGENDA.disponibilidad y .red) y el orden de la Agenda (agenda fija primero, luego la red de ofertas).
+  const FICHA = {
+    'Marco Tapia': { credencial: 'AS-INS-0142', ciudadBase: 'Quito', base: [-0.1807, -78.4678], zonas: ['Quito'] },
+    'Cristian Vaca': { credencial: 'AS-INS-0157', ciudadBase: 'Quito', zonas: ['Quito', 'Manta'] },
+    'Paola Vinueza': { credencial: 'AS-INS-0163', ciudadBase: 'Guayaquil', zonas: ['Guayaquil'] },
+    'Luis Andrade': { credencial: 'EXT-INS-0031', ciudadBase: 'Quito', base: [-0.2101, -78.4904], zonas: ['Quito', 'Ambato'], red: { organizacion: 'Independiente', tipo: 'Externo' } },
+    'Diana Cárdenas': { credencial: 'EUR-INS-0012', ciudadBase: 'Quito', zonas: ['Quito', 'Guayaquil'] },
+    'Jorge Pazmiño': { credencial: 'AND-INS-0008', ciudadBase: 'Ambato', zonas: ['Ambato', 'Cuenca'] },
+    'Mauricio Endara': { credencial: 'EUR-INS-0044', base: [-0.1406, -78.4757], zonas: ['Quito'], red: { organizacion: 'Eurosurvey', agencia: 'eurosurvey', tipo: 'Agencia' } },
+    'Sofía Arteaga': { credencial: 'AND-INS-0015', base: [-0.1950, -78.4890], zonas: ['Quito', 'Ambato', 'Cuenca'], red: { organizacion: 'Inspecciones Andinas Cía. Ltda.', agencia: 'andinas', tipo: 'Agencia' } },
+    'Pedro Lasso': { credencial: 'PAC-INS-0003', zonas: ['Manta', 'Guayaquil'], red: { organizacion: 'Peritajes del Pacífico S.A.', agencia: '', tipo: 'Agencia', nota: 'Invitación vencida: no recibe ofertas' } },
+    'Renata Cobo': { zonas: [] } };
+  const ORDEN = ['Marco Tapia', 'Cristian Vaca', 'Paola Vinueza', 'Luis Andrade', 'Diana Cárdenas', 'Jorge Pazmiño', 'Mauricio Endara', 'Sofía Arteaga', 'Pedro Lasso', 'Renata Cobo'];
+  inspectores.forEach((i) => { i.ficha = FICHA[i.nombre] || { zonas: [] }; });
+  inspectores.sort((a, b) => ORDEN.indexOf(a.nombre) - ORDEN.indexOf(b.nombre));
   const vig = (f, hoy) => { const d = String(f.desde || '').slice(0, 10), a = String(f.hasta || '').slice(0, 10); return (!d || d <= hoy) && (!a || hoy <= a); };
   inspectores.forEach((i) => i.cobertura.forEach((f) => { f.vigente = vig(f, HOY); }));
   const historial = [
@@ -42,6 +60,8 @@
     { inspector: 'Diana Cárdenas', accion: 'Asignó cobertura', detalle: 'Zona · Quito · Zona Centro · desde 01/11/2026', motivo: 'Refuerzo del centro desde noviembre', por: POR, hora: '2026-10-16T15:10' },
     { inspector: 'Sofía Arteaga', accion: 'Cambió la operación', detalle: 'Capacidad por día: 5 → 6', motivo: 'La agencia sumó un vehículo para sus inspectores', por: POR, hora: '2026-10-15T10:20' },
   ];
+  // R-5a · DEC-266: los bloqueos que antes se anotaban en la Agenda ahora son filas de la Red; su origen queda aquí.
+  inspectores.forEach((i) => (i.bloqueos || []).filter((b) => b.desde < '2026-11-01').forEach((b) => historial.push({ inspector: i.nombre, accion: 'Bloqueo traído de la Agenda (R-5a)', detalle: b.motivo + ' · ' + (b.desde.slice(0, 10) === b.hasta.slice(0, 10) ? 'el ' + b.desde.slice(8, 10) + '/' + b.desde.slice(5, 7) + '/' + b.desde.slice(0, 4) + ' de ' + b.desde.slice(11, 16) + ' a ' + b.hasta.slice(11, 16) : 'del ' + b.desde.slice(8, 10) + '/' + b.desde.slice(5, 7) + '/' + b.desde.slice(0, 4) + ' al ' + b.hasta.slice(8, 10) + '/' + b.hasta.slice(5, 7) + '/' + b.hasta.slice(0, 4)), motivo: 'Antes se anotaba en la Agenda (SIRIUS_AGENDA.bloqueos); desde R-5a vive solo en la Red', por: 'Migración R-5a', hora: '2026-10-18T07:00' })));
 
   // ---------- Base simulada de redAccion (mismas validaciones y mensajes) ----------
   const z2 = (n) => String(n).padStart(2, '0');
@@ -99,7 +119,7 @@
       if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(a) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(b)) return no('Indica desde y hasta del bloqueo (fecha y hora).'); if (b <= a) return no('«Hasta» debe ser posterior a «desde».');
       const bl = { id: 'rb-' + Math.random().toString(36).slice(2, 8), desde: a.slice(0, 16), hasta: b.slice(0, 16), motivo: mot, origen: 'Red de inspectores', por: quien }; (i.bloqueos = i.bloqueos || []).push(bl);
       reg(i.nombre, 'Agregó un bloqueo', mot + ' · del ' + fDia(a) + ' ' + fHora(a) + ' al ' + fDia(b) + ' ' + fHora(b)); return { ok: true, mensaje: 'Bloqueo agregado a ' + i.nombre + '.' }; }
-    if (tipo === 'desbloquear') { const x = bloqDe(d.id); if (!x) return no('El bloqueo no existe.'); if (x.b.origen === 'Agenda') return no('Este bloqueo viene de la Agenda: se cambia allí.');
+    if (tipo === 'desbloquear') { const x = bloqDe(d.id); if (!x) return no('El bloqueo no existe.'); /* R-5a: ya no hay bloqueos de la Agenda */
       x.i.bloqueos = x.i.bloqueos.filter((b) => b !== x.b); reg(x.i.nombre, 'Quitó un bloqueo', x.b.motivo + ' · del ' + fDia(x.b.desde) + ' al ' + fDia(x.b.hasta)); return { ok: true, mensaje: 'Bloqueo quitado a ' + x.i.nombre + '.' }; }
     return no('Acción desconocida: ' + tipo);
   };
@@ -173,7 +193,7 @@
   const extras = NOM.map((n, k) => { const t = TIPOS[k % 3]; return ins(n, t, t === 'Agencia' ? (k % 2 ? 'eurosurvey' : 'andinas') : '', 'Activo', op(PV, k % 2 ? VR : V, k % 4 === 0 ? 'red' : k % 4 === 3 ? 'no' : 'coord', k % 5 ? LV : LS, '08:00', '17:00', 4 + (k % 3)), k % 6 === 5 ? [] : [fila('sucursal', { sucursal: SUC[k % 5], motivo: 'Atiende la sucursal ' + SUC[k % 5] })]); });
   extras.forEach((i) => i.cobertura.forEach((f) => { f.vigente = vig(f, HOY); }));
   window.SIRIUS_RED_EXTRA = extras;
-  window.SIRIUS_RED = { version: '1.1', listo: true, hoy: HOY, puedeGestionar: true, inspectores, historial, aplicar, lugar, ambito, NIVELES: NIV, RECIBE };
+  window.SIRIUS_RED = { version: '1.2', listo: true, hoy: HOY, puedeGestionar: true, inspectores, historial, aplicar, lugar, ambito, NIVELES: NIV, RECIBE };
 
   // ---------- Escena redcx: conexión simulada (SIRIUS_CX_COORD) con una fila «Viene de la ficha» ----------
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxEscenas) return;

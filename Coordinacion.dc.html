@@ -263,11 +263,11 @@ class Component extends DCLogic {
   reloj() { const B = this.cxBase(); return B && B.reloj && B.reloj.hoy ? B.reloj : null; }
   get today() { const r = this.reloj(); return r ? r.hoy : '2026-10-16'; }
   get nowIso() { const r = this.reloj(); return r ? r.hoy + 'T' + r.hora : '2026-10-16T13:40'; }
-  // Etapa P-6f-0f · DEC-232 (con la conexión): jornada del inspector según la Agenda (SIRIUS_AGENDA.disponibilidad, por nombre; en las escenas simuladas también base.escena.disponibilidad).
-  // Etapa P-6f-0f2: sin jornada propia se usa la «Jornada por defecto de las visitas» (SIRIUS_AGENDA.jornadaDefecto; sin ella, lunes a sábado de 08:30 a 17:30), que se edita en Configuración general › Agenda.
-  jornada(nombre) { const A = window.SIRIUS_AGENDA || {}, SF = window.SiriusFecha, B = this.cxBase(), E = B && B.escena && Array.isArray(B.escena.disponibilidad) ? B.escena.disponibilidad : [], d = nombre ? E.concat(A.disponibilidad || []).find(x => x && x.inspector === nombre) : null, ok = d && Array.isArray(d.dias) && Array.isArray(d.jornada) && d.jornada.length === 2;
-    const G = SF.jornadaDefecto(), dias = ok ? d.dias.map(x => x === 0 ? 7 : x).sort((a, b) => a - b) : G.dias.slice(), ini = ok ? d.jornada[0] : G.desde, fin = ok ? d.jornada[1] : G.hasta;
-    return { dias, ini, fin, txt: SF.jornadaTxt({ dias, desde: ini, hasta: fin }), propia: !!ok }; }
+  // Etapa P-6f-0f · DEC-232: jornada del inspector. R-5a · DEC-266 y DEC-268: sale de la Red de inspectores por el lector único (SiriusRedFuente: SIRIUS_CONEXION.red
+  // con la conexión, real o simulada; si no, SIRIUS_RED). Sin jornada propia en la Red, la «Jornada por defecto de las visitas» (Configuración general › Agenda).
+  jornada(nombre) { const SF = window.SiriusFecha, R = window.SiriusRedFuente, G = SF.jornadaDefecto(), J = nombre && R ? R.jornada(nombre) : null, ok = !!(J && J.propia);
+    const dias = ok ? J.dias.slice() : G.dias.slice(), ini = ok ? J.desde : G.desde, fin = ok ? J.hasta : G.hasta;
+    return { dias, ini, fin, txt: SF.jornadaTxt({ dias, desde: ini, hasta: fin }), propia: ok }; }
   jTit(nombre, J) { return 'Fuera de la jornada ' + (J.propia && nombre ? 'de ' + nombre : 'de las visitas') + ' (' + J.txt + ')'; }
   diaSemana(iso) { const t = new Date(iso + 'T12:00:00Z'); return ((t.getUTCDay() + 6) % 7) + 1; } // lunes = 1 … domingo = 7
   fueraJornada(nombre, fecha, a, b) { const SF = window.SiriusFecha; if (!SF || !fecha || !a) return ''; const J = this.jornada(nombre), m = SF.aMin;
@@ -289,7 +289,7 @@ class Component extends DCLogic {
     const i = this.INS.find(x => x.n === name), out = ((i && i.agenda && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1], caso: '' }));
     this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
     return out.sort((a, b) => a.a < b.a ? -1 : 1); }
-  capacidad(n) { const A = window.SIRIUS_AGENDA || {}, B = this.cxBase(), E = B && B.escena && Array.isArray(B.escena.disponibilidad) ? B.escena.disponibilidad : [], d = E.concat(A.disponibilidad || []).find(x => x && x.inspector === n); return d && d.capacidadDia ? d.capacidadDia : null; }
+  capacidad(n) { const R = window.SiriusRedFuente, c = R ? R.capacidad(n) : null; return c ? c : null; } // R-5a: capacidad por día de la Red (null = sin capacidad registrada)
   // DEC-237: modalidades según las reglas parametrizadas, evaluadas con los riesgos elegidos (props.modalidadesPara del Back-office: SiriusModalidades.ofrecerPara).
   modsLista(ids) { const P = this.props, c = typeof P.modalidadesPara === 'function' ? P.modalidadesPara(ids) : this.modCfg();
     return this.MODS.filter(([label]) => this.modCfg() || this.modOk(label)).map(([label, hint]) => { const it = c && c.items ? c.items[label] : null, ok = it ? it.ok !== false : this.modOk(label);

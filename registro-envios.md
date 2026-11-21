@@ -4,6 +4,172 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-5a
+
+Publiqué la versión 363 de SIRIUS (los archivos subieron en la 362; esta versión cierra el registro con el tiempo de la etapa). La jornada, la capacidad, las modalidades, los ramos, «recibe ofertas» y los bloqueos de cada inspector ya se leen con un solo lector de la Red de inspectores (`sirius-red-fuente.js`, DEC-266 y DEC-268), y `SIRIUS_AGENDA` 1.2 ya no los tiene. Con los mismos datos, la Agenda, Coordinar visita, la Agenda conectada, el monitor y el portal dan exactamente lo mismo que antes. Un cambio hecho en la Red ahora se ve en todas esas pantallas. Antes de tocar nada te pregunté qué valores debían quedar en la Red para cuatro inspectores donde las fuentes no coincidían, y elegiste «Paridad primero».
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué leía | Ahora |
+|---|---|---|
+| `sirius-agenda.js` | `A.disp`, `A.trabaja`, `A.bloqueos` y la capacidad de `validar` desde `SIRIUS_AGENDA.disponibilidad` y `.bloqueos` | El lector (misma forma de respuesta) |
+| `Coordinacion.dc.html` | `jornada(nombre)` y `capacidad(n)` de `SIRIUS_AGENDA.disponibilidad` y `base.escena.disponibilidad` | El lector |
+| `SIRIUS Back-office.dc.html` | Agenda conectada (`d0` de `AG.disponibilidad` y `coordEscena.disponibilidad`); escena de Mauricio Endara (`SIRIUS_AGENDA.red`) | El lector (`disp`, `capacidad`, `deRed`) |
+| `Usuarios.dc.html` | `ufJornada`, y modalidades y «recibe» de `ufVmDemo` | El lector |
+| `sirius-monitor.js` | Capacidad (jornada) y disponibilidad (bloqueos) de cada persona | El lector |
+| `sirius-portal-caso.js` | `AGD()`: agenda fija, red de ofertas, orden, credencial y organización | El lector (`agenda`, `ofertas`, `disp`, `deRed`) |
+| `sirius-cobertura.js` | `inspectores()` y `zonasHeredadas()` con `A.disponibilidad` y `A.red` | El lector |
+| `ConfiguracionGeneral.dc.html` | Número de inspectores con jornada propia | El lector |
+| `datos-cx-inspectores.js` | cxcoordjornada sumaba a `SIRIUS_AGENDA.disponibilidad` | Red de la escena (`SIRIUS_CONEXION.red`) |
+| `datos-red.js` | La demostración de la Red | Valores escritos, 1.2 |
+| No estaban en la lista | `sirius-app-inspector.js` (red, jornada y bloqueos del inspector) y las escenas de Coordinar visita por fases (`datos-cx-fases.js`, `coordEscena.disponibilidad`; `datos-cx-lugar.js`) | El lector y la Red de la escena |
+| Sin cambios | `jornadaDefecto`, `intentosSinRespuesta`, `confirmacion`, `traslado`, `franjaMinima`, `vistas`, `vistaInicial`, `autoagendamiento`; la cobertura de la ficha (R-5b); `sirius-conexion.js` (70 bytes); archivos vigilados salvo `datos-agenda-liquidaciones.js` | — |
+
+**Qué cambió**
+
+- **Lector único** `sirius-red-fuente.js` (`window.SiriusRedFuente`): `fuente()`, `inspector`, `lista`, `jornada` (propia o la jornada por defecto, con `propia`), `trabaja`, `capacidad`, `modalidades`, `ramos`, `recibe`, `bloqueos` (la forma exacta de `A.bloqueos`) y `bloqueosDe`. La conversión de días (Red 1 a 7, Agenda 0 a 6) se hace solo aquí. Se carga antes de `sirius-agenda.js`, `sirius-cobertura.js` y `sirius-portal-caso.js` en el Back-office, Agenda, Portal, Formularios y Usuarios; también en Configuración general.
+- **Fuente:** con la conexión, real o simulada, `SIRIUS_CONEXION.red`. Sin ella, la Red de la sesión (lo que se guarda en Red › Por inspector) o `SIRIUS_RED`.
+- **Transición hasta R-5b:** `disp(n)`/`agenda()` y `deRed(n)`/`ofertas()` devuelven los registros con la forma anterior. La credencial, la ciudad base, la ubicación, las zonas heredadas y la organización van en `ficha` de cada inspector de la Red.
+- **`datos-red.js` 1.2:** lleva escritos los valores que antes resultaban. Sofía Arteaga queda con Presencial y los tres grupos, sin jornada propia y sin capacidad. Mauricio Endara, Pedro Lasso y Renata Cobo quedan sin jornada propia. Los bloqueos traídos de la Agenda tienen origen «Red de inspectores» y en el historial «Bloqueo traído de la Agenda (R-5a)». `aplicar('desbloquear')` ya no rechaza esos bloqueos.
+- **`SIRIUS_AGENDA` 1.1 → 1.2** (`datos-agenda-liquidaciones.js`, vigilado): sin `disponibilidad`, `red` ni `bloqueos`. El resto de las claves queda igual, carácter por carácter.
+- **Red › Por inspector:** los bloqueos ya no dicen «Viene de la Agenda» y tienen «Quitar». Sin jornada propia dice «Sin jornada propia: usa la jornada por defecto (Lunes a sábado, 08:30 a 17:30)».
+- **Agenda:** el bloqueo se ve igual («Bloqueado …: motivo»). Para quien tiene «Gestionar la red de inspectores» es un botón que abre su detalle con «Gestionar en Red de inspectores» (Red › Por inspector con esa persona). Se cierra con Esc o con un clic fuera y el foco vuelve al bloqueo. Los demás ven el bloqueo sin el enlace.
+
+**Paridad** (foto ANTES con la versión anterior y foto DESPUÉS, sin conexión y con la conexión simulada)
+
+| Punto | Resultado |
+|---|---|
+| (a) `A.trabaja`, `A.bloqueos` y `A.disp` de 10 inspectores × 14 días (19/10 al 01/11) | Igual |
+| (a) Jornada y capacidad de Coordinación (coord, cxcoordins, cxcoordjornada) | Igual |
+| (a) Jornada de la ficha de Usuarios | Igual en los 10 |
+| (a) Modalidades y «recibe» de la ficha | Igual salvo 3 (ver Diferencias) |
+| (b) Inspectores, jornadas y capacidad de Coordinar visita y de la Agenda conectada (cxagenda) | Igual |
+| (b) Cobertura, zonas heredadas, credencial, organización y perfil de la app | Igual |
+| (c) Monitor (monitorresp y monitorcarga) | Igual |
+| (d) Portal del 20152 (portalagenda y portalporagenda) | 118 horarios inmediatos y 18 por la red, antes y después |
+| (e) Texto de agendaok, agendamover, agendadia, agendasemana, cxagenda, cxagendamover, coord, coordchoque, cxcoordins, cxcoordjornada, lugarbuscar, usuarios, monitorresp, monitorcarga, portalagenda, portalporagenda, portalhoras, cxcoordfases y coordfechahora | Igual. En cxagenda y cxagendamover solo cambia la hora real de Ecuador, y en portalporagenda el enlace aleatorio |
+| (e) usfichaoperacion | Cambia: Sofía con los valores que usan las demás pantallas |
+
+**Prueba cruzada**
+
+El mismo cambio en la Red (jornada de Marco Tapia L–V 09:00–13:00 y un bloqueo el 22/10 de 09:00 a 11:00), en cada pantalla:
+
+| Pantalla | Antes del cambio | Después |
+|---|---|---|
+| Agenda | 08:00–17:00 junto al nombre | 09:00–13:00, «Bloqueado 09:00–11:00: Reunión…», y mover a las 15:00 «queda fuera de la jornada de Marco Tapia (09:00 a 13:00)» |
+| Coordinar visita | lun a vie, 08:00–17:00 | lun a vie, 09:00–13:00; las 15:00 «Fuera de la jornada de Marco Tapia (lun a vie, 09:00–13:00)» |
+| Ficha de Usuarios | 08:00–17:00 | 09:00–13:00 |
+| Monitor (cargabilidad) | 44 % | 106 % |
+| Portal de demostración | Marco en 113 horarios inmediatos (45 por la tarde) | 56, ninguno por la tarde |
+
+Las dos escenas nuevas muestran lo mismo.
+
+**Verificado**
+
+- **Conexión temporal activa (no simulada)** en una copia aparte, con `SIRIUS_CONEXION.red` propia (Marco 09:00–13:00, capacidad 4 y un bloqueo el 24/11) y sin `SIRIUS_AGENDA.disponibilidad`. La Agenda conectada y Coordinar visita usan esa jornada, esa capacidad y ese bloqueo, y la demostración (08:00–17:00) no interviene. `sirius-conexion.js` sigue en 70 bytes.
+- **Detalle del bloqueo:** Esc lo cierra y devuelve el foco; Enter lo abre; «Gestionar en Red de inspectores» abre Red › Por inspector con Marco. Desde allí, «Quitar» un bloqueo traído de la Agenda lo saca de la Agenda y queda en el historial. El Inspector ve el bloqueo sin el enlace.
+- **Escenas nuevas** a 1280×720 y 1920×1080, sin errores ni desplazamiento lateral.
+- **Regresión del texto contra la versión anterior:** 154 escenas a 1280×720 (Red, Agenda, Coordinar visita, Usuarios, portal, app del inspector, monitor, honorarios, notificaciones y coordinación con la conexión simulada) y 15 a 1920×1080. Diferentes: solo las 11 que se explican en Diferencias.
+- **Búsqueda en todo el proyecto:** `SIRIUS_AGENDA` con `disponibilidad`, `.red` o `bloqueos` queda solo en el lector, en `datos-red.js` y en comentarios históricos.
+- **Archivos vigilados:** cambió solo `datos-agenda-liquidaciones.js` (SIRIUS_AGENDA 1.2). `datos-usuarios.js`, `datos-portal-cliente.js`, `datos-notificaciones.js` y `datos-zonas.js` quedan iguales.
+- Sintaxis de los 23 archivos cambiados.
+
+**No verificado**
+
+- La base real (`red_inspectores` y `redAccion` reales): solo conexión temporal y simulada.
+- Firefox y Safari; lector de pantalla sobre el detalle del bloqueo.
+- La app del inspector y el portal con la Red cambiada desde la pantalla de la Red (solo por el lector y la prueba cruzada).
+
+**Diferencias**
+
+- **Ficha de Usuarios, 3 valores que antes se contradecían con el portal:** Mauricio Endara pasa de «Presencial» a «Presencial, Virtual guiada» (el portal ya le ofrecía las dos). Pedro Lasso (invitación vencida) y Renata Cobo (inactiva) pasan de «recibe de la red» a «No recibe ofertas», que es lo que dice la Red y lo que hacía el portal.
+- **Red de inspectores, por tu elección «Paridad primero»:**
+  - Sofía Arteaga queda con Presencial, Vehículos, Ramos Generales y Equipo y maquinaria, sin jornada propia y sin capacidad.
+  - Mauricio Endara, Pedro Lasso y Renata Cobo, sin jornada propia; Mauricio y Renata, sin capacidad.
+  - Se ve en las escenas red, redasignar, redsincob, redcx, redlistalarga, redzonaasignar y redsucursalasignar, y en la tarjeta «Operación» de usfichaoperacion, cobertura y coberturazonainactiva.
+  - Los bloqueos ya tienen «Quitar» y su historial.
+- **Escenas y lectores:**
+  - La escena «coordins» no existe; usé coord, coordchoque y cxcoordins.
+  - Encontré dos lectores más fuera de la lista: la app del inspector y las escenas de Coordinar visita por fases.
+- **Texto en Configuración general (agendajornada):** «con jornada propia en la Agenda» pasa a «en la Red de inspectores».
+- **Agenda:**
+  - Con la conexión, cuando los bloqueos vienen de la Red de la base, la leyenda dice «Bloqueo (con su motivo)» en lugar de «(demostración)».
+  - En redfuentejornada, «fuera de jornada por la tarde» se ve en la vista Día del 22/10. La Semana (`?fvista=semana`) muestra «09:00–13:00» junto al nombre, porque no dibuja horas.
+- **Red de la sesión:** el lector lee la Red de la sesión porque los cambios de Red › Por inspector se guardan allí, no en `SIRIUS_RED`. Además, los archivos de datos se ejecutan dos veces al cargar.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `redfuentejornada` | Jornada de Marco Tapia cambiada en la Red a L–V 09:00–13:00: Agenda Día del 22/10 fuera de jornada desde las 13:00; `?fvista=semana` con «09:00–13:00» |
+| `redfuentebloqueo` | Bloqueo nuevo de la Red (22/10, 09:00–11:00) en la Agenda Semana con su detalle abierto y «Gestionar en Red de inspectores» |
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (filas de los 23 archivos, `sirius-red-fuente.js` nuevo, 2 escenas y la sección «Una sola fuente para la operación de los inspectores»).
+
+Tiempo de la etapa: inicio 21/11/2026 16:47 · fin 21/11/2026 17:46 · 59 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa U-8
+
+Publiqué la versión 361 de SIRIUS (los archivos subieron en la 360; esta versión cierra el registro con el tiempo de la etapa). Con la conexión real el rol activo sale siempre del usuario de la sesión (DEC-267): ya no hay rol de respaldo, la pantalla queda tapada hasta que llega el usuario, se fija su rol principal y, si el rol deja de ser uno de los suyos o hay «ver como otro usuario», se corrige solo. Apliqué los 8 reemplazos de la asesoría, solo en `SIRIUS Back-office.dc.html`, y no cambia nada sin la conexión ni con la conexión simulada.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| `cxUsuario()` | Sin usuario devuelve `rol: ''` y `roles: []` (antes «Coordinador de inspecciones») |
+| `cxRolEstado()` y `cxRolValido(st)` (nuevas) | Una sola regla del rol activo con la conexión real |
+| `cxActivar()` y estado inicial con la conexión | No buscan el rol de un usuario ausente |
+| `cxSuscribir()` | Al resolverse `X.listo` fija el rol del usuario |
+| `componentDidUpdate` | Vigila que el rol activo sea uno de los roles del usuario y quita «ver como otro usuario» |
+| Render (`role`) | Con la conexión real, sin rol de respaldo |
+| `pick` de «Ver como otro usuario» | Con la conexión real no hace nada |
+| Arranque con la conexión real: rol, menú lateral y menú del perfil | Salen del usuario de la sesión |
+| Sin cambios | Demostración, conexión simulada y escenas, base, archivos vigilados, `sirius-conexion.js` (70 bytes) |
+
+**Qué cambió**
+
+Los 8 reemplazos exactos de la asesoría, en este orden: `cxUsuario()`; las funciones nuevas `cxRolEstado()` y `cxRolValido(st)` antes del comentario «Casos y detalles solo de la conexión»; `cxActivar()`; `cxSuscribir()`; el estado inicial con la conexión; `pick`; `componentDidUpdate`; y el `role` del render.
+
+**Prueba cruzada** (copia aparte con una conexión temporal activa, no simulada, con `usuario` null al montar y `listo` que se resuelve a los 2 s)
+
+| Caso | Antes | Ahora |
+|---|---|---|
+| (a) Santiago Ortiz, Ejecutivo comercial | Quedaba «Coordinador de inspecciones» con Red de inspectores, Reportes y Administración | «Ejecutivo comercial»; menú Inicio, Solicitudes, Agenda, Garantías y Reportes, sin Red de inspectores |
+| (b) Andrea Salazar con roles Coordinador y Administrador | Entraba como Coordinador | Entra como Coordinador, cambia a Administrador desde el perfil y se mantiene tras 3 s |
+| (c) «Ver como otro usuario» forzado (panel oculto mostrado) | Cambiaba el rol y el menú | No cambia nada ni a los 3 s |
+| Mientras el usuario no llega | Menú de Coordinador completo | Pantalla «Preparando tu espacio de trabajo», sin rol |
+
+`sirius-conexion.js` vuelve a su contenido mínimo (70 bytes): la conexión temporal solo existió en copias aparte.
+
+**Verificado**
+
+- Los 8 reemplazos: el archivo cambia solo en 7 bloques (el primero junta los reemplazos 1 y 2); el resto es igual al anterior. Sintaxis correcta.
+- Sin la conexión: «Ver como otro usuario» (Santiago Ortiz y Verónica Lema) e «Ir a una escena» dan lo mismo que antes (813 escenas listadas).
+- Escenas con la conexión simulada y de demostración (cxlimpio, redzonacx, garsincaso, cxagenda, demousuarios, inicio, inicioadm, iniciocom, redzona, cxgarantiacumplir, campanavacia): 11 de 11 iguales a 1280×720 y a 1920×1080.
+- Sin errores de consola en la prueba con la conexión temporal.
+
+**No verificado**
+
+- La conexión real de producción (Supabase y el usuario real de la sesión): solo probé una conexión temporal con la forma del contrato.
+- Que la base ignore el rol de pantalla (lo indica la asesoría; no lo probé).
+- Firefox y Safari.
+
+**Diferencias**
+
+- Ninguna respecto de los 8 reemplazos pedidos. El mensaje de la prueba pedía «cinco líneas» para el paso 2: las pegué tal cual, y son seis líneas físicas (tres de comentario, `cxRolEstado()` y las dos de `cxRolValido`).
+
+**Escenas**
+
+Sin escenas nuevas ni cambiadas.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (fila del Back-office y sección «Rol activo blindado con la conexión»).
+
+Tiempo de la etapa: inicio 21/11/2026 16:28 · fin 21/11/2026 16:36 · 8 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-3d
 
 Publiqué la versión 359 de SIRIUS (los archivos subieron en la 358; esta versión cierra el registro con el tiempo de la etapa). Garantías e Inicio ya no se detienen cuando la base trae una garantía sin su caso (DEC-261): se omite, no se muestra y no se cuenta. Antes del cambio la escena nueva fallaba con «Cannot read properties of null (reading 'asegurado')»; ahora carga sin errores y los números son los mismos con y sin la garantía huérfana. No cambió ninguna regla de Garantías.

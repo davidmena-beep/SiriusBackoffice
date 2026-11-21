@@ -150,7 +150,7 @@
   SiriusFecha.aMin = function (t) { var q = String(t || '').split(':').map(Number); return (q[0] || 0) * 60 + (q[1] || 0); };
   SiriusFecha.aHora = function (m) { m = Math.max(0, Math.min(23 * 60 + 59, m)); return z(Math.floor(m / 60)) + ':' + z(m % 60); };
   SiriusFecha.minimaHoy = function (r) { return SiriusFecha.aHora(Math.ceil(((r && r.min) || 0) / 15) * 15 + (((r && r.min) || 0) % 15 === 0 ? 15 : 0)); };
-  // Jornada por defecto de las visitas (DEC-232 · P-6f-0f2): la que se usa cuando el inspector no tiene jornada propia en SIRIUS_AGENDA.disponibilidad.
+  // Jornada por defecto de las visitas (DEC-232 · P-6f-0f2): la que se usa cuando el inspector no tiene jornada propia en la Red de inspectores (R-5a; antes SIRIUS_AGENDA.disponibilidad).
   // Se lee de SiriusJornada.valor (lo editado en la sesión), de SIRIUS_AGENDA.jornadaDefecto o, si no existe o no es válida, del valor inicial: lunes a sábado, de 08:30 a 17:30.
   // dias: 1 = lunes … 7 = domingo (0 también vale como domingo). Es el único lugar de esas horas fuera de los datos.
   SiriusFecha.JORNADA_INICIAL = { dias: [1, 2, 3, 4, 5, 6], desde: '08:30', hasta: '17:30' };

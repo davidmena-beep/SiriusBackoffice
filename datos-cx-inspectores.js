@@ -54,9 +54,9 @@
     casos.push(caso('50083', 'Agendado', { asegurado: 'Patricia Garcés Ortiz', visitasBase: [vis(1, 'Mauricio Endara', p.fecha, hm(p.hIni, 60), hm(p.hIni, 105)), vis(2, 'Mauricio Endara', p.fecha, hm(p.hIni, 120), hm(p.hIni, 150), 'Cancelada')] }));
     casos.push(caso('50086', 'Inspeccionado', { asegurado: 'Javier Cueva Ríos', visitasBase: [vis(1, 'Mauricio Endara', p.fecha, '07:00', '07:45', 'Terminada')] }));
     const X = { usuario: U, casos: casos, detalles: {}, eventos: {}, evidencias: {}, controles: {}, informes: {}, calificaciones: {}, inspectores: JSON.parse(JSON.stringify(INSPECTORES)), relojReal: true,
-      coordEscena: { inspector: e[1], motivo: e[2], rechazar: rech, dir: escena === 'cxvisitariesgos' ? DIR_VISITA : '', hIni: '00:00', hFin: '00:45',
-        // Solo en cxcoordjornada: la disponibilidad de la Agenda para esta escena (se suma a SIRIUS_AGENDA.disponibilidad sin cambiarla).
-        disponibilidad: escena === 'cxcoordjornada' ? [JSON.parse(JSON.stringify(JORNADA_ME))] : [] } };
+      coordEscena: { inspector: e[1], motivo: e[2], rechazar: rech, dir: escena === 'cxvisitariesgos' ? DIR_VISITA : '', hIni: '00:00', hFin: '00:45' } };
+    // R-5a · DEC-266: solo en cxcoordjornada, la jornada de Mauricio Endara va en la Red de esta escena (SIRIUS_CONEXION.red), no en SIRIUS_AGENDA.
+    if (escena === 'cxcoordjornada' && window.SiriusRedFuente) X.red = window.SiriusRedFuente.conJornadas([JSON.parse(JSON.stringify(JORNADA_ME))]);
     if (escena === 'agendajornada') X.usuario = Object.assign({}, U, { rol: 'Administrador', roles: ['Administrador', 'Coordinador de inspecciones'] }); // P-6f-0f2: la Agenda se configura como Administrador (y puede coordinar)
     try { const h = new URLSearchParams(location.search).get('cxhora'); if (escena === 'cxcoordjornada' && /^\d\d:\d\d$/.test(h || '')) { X.coordEscena.hIni = h; X.coordEscena.hFin = hm(h, 45); } } catch (er) { /* nada */ }
     casos.forEach((c) => { X.eventos[c.id] = [{ hora: '2026-10-17T15:20', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' }]; X.evidencias[c.id] = []; X.controles[c.id] = []; X.informes[c.id] = []; X.calificaciones[c.id] = []; });

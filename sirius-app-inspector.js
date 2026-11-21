@@ -47,8 +47,10 @@
 
   // ---------- Quién es quién ----------
   const usuario = (n) => (SU() && SU().usuario ? SU().usuario(n) : null) || null;
-  const redDe = (n) => (AGD().red || []).find((x) => x.inspector === n) || null;
-  const dispDe = (n) => (AGD().disponibilidad || []).find((x) => x.inspector === n) || null;
+  // R-5a · DEC-266: la red de ofertas, la jornada y los bloqueos del inspector salen de la Red de inspectores por el lector único (SiriusRedFuente).
+  const RF = () => W.SiriusRedFuente || null;
+  const redDe = (n) => (RF() ? RF().deRed(n) : null);
+  const dispDe = (n) => (RF() ? RF().disp(n) : null);
   function perfilDe(n) { const r = redDe(n), d = dispDe(n), u = usuario(n) || {}, ov = S.perfil[n] || {};
     const tipo = u.tipo || (r ? r.tipo : 'Interno'), enRed = !!r && tipo !== 'Interno', org = r ? r.organizacion : tipo === 'Interno' ? 'Aseguradora del Sur' : (u.agencia || tipo);
     return { nombre: n, tipo, enRed, organizacion: org, agencia: (r && r.agencia) || u.agencia || '', credencial: (r && r.credencial) || (d && d.credencial) || '', base: (r && r.base) || (d && d.base) || null,
@@ -135,7 +137,7 @@
     return { valor: v, txt: usd(v) + ' (estimado)', nota: 'Tarifa de la aseguradora · calculadora hora-hombre: Inspector Riesgos Básicos, ' + hv + ' h de visita y ' + hr + ' h de redacción; el definitivo sigue el flujo del honorario', esquema: 'aseguradora' }; }
   function choques(n, fecha, ini, fin) { const a = min(ini), b = min(fin), out = [];
     visitasDe(n, fecha).forEach((v) => { const x = min(v.hIni), y = v.hFin ? min(v.hFin) : x + 60; if (a < y && b > x) out.push('Choca con tu visita de las ' + v.hIni + ' (caso ' + v.caso + ')'); });
-    (AGD().bloqueos || []).filter((k) => k.inspector === n).forEach((k) => { const d0 = String(k.desde).slice(0, 10), d1 = String(k.hasta).slice(0, 10); if (fecha < d0 || fecha > d1) return; const x = k.desde.length > 10 && d0 === fecha ? min(k.desde.slice(11)) : 0, y = k.hasta.length > 10 && d1 === fecha ? min(k.hasta.slice(11)) : 1440; if (a < y && b > x) out.push('Choca con tu bloqueo «' + k.motivo + '»'); });
+    (RF() ? RF().bloqueosDe(n) : []).forEach((k) => { const d0 = String(k.desde).slice(0, 10), d1 = String(k.hasta).slice(0, 10); if (fecha < d0 || fecha > d1) return; const x = k.desde.length > 10 && d0 === fecha ? min(k.desde.slice(11)) : 0, y = k.hasta.length > 10 && d1 === fecha ? min(k.hasta.slice(11)) : 1440; if (a < y && b > x) out.push('Choca con tu bloqueo «' + k.motivo + '»'); });
     return out; }
   function ofertas(n) { const P = PCL(); if (!P || !P.redes) return []; const p = perfilDe(n); if (!p.enRed) return [];
     return P.redes().filter((r) => (r.miembros || []).indexOf(n) >= 0 && !(S.rechazos[claveRed(r)] || {})[n] && (r.estado === 'buscando' || (r.estado === 'aceptada' && r.aceptadoPor !== n && !(S.vistas[claveRed(r)] || {})[n])))

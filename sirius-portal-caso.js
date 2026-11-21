@@ -1,6 +1,6 @@
 // SIRIUS · Portal del cliente del caso: Mi inspección, Agenda y Documentos (etapa 14 · DEC-171; etapa 14b · DEC-172).
 // Lee SIRIUS_PORTAL_CLIENTE (datos-portal-cliente.js v1.2, tal cual), los enlaces, documentos y lecturas de SIRIUS_EJEMPLO.portalCliente, la Agenda
-// (SIRIUS_AGENDA + SiriusAgenda: disponibilidad, zonas, capacidad, bloqueos, red y duración por ramo) y el calendario hábil de SIRIUS_FLUJO.
+// (SiriusRedFuente · R-5a: agenda fija, red de ofertas, jornada, capacidad y bloqueos de la Red de inspectores; SIRIUS_AGENDA: duración por ramo) y el calendario hábil de SIRIUS_FLUJO.
 // Los textos salen de los bloques de contenido de la apariencia (SiriusPortalCfg.texto · DEC-162).
 // · window.SiriusPortalCasoLogic: horarios cada 30 minutos en la jornada hábil de los próximos 10 días hábiles para todos los grupos de ramo
 //   (duración por grupo o por ramo); «Confirmación inmediata» con inspectores de agenda fija (apartado de 10 minutos) y «Otros horarios» que
@@ -14,7 +14,9 @@
 (function () {
   if (window.SiriusPortalCaso) return;
   const W = window, R = () => W.React, h = (...a) => R().createElement(...a), NS = () => W.AseguradoraDelSurDesignSystem_4fbf29 || {};
-  const PC = () => W.SIRIUS_PORTAL_CLIENTE || {}, EJ = () => W.SIRIUS_EJEMPLO || {}, PCL = () => EJ().portalCliente || {}, AGD = () => W.SIRIUS_AGENDA || { disponibilidad: [], bloqueos: [], red: [] };
+  const PC = () => W.SIRIUS_PORTAL_CLIENTE || {}, EJ = () => W.SIRIUS_EJEMPLO || {}, PCL = () => EJ().portalCliente || {}, AGD = () => W.SIRIUS_AGENDA || {};
+  // R-5a · DEC-266: la agenda fija (con jornada propia) y la red de ofertas salen de la Red de inspectores por el lector único (SiriusRedFuente).
+  const RF = () => W.SiriusRedFuente || null, FIJA = () => (RF() ? RF().agenda() : []), OFERTAS = () => (RF() ? RF().ofertas() : []);
   const F = () => W.SIRIUS_FLUJO || null, A = () => W.SiriusAgenda || null, CFG = () => W.SiriusPortalCfg || null;
   const z2 = (n) => String(n).padStart(2, '0');
   const isoD = (d) => d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate());
@@ -77,14 +79,14 @@
   function minHab(a, b, suc) { const f = F(); return f && f.minutosHabiles ? f.minutosHabiles(a, b, suc) : Math.max(0, (b - a) / 60000); }
   function sumarHab(a, m) { const f = F(); return f && f.sumarHabiles ? f.sumarHabiles(a, m) : new Date(a.getTime() + m * 60000); }
   const tipoIns = (n) => ((EJ().inspectores || []).find((x) => x.n === n) || {}).tipo || 'Interno';
-  const orgDe = (n) => { const x = (EJ().inspectores || []).find((y) => y.n === n) || {}, r = (AGD().red || []).find((y) => y.inspector === n); return r ? r.organizacion : x.tipo === 'Agencia' ? (x.ag || 'Agencia') : x.tipo === 'Externo' ? 'Independiente' : 'Aseguradora del Sur'; };
+  const orgDe = (n) => { const x = (EJ().inspectores || []).find((y) => y.n === n) || {}, r = RF() ? RF().deRed(n) : null; return r ? r.organizacion : x.tipo === 'Agencia' ? (x.ag || 'Agencia') : x.tipo === 'Externo' ? 'Independiente' : 'Aseguradora del Sur'; };
   // Agenda fija: internos y de agencia con disponibilidad en SIRIUS, de la zona y la modalidad (los externos van por la red).
   // Etapa G-2b · DEC-223: «cubre» usa la cobertura del inspector con la sucursal del caso (d.zona); sin SiriusCobertura, sus zonas como antes.
   // Etapa G-2c · DEC-222: con el lugar de la visita (d.lugar), también su ciudad y su zona.
   const cubre = (x, d) => { const C = W.SiriusCobertura, lg = d.lugar && typeof d.lugar === 'object' ? d.lugar : null; return C ? !!C.cubre(x, { sucursal: d.zona, ciudad: lg ? lg.ciudad : '', zonaId: lg && lg.zona ? lg.zona.id : '' }).nivel : (x.zonas || []).indexOf(d.zona) >= 0; };
-  function fijos(d) { return (AGD().disponibilidad || []).filter((x) => cubre(x, d) && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
+  function fijos(d) { return FIJA().filter((x) => cubre(x, d) && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
   // Red (DEC-172): externos y agencias habilitados para la zona, el grupo de ramo y la modalidad.
-  function redDe(d) { const AP = W.SiriusAppInspectorLogic; return (AGD().red || []).map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && cubre(x, d) && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }
+  function redDe(d) { const AP = W.SiriusAppInspectorLogic; return OFERTAS().map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && cubre(x, d) && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }
   function apartadosActivos() { const n = now(); return S.apartados.filter((x) => parse(x.hasta) > n); }
   function apartadoDe(caso) { return apartadosActivos().find((x) => x.caso === caso) || null; }
   // Inspectores de agenda fija con ese horario libre: trabaja ese día, cabe en su jornada, sin bloqueo, sin choque con otra visita o cupo
@@ -102,7 +104,7 @@
       if (ad.some((a) => a0 < min(a.fin) && b0 > min(a.ini))) return false;
       return vd.length + ad.length + 1 <= x.capacidadDia; });
     const carga = (n) => vis.filter((v) => v.inspector === n && v.fecha === fecha).length + ap.filter((a) => a.inspector === n && a.fecha === fecha).length;
-    const orden = (AGD().disponibilidad || []).map((x) => x.inspector);
+    const orden = FIJA().map((x) => x.inspector);
     return out.sort((a, b) => carga(a.inspector) - carga(b.inspector) || orden.indexOf(a.inspector) - orden.indexOf(b.inspector));
   }
   // Horarios de los próximos 10 días hábiles: inicio cada 30 min dentro de cada bloque de la jornada, si la visita termina antes del cierre
@@ -154,7 +156,7 @@
   }
   // En el prototipo la aceptación se simula (la oferta en la app del inspector es de la etapa 15): el primero que acepta queda asignado.
   function redAceptar(caso, nombre) {
-    const r = S.red[caso]; if (!r || r.estado !== 'buscando') return null; const m = (AGD().red || []).find((x) => x.inspector === (nombre || r.miembros[0])); if (!m) return null; const at = iso(now());
+    const r = S.red[caso]; if (!r || r.estado !== 'buscando') return null; const m = OFERTAS().find((x) => x.inspector === (nombre || r.miembros[0])); if (!m) return null; const at = iso(now());
     const p = { caso, riesgo: r.riesgo, modalidad: r.modalidad, zona: r.zona, grupo: r.grupo, fecha: r.fecha, hIni: r.ini, hFin: r.fin, franja: r.ini + ' – ' + r.fin, inspector: m.inspector, organizacion: m.organizacion, credencial: m.credencial, origen: 'red', consultados: r.consultados, buscandoDesde: r.desde,
       dir: r.form.dir, ref: r.form.ref, recibe: r.form.recibe, cel: r.form.cel, ubicacion: r.form.ubicacion || null, lugar: r.form.lugar || null /* G-2d */, reemplaza: r.reemplaza, at, por: r.por };
     Object.assign(r, { estado: 'aceptada', aceptadoPor: m.inspector, organizacion: m.organizacion, credencial: m.credencial, aceptadoEn: at });
@@ -169,7 +171,7 @@
   function avisarCamino(caso, o) { S.camino[caso] = Object.assign({ at: iso(now()) }, o || {}); cambio(); return S.camino[caso]; }
   function caminoDe(caso) { return S.camino[caso] || null; }
   function enCamino(cita, caso) { const k = caso || (cita && cita.caso), a = k ? S.camino[k] : null; if (!cita || !cita.fecha || cita.estado !== 'Agendada' || !a) return false; const n = now(), b = parse(cita.fecha + 'T' + cita.hFin); return isoD(n) === cita.fecha && a.fecha === cita.fecha && n < b; }
-  function credencial(n) { const x = (AGD().disponibilidad || []).find((d) => d.inspector === n) || (AGD().red || []).find((d) => d.inspector === n); return (x && x.credencial) || ''; }
+  function credencial(n) { const R = RF(), x = R ? (R.disp(n) || R.deRed(n)) : null; return (x && x.credencial) || ''; }
   // Archivo de calendario (.ics) con aviso 2 h antes (SIRIUS_PORTAL_CLIENTE.agenda.recordatorio).
   function ics(c, d) { const f = (fe, ho) => fe.replace(/-/g, '') + 'T' + ho.replace(':', '') + '00';
     return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Aseguradora del Sur//SIRIUS//ES', 'BEGIN:VEVENT', 'UID:' + d.caso + '-' + c.id + '@asur.ec', 'DTSTAMP:' + f(isoD(now()), hhmm(now())), 'DTSTART:' + f(c.fecha, c.hIni), 'DTEND:' + f(c.fecha, c.hFin), 'SUMMARY:Inspección de tu seguro · caso ' + d.caso, 'LOCATION:' + String(c.dir || '').replace(/,/g, '\\,'),
