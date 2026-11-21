@@ -33,6 +33,7 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 20/11/2026 · DEC-263 (B): consentimiento de WhatsApp, SMS y correo dado por otorgado en los casos de la base (solo prueba; brecha LOPDP para Citytech).
 // 20/11/2026 · R-2 · DEC-262: SIRIUS_CONEXION.red (Red de inspectores, SQL 68) = { listo, puedeGestionar, hoy, inspectores: [{ nombre, tipo, tipoInspector, agencia, estado, cuenta,
 //   operacion: { modalidades, ramos, recibeOfertas ('red'|'coord'|'no'), jornada: { dias, desde, hasta }, capacidadDia, fuente, actualizado },
 //   cobertura: [{ id, nivel ('todas'|'sucursal'|'ciudad'|'zona'), sucursal, ciudad, zona, desde, hasta, vigente, origen, motivo, creado, creadoPor }],
@@ -376,8 +377,15 @@
       if (i.operacion) { u.jornada = { dias: i.operacion.jornada.dias, desde: i.operacion.jornada.desde, hasta: i.operacion.jornada.hasta }; u.recibeOfertas = i.operacion.recibeOfertas; u.capacidadDia = i.operacion.capacidadDia;
         if (i.operacion.modalidades.length) u.modalidades = i.operacion.modalidades; if (i.operacion.ramos.length) u.ramos = i.operacion.ramos; } }); });
   }
+  // DEC-263 (decisión B, solo prueba de concepto): los casos de la base no traen consentimiento del cliente; se da por otorgado en WhatsApp,
+  // SMS y correo para que la pantalla permita esos canales (se simulan hasta Genesis, N-3). Brecha LOPDP para Citytech: en producción el
+  // consentimiento se registra en la solicitud con fecha y origen, y sin él no se escribe por WhatsApp ni SMS.
+  function ponerConsentimiento() {
+    var N = window.SIRIUS_NOTIFICACIONES; if (!N) return; N.consentimiento = N.consentimiento || {}; N.consentimiento.casos = N.consentimiento.casos || {};
+    (CX.casos || []).forEach(function (c) { var id = String(c.id || ''); if (id && !N.consentimiento.casos[id]) N.consentimiento.casos[id] = { whatsapp: true, sms: true, correo: true, origen: 'Prueba de concepto · se asume (DEC-263)' }; });
+  }
   function cargarCasos() {
-    return Promise.all([cargarCasos0(), cargarRed()]).then(function (r) { ponerRedEnUsuarios(); var hr = JSON.stringify(CX.red); if (hr !== huellaRed) { huellaRed = hr; return true; } return r[0]; });
+    return Promise.all([cargarCasos0(), cargarRed()]).then(function (r) { ponerRedEnUsuarios(); ponerConsentimiento(); var hr = JSON.stringify(CX.red); if (hr !== huellaRed) { huellaRed = hr; return true; } return r[0]; });
   }
 
   function cargarCasos0() {
