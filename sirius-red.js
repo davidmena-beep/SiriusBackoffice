@@ -4,7 +4,7 @@
 // SIRIUS_CONEXION.redAccion(tipo, datos) → { ok, mensaje }; sin la conexión: SIRIUS_RED (datos-red.js), con redAccion simulada en la sesión (SIRIUS_RED.aplicar).
 // La cobertura se resume y se decide con SiriusCobertura (resumenFilas, cortoFilas, cubreFilas): lo que muestra Por inspector = SiriusCobertura.cubre = la base.
 // Filas que vienen de la ficha del usuario o bloqueos de la Agenda: «Viene de la ficha» / «Viene de la Agenda», sin «Quitar» (se cambian allí durante la transición).
-// Componente: window.SiriusRedInspectores({ rol, usuario, escena, rev, onIr }). Escenas: red, redsincob, redasignar, redoperacion y redcx. Lógica: window.SiriusRed.
+// Componente: window.SiriusRedInspectores({ rol, usuario, escena, rev, onIr, inspector }). Escenas: red, redsincob, redasignar, redoperacion y redcx. Lógica: window.SiriusRed.
 (function () {
   'use strict';
   const W = window; if (W.SiriusRedInspectores) return;
@@ -34,6 +34,24 @@
   S.RECIBE = [['red', 'Sí, de Coordinación y de la red'], ['coord', 'Solo de Coordinación'], ['no', 'No recibe ofertas']];
   S.recibeTxt = (v) => (v === 'red' ? 'Recibe ofertas de Coordinación y de la red' : v === 'coord' ? 'Recibe ofertas solo de Coordinación' : 'No recibe ofertas');
   S.MODALIDADES = ['Presencial', 'Virtual guiada']; S.RAMOS = ['Vehículos', 'Ramos Generales'];
+  // Etapa R-4 · DEC-262: la operación de un inspector para la tarjeta «Operación (solo lectura)» de la ficha de Usuarios (misma fuente que Por inspector: SIRIUS_CONEXION.red o SIRIUS_RED).
+  // → null si la base no trae la red; { encontrado: false } si el inspector no figura; si figura: { encontrado, cobertura, modalidadesRamos, recibe, jornada }.
+  const DIA_L = ['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  S.diasTxt = (dias) => { const d = Array.from(new Set((dias || []).map(Number).filter((x) => x >= 1 && x <= 7))).sort((a, b) => a - b); if (!d.length) return 'Sin días';
+    const seguidos = d.every((x, i) => i === 0 || x === d[i - 1] + 1), cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    if (d.length === 1) return cap(DIA_L[d[0]]); if (seguidos) return cap(DIA_L[d[0]]) + ' a ' + DIA_L[d[d.length - 1]];
+    const n = d.map((x) => DIA_L[x]); return cap(n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1]); };
+  S.jornadaTxt = (op) => { const j = (op || {}).jornada || {}, c = (op || {}).capacidadDia; if (!j.desde) return 'Sin jornada' + (c ? ' · capacidad ' + c + ' por día' : '');
+    return S.diasTxt(j.dias) + ', ' + j.desde + ' a ' + j.hasta + ' · ' + (c ? 'capacidad ' + c + ' por día' : 'sin límite de visitas por día'); };
+  // Resumen de cobertura para la ficha: como el corto de la Red, pero con «(ciudad completa)» en cada ciudad entera, por ejemplo «Sucursal Quito · Riobamba (ciudad completa)».
+  S.coberturaTxt = (i, hoy) => { const C = COB(); if (!C) return ''; const v = C.vigentes(i.cobertura || [], hoy); if (!v.length) return 'Sin cobertura vigente'; if (v.some((f) => f.nivel === 'todas')) return 'Todas las inspecciones';
+    const zon = {}, out = []; v.forEach((f) => { if (f.nivel === 'zona') { const k = String(f.ciudad); (zon[k] = zon[k] || []).push(C.zonaNombre(k, String(f.zona || ''))); } });
+    v.forEach((f) => { if (f.nivel === 'sucursal') out.push('Sucursal ' + f.sucursal); else if (f.nivel === 'ciudad') out.push(C.ciudadNombre(f.ciudad) + ' (ciudad completa)'); else if (f.nivel === 'zona' && zon[String(f.ciudad)]) { out.push(C.ciudadNombre(f.ciudad) + ' · ' + (zon[String(f.ciudad)].length === 1 ? 'Zona ' : 'Zonas ') + C.lista(zon[String(f.ciudad)])); delete zon[String(f.ciudad)]; } });
+    return out.filter((x, k, arr) => arr.indexOf(x) === k).join(' · '); };
+  S.operacionDe = (nombre) => { const D = S.datos(), red = D && D.red; if (!red) return null; const i = (red.inspectores || []).find((x) => x && x.nombre === nombre); if (!i) return { encontrado: false };
+    const op = i.operacion || {}, hoy = red.hoy || (COB() ? COB().hoy() : ''), L = (a, todo) => ((a || []).length ? a.join(', ') : todo);
+    return { encontrado: true, cobertura: S.coberturaTxt(i, hoy), modalidadesRamos: L(op.modalidades, 'Todas las modalidades') + ' · ' + L(op.ramos, 'Todos los ramos'),
+      recibe: op.recibeOfertas === 'red' ? 'De Coordinación y de la red' : op.recibeOfertas === 'coord' ? 'Solo de Coordinación' : 'No recibe ofertas', jornada: S.jornadaTxt(op) }; };
   W.SiriusRed = S;
 
   // ---------- Formato ----------
@@ -87,7 +105,7 @@
     const [tab, setTab] = R().useState('inspector');
     const [q, setQ] = R().useState('');
     const [filtro, setFiltro] = R().useState(esc === 'redsincob' ? 'sincob' : 'todos');
-    const [sel, setSel] = R().useState(esc === 'red' || esc === 'redasignar' || esc === 'redoperacion' || esc === 'redcx' || esc === 'redlistalarga' ? 'Sofía Arteaga' : esc === 'redsincob' ? 'Cristian Vaca' : '');
+    const [sel, setSel] = R().useState(props.inspector ? String(props.inspector) /* R-4: «Abrir en Red de inspectores» desde la ficha de Usuarios */ : esc === 'red' || esc === 'redasignar' || esc === 'redoperacion' || esc === 'redcx' || esc === 'redlistalarga' ? 'Sofía Arteaga' : esc === 'redsincob' ? 'Cristian Vaca' : '');
     const [drafts, setDrafts] = R().useState(() => esc === 'redoperacion' ? { 'Sofía Arteaga': { capacidadDia: 5, jornada: { dias: [1, 2, 3, 4, 5, 6], desde: '08:00', hasta: '17:00' } } } : {});
     const [motivo, setMotivo] = R().useState(''), [barErr, setBarErr] = R().useState(''), [guardando, setGuardando] = R().useState(false);
     const [aviso, setAviso] = R().useState(null);

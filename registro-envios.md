@@ -4,6 +4,93 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-4
+
+Publiqué la versión 349 de SIRIUS (los archivos subieron en la 348; esta versión cierra el registro con el tiempo de la etapa). En Usuarios, la ficha de un inspector ya no deja editar su cobertura ni su jornada: muestra la tarjeta «Operación (solo lectura)» con lo que dice la Red de inspectores y el botón «Abrir en Red de inspectores». Tipo, agencia y honorarios siguen editables. En Administración › Portal del cliente hay una pestaña «Agenda» con los tres plazos editables. Cuatro decisiones mías están en **Diferencias**.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| Usuarios › ficha (`sirius-usuarios-ficha.js`) | Se quitan «Cobertura y zonas», «Jornada» y los campos «Modalidades que hace», «Ramos» y «Recibe ofertas»; entra `operacionCard`; «Inspección» pasa a «Vínculo: tipo y agencia»; el alcance de quien solo es Inspector dice «no aplica» |
+| Usuarios › guardar y crear (`Usuarios.dc.html`) | `ufCambiosCx`, `ufGuardar` y `ufCrear` ya no envían cobertura, jornada, modalidades, ramos ni «recibe ofertas» |
+| Red de inspectores (`sirius-red.js`) | `operacionDe(nombre)` entrega el resumen para la ficha; la Red se abre con una persona elegida |
+| Back-office | `confIr` acepta `{ red: nombre }`; las escenas nuevas están en `KNOWN_ESC` |
+| Portal del cliente (`sirius-portal-cliente.js`, `datos-portal-cliente.js`) | Pestaña «Agenda» con tres campos numéricos, motivo e Historial; valores vigentes en `agenda.*` |
+| Portal del cliente › lógica (`sirius-portal-caso.js`) | `ANTICIPA()` y `RED_ANTES()` leen los números; el texto queda de respaldo |
+| Versiones | `datos-usuarios.js` 1.7 y `datos-portal-cliente.js` 1.4 (DEC-262: por encima de la publicada en la base) |
+| Sin cambios | Red › Por inspector (sus tablas y su barra), Agenda, Coordinación, honorarios, `sirius-conexion.js` |
+
+**Qué cambió**
+
+- Ficha de un inspector: la tarjeta «Operación (solo lectura)» tiene fondo teal claro, el título a la izquierda, el botón principal «Abrir en Red de inspectores» a la derecha y la lista Cobertura, Modalidades y ramos, Recibe ofertas y Jornada («Lunes a sábado, 08:00 a 18:00 · capacidad 6 por día»). Al pie: «La gestiona el negocio (permiso “Gestionar la red de inspectores”). Desde aquí no se edita.» Los datos salen de `SIRIUS_CONEXION.red`; sin conexión, de `SIRIUS_RED`.
+- «Vínculo: tipo y agencia»: Tipo de inspector, Agencia y Honorarios, con la nota «Se queda en Usuarios: el tipo y la agencia deciden qué datos puede ver y cómo se le paga».
+- Un usuario que solo es Inspector ve «Alcance de trabajo: no aplica. Ve los casos de sus visitas.»
+- «Abrir en Red de inspectores» abre Red de inspectores › Por inspector con esa persona elegida.
+- Al guardar la ficha ya no se envían cobertura, jornada, modalidades, ramos ni «recibe ofertas».
+- Portal del cliente › Agenda: «Plazo para cambiar o cancelar la cita» (1 a 24 horas hábiles), «Anticipación para confirmación inmediata» (30 a 480 minutos) y «Anticipación para pedir a la red» (1 a 24 horas hábiles), cada uno con su explicación, su rango y su campo. Se publican con motivo y quedan en «Historial de Agenda».
+- Versiones de configuración: `datos-usuarios.js` pasa a 1.7 y `datos-portal-cliente.js` a 1.4.
+
+**Prueba cruzada**
+
+Lo que se envía al guardar la ficha de un inspector:
+
+| Cambio hecho en la ficha | Antes | Ahora |
+|---|---|---|
+| Alexandre Abascal: tipo Agencia y agencia Eurosurvey (`cxusrcobertura`) | `tipo`, `agencia`, `cobertura`, `tipoInspector`, `agenciaRuc` | `tipo`, `agencia`, `tipoInspector`, `agenciaRuc` (sin `cobertura`) |
+| Sofía Arteaga: celular | — (escena nueva) | `{ celular }` |
+| Sofía Arteaga: agencia | — | `{ agencia, agenciaRuc }` |
+
+La ficha ya no tiene campos de cobertura, jornada, modalidades, ramos ni «recibe ofertas», así que esas claves no pueden salir en ningún guardado ni alta.
+
+Lo que ve el cliente en el portal (caso con horarios, mismos datos, solo cambian los tres números):
+
+| Plazo | Valor | Horarios inmediatos | Horarios por la red |
+|---|---|---|---|
+| Vigentes | 4 h hábiles · 120 min · 4 h hábiles | 118 | 18 |
+| Publicados en la prueba | 8 h hábiles · 480 min · 12 h hábiles | 109 | 9 |
+
+El plazo para cambiar o cancelar pasó de 4 a 8 horas hábiles. Con los valores vigentes, las 16 escenas del portal y de formularios salen idénticas a antes.
+
+**Verificado**
+
+- `usfichaoperacion` y `portalplazos` a 1280×720 y 1920×1080, sin desplazamiento horizontal. La ficha de Sofía Arteaga muestra «Sucursal Quito · Riobamba (ciudad completa)», «Presencial, Virtual guiada · Vehículos, Ramos Generales», «De Coordinación y de la red» y «Lunes a sábado, 08:00 a 18:00 · capacidad 6 por día».
+- «Abrir en Red de inspectores» abre Red › Por inspector con Sofía Arteaga elegida.
+- Portal › Agenda: 30 horas hábiles, 20 minutos y 0 horas dan el mensaje de rango; con 6, 90 y 8 y un motivo se publica la versión 2, el portal lee los tres números y los textos explicativos de la agenda pasan a «90 minutos», «8 horas hábiles» y «6 h hábiles».
+- Regresión contra la versión anterior (texto visible, 1280×720): ficha de un usuario interno sin rol Inspector (`usrfichanoinsp`), `usrlista`, `cargatardia`, `cxreinvitar`, `usuariosuspender`, `roles`, `roleseditar`, `agencias`, `cxusuarios`, `cxusuarioeditar`, `usmenuabajo`, `redlistalarga`, `rolescomparar`, `monitorpermiso` y `cxagenciasinspectores` salen iguales. Cambian solo las fichas de inspector y el alta (`usrnuevo`, `usrduplicado`, `cxusuariocrear`, `cxmaestros`), donde las secciones de cobertura, jornada y ofertas pasan a la tarjeta de solo lectura.
+- El alta con rol Inspector (`usrnuevo`) muestra la tarjeta sin botón y la ficha de un usuario interno sin rol Inspector se ve igual que antes. No guardé un alta nueva en esta etapa.
+- `sirius-conexion.js` sigue en 70 bytes. Catálogo: 786 escenas.
+
+**No verificado**
+
+- El botón «Abrir en Red de inspectores» deshabilitado para un rol sin el permiso: lo comprobé en el código (`onRed` solo se pasa con `SiriusUsuarios.puede(rol, 'red')`), pero no abrí la ficha con un rol sin ese permiso.
+- La versión que la base tiene publicada de `datos-portal-cliente.js` y de `datos-usuarios.js`: no la conozco desde el prototipo; los archivos publicados traían 1.5 y 1.2, y subí a 1.7 (el ejemplo de DEC-262) y 1.4, por encima de esos. Si la base ya publicó una versión mayor, hay que subirlas otra vez.
+- La Red solo está simulada en `usfichaoperacion`; con la conexión real, el formato de `SIRIUS_CONEXION.red` es el que ya usa la Red de inspectores.
+- Firefox y Safari.
+
+**Diferencias**
+
+- El resumen de cobertura de la ficha se escribe con «(ciudad completa)» en cada ciudad entera («Sucursal Quito · Riobamba (ciudad completa)»), como en tu ejemplo; el resumen corto de la Red usa «toda la ciudad» solo cuando hay una sola fila.
+- Los inspectores que la Red no tiene (por ejemplo, en las escenas con conexión simulada sin `red`) muestran «La red de inspectores todavía no tiene la operación de este inspector. Se define en Red de inspectores.» en lugar de datos inventados.
+- Al publicar los plazos también actualizo los textos explicativos de la agenda (`horarios`, `red.plazo` y `cambiar.nota`) para que no digan otro número que los campos.
+- En el alta de un usuario la tarjeta no lleva botón (no hay a quién abrir en la Red todavía) y explica que la operación se asigna en Red de inspectores cuando el usuario ya existe.
+- Reescribí las descripciones de `usrficha`, `usrsinguardar`, `cxusrcobertura`, `cobertura`, `coberturasucursales`, `coberturazonainactiva` y `cxcobertura`, porque esas escenas ya no editan la cobertura.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `usfichaoperacion` | Ficha de Sofía Arteaga (cobertura mixta, conexión simulada): «Vínculo: tipo y agencia» editable y «Operación (solo lectura)» con «Abrir en Red de inspectores» |
+| `portalplazos` | Portal del cliente › Agenda con los tres plazos y un cambio sin publicar en cada uno (6 h hábiles, 90 min, 8 h hábiles) y la barra «3 cambios sin publicar» con motivo |
+
+También abrí `usrficha`, `usrsinguardar`, `cxusrcobertura`, `cobertura`, `coberturazonainactiva`, `usrfichanoinsp` y `usrnuevo` para comprobar el cambio y la regresión.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «La operación del inspector en solo lectura y los plazos del portal editables»).
+
+Tiempo de la etapa: inicio 20/11/2026 22:28 · fin 20/11/2026 23:05 · 37 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa G-3e
 
 Publiqué la versión 346 de SIRIUS (los archivos subieron en la 345; esta versión cierra el registro con el tiempo de la etapa). Coordinación ya muestra el estado real de la visita: una visita que agendó el cliente se ve «Agendada», con fecha, hora, inspector y sus acciones, aunque su enlace siga abierto. La cabecera del caso ya no dice «Autoinspección en curso» sin autoinspección, y la lista de la Red de inspectores se desplaza por su cuenta. Tres decisiones mías están en **Diferencias**.

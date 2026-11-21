@@ -1,4 +1,6 @@
-// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v2.1 · provisional · etapa R-3a · 19/11/2026)
+// SIRIUS · Usuarios, roles, permisos, agencias e invitaciones (v2.2 · provisional · etapa R-4 · 20/11/2026)
+// v2.2 (etapa R-4 · DEC-262): `fichaInspector` (textos de la ficha del inspector: «Operación (solo lectura)», «Vínculo: tipo y agencia» y el alcance de trabajo de quien solo es Inspector).
+//       La propiedad `version` pasa de 1.5 a 1.7: por encima de la publicada en la base, para que la base no pise el cambio (regla de los archivos de configuración vigilados).
 // v2.1 (etapa R-3a · DEC-262): acción «Gestionar la red de inspectores» (grupo «Red de inspectores»: Administrador y Coordinador de inspecciones, Editar);
 //       el rol «Gestor de inspecciones» está pendiente de definir.
 // v2.0 (etapa C2-19 · DEC-198): acción «Ver los controles y confirmar que se vieron» (Administrador edita; inspector y Control de calidad, lo propio);
@@ -24,7 +26,14 @@
 // Las facultades del inspector siguen en Niveles de calificación (BO-21); aquí solo se enlazan. Decisiones: DEC-113 (actualizada), DEC-128 a DEC-130.
 (function () {
   const U = {
-    version: '1.5', vigencia: 'Provisional', compania: 'Aseguradora del Sur', dominio: 'asur.ec',
+    version: '1.7', vigencia: 'Provisional', compania: 'Aseguradora del Sur', dominio: 'asur.ec',
+    // ---------- Ficha del inspector (etapa R-4 · DEC-262): la cobertura y la operación son de Red de inspectores; aquí solo se ven ----------
+    fichaInspector: {
+      operacion: { titulo: 'Operación (solo lectura)', boton: 'Abrir en Red de inspectores', nota: 'La gestiona el negocio (permiso «Gestionar la red de inspectores»). Desde aquí no se edita.',
+        sinPermiso: 'Tu rol no gestiona la red de inspectores: la operación se ve aquí y se cambia en Red de inspectores.', sinDatos: 'La red de inspectores todavía no tiene la operación de este inspector. Se define en Red de inspectores.', nuevo: 'La cobertura y la operación se asignan en Red de inspectores cuando el usuario activa su cuenta.' },
+      vinculo: { titulo: 'Vínculo: tipo y agencia', nota: 'Se queda en Usuarios: el tipo y la agencia deciden qué datos puede ver y cómo se le paga.' },
+      alcanceInspector: { principal: 'Alcance de trabajo: no aplica. Ve los casos de sus visitas.', secundaria: 'Para coordinadores y calificadores se elige aquí por sucursal y grupo de ramo.' }
+    },
     // ---------- Acceso (DEC-113 actualizada, DEC-128) ----------
     acceso: {
       internos: { metodos: ['Google', 'Usuario y contraseña'], nota: 'Correo del dominio de la compañía; eligen cualquiera de los dos al entrar' },

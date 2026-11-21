@@ -64,10 +64,10 @@
   const AGC = () => PC().agenda || {};
   const HCAMBIO = () => ((AGC().cambiar || {}).hastaHorasHabiles) || 4;
   const MINAP = () => num(AGC().confirmacionInmediata, /apartado (\d+) minutos/, 10);
-  const ANTICIPA = () => num(AGC().horarios, /dentro de (\d+) horas/, 2) * 60;
+  const ANTICIPA = () => Number(AGC().anticipacionMinutos) > 0 ? Number(AGC().anticipacionMinutos) : num(AGC().horarios, /dentro de (\d+) horas/, 2) * 60; // R-4: número editable en Portal del cliente › Agenda (minutos); el texto es el respaldo
   const PASO = () => AGC().pasoMinutos || 30;
   const RED_PLAZO = () => num((AGC().red || {}).plazo, /en (\d+) horas hábiles/, 2) * 60;
-  const RED_ANTES = () => num((AGC().red || {}).plazo, /antes de (\d+) horas hábiles/, 4) * 60;
+  const RED_ANTES = () => (Number(AGC().redAnticipacionHorasHabiles) > 0 ? Number(AGC().redAnticipacionHorasHabiles) : num((AGC().red || {}).plazo, /antes de (\d+) horas hábiles/, 4)) * 60; // R-4: horas hábiles editables en Portal del cliente › Agenda
   const ICS_AVISO = () => num(AGC().recordatorio, /aviso (\d+) h antes/, 2);
   const MAXMB = () => 10;
   function duraciones() { if (!S.durRamo) S.durRamo = Object.assign({}, ((AGD().autoagendamiento || {}).duracionPorRamo) || {}); return S.durRamo; }

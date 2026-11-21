@@ -1,11 +1,14 @@
-// SIRIUS · Portal del cliente: estado, autoagendamiento y documentos (v1.2 · provisional · etapa 14b · 06/11/2026) · DEC-171 y DEC-172
+// SIRIUS · Portal del cliente: estado, autoagendamiento y documentos (v1.4 · provisional · etapa R-4 · 20/11/2026) · DEC-171, DEC-172 y DEC-262
+// v1.4 (etapa R-4 · DEC-262): `agenda.anticipacionMinutos` (30 a 480; antes «2 horas» dentro del texto de `horarios`) y `agenda.redAnticipacionHorasHabiles` (1 a 24; antes «4 horas hábiles»
+//       dentro de `red.plazo`), junto a `agenda.cambiar.hastaHorasHabiles` (1 a 24): los tres se editan en Portal del cliente › Agenda y se publican con motivo. La versión pasa de 1.2 a 1.4:
+//       por encima de la publicada en la base, para que la base no pise el cambio (regla de los archivos de configuración vigilados).
 // v1.2: autoagendamiento para todos los grupos de ramo; horarios cada 30 min en la jornada; confirmación inmediata con inspectores
 //       de agenda fija y, para los demás horarios, búsqueda en la red de inspectores (al estilo de una app de transporte).
 // v1.1: documentos con la misma captura guiada de la autoinspección (cámara inmersa, marco, indicadores y revisión) y sus datos
 //       a los campos del formulario.
 // Aprobado por el negocio con la maqueta del 14. Mismo enlace único del caso (DEC-146); textos con bloques y variables (DEC-162).
 window.SIRIUS_PORTAL_CLIENTE = {
-  version: '1.2', vigencia: 'Provisional',
+  version: '1.4', vigencia: 'Provisional',
   secciones: ['Mi inspección', 'Agenda', 'Documentos'],
   modalidades: 'Presencial y virtual guiada usan Agenda; autoinspección conserva su recorrido (12d) y muestra Mi inspección y Documentos.',
   grupos: 'Autoagendamiento para todos los grupos de ramo (Vehículos, Ramos Generales y Equipo y maquinaria): cada uno define la duración de la visita (Vehículos 45 min, Ramos Generales 120 min, Equipo y maquinaria 90 min, configurables por ramo), sus documentos y el texto de la pregunta del lugar.',
@@ -33,6 +36,7 @@ window.SIRIUS_PORTAL_CLIENTE = {
       estadoCaso: 'En SIRIUS el caso queda «En coordinación · buscando inspector en la red» hasta la aceptación; luego pasa a Agendado.',
     },
     datos: ['Dirección (con mapa y ubicación actual)', 'Referencia', 'Quién recibe al inspector (nombre y celular 09XXXXXXXX)'],
+    anticipacionMinutos: 120, redAnticipacionHorasHabiles: 4,
     cambiar: { hastaHorasHabiles: 4, nota: 'Cambiar o cancelar la cita hasta 4 h hábiles antes; después, solo llamando. Mientras se busca en la red, siempre se puede cambiar o cancelar.' },
     diaVisita: 'El día de la visita: «Tu inspector va en camino» con nombre, organización, credencial y hora estimada; sin teléfono personal ni foto (LOPDP).',
     recordatorio: 'R06 el día anterior a las 17:00 por el canal con consentimiento; archivo de calendario (.ics) con aviso 2 h antes.',

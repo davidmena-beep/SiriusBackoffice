@@ -85,12 +85,17 @@
 
   // ---------- Almacén ----------
   let ST = null; const ON = new Set();
+  // Etapa R-4 · DEC-262: plazos de la agenda del cliente (Portal del cliente › Agenda). Valores vigentes = SIRIUS_PORTAL_CLIENTE.agenda (datos-portal-cliente.js v1.4); se publican con motivo.
+  const AGDEF = { cambiar: 4, antic: 120, red: 4 };
+  function agendaDeDatos() { const ag = (window.SIRIUS_PORTAL_CLIENTE || {}).agenda || {}, n = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d);
+    return { cambiar: n((ag.cambiar || {}).hastaHorasHabiles, AGDEF.cambiar), antic: n(ag.anticipacionMinutos, AGDEF.antic), red: n(ag.redAnticipacionHorasHabiles, AGDEF.red) }; }
+  function agendaInicial() { return { version: 1, estado: 'Vigente', desde: '2026-10-18T20:30', vals: agendaDeDatos() }; }
   function inicial() { const A = AI(), E = (EJ().autoinspeccion || {}).enlaces || [], ini = contenidoInicial();
     const ag = { eurosurvey: 'eurosurvey' }, ext = (a) => { const t = a.textos || {}, c = {}; if (a.id !== 'ads') { if (t.bienvenida) c.eresTu = { texto: t.bienvenida }; if (t.gracias) c.gracias = { texto: t.gracias }; } return c; };
     return { flujo: { version: 1, estado: 'Vigente', desde: '2026-10-18T20:30', conf: clone({ flujo: A.flujo || [], controles: A.controles || [], video360: A.video360 || {} }) },
       apar: (A.apariencias || []).map(a => ({ id: a.id, nombre: a.nombre, aplicaA: a.aplicaA, compania: a.id === 'ads', agencia: ag[a.id] || null, estado: a.estado, version: 1, logo: a.logo || '', logoOrigen: a.id === 'ads' ? 'biblioteca:compania' : 'agencia', logoFondo: a.logoFondo || 'claro', colorPrincipal: a.colorPrincipal, colorOscuro: a.colorOscuro,
         contacto: a.id === 'ads' ? (((EJ().autoinspeccion || {}).contactoCompania) || {}).telefono || '' : '', contenido: a.id === 'ads' ? ini : ext(a), usos: a.id === 'ads' ? E.length : 0, borrador: null, legal: null })),
-      log: [], ultima: {} }; }
+      agenda: agendaInicial(), log: [], ultima: {} }; }
   function cfg() { if (!ST) ST = inicial(); return ST; }
   function set(fn, hh) { const n = clone(cfg()); fn(n); if (hh) n.log.unshift(Object.assign({ at: hoy(), by: hh.by || 'Andrea Salazar' }, hh)); ST = n; ON.forEach(f => f()); }
   function reset() { ST = null; ON.forEach(f => f()); }
@@ -251,9 +256,47 @@
         h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, propios.filter(x => x.total).map(x => h('span', { key: x.pid, style: { fontSize: 12, padding: '4px 8px', borderRadius: 999, background: 'var(--surface-subtle)', color: 'var(--text-body)' } }, (C.NOMBRES[x.pid] || x.pid) + ' · ' + (a.compania ? x.total + ' bloques' : x.propios + ' propios, ' + (x.total - x.propios) + ' heredados')))))); }
 
   // Portal del cliente (pantalla de Formularios): encabezado, «Simular portal» y pestañas.
-  function SiriusPortalCliente(p) { const st = C.useCfg(), TABS = ['Apariencias', 'Flujo', 'Controles', 'Video', 'Documentos'], s0 = R().useState(Math.max(0, TABS.indexOf(p.tab || 'Apariencias'))), tab = s0[0], setTab = s0[1];
+  // ---------- Portal del cliente › Agenda (etapa R-4 · DEC-262): tres plazos numéricos, con su explicación; se publican con motivo ----------
+  const PLAZOS = [
+    { k: 'cambiar', id: 'pc-ag-cambiar', etq: 'Plazo para cambiar o cancelar la cita', unidad: 'horas hábiles', min: 1, max: 24, campo: 'agenda.cambiar.hastaHorasHabiles',
+      expl: 'El cliente puede cambiar o cancelar su cita desde el portal hasta este número de horas hábiles antes de que empiece; después, solo llamando. Mientras se busca un inspector en la red siempre puede cambiarla o cancelarla.' },
+    { k: 'antic', id: 'pc-ag-antic', etq: 'Anticipación para confirmación inmediata', unidad: 'minutos', min: 30, max: 480, campo: 'agenda.anticipacionMinutos',
+      expl: 'Solo se ofrecen para confirmar al instante los horarios que empiezan dentro de este número de minutos o más. Los horarios más cercanos no se muestran.' },
+    { k: 'red', id: 'pc-ag-red', etq: 'Anticipación para pedir a la red', unidad: 'horas hábiles', min: 1, max: 24, campo: 'agenda.redAnticipacionHorasHabiles',
+      expl: 'Un horario sin inspector de agenda fija se puede pedir a la red de inspectores solo si faltan más de estas horas hábiles para que empiece. También es el límite antes del inicio en que la búsqueda deja de esperar una respuesta.' }];
+  const errPlazo = (c, v) => { const t = String(v == null ? '' : v).trim(); if (!t) return 'Escribe un número.'; if (!/^\d+$/.test(t)) return 'Escribe un número entero, sin decimales.'; const n = Number(t); return n < c.min || n > c.max ? 'Debe estar entre ' + c.min + ' y ' + c.max + ' ' + c.unidad + '.' : ''; };
+  function PlazosAgenda(p) { const st = C.useCfg(), V = st.agenda.vals, pre = p.preset === 'sinpublicar' ? { cambiar: '6', antic: '90', red: '8' } : {};
+    const [d, setD] = R().useState(() => Object.assign({}, { cambiar: String(V.cambiar), antic: String(V.antic), red: String(V.red) }, pre)), [mot, setMot] = R().useState(''), [tried, setTried] = R().useState(false), [aviso, setAviso] = R().useState('');
+    const cambios = PLAZOS.filter(c => String(d[c.k]).trim() !== String(V[c.k])), errs = {}; PLAZOS.forEach(c => { const e = errPlazo(c, d[c.k]); if (e) errs[c.k] = e; });
+    const hay = cambios.length > 0, motOk = motivoOk(mot);
+    function publicar() { setTried(true); setAviso(''); if (!hay || Object.keys(errs).length || !motOk) return;
+      const nv = { cambiar: Number(d.cambiar), antic: Number(d.antic), red: Number(d.red) }, det = cambios.map(c => c.etq + ': ' + V[c.k] + ' → ' + nv[c.k] + ' ' + c.unidad).join('; ');
+      const PC = window.SIRIUS_PORTAL_CLIENTE; if (PC) { PC.agenda = PC.agenda || {}; PC.agenda.cambiar = Object.assign({}, PC.agenda.cambiar, { hastaHorasHabiles: nv.cambiar }); PC.agenda.anticipacionMinutos = nv.antic; PC.agenda.redAnticipacionHorasHabiles = nv.red;
+        const ant = nv.antic % 60 ? nv.antic + ' minutos' : (nv.antic / 60) + (nv.antic === 60 ? ' hora' : ' horas'), rp = (t, re, nu) => (typeof t === 'string' ? t.replace(re, nu) : t); // los textos explicativos de la agenda siguen a los números publicados
+        PC.agenda.horarios = rp(PC.agenda.horarios, /dentro de \d+ horas?( o más)?|dentro de \d+ minutos( o más)?/, 'dentro de ' + ant + ' o más');
+        if (PC.agenda.red) PC.agenda.red = Object.assign({}, PC.agenda.red, { plazo: rp(PC.agenda.red.plazo, /antes de \d+ horas hábiles/, 'antes de ' + nv.red + ' horas hábiles') });
+        if (PC.agenda.cambiar) PC.agenda.cambiar.nota = rp(PC.agenda.cambiar.nota, /hasta \d+ h hábiles antes/, 'hasta ' + nv.cambiar + ' h hábiles antes'); } // el portal del cliente lee estos valores
+      C.set(n => { n.agenda = { version: (n.agenda.version || 1) + 1, estado: 'Vigente', desde: S.hoy(), vals: nv }; }, { area: 'Agenda', what: 'Publicó los plazos de la agenda · ' + det, motivo: mot.trim() });
+      setMot(''); setTried(false); setAviso('Plazos publicados: la versión ' + ((st.agenda.version || 1) + 1) + ' ya rige para el portal del cliente.'); }
+    return h('div', { 'data-pc-agenda': '', style: { display: 'flex', flexDirection: 'column', gap: 14, padding: '20px 24px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: '#FFFFFF', minWidth: 0 } },
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('h2', { style: { margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' } }, 'Portal del cliente · Agenda'),
+        h('p', { style: { margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--text-muted)' } }, 'Plazos con los que el cliente agenda, cambia o cancela su inspección desde el portal (agenda v' + st.agenda.version + ' vigente). Cada cambio pide motivo y queda en el historial.')),
+      h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,300px),1fr))', gap: 16 } }, PLAZOS.map(c => { const cam = String(d[c.k]).trim() !== String(V[c.k]), e = (tried || cam) && errs[c.k] ? errs[c.k] : '';
+        return h('div', { key: c.k, 'data-pc-plazo': c.k, style: { display: 'flex', flexDirection: 'column', gap: 6, padding: 14, border: '1.5px solid ' + (cam ? 'var(--color-brand)' : 'var(--border-subtle)'), borderRadius: 'var(--radius-sm)', background: cam ? 'var(--cyan-100, #E0F4FB)' : '#FFFFFF', minWidth: 0 } },
+          h('label', { htmlFor: c.id, style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' } }, c.etq),
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, h('div', { style: { width: 96 } }, S.inp(c.id, d[c.k], (v) => { setD(x => Object.assign({}, x, { [c.k]: v.replace(/[^\d]/g, '').slice(0, 4) })); setAviso(''); }, '', { inputMode: 'numeric', 'aria-invalid': e ? 'true' : undefined, 'aria-describedby': c.id + '-d ' + c.id + '-e' })), h('span', { style: { fontSize: 14, color: 'var(--text-body)' } }, c.unidad)),
+          cam ? h('span', { 'data-pc-antes': c.k, style: { fontSize: 12.5, color: 'var(--text-muted)' } }, '(vigente: ' + V[c.k] + ' ' + c.unidad + ')') : null,
+          h('span', { id: c.id + '-d', style: { fontSize: 13, lineHeight: 1.5, color: 'var(--text-body)' } }, c.expl),
+          h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, 'De ' + c.min + ' a ' + c.max + ' ' + c.unidad + ' · campo ' + c.campo), S.err(c.id + '-e', e)); })),
+      aviso ? h('div', { role: 'status', 'data-pc-publicado': '', style: { padding: '8px 12px', borderRadius: 8, background: 'var(--alert-success-bg,#E6F4EA)', fontSize: 14, fontWeight: 600 } }, aviso) : null,
+      hay ? h('div', { 'data-pc-barra': String(cambios.length), role: 'region', 'aria-label': 'Cambios sin publicar', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '10px 12px', padding: '12px 14px', borderRadius: 12, border: '1.5px solid var(--color-brand)', background: '#FFFFFF' } },
+        h('strong', { style: { fontSize: 14, whiteSpace: 'nowrap', alignSelf: 'center' } }, cambios.length + (cambios.length === 1 ? ' cambio sin publicar' : ' cambios sin publicar')),
+        h('div', { style: { flex: '1 1 280px', minWidth: 0 } }, S.MotivoCampo({ id: 'pc-ag-motivo', value: mot, onChange: setMot, err: tried && !motOk ? 'Escribe el motivo (mínimo 10 caracteres).' : '' })),
+        h('div', { style: { display: 'flex', gap: 8, alignSelf: 'center', flexWrap: 'wrap' } }, S.btn('Descartar', () => { setD({ cambiar: String(V.cambiar), antic: String(V.antic), red: String(V.red) }); setMot(''); setTried(false); }, { id: 'pc-ag-descartar' }), S.btn('Publicar', publicar, { primary: true, id: 'pc-ag-publicar' })),
+        tried && Object.keys(errs).length ? h('span', { role: 'alert', style: { flex: '1 1 100%', fontSize: 13, color: 'var(--color-danger,#b3261e)', fontWeight: 700 } }, 'Revisa: ' + PLAZOS.filter(c => errs[c.k]).map(c => c.etq.toLowerCase()).join(', ') + '.') : null) : null); }
+  function SiriusPortalCliente(p) { const st = C.useCfg(), TABS = ['Apariencias', 'Flujo', 'Controles', 'Video', 'Documentos', 'Agenda'], s0 = R().useState(Math.max(0, TABS.indexOf(p.tab || 'Apariencias'))), tab = s0[0], setTab = s0[1];
     const onConf = (nv, hh) => C.set(n => { n.flujo.conf = nv; }, hh ? { area: TABS[tab], what: hh.what, motivo: hh.motivo } : null);
-    const cuerpo = TABS[tab] === 'Documentos' ? (window.SiriusDocCatalogo ? h(window.SiriusDocCatalogo, { usuario: p.usuario, preset: p.preset }) : h('p', null, 'Cargando el catálogo de documentos…')) /* P-6e-1 · DEC-203 */ : tab === 0 ? h(Apariencias, { preset: p.preset, editar: p.editar, modal: p.preset === 'eliminar' ? { kind: 'elim', id: 'eurosurvey' } : null })
+    const cuerpo = TABS[tab] === 'Agenda' ? h(PlazosAgenda, { preset: p.preset }) /* R-4 · DEC-262 */ : TABS[tab] === 'Documentos' ? (window.SiriusDocCatalogo ? h(window.SiriusDocCatalogo, { usuario: p.usuario, preset: p.preset }) : h('p', null, 'Cargando el catálogo de documentos…')) /* P-6e-1 · DEC-203 */ : tab === 0 ? h(Apariencias, { preset: p.preset, editar: p.editar, modal: p.preset === 'eliminar' ? { kind: 'elim', id: 'eurosurvey' } : null })
       : window.SiriusAutoConfig ? h(window.SiriusAutoConfig, { conf: st.flujo.conf, soloTab: TABS[tab], usuario: p.usuario, onCambio: onConf }) : null;
     const hist = st.log.filter(l => l.area === TABS[tab] && tab > 0);
     return h('section', { id: 'pc-portal', 'aria-labelledby': 'pc-t', style: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 } },
