@@ -4,6 +4,135 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-3b
+
+Publiqué la versión 357 de SIRIUS (los archivos subieron en la 356; esta versión cierra el registro con el tiempo de la etapa). Red de inspectores ya tiene las vistas «Por zona» y «Por sucursal», además de un solo diálogo «Asignar inspectores» para zonas, ciudades, sucursales y todas las sucursales. Las listas salen de `redLugar` con la regla de DEC-265: con la conexión, de la función `red_lugar` de la base; sin ella, de una base simulada con la misma forma. La prueba cruzada dio igual en los cinco puntos. Por inspector, Coordinación y los archivos vigilados no cambiaron. En este mensaje no llegó la maqueta, así que armé las vistas según la descripción (ver **Diferencias**).
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| `sirius-red.js` (v1.1) | Por zona (`PorZona`, `MapaRed`), Por sucursal (`PorSucursal`) y el diálogo único (`AsignarLugar`). `S.lugar` llama a `redLugar` o a la base simulada. `S.categoria` aplica la Definición para «Aporta» y el efecto. |
+| `datos-red.js` (v1.1, no vigilado) | `SIRIUS_RED.lugar(datos, red)` con las vistas 'ciudad', 'sucursales' y 'probar'. `SIRIUS_CX_COORD.redLugar` y las escenas `redzonacx` y `redzonacxerror`. |
+| `SIRIUS Back-office.dc.html` | La conexión simulada suma `redLugar`. Escenas en `KNOWN_ESC`, en la apertura de la Red y en `redEscena`. |
+| `datos-escenas.js` | 9 escenas nuevas (805 en total). |
+| Sin cambios | Por inspector, SiriusCobertura, Coordinación, el portal, Agenda, Usuarios, Ciudades y zonas, los archivos vigilados (`datos-zonas.js`, `datos-usuarios.js`, `datos-agenda-liquidaciones.js`, `datos-portal-cliente.js`…) y `sirius-conexion.js` (70 bytes). |
+
+**Qué cambió**
+
+- **Base simulada (`SIRIUS_RED.lugar`):**
+  - Usa `SIRIUS_RED.inspectores` (estado Activo y filas vigentes a `hoy`), `SiriusCobertura.cubreFilas`, las zonas activas publicadas, `SiriusZonas.zonaDePublicada` para «probar» y las 11 sucursales.
+  - Devuelve las tres formas del contrato.
+  - La zona por confirmar cuenta solo todas, la ciudad completa y la sucursal, y amplía la red cuando hace falta.
+  - Calcula las alertas de zona y de ciudad en el orden pedido.
+- **Conexión simulada:** `redLugar` usa la misma función. Con `?cxok=0` (y en `redzonacxerror`) responde `{ ok: false, mensaje }`.
+- **Por zona:**
+  - **Barra superior:** selector «Ciudad» con las ciudades que tienen zonas y las de las 11 sucursales; por defecto, la sucursal del usuario o Quito. Al lado, «N zonas publicadas · N inspectores atienden <ciudad>» con la alerta en su tono, y el botón «Asignar inspectores».
+  - **Mapa:**
+    - Cada zona activa tiene un círculo y un punto con su nombre, o su área si la tiene: azul con propios, ámbar sin propios, rojo sin inspectores.
+    - Un clic en una zona la elige y lleva a su tarjeta con el foco.
+    - Una ciudad sin zonas muestra solo su radio.
+    - La leyenda tiene las cuatro entradas.
+  - **Panel «Probar una dirección»** (abajo a la izquierda):
+    - Usa la búsqueda de SiriusUbicacion o un clic en el mapa, y deja el marcador «Dirección probada».
+    - Muestra la zona calculada, el mensaje y las listas «Confirmación inmediata» y «Red», con la nota de red ampliada cuando corresponde.
+    - Si la dirección es de otra ciudad, cambia el selector.
+  - **Columna derecha:**
+    - «Atienden toda la ciudad», con tipo, etiquetas, «Asignar» y la nota de «zona por confirmar».
+    - «Por sucursal <sucursal>», con su nota.
+    - Una tarjeta por zona: «Inmediata N · Red N» (y «Solo Coordinación N»), los nombres, los propios, la alerta en texto y «Asignar a esta zona».
+    - Sin zonas, una sola tarjeta «Toda la ciudad (sin zonas)».
+- **Diálogo «Asignar inspectores»** (único):
+  - **Título y nivel:** el título depende del punto de entrada. Desde una zona se elige el nivel: «Esta zona» o «Toda la ciudad».
+  - **Filtros y tabla:**
+    - Filtros: Buscar, Tipo y Recibe ofertas.
+    - Solo aparecen inspectores activos. Columnas: Inspector (tipo · agencia), Modalidades, Cobertura actual y «Aporta».
+    - Quien ya cubre el ámbito queda deshabilitado con «Ya la atiende por la sucursal X / toda la ciudad / esta zona».
+  - **Fechas y motivo:** «Vigente desde», «Hasta (opcional)» y «Motivo (obligatorio)», de 10 caracteres o más.
+  - **Efecto:** «Efecto en <ámbito>» muestra «Confirmación inmediata: a → b» y «Red: a → b». Cuando corresponde agrega «Deja de estar «sin inspectores (propios)»» o «Rige desde el dd/mm: hoy no cambia».
+  - **Guardar:** el pie aclara que la asignación queda en el historial y no cambia cuentas ni roles. «Asignar N inspectores» llama a `redAccion('asignar', …)`. Con `{ ok: false }`, el diálogo sigue abierto con los datos; con `{ ok: true }`, se cierra, la vista vuelve a pedir `redLugar` y aparece el aviso de la base.
+- **Por sucursal:**
+  - Las dos definiciones y la tarjeta «Atienden todas las sucursales» (con la lista o «Nadie tiene hoy cobertura «todas»…», y «Asignar»).
+  - La tabla de las 11 sucursales, con «Ver en el mapa» (abre Por zona con esa ciudad y el foco en la pestaña) y «Asignar» (nivel sucursal).
+  - La nota al pie.
+- **Estados:** las dos vistas tienen carga, vacío y error, y se usan con teclado (pestañas con flechas, casillas con Espacio, Esc cierra y el foco vuelve al botón).
+
+**Prueba cruzada**
+
+| Punto | Resultado |
+|---|---|
+| (a) Listas Inmediata y Red de cada tarjeta = Por inspector (nivel de SiriusCobertura en la zona + la Definición) | 12 de 12 zonas iguales: Quito 5, Guayaquil 4, Cuenca 3 |
+| (b) «Probar» en el punto de cada zona = la misma zona y las mismas listas que su tarjeta | 12 de 12 iguales |
+| (c) Cada fila de Por sucursal = resumen y alerta de su ciudad en Por zona («Ver en el mapa») | 11 de 11 iguales (Quito «3 zonas sin inspectores propios»; Cuenca y Guayaquil «Sin red»; Loja, Machala, Santo Domingo, Ibarra, Manta y El Coca «Sin inspectores»; Riobamba y Ambato sin alerta) |
+| (d) Sin la conexión = conexión simulada (7 ciudades, sucursales y 3 pruebas) | Respuesta idéntica, byte a byte |
+| (e) Tras «Asignar», la tarjeta recargada = el efecto previsto | Zona Sur con Cristian Vaca y Luis Andrade: previsto «Inmediata 3 → 4 · Red 2 → 3 · Deja de estar sin propios»; tarjeta: «Inmediata 4 · Red 3», sin alerta. Igual sin la conexión y con la simulada. Loja con Cristian Vaca: «0 → 1 · Deja de estar sin inspectores» y la fila queda en Inmediata 1, «Sin red». |
+
+**Verificado**
+
+- **Pantallas:** las 9 escenas a 1280 × 720 y 1920 × 1080, sin desplazamiento lateral ni errores. A 1024 × 768 la columna derecha baja debajo del mapa.
+- **Diálogo:**
+  - Sin motivo: «Escribe el motivo (mínimo 10 caracteres).».
+  - «Hasta» anterior a «desde»: aparece el mensaje de la base y el diálogo sigue abierto con el motivo escrito.
+  - «Desde» futuro: «Rige desde el 05/11: hoy no cambia».
+  - «Toda la ciudad» recalcula el efecto (4 → 5).
+  - Quedan deshabilitados Marco Tapia y Sofía Arteaga («por la sucursal Quito») y Mauricio Endara («por toda la ciudad»).
+- **Conexión simulada:** `redAccion` recibe `{ nivel: 'zona', inspectores, motivo, ciudad: '1701', zona: 'z1701-3', desde }` y la red de la conexión cambia. `redzonacxerror` muestra «La base rechazó la consulta (prueba)» y no cambia nada.
+- **Probar:**
+  - «Conocoto» (con flechas y Enter): Valle de los Chillos.
+  - «Malecón»: cambia a Guayaquil · Zona Centro.
+  - Una dirección sin ubicar: «zona por confirmar».
+  - «Quitar» limpia el panel.
+- **Copia aparte con una conexión temporal** (activa, no simulada):
+  - `redLugar` con las formas del contrato y las claves vacías quitadas: las tarjetas muestran «Red: nadie» y 0.
+  - La asignación llega a `redAccion` y la tarjeta se recarga.
+  - Con `{ ok: false }`: el aviso y nada más. Sin `redLugar`: «La conexión todavía no calcula la red por lugar (falta el SQL 75)».
+  - En el proyecto, `sirius-conexion.js` sigue con su contenido mínimo (70 bytes).
+- **Regresión contra la copia anterior, texto visible:**
+  - A 1280 × 720, 22 de 22 iguales: Por inspector (`red`, `redsincob`, `redasignar`, `redoperacion`, `redsinpermiso`, `redcx`, `redlistalarga`), Coordinación con sugerencias por cobertura (`lugarbuscar`, `lugarlejos`, `lugarfuera`, `lugarrg`, `cxlugar`, `cxcoordins`, `cxcoordmismo`, `coordoferta`, `coordagendada`, `cxvisitacliente`), `cobertura`, `usfichaoperacion`, `zonas`, `zonasprobar` y `portalsinhorarios`.
+  - A 1920 × 1080, 8 de 8 iguales.
+- **Archivos:** solo cambiaron `sirius-red.js`, `datos-red.js`, `SIRIUS Back-office.dc.html` y `datos-escenas.js`. Ningún archivo vigilado cambió, así que no subí ninguna versión.
+
+**No verificado**
+
+- La función `red_lugar` real (SQL 75) y sus mensajes. La base simulada usa mensajes propios con la misma idea.
+- El mapa base con teselas reales: en esta vista están bloqueadas y aparece «Mapa base no disponible en esta vista».
+- Firefox, Safari y lectores de pantalla sobre los marcadores del mapa (Leaflet los hace enfocables y abren con Enter).
+
+**Diferencias**
+
+- **Maqueta:** no llegó adjunta. La disposición sigue la descripción: barra arriba, mapa flexible a la izquierda y columna de 380–460 px a la derecha.
+- **Listas en las tarjetas:** además de «Inmediata N · Red N», cada tarjeta muestra los nombres, para que se vea quién ofrece el portal (y para la prueba (a)).
+- **Vista 'sucursales':** la base simulada devuelve `inmediata`, `red` y `coordinacion` como listas de nombres; la pantalla también acepta números. «probar» devuelve además `coordinacion` y `sucursal`, y `lugar.zona` va como `{ id, nombre }`.
+- **«Atienden en la ciudad»:**
+  - «Ana (toda la ciudad) · N por zonas».
+  - «Sin zonas: ciudad completa» cuando la ciudad no tiene zonas y nadie la atiende por ciudad.
+  - «— (N zonas publicadas)» cuando tiene zonas y nadie la atiende por ciudad ni por zona.
+- **«Ya la atiende por todas las sucursales»:** lo sumé para quien tiene cobertura «todas».
+- **Efecto en «todas las sucursales»:** sale de quienes ya tienen «todas», sin la línea «deja de estar».
+- **Ciudad por defecto:** Andrea Salazar no tiene sucursal en sus datos, así que abre Quito.
+- **Mapa:** el círculo de cada zona mide un décimo del radio de la ciudad (1,5 km en Quito); es solo visual. El mapa mide al menos 460 px, así que a 1280 × 720 la página baja un poco. Con un resultado, el panel «Probar» tapa parte del mapa.
+- **Escena `redzonacxerror`:** equivale a `?cxok=0` (la conexión simulada responde `{ ok: false }` a todo).
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `redzona` | Quito: 5 zonas, «3 zonas sin inspectores propios», mapa, leyenda, probar y la columna derecha |
+| `redzonasinzonas` | Ambato sin zonas: solo el radio y «Toda la ciudad (sin zonas)» con Inmediata 1 · Red 1 |
+| `redzonaprobar` | Av. Amazonas probada: «Quito · Zona Norte», Inmediata 4 y Red 2, iguales a su tarjeta |
+| `redzonaconfirmar` | «Calle sin nombre…»: «Quito · zona por confirmar», Inmediata 3 y Red 2 |
+| `redzonaasignar` | Diálogo desde la zona Sur con Cristian Vaca y Luis Andrade: «3 → 4 · 2 → 3 · Deja de estar «sin inspectores propios»» |
+| `redsucursal` | Las definiciones, «Atienden todas las sucursales» y la tabla de las 11 sucursales |
+| `redsucursalasignar` | Diálogo de la sucursal Loja con Cristian Vaca: «0 → 1 · Deja de estar «sin inspectores»» |
+| `redzonacx` | Conexión simulada con `redLugar`: igual que `redzona` |
+| `redzonacxerror` | Conexión simulada con `{ ok: false }`: aviso y vista vacía |
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «Red de inspectores por lugar: Por zona y Por sucursal»).
+
+Tiempo de la etapa: inicio 21/11/2026 14:43 · fin 21/11/2026 15:15 · 32 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa U-7
 
 Publiqué la versión 355 de SIRIUS (los archivos subieron en la 354; esta versión cierra el registro con el tiempo de la etapa). El selector «Agrupar por» (Riesgo | Visita) de Coordinación › cartas ya no recorta el resaltado del botón elegido en las esquinas exteriores: reproduje el cambio de `sirius-coordcartas.js` tal como lo pasó la asesoría. Encontré un segundo selector con el mismo patrón, el de nivel de cada permiso en Usuarios › Roles y permisos, y le apliqué la misma corrección. Los dos se ven completos en los dos estados y con el foco del teclado. Una diferencia mía queda en **Diferencias**.

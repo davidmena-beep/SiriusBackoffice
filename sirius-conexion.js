@@ -33,6 +33,13 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 21/11/2026 · R-3b · SQL 75 · DEC-265: SIRIUS_CONEXION.redLugar(datos) → red_lugar (solo lectura, permiso de la Red) → { ok, mensaje? , … }:
+//   { vista: 'ciudad', ciudad } → { ciudad, ciudadNombre, sucursal, radio, zonas[{ id, nombre, punto, area, inmediata[], red[], coordinacion[], propios[{ nombre, tipo, inmediata, red }], alerta, alertaTipo }],
+//     porConfirmar{ inmediata[], red[], redAmpliada, coordinacion[] }, todaCiudad[{ nombre, tipo, nivel, inmediata, red }], porSucursal[…], resumen{ zonas, inmediata, red, coordinacion,
+//     inspectores, zonasSinPropios, zonasSinInspectores }, inmediata[], red[], coordinacion[], alerta, alertaTipo ('error'|'aviso') };
+//   { vista: 'sucursales' } → { sucursales[{ sucursal, ciudad, ciudadNombre, porSucursal[], todaCiudad[], porZonas, zonas, inmediata, red, coordinacion, inspectores, alerta, alertaTipo }], todas[{ nombre, tipo }] };
+//   { vista: 'probar', lugar: { ciudad | ciudadNombre, punto?, direccion? }, sucursal? } → { lugar (zona calculada), sucursal, inmediata[{ nombre, tipo, nivel }], red[…], redAmpliada, mensaje }.
+//   Sale de las mismas funciones del portal: lo que muestra la Red es lo que ofrece el portal.
 // 21/11/2026 · G-4c · SQL 74: visitasBase[] con canceladoPor, canceladoEn y avance { fotos, total, ultimo, paso }; enlaces[] con canal, canales y enviadoEn (un registro por canal).
 // 20/11/2026 · S-1a · SQL 72: casos[] con prov, canton, dir, correoAps, tipoSolicitud, fechaSolicitud, aseguradoDatos y solicitante (solicitud completa); accion('editarSolicitud', { caso, cambios, motivo }).
 // 20/11/2026 · DEC-263 (B): consentimiento de WhatsApp, SMS y correo dado por otorgado en los casos de la base (solo prueba; brecha LOPDP para Citytech).
@@ -312,6 +319,8 @@
     // 59f: los datos con que la base arma el correo de un caso (enlaces activos y destinatario típico de la plantilla), para la vista previa
     contextoNotificacion: function (caso, plantilla) { return rpc('notif_contexto', { p_caso: String(caso || ''), p_plantilla: String(plantilla || '') }).catch(function () { return null; }); },
     notificacionContexto: function (id) { return get('notificaciones?select=contexto,asunto,plantilla&id=eq.' + encodeURIComponent(id)).then(function (r) { return (r && r[0]) || null; }).catch(function () { return null; }); },
+    redLugar: function (datos) { return rpc('red_lugar', { p_datos: datos || {} }).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; })   // R-3b · SQL 75
+      .catch(function (e) { var m = String(e.message || e); return { ok: false, mensaje: /red_lugar|PGRST202/.test(m) ? 'La base todavía no tiene la Red por lugar (falta el SQL 75)' : m.slice(0, 200) }; }); },
     redAccion: function (tipo, datos) { return rpc('red_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };   // R-2 · DEC-262
       return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
