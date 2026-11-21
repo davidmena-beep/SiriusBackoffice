@@ -33,6 +33,7 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 20/11/2026 · S-1a · SQL 72: casos[] con prov, canton, dir, correoAps, tipoSolicitud, fechaSolicitud, aseguradoDatos y solicitante (solicitud completa); accion('editarSolicitud', { caso, cambios, motivo }).
 // 20/11/2026 · DEC-263 (B): consentimiento de WhatsApp, SMS y correo dado por otorgado en los casos de la base (solo prueba; brecha LOPDP para Citytech).
 // 20/11/2026 · R-2 · DEC-262: SIRIUS_CONEXION.red (Red de inspectores, SQL 68) = { listo, puedeGestionar, hoy, inspectores: [{ nombre, tipo, tipoInspector, agencia, estado, cuenta,
 //   operacion: { modalidades, ramos, recibeOfertas ('red'|'coord'|'no'), jornada: { dias, desde, hasta }, capacidadDia, fuente, actualizado },
@@ -203,7 +204,18 @@
     x.tipoRiesgo = k.grupo_ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales';   // P-6f-0: la bandeja rotula «3 vehículos» (no «3 ramos») y muestra «PRB1212 +2»
     x.origen = k.origen || x.origen || 'Manual'; x.contacto = c.nombre || x.contacto || ''; x.tel = c.celular || x.tel || ''; x.correo = c.correo || x.correo || '';
     x.nota = d.nota || k.subestado || x.nota || '';
-    x.subestado = k.subestado || '';   // G-2c8 · DEC-238: «N de M agendados», «Oferta enviada», «Enlace enviado» (SQL 41)
+    x.subestado = k.subestado || '';
+    // S-1a · SQL 72: solicitud completa. Provincia, cantón y dirección del asegurado (antes salían «—» o la ciudad de la sucursal),
+    // datos personales, solicitante distinto y póliza. aseguradoDatos y solicitante: { nombre, tipoIdentificacion, identificacion, nombres, apellidos,
+    // fechaNacimiento, estadoCivil, genero, telefonoFijo, celular, correo, provincia, canton, direccion }; poliza: { fechaSolicitud, broker, correoAps, ordenEmision, tipoSolicitud }.
+    var tit = function (t) { return String(t || '').toLowerCase().replace(/(^|[\s-])(\S)/g, function (m, a1, b) { return a1 + b.toUpperCase(); }); }, pol = d.poliza || {};
+    x.prov = a.provincia ? tit(a.provincia) : (x.prov || ''); x.canton = a.canton || x.canton || ''; x.dir = a.direccion || x.dir || '';
+    x.correoAps = pol.correoAps || x.correoAps || ''; x.tipoSolicitud = pol.tipoSolicitud || x.tipoSolicitud || ''; x.fechaSolicitud = pol.fechaSolicitud || '';
+    if (pol.ordenEmision) x.orden = pol.ordenEmision;
+    x.aseguradoDatos = { nombre: a.nombre || '', tipoIdentificacion: a.tipoIdentificacion || '', identificacion: a.identificacion || '', nombres: a.nombres || '', apellidos: a.apellidos || '',
+      fechaNacimiento: a.fechaNacimiento || '', estadoCivil: a.estadoCivil || '', genero: a.genero || '', telefonoFijo: a.telefonoFijo || '', celular: c.celular || '', correo: c.correo || '',
+      provincia: a.provincia ? tit(a.provincia) : '', canton: a.canton || '', direccion: a.direccion || '' };
+    x.solicitante = d.solicitante ? Object.assign({}, d.solicitante, { provincia: d.solicitante.provincia ? tit(d.solicitante.provincia) : '' }) : null;   // null: el solicitante es el asegurado   // G-2c8 · DEC-238: «N de M agendados», «Oferta enviada», «Enlace enviado» (SQL 41)
     // P-6e · plantilla de cada riesgo (riesgos.datos.formulario, SQL 29) y su carrocería: Coordinación ofrece las modalidades de esa plantilla.
     x.formularios = rs.map(function (r) { return (r.datos || {}).formulario || ''; }); x.carrocerias = rs.map(function (r) { return (r.datos || {}).carroceria || ''; });
     x.sumaAsegurada = rs.reduce(function (t, r) { return t + (Number(r.suma_asegurada) || 0); }, 0) || x.sumaAsegurada; x.anios = rs.map(function (r) { return (r.datos || {}).anio || null; }); x.placas = rs.map(function (r) { return (r.datos || {}).placa || r.descripcion || ''; }); x.riesgosBase = rs.map(function (r) { return { descripcion: r.descripcion || '', composicion: r.composicion || '', suma: Number(r.suma_asegurada) || null, datos: r.datos || {} }; });   // detalle de la solicitud por riesgo (marca, modelo, versión, año, color, VIN, motor, clase, uso, extras)

@@ -102,6 +102,11 @@
       x.i.bloqueos = x.i.bloqueos.filter((b) => b !== x.b); reg(x.i.nombre, 'Quitó un bloqueo', x.b.motivo + ' · del ' + fDia(x.b.desde) + ' al ' + fDia(x.b.hasta)); return { ok: true, mensaje: 'Bloqueo quitado a ' + x.i.nombre + '.' }; }
     return no('Acción desconocida: ' + tipo);
   };
+  // Etapa G-3e: escena redlistalarga = los 10 de arriba + 20 más (30 en total) para comprobar el desplazamiento de la lista. Se suman solo en esa escena (sirius-red.js).
+  const NOM = ['Andrea Mora', 'Bruno Paredes', 'Carla Idrovo', 'Daniel Ochoa', 'Elena Salgado', 'Fabián Rueda', 'Gloria Mena', 'Héctor Albán', 'Inés Quishpe', 'Julio Carrión', 'Karina Zurita', 'Leonel Ayala', 'Marisol Tello', 'Néstor Bravo', 'Olga Cevallos', 'Patricio Naranjo', 'Rocío Alvear', 'Sergio Játiva', 'Tamara Vélez', 'Ulises Toapanta'], TIPOS = ['Interno', 'Agencia', 'Independiente'], SUC = ['Quito', 'Guayaquil', 'Cuenca', 'Ambato', 'Loja'];
+  const extras = NOM.map((n, k) => { const t = TIPOS[k % 3]; return ins(n, t, t === 'Agencia' ? (k % 2 ? 'eurosurvey' : 'andinas') : '', 'Activo', op(PV, k % 2 ? VR : V, k % 4 === 0 ? 'red' : k % 4 === 3 ? 'no' : 'coord', k % 5 ? LV : LS, '08:00', '17:00', 4 + (k % 3)), k % 6 === 5 ? [] : [fila('sucursal', { sucursal: SUC[k % 5], motivo: 'Atiende la sucursal ' + SUC[k % 5] })]); });
+  extras.forEach((i) => i.cobertura.forEach((f) => { f.vigente = vig(f, HOY); }));
+  window.SIRIUS_RED_EXTRA = extras;
   window.SIRIUS_RED = { version: '1.0', listo: true, hoy: HOY, puedeGestionar: true, inspectores, historial, aplicar, ambito, NIVELES: NIV, RECIBE };
 
   // ---------- Escena redcx: conexión simulada (SIRIUS_CX_COORD) con una fila «Viene de la ficha» ----------

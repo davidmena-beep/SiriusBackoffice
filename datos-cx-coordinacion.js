@@ -36,6 +36,14 @@
     pres(2, 'Buscando inspector', null, null, '', { origen: 'Cliente · red', agendadoEn: '2026-10-18T19:50', direccion: 'Av. Daniel León Borja y Juan de Velasco, Riobamba',
       lugar: { provincia: '06', ciudad: '0601', ciudadNombre: 'Riobamba', direccion: 'Av. Daniel León Borja y Juan de Velasco, Riobamba', referencia: 'Frente al parque Sucre', punto: [-1.6636, -78.6546], zona: null, estadoZona: 'Sin zonas', lejos: false, origen: 'Búsqueda', texto: 'Riobamba · Ciudad sin zonas' },
       oferta: { inspectores: ['Pablo Heredia'], desde: '2026-10-21', hasta: '2026-10-23', minutos: 45, vigenciaHoras: 2, nota: '', vence: '2026-10-18T21:50', porCliente: true } })];
+  // G-3e: caso 30052 «Agendado» con dos visitas del portal. V1 «Virtual guiada» agendada por el cliente (agenda fija) para el 21/10 a las 10:00 con Mauricio Endara, y su enlace de Autoagendamiento todavía
+  // «En curso» (queda abierto a propósito: «Cambiar la fecha» lo usa). V2 «Por agendar» con otro enlace de Autoagendamiento «En curso»: se ve «Enlace abierto por el cliente», no «En curso por el cliente».
+  visitas.clienteagendada = [{ n: 1, modalidad: 'Virtual guiada', estado: 'Agendada', inicio: '2026-10-21T10:00', fin: '2026-10-21T10:30', agendadoEn: '2026-10-18T19:42', origen: 'Cliente · agenda fija', inspector: 'Mauricio Endara',
+      enlace: { tipo: 'Autoagendamiento', estado: 'En curso', vence: '2026-10-25T13:18', url: url('Autoagendamiento', 'AG-7B652C') },
+      enlaces: [{ tipo: 'Autoagendamiento', estado: 'En curso', enviadoEn: '2026-10-18T09:05', canal: 'WhatsApp', vence: '2026-10-25T13:18' }] },
+    { n: 2, modalidad: 'Presencial', estado: 'Por agendar', inicio: null, fin: null, agendadoEn: '2026-10-18T10:40', origen: 'Coordinador', inspector: '',
+      enlace: { tipo: 'Autoagendamiento', estado: 'En curso', vence: '2026-10-19T10:40', url: url('Autoagendamiento', 'AG-3M8P1D') },
+      enlaces: [{ tipo: 'Autoagendamiento', estado: 'En curso', enviadoEn: '2026-10-18T10:40', canal: 'WhatsApp', vence: '2026-10-19T10:40' }] }];
   const sim = (id, vis, extra) => { const c = caso(id, Object.assign({ visitasBase: JSON.parse(JSON.stringify(vis)) }, extra || {}));
     const eventos = [
       { hora: '2026-10-17T16:05', accion: 'Solicitud recibida', detalle: 'Desde el BPM de Emisión', actor: 'BPM de Emisión', rol: 'Sistema' },
@@ -44,11 +52,11 @@
   window.SIRIUS_CX_COORD = {
     version: '1.0',
     // escena → [caso, conjunto de visitas, pestaña del caso (1 = Coordinación)]
-    cxEscenas: { cxvisitaenlace: ['30031', 'autoinspeccion'], cxvisitacancelar: ['30031', 'autoinspeccion'], cxcancelarvisitanumero: ['50012', 'cancelarnumero'], cxnumerocruce: ['30007', 'autoagendamiento'], cxvisitacliente: ['30041', 'cliente'] },
+    cxEscenas: { cxvisitaenlace: ['30031', 'autoinspeccion'], cxvisitacancelar: ['30031', 'autoinspeccion'], cxcancelarvisitanumero: ['50012', 'cancelarnumero'], cxnumerocruce: ['30007', 'autoagendamiento'], cxvisitacliente: ['30041', 'cliente'], cxvisclienteagendada: ['30052', 'clienteagendada'] },
     cxSim: function (escena) { const e = this.cxEscenas[escena]; if (!e) return null; let vv = visitas[e[1]], desfase = null;
       if (escena === 'cxcancelarvisitanumero') { const f = (function () { try { return new URLSearchParams(location.search).get('fvisita') || ''; } catch (er) { return ''; } })(); window.__sirCancelUltima = null;
         if (f === '2') { vv = JSON.parse(JSON.stringify(vv)); vv[1] = Object.assign(vv[1], { estado: 'Agendada', inicio: '2026-10-19T14:00', fin: '2026-10-19T14:45', inspector: 'Marco Tapia', motivoCancelacion: undefined }); desfase = { n: 2 }; /* la pantalla aún la ve «Agendada»; en la base otra persona ya la canceló */ } }
-      const X = sim(e[0], vv); if (desfase) X.cxDesfase = desfase; return X; },
+      const X = sim(e[0], vv, escena === 'cxvisclienteagendada' ? { estado: 'Agendado', subestado: 'Autoinspección en curso', responsable: 'Mauricio Endara' } : null); if (desfase) X.cxDesfase = desfase; return X; },
     // Base simulada de las escenas: aplica las acciones de visitas sobre SIRIUS_CONEXION.casos[i].visitasBase (como lo haría la base) y devuelve el enlace.
     aplicar: function (X, tipo, d) { const c = ((X && X.casos) || []).find((x) => x && String(x.id) === String((d || {}).caso)); if (!c) return null; const V = c.visitasBase = c.visitasBase || [];
       const E = window.SIRIUS_EJEMPLO || {}, a = typeof E.ahora === 'function' ? E.ahora() : null, two = (n) => (n < 10 ? '0' : '') + n;

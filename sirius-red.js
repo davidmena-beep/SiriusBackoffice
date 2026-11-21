@@ -57,6 +57,9 @@
       '.rdi-tabs{display:flex;gap:28px;border-bottom:1px solid var(--border-subtle);margin:20px 0 24px;flex-wrap:wrap}.rdi-tab{border:0;background:none;padding:8px 0 10px;margin-bottom:-1px;font:600 17px var(--font-brand);color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent}' +
       '.rdi-tab[aria-selected="true"]{color:var(--text-strong);font-weight:700;border-bottom-color:var(--color-brand)}.rdi-tab:hover{color:var(--text-strong)}.rdi-tab:focus-visible,.rdi button:focus-visible,.rdi input:focus-visible,.rdi select:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}' +
       '.rdi-grid{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:24px;align-items:start}@media (max-width:900px){.rdi-grid{grid-template-columns:minmax(0,1fr)}}' +
+      /* G-3e: la lista y la ficha se desplazan por su cuenta; alto máximo = alto de la ventana disponible (--rdi-alto la calcula el componente); barra siempre visible */
+      '.rdi-lcard{display:flex;flex-direction:column;min-height:0;max-height:var(--rdi-alto,none);position:sticky;top:8px}.rdi-ul{flex:1 1 auto;min-height:120px;overflow-y:scroll;overscroll-behavior:contain;margin:0 -8px;padding:0 4px 0 8px}.rdi-ul::-webkit-scrollbar{width:10px}.rdi-ul::-webkit-scrollbar-track{background:#EEF0F3;border-radius:6px}.rdi-ul::-webkit-scrollbar-thumb{background:#8A94A3;border-radius:6px;border:2px solid #EEF0F3}' +
+      '.rdi-fcol{max-height:var(--rdi-alto,none);overflow-y:auto;overscroll-behavior:contain;position:sticky;top:8px;padding:2px 8px 2px 2px}.rdi-fcol::-webkit-scrollbar{width:10px}.rdi-fcol::-webkit-scrollbar-track{background:#EEF0F3;border-radius:6px}.rdi-fcol::-webkit-scrollbar-thumb{background:#8A94A3;border-radius:6px;border:2px solid #EEF0F3}@supports not selector(::-webkit-scrollbar){.rdi-ul,.rdi-fcol{scrollbar-width:thin;scrollbar-color:#8A94A3 #EEF0F3}}@media (max-width:900px){.rdi-lcard,.rdi-fcol{position:static}.rdi-lcard{max-height:60vh}.rdi-fcol{max-height:none;overflow:visible}}' +
       '.rdi-card{background:#fff;border:1px solid var(--border-subtle);border-radius:16px;padding:22px 24px;box-shadow:0 1px 3px rgba(1,30,65,.06);min-width:0}.rdi-col{display:flex;flex-direction:column;gap:16px;min-width:0}' +
       '.rdi-h3{margin:0;font:700 19px var(--font-brand);color:var(--text-strong)}.rdi-lbl{display:block;font:700 14px var(--font-brand);color:var(--text-strong);margin:0 0 6px}' +
       '.rdi-in{width:100%;height:44px;border:1.5px solid var(--input-outlined-border,#DADADA);border-radius:8px;padding:0 12px;font:400 15px var(--font-brand);color:var(--text-strong);background:#fff}.rdi-in:focus{border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)}.rdi-in:disabled{background:var(--surface-subtle);color:var(--text-muted)}' +
@@ -84,14 +87,20 @@
     const [tab, setTab] = R().useState('inspector');
     const [q, setQ] = R().useState('');
     const [filtro, setFiltro] = R().useState(esc === 'redsincob' ? 'sincob' : 'todos');
-    const [sel, setSel] = R().useState(esc === 'red' || esc === 'redasignar' || esc === 'redoperacion' || esc === 'redcx' ? 'Sofía Arteaga' : esc === 'redsincob' ? 'Cristian Vaca' : '');
+    const [sel, setSel] = R().useState(esc === 'red' || esc === 'redasignar' || esc === 'redoperacion' || esc === 'redcx' || esc === 'redlistalarga' ? 'Sofía Arteaga' : esc === 'redsincob' ? 'Cristian Vaca' : '');
     const [drafts, setDrafts] = R().useState(() => esc === 'redoperacion' ? { 'Sofía Arteaga': { capacidadDia: 5, jornada: { dias: [1, 2, 3, 4, 5, 6], desde: '08:00', hasta: '17:00' } } } : {});
     const [motivo, setMotivo] = R().useState(''), [barErr, setBarErr] = R().useState(''), [guardando, setGuardando] = R().useState(false);
     const [aviso, setAviso] = R().useState(null);
     const [dlg, setDlg] = R().useState(() => esc === 'redasignar' ? { k: 'asignar', nivel: 'zona', sucursal: '', ciudad: '1701', zona: '', desde: '', hasta: '', motivo: '' } : null);
     const [verHist, setVerHist] = R().useState(false);
     const retRef = R().useRef(null);
-    const D = S.datos(), red = D.red, hoy = (red && red.hoy) || (COB() ? COB().hoy() : ''), SU = W.SiriusUsuarios;
+    /* G-3e: alto disponible = alto de la ventana menos lo que hay encima del panel; se recalcula al abrir, al cambiar el tamaño y al cambiar de vista. La posición de la lista se guarda y se devuelve tras cada cambio de selección. */
+    const gridRef = R().useRef(null), ulRef = R().useRef(null), posRef = R().useRef(0);
+    const [alto, setAlto] = R().useState(0);
+    R().useLayoutEffect(() => { const calc = () => { const g = gridRef.current; if (!g || !W.innerHeight) return; const top = g.getBoundingClientRect().top; const a = Math.max(360, Math.round(W.innerHeight - Math.max(top, 8) - 16)); setAlto((x) => (Math.abs(x - a) > 1 ? a : x)); }; calc(); W.addEventListener('resize', calc); return () => W.removeEventListener('resize', calc); }, [tab]);
+    R().useLayoutEffect(() => { if (ulRef.current && posRef.current) ulRef.current.scrollTop = posRef.current; });
+    const D = S.datos(), red = D.red; if (esc === 'redlistalarga' && red && W.SIRIUS_RED_EXTRA && !red.__larga) { red.__larga = true; red.inspectores = (red.inspectores || []).concat(W.SIRIUS_RED_EXTRA); } /* G-3e: escena de 30 inspectores */
+    const hoy = (red && red.hoy) || (COB() ? COB().hoy() : ''), SU = W.SiriusUsuarios;
     const puede = !!red && red.puedeGestionar !== false && (!SU || !props.rol || SU.puede(props.rol, 'red'));
     const verUsuarios = !SU || !props.rol || SU.permiso(props.rol, 'Gestionar usuarios, roles e invitaciones') !== ''; /* la ficha de identidad y acceso la abre quien gestiona usuarios */
     const titulo = h('div', { key: 'cab', style: { display: 'flex', flexDirection: 'column', gap: 6 } },
@@ -113,18 +122,20 @@
     const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     const L = L0.filter((i) => (filtro === 'sincob' ? S.sinCobertura(i, hoy) : filtro === 'red' ? (i.operacion || {}).recibeOfertas === 'red' : true) && (!q.trim() || norm([i.nombre, i.tipo, agNombre(i.agencia), S.corto(i, hoy), (i.cobertura || []).map((f) => S.ambito(f)).join(' ')].join(' ')).indexOf(norm(q.trim())) >= 0));
     const actual = L0.find((i) => i.nombre === sel) || L[0] || null;
-    const lista = h('div', { key: 'lista', className: 'rdi-card', 'data-red-lista': '', style: { padding: '20px 18px' } },
+    /* G-3e: ↑ ↓ Inicio Fin recorren la lista (Tab también, todos los botones son tabulables); el foco no cambia la selección hasta pulsar Enter o clic */
+    const teclaLista = (e) => { const k = e.key; if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(k)) return; const bs = Array.from(e.currentTarget.querySelectorAll('button[data-red-ins]')), i = bs.indexOf(document.activeElement); if (!bs.length) return; e.preventDefault(); const n2 = k === 'Home' ? 0 : k === 'End' ? bs.length - 1 : Math.max(0, Math.min(bs.length - 1, (i < 0 ? 0 : i) + (k === 'ArrowDown' ? 1 : -1))); bs[n2].focus(); };
+    const lista = h('div', { key: 'lista', className: 'rdi-card rdi-lcard', 'data-red-lista': '', style: { padding: '20px 18px' } },
       h('label', { className: 'rdi-lbl', htmlFor: 'rdi-q' }, 'Buscar'),
       h('input', { id: 'rdi-q', className: 'rdi-in', type: 'search', value: q, placeholder: 'Nombre, agencia o ciudad', onChange: (e) => setQ(e.target.value), autoComplete: 'off' }),
       h('div', { role: 'group', 'aria-label': 'Filtrar inspectores', style: { display: 'flex', flexWrap: 'wrap', gap: 8, margin: '14px 0 12px' } },
         [['todos', 'Todos', L0.length], ['sincob', 'Sin cobertura', nSin], ['red', 'Solo red', nRed]].map(([k, t, c]) => h('button', { key: k, type: 'button', className: 'rdi-chip', 'data-red-filtro': k, 'aria-pressed': filtro === k ? 'true' : 'false', onClick: () => setFiltro(k) }, t + ' ' + c))),
-      L.length ? h('ul', { style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 2 }, 'aria-label': 'Inspectores' }, L.map((i) => { const sc = S.sinCobertura(i, hoy), cur = actual && actual.nombre === i.nombre, sg = !!drafts[i.nombre];
+      L.length ? h('ul', { ref: ulRef, className: 'rdi-ul', 'data-red-ul': '', onScroll: (e) => { posRef.current = e.currentTarget.scrollTop; }, onKeyDown: teclaLista, style: { listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }, 'aria-label': 'Inspectores' }, L.map((i) => { const sc = S.sinCobertura(i, hoy), cur = actual && actual.nombre === i.nombre, sg = !!drafts[i.nombre];
         return h('li', { key: i.nombre }, h('button', { type: 'button', className: 'rdi-li', 'data-red-ins': i.nombre, 'aria-current': cur ? 'true' : undefined, onClick: () => { setSel(i.nombre); setAviso(null); setBarErr(''); setVerHist(false); } },
           h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { font: '700 16px var(--font-brand)', color: 'var(--text-strong)' } }, i.nombre),
             h('span', { style: { fontSize: 13.5, color: 'var(--text-muted)', overflowWrap: 'anywhere' } }, [i.tipo || '—'].concat(sc ? [] : [S.corto(i, hoy)]).join(' · '))),
           h('span', { style: { display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', flex: '0 0 auto' } }, sc ? pill('Sin cobertura', 'danger') : null, sg ? pill('Sin guardar', 'warning') : null))); }))
         : h('p', { role: 'status', style: { margin: '8px 4px', fontSize: 14, color: 'var(--text-muted)' } }, 'Ningún inspector coincide con la búsqueda o el filtro.'));
-    if (!actual) return marco(h('div', { className: 'rdi-grid' }, lista, h('div', { className: 'rdi-card' }, 'La red no tiene inspectores.')));
+    if (!actual) return marco(h('div', { className: 'rdi-grid', ref: gridRef, style: { '--rdi-alto': alto ? alto + 'px' : undefined } }, lista, h('div', { className: 'rdi-card' }, 'La red no tiene inspectores.')));
 
     // Ficha
     const op0 = actual.operacion || {}, j0 = op0.jornada || { dias: [], desde: '', hasta: '' }, dr = drafts[actual.nombre] || {};
@@ -190,8 +201,8 @@
       h('span', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } }, nCamb ? boton({ variant: 'ghost', onClick: () => { setDrafts((x) => { const o = Object.assign({}, x); delete o[actual.nombre]; return o; }); setBarErr(''); } }, 'Descartar') : null,
         boton({ variant: 'primary', id: 'rdi-guardar', loading: guardando, onClick: guardar }, 'Guardar cambios')));
     const av = h('div', { key: 'av', role: 'status', 'aria-live': 'polite', 'data-red-aviso': '' }, aviso ? h('div', { style: { padding: '10px 14px', borderRadius: 8, background: aviso.ok ? '#E7F5EA' : '#FDECEA', color: aviso.ok ? '#1E6B34' : '#A1261B', fontSize: 14.5 } }, aviso.t) : null);
-    const ficha = h('div', { key: 'ficha', className: 'rdi-col', 'data-red-ficha': actual.nombre }, av, cab, cob, oper, jorn, bloq, hist, bar);
-    return h(R().Fragment, null, marco(h('div', { className: 'rdi-grid' }, lista, ficha)), dlg ? h(Dialogo, { key: 'dlg', d: dlg, set: setDlg, ins: actual, hoy, ret: retRef, onOk: (t) => { setAviso({ ok: true, t }); refrescar(); } }) : null);
+    const ficha = h('div', { key: 'ficha', className: 'rdi-col rdi-fcol', 'data-red-ficha': actual.nombre, tabIndex: 0, role: 'region', 'aria-label': 'Ficha de ' + actual.nombre }, av, cab, cob, oper, jorn, bloq, hist, bar);
+    return h(R().Fragment, null, marco(h('div', { className: 'rdi-grid', ref: gridRef, style: { '--rdi-alto': alto ? alto + 'px' : undefined } }, lista, ficha)), dlg ? h(Dialogo, { key: 'dlg', d: dlg, set: setDlg, ins: actual, hoy, ret: retRef, onOk: (t) => { setAviso({ ok: true, t }); refrescar(); } }) : null);
   }
 
   // ---------- Diálogos: agregar o quitar cobertura, agregar o quitar bloqueo ----------

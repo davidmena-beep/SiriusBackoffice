@@ -648,7 +648,7 @@ class Component extends DCLogic {
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
     const nextId = 'V' + (vis.length + 1);
-    const tone = { 'Oferta enviada': 'brand', 'Buscando inspector': 'brand', 'En camino': 'brand', 'Sin respuesta': 'warning', 'Por sincronizar': 'warning', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
+    const tone = { 'Oferta enviada': 'brand', 'Buscando inspector': 'brand', 'En camino': 'brand', 'Sin respuesta': 'warning', 'Por sincronizar': 'warning', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'Enlace abierto por el cliente': 'neutral' /* G-3e */, 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
     const fMot = this.pideMotivoCx(p) ? [this.F('motivoCx', p.mode === 'inspector' ? 'Motivo del cambio de inspector' : 'Motivo del cambio de fecha', 'textarea', { req: true, span: '1 / -1', ph: 'Mínimo 10 caracteres. Queda en el historial y se envía a la base.' })] : []; // DEC-231
     const fields0 = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
       this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
@@ -776,7 +776,7 @@ class Component extends DCLogic {
         const onA = P.onAction || (() => {});
         const showWa = (vv, title) => this.setState({ wa: { title, to: vv.cName + ' · ' + vv.cCel, text: this.waMessage(vv), enlace: this.enlaceCopia(vv), ins: '' } });
         const mA = this.modCfg(), okA = !mA || !mA.items || !mA.items['Autoinspección'] || mA.items['Autoinspección'].ok, porqueA = mA && mA.items && mA.items['Autoinspección'] && !mA.items['Autoinspección'].ok ? (mA.items['Autoinspección'].motivo || 'La plantilla no ofrece la autoinspección') : '';
-        const actsCx = !cxB ? null : ['Enlace enviado', 'Autoinspección enviada'].includes(est) ? [
+        const actsCx = !cxB ? null : ['Enlace enviado', 'Autoinspección enviada', 'Enlace abierto por el cliente'].includes(est) ? [
           { label: 'Reenviar enlace', variant: 'secondary', onClick: () => onA('cxReenviar', { id: v.id, tipo: cxB.tipo }) },
           { label: 'Generar nuevo enlace', variant: 'secondary', onClick: () => this.setState({ regen: { id: v.id, motivo: '', touched: false, cx: cxB.tipo } }) },
           { label: 'Copiar enlace', variant: 'secondary', onClick: () => onA('cxCopiar', { id: v.id, url: cxB.url }), why: cxB.url ? '' : 'La base no envió la dirección del enlace' },

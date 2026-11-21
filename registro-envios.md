@@ -4,6 +4,72 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa G-3e
+
+Publiqué la versión 346 de SIRIUS (los archivos subieron en la 345; esta versión cierra el registro con el tiempo de la etapa). Coordinación ya muestra el estado real de la visita: una visita que agendó el cliente se ve «Agendada», con fecha, hora, inspector y sus acciones, aunque su enlace siga abierto. La cabecera del caso ya no dice «Autoinspección en curso» sin autoinspección, y la lista de la Red de inspectores se desplaza por su cuenta. Tres decisiones mías están en **Diferencias**.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| Back-office › `cxVisitasBase` | La regla del estado de la tarjeta revisaba primero el enlace («en curso» → «En curso por el cliente») y después la visita. Ahora hay una sola función, `cxEstadoVisita`, donde manda el estado de la visita |
+| Coordinación › tarjeta de visita | Acepta «Enlace abierto por el cliente» (tono neutral, acciones del enlace) y muestra Reagendar, Cambiar inspector y Cancelar visita en las «Agendada» del cliente |
+| Cabecera del caso (`withR`, `caseById`) | `cxSubReal` quita «Autoinspección en curso» si no hay una autoinspección en curso |
+| Red de inspectores › Por inspector | Lista y ficha con desplazamiento propio, alto de la ventana, posición conservada y teclado |
+| Sin cambios | Autoinspección (enviada y en curso), ofertas, Cerrada sin inspección, Agenda, Portal del cliente, `sirius-conexion.js` |
+
+**Qué cambió**
+
+- Estado de la tarjeta: Agendada, En camino, En curso, Por sincronizar, Buscando inspector, Sin respuesta, Realizada y Cancelada se muestran como son, con sus datos y acciones, también si la agendó el cliente.
+- «En curso por el cliente» solo sale de un enlace de Autoinspección en uso. Un enlace de Autoagendamiento abierto en una visita «Por agendar» es «Enlace abierto por el cliente» (neutral).
+- Cabecera del caso: «Autoinspección en curso» solo si hay una visita de autoinspección en curso.
+- Red › Por inspector: la lista y la ficha tienen desplazamiento vertical propio, barra visible y alto máximo igual al de la ventana disponible. Elegir a alguien no mueve la lista; ↑ ↓ Inicio Fin y Tab la recorren.
+
+**Prueba cruzada** (6 estados de enlace × 10 estados de visita = 60 combinaciones, antes y ahora)
+
+| Enlace | Visita | Antes | Ahora |
+|---|---|---|---|
+| Autoagendamiento en curso | Por agendar | En curso por el cliente | Enlace abierto por el cliente |
+| Autoagendamiento en curso | Agendada, En camino, En curso, Por sincronizar, Buscando inspector, Sin respuesta | En curso por el cliente | El estado de la visita |
+| Autoagendamiento vigente | Agendada, En camino, En curso, Por sincronizar, Buscando inspector, Sin respuesta | Enlace enviado | El estado de la visita |
+| Autoinspección (vigente, en curso, vencido) | Todos | — | Sin cambios (0 de 30) |
+| Sin enlace; visitas Realizada, Cancelada, Cerrada | Todos | — | Sin cambios |
+
+Cambian 13 de 60, todas con enlace de Autoagendamiento. Filtro del subestado: 8 de 8 casos correctos.
+
+**Verificado**
+
+- `cxvisclienteagendada` a 1280×720 y 1920×1080: V1 «Agendada», cita 21/10/26 · 10:00, Mauricio Endara, enlace y las tres acciones; V2 «Enlace abierto por el cliente»; cabecera «Agendado». Reagendar abre el panel con la cita y Cancelar visita pide el motivo.
+- `redlistalarga` a 1280×720 y 1920×1080: 30 inspectores; lista y ficha con barra visible y alto 419 px (1280×720) y 779 px (1920×1080); al desplazar la lista a 600 px y elegir a Karina Zurita la posición queda en 600; ↑ ↓ Inicio Fin recorren la lista y Tab pasa a la ficha.
+- Regresión contra la versión anterior (texto visible, 1280×720): cxvisitaenlace, cxvisitacancelar, cxcancelarvisitanumero, cxnumerocruce, cxvisitacliente, redcx, redsincob, redasignar, redoperacion, usmenuabajo, cxlimpio, envioenlace y red, 13 de 13 iguales.
+- `sirius-conexion.js` sigue en 70 bytes. Catálogo: 784 escenas.
+
+**No verificado**
+
+- La barra visible se comprobó en Chromium; en Firefox usa `scrollbar-width: thin` y en macOS con barras ocultas por el sistema no lo probé.
+- «Cambiar la fecha» del portal con el enlace abierto de una visita agendada no se ejecutó de punta a punta en esta etapa.
+
+**Diferencias**
+
+- Una visita con enlace de Autoagendamiento vigente (sin abrir) y ya agendada también muestra «Agendada» en vez de «Enlace enviado»: es el mismo error de fondo y lo corrige la misma regla.
+- «Enlace abierto por el cliente» usa las mismas acciones que «Enlace enviado» (Reenviar, Generar nuevo, Copiar, Cancelar visita).
+- La lista y la ficha son `sticky`; con la ventana de 1280×720 la lista muestra unas cuatro filas porque el título y las pestañas ocupan la parte de arriba.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `cxvisclienteagendada` | Caso 30052 con conexión simulada: V1 agendada por el cliente con su enlace abierto y V2 «Enlace abierto por el cliente» |
+| `redlistalarga` | Red de inspectores › Por inspector con 30 inspectores y desplazamiento propio |
+
+También abrí `cxvisitacliente`, `redcx` y `usmenuabajo` para comprobar que no cambian.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «Estado real de la visita en Coordinación y lista de la Red con desplazamiento»).
+
+Tiempo de la etapa: inicio 20/11/2026 20:45 · fin 20/11/2026 21:01 · 16 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa U-6
 
 Publiqué la versión 342 de SIRIUS (los archivos subieron en la 341; esta versión cierra el registro con el tiempo de la etapa). El menú «…» de fila ya no se recorta: se dibuja en una capa flotante sobre la página, con un solo componente (`sirius-menu-fila.js`) que usan todas las tablas. Tres decisiones mías están en **Diferencias**: Agencias y Roles hoy no tienen menú «…», las acciones bloqueadas muestran su motivo debajo y la escena usa los datos de ejemplo.
