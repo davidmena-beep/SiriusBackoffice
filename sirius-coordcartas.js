@@ -1,3 +1,4 @@
+// U-7 · 21/11/2026: «Agrupar por» sin esquinas cortadas (margen interior y botones con sus propias esquinas).
 // SIRIUS · Pestaña Coordinación en cartas (etapa G-4 · maqueta aprobada) · v1.0
 // Una pila por riesgo (o por visita): arriba la visita vigente con sus datos y acciones; detrás asoman hasta dos capas con las
 // visitas anteriores del mismo riesgo. «N visitas anteriores» las despliega en una línea de tiempo (de la más nueva a la más
@@ -21,9 +22,9 @@
       '.cc{display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)}',
       '.cc-barra{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}',
       '.cc-lbl{font-size:14px;font-weight:600;color:var(--text-body)}',
-      '.cc-seg{display:inline-flex;border:1px solid var(--border-default,#C9D0DA);border-radius:10px;overflow:hidden;background:#fff}',
-      '.cc-seg button{min-height:40px;padding:0 16px;border:0;background:#fff;font:600 14px var(--font-brand);color:var(--text-body);cursor:pointer}',
-      '.cc-seg button+button{border-left:1px solid var(--border-default,#C9D0DA)}',
+      '.cc-seg{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--border-default,#C9D0DA);border-radius:10px;background:#fff}',
+      '.cc-seg button{min-height:36px;padding:0 16px;border:0;border-radius:7px;background:transparent;font:600 14px var(--font-brand);color:var(--text-body);cursor:pointer}',
+      '.cc-seg button:focus-visible{outline:2px solid var(--blue-700,#0033A1);outline-offset:2px}',
       '.cc-seg button[aria-checked="true"]{background:var(--blue-100,#F1F5FF);color:var(--blue-700,#0033A1);box-shadow:inset 0 0 0 2px var(--blue-700,#0033A1)}',
       '.cc-chip{min-height:40px;padding:0 16px;border:1px solid var(--border-default,#C9D0DA);border-radius:999px;background:#fff;font:600 14px var(--font-brand);color:var(--text-strong);cursor:pointer;white-space:nowrap}',
       '.cc-chip[aria-pressed="true"]{background:var(--blue-100,#F1F5FF);border-color:var(--blue-700,#0033A1);color:var(--blue-700,#0033A1);box-shadow:inset 0 0 0 1px var(--blue-700,#0033A1)}',
