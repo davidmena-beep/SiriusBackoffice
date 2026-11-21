@@ -4,6 +4,185 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa S-1b
+
+Publiqué la versión 353 de SIRIUS (los archivos subieron en la 352; esta versión cierra el registro con el tiempo de la etapa). Nueva solicitud ya envía a la base todo lo que pide el formulario. El Resumen muestra a la persona completa y la póliza. «Editar solicitud» y «Duplicar» funcionan, y el enlace del cliente sale por uno, dos o tres canales. En Administración hay una entrada «Portal del cliente». Cuatro decisiones mías están en **Diferencias**.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| Nueva solicitud (`NuevaSolicitud.dc.html`) | `cxPersona` y `cxPoliza` arman el asegurado, el solicitante y la póliza del contrato. La prop `modo` abre el formulario para editar o duplicar. La fecha y hora de la solicitud son las reales. |
+| Back-office › Resumen | «Solicitante y asegurado» (uno o dos bloques) y «Póliza» salen de una sola función (`solPersonas`, `solCampos`, `solPoliza`) con la base o con la ficha del caso. |
+| Back-office › menú del caso | «Editar solicitud» (habilitado o deshabilitado con su motivo) y «Duplicar» abren Nueva solicitud. |
+| Back-office › envíos de enlace | `cxEnlaceContrato`: todo `enviarEnlace` sale con `canales` y `destino*`. |
+| Coordinar visita (`sirius-coordinar.js`) y Coordinación | `CanalesUI`, una sola pieza para el autoagendamiento y la autoinspección. El aviso tras enviar y la carta dicen los canales. |
+| Administración | Entrada «Portal del cliente», con la misma pantalla de Formularios de inspección. |
+| Base simulada | `editarSolicitud`; `crearCaso` guarda la solicitud completa; un envío por canal; casos 50059 y 50060. |
+| Sin cambios | Riesgos, lugar y modalidad de Nueva solicitud, carga masiva, `sirius-conexion.js` y los archivos de configuración vigilados. |
+
+**Qué cambió**
+
+- **Nueva solicitud:** `crearCaso` lleva el asegurado completo (tipo y número de identificación, nombre, nombres, apellidos, nacimiento, estado civil, género, fijo, provincia y cantón con código del INEC, dirección y contacto). El solicitante va solo si no es el asegurado, y la póliza lleva fecha y hora, broker, correo APS, orden y tipo. Un dato vacío no se envía.
+- **Resumen:** con el mismo solicitante hay un bloque «Solicitante y asegurado»; si son distintos, dos (Solicitante y Asegurado). Cada uno muestra nombres o razón social, tipo y número de identificación, fecha de nacimiento, estado civil, género, celular, teléfono fijo, correo, provincia, cantón y dirección, con «—» si falta. El bloque «Póliza» muestra fecha y hora de la solicitud, broker, correo APS, orden de emisión y tipo de solicitud.
+- **«Editar solicitud»** (en el Resumen y en el menú; Coordinador de inspecciones, Ejecutivo comercial o Administrador):
+  - Abre el formulario con los datos cargados. La identificación del asegurado queda fija y el paso 3 (riesgos) se bloquea con «Los riesgos no se editan aquí».
+  - Pide un motivo de 10 caracteres o más y envía solo lo que cambió.
+  - Muestra el mensaje de la base y vuelve al caso, donde el Historial dice «Editó la solicitud».
+  - Fuera de coordinación queda deshabilitado con «Solo mientras el caso está en coordinación».
+- **«Duplicar»:** copia personas, póliza, sucursal, ramo, lugar, riesgos y datos adicionales. En Vehículos la placa y el VIN quedan vacíos y se muestra el aviso «Duplicado del caso N: revisa los datos y completa la placa». Se guarda con `crearCaso` y «Duplicado del caso N» al inicio de las observaciones.
+- **Enlace del cliente:** WhatsApp, SMS y Correo son casillas de selección múltiple (al menos una), cada una con su disponibilidad y el motivo si no está. «Enviar a» muestra el correo para Correo y el número para WhatsApp y SMS. La vista previa tiene una pestaña por canal.
+- **Menú de Administración:** nueva entrada «Portal del cliente».
+
+**Prueba cruzada**
+
+Lo que llega a la base (conexión simulada):
+
+| Envío | Antes | Ahora |
+|---|---|---|
+| `crearCaso` (cxnuevaveh, mismo solicitante) | asegurado: identificación, nombre, provincia, cantón, dirección, contacto | Lo mismo, más nombres, apellidos y `poliza` {fechaSolicitud, broker, correoAps, tipoSolicitud}; sin `solicitante`; sin `ordenEmision` porque está vacía |
+| `crearCaso` (duplicado de 50060, solicitante distinto) | Se perdía el solicitante | `solicitante` completo (nacimiento, estado civil, género, fijo…), asegurado con RUC, `observaciones: «Duplicado del caso 50060»`, placa nueva PDH2240 |
+| `editarSolicitud` (50060) | No existía | `{ caso, cambios: { asegurado (sin identificación), solicitante }, motivo }`; solo los bloques que cambiaron |
+| `enviarEnlace` de autoinspección con tres canales | `canal: 'WhatsApp'`, `destinatario {…}` | `canales: [WhatsApp, SMS, Correo]`, `destinoTipo`, `destinoNombre`, `destinoCorreo`, `destinoNumero` |
+| `enviarEnlace` de autoagendamiento con un canal (al chofer) | `canal`, `destinatario` | `canales: [WhatsApp]`, `destinoTipo: otro`, `destinoNumero`, `destinoRelacion: Chofer`, sin correo |
+
+En la pantalla:
+
+- El caso nuevo duplicado (50061) muestra en el Resumen los dos bloques y «Renovación».
+- Tras editar 50060, el Resumen trae la dirección nueva y el Historial «Editó la solicitud · asegurado, solicitante · Motivo: …».
+- Sin conexión, editar 20152 cambia el tipo de solicitud en el Resumen y deja el evento en el Historial.
+
+**Verificado**
+
+- Las seis escenas a 1280×720 y 1920×1080, sin desplazamiento horizontal.
+- «Editar solicitud» sin motivo muestra el error. Con motivo guarda, vuelve al caso y deja el evento en el Historial, con y sin conexión.
+- En 50059 «Agendado», el botón y el menú están deshabilitados con su motivo.
+- «Duplicar» exige la placa en el paso 3 antes de registrar.
+- La vista previa cambia por canal: Correo agrega el asunto. La carta y el aviso de la autoinspección enviada dicen «Enviado por WhatsApp, SMS y Correo».
+- Administración › Portal del cliente abre la pantalla de las pestañas Apariencias…Agenda.
+- **Regresión contra la versión anterior (texto visible):** en Nueva solicitud, `ns2`, `ns3v`, `ns3g` y `cxnuevarg` salen iguales. En `ns1g`, `ns4`, `nsbpm`, `cxnuevaveh` y `cxnuevaramos` solo cambia la fecha de la solicitud (ya no es la fija «16/10/26 · 13:40»). En los enlaces por un canal, `enlacesincorreo` y `cxvisitaenlace` salen iguales; `enlaceagenda` cambia solo el token aleatorio. En `coordautoinsp`, `envioenlace`, `coordenlaceauto` y `coordcontacto` solo se suman las casillas de canales, la disponibilidad y las pestañas de la vista previa. El Resumen sin solicitante distinto (20196) mantiene un solo bloque, con los campos nuevos en «—».
+- `sirius-conexion.js` sigue en 70 bytes. El catálogo tiene 796 escenas.
+
+**No verificado**
+
+- Firefox y Safari.
+- La base real: probé contra la base simulada con la forma del contrato (SQL 72 y SQL 73).
+- La reconversión de la provincia y el cantón cuando la base los manda como nombre y no como código. El Resumen acepta las dos formas; el formulario de edición usa el nombre.
+
+**Diferencias**
+
+- La fecha y hora de la solicitud ya no es la fija de la demostración: con la conexión es la hora real de Ecuador; sin ella, el reloj del prototipo. Al editar se conserva la del caso.
+- Si el caso no trae nombres y apellidos por separado (casos de ejemplo), el formulario de edición los parte del nombre completo: las dos últimas palabras son apellidos.
+- En la edición no aparecen los datos adicionales (no son parte de `editarSolicitud`). En el duplicado se copian los del caso; los del vehículo se vuelven a pedir.
+- En una base simulada, `crearCaso` ahora responde en todas las escenas conectadas, para que «Duplicar» se pueda probar desde 50059 y 50060. Al editar, desmarcar «El asegurado es el mismo solicitante» deja al asegurado con su identificación y pide los datos del solicitante.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `solcompleta` | 20152 con Solicitante y Asegurado distintos, todos los datos y «Póliza» |
+| `soleditar` | «Editar solicitud» de 20152 con la identificación fija (`?fpaso=4`: el motivo pendiente) |
+| `soleditarfuera` | 50059 «Agendado» con conexión simulada: «Editar solicitud» deshabilitado y el menú abierto |
+| `solduplicar` | Duplicado de 20196 con el aviso y los vehículos sin placa |
+| `enlacecanales` | Enlace de autoinspección con los tres canales y la vista previa por canal (`?fenviar=1` envía) |
+| `solcx` | 50060 con los datos del contrato: asegurado con RUC, solicitante distinto y póliza |
+
+También abrí `cxnuevaveh`, `coordenlaceauto`, `coordvis` y `nsmarca` para la regresión.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «Solicitud completa, editar, duplicar y enlace por varios canales»).
+
+Tiempo de la etapa: inicio 21/11/2026 01:15 · fin 21/11/2026 02:00 · 45 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa G-4
+
+Publiqué la versión 351 de SIRIUS (los archivos subieron en la 350; esta versión cierra el registro con el tiempo de la etapa). La pestaña Coordinación ya se ve en cartas, como en la maqueta: una pila por riesgo (o por visita), con la visita vigente arriba y las anteriores detrás. Las anteriores se despliegan en una línea de tiempo y «Volver a apilar» las recoge. El estado de cada carta es el de la visita (G-3e) y sus acciones son las de siempre. Cuatro decisiones mías están en **Diferencias**.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Lugar | Qué cambia |
+|---|---|
+| Coordinación › «Visitas del caso» | La grilla de tarjetas pasa a `SiriusCoordCartas` (nuevo `sirius-coordcartas.js`). `cartaDe` arma cada carta con el mismo estado y las mismas acciones de la tarjeta. |
+| Coordinación › acciones | «Ver en Agenda» en las agendadas; «Copiar enlace» pasa a la fila Enlace; «En curso por el cliente» con Reenviar enlace y Cancelar visita. |
+| Back-office | `verAgenda` → Agenda › Día con la fecha y el inspector; «Reagendada» y «Enlace caducado» en `cxEstadoVisita`; `hist`, `avance` y canales del enlace en `cxVisitasBase`; 4 escenas. |
+| Estado nuevo «Reagendada» | Cerrada en la regla del estado (`sirius-coordestado.js`), en la Agenda (`sirius-agenda.js`, `Agenda.dc.html`, `agendaVisitas`, Agenda conectada) y en los filtros de visitas abiertas del Back-office y de Coordinación. |
+| Base simulada (`datos-cx-coordinacion.js`) | Caso 50054 de la maqueta; `reenviarEnlace` acepta un enlace «En curso». |
+| Sin cambios | Coordinar visita (fases), cabecera y franja del caso, bandeja, Agenda (salvo «Reagendada»), portal, `sirius-conexion.js`. |
+
+**Qué cambió**
+
+- **Barra:** «Agrupar por» Riesgo (por defecto) o Visita, filtros «Todos N» y uno por riesgo, y el botón principal «Coordinar visita».
+- **Pila:** una por riesgo, con el título del riesgo. Agrupado por visita, los riesgos con la misma visita vigente van en una sola pila («V4 · Presencial · PBA4521…»).
+- **Carta de arriba:** muestra V4, la modalidad, el estado real, el origen («Por el cliente · agenda fija / red») y la fecha y hora en grande. Debajo van Lugar (ciudad · zona · dirección y su origen), Inspector (con su tipo), Recibe y Enlace (estado, canales, vencimiento y «Copiar enlace»).
+- **Acciones de la carta:** Reagendar, Cambiar inspector, Ver en Agenda y «Cancelar visita…» con motivo. Las visitas «Por agendar», «Buscando inspector», con oferta o con enlace conservan sus acciones de siempre.
+- **Anteriores:** asoman hasta dos capas detrás y el botón «N visitas anteriores» las despliega. Desplegadas, se ven de la más nueva a la más antigua en una línea de tiempo. Cada una es un botón que abre su resumen (estado, fecha, motivo y quién), sin acciones ni enlaces. «Volver a apilar» las recoge y devuelve el foco al botón.
+- **Sin anteriores o sin visita:** «Sin visitas anteriores.» o la carta «Sin visita» con «Coordinar visita».
+- **Teclado:** cartas, filtros y botones se recorren con Tab; «Agrupar por» es un grupo de opciones con flechas. El estado siempre va con texto y un punto, no solo con color.
+
+**Prueba cruzada**
+
+Cada visita conserva su estado y sus acciones con las cartas. Comparé la versión anterior y la nueva en 17 escenas de Coordinación, 33 visitas.
+
+| Visitas | Estado | Acciones |
+|---|---|---|
+| Agendadas (19) | Igual | Igual, más «Ver en Agenda» |
+| Oferta enviada (3) | Igual | Igual (Anular oferta) |
+| Enlace enviado, autoinspección enviada, enlace abierto (3) | Igual | Igual; con la base, «Copiar enlace» pasa de botón a la fila Enlace |
+| En curso (4) | Igual | Igual (Cambiar inspector; portal y enlace en la autoinspección) |
+| Realizada (1) | Igual | Igual (Ver informe) |
+| Canceladas (3) | Igual | Sin acciones, ahora detrás como anteriores |
+
+En `coordcartascx` probé las acciones contra la base simulada:
+
+| Acción | Qué se envió o abrió |
+|---|---|
+| «Cancelar visita…» de V4 | `cancelarVisita { caso: 50054, visita: 4, modalidad: Presencial, motivo }`. La V4 pasa detrás, la pila queda «Sin visita» y muestra 4 anteriores. |
+| Reenviar enlace de V5 | `reenviarEnlace { visita: 5, tipo: Autoinspección, canal: Correo }` |
+| Ver en Agenda | Agenda › Día del viernes 27/11 con Mauricio Endara y la V4 a las 15:00 (la V3 reagendada no aparece; carga 1 de 6) |
+
+Sin conexión (20196), Ver en Agenda lleva al martes 20/10 con Marco Tapia, con 1 de 6 de carga.
+
+**Verificado**
+
+- Las cuatro escenas a 1280×720 y 1920×1080, sin desplazamiento horizontal.
+- `coordcartascx` coincide con la maqueta (pantallas 1 y 2): V4 «Viernes 27/11 · 15:00 a 15:45», enlace «Abierto por el cliente · enviado por WhatsApp y correo · vence 30/11 · Copiar enlace» y V5 «En curso por el cliente · 5 de 9 fotos». Desplegadas: V3 «Reagendada → V4», V2 «Presencial · Riobamba · pedida a la red · Cancelada» y V1 «Enlace de autoagendamiento · Enlace caducado».
+- Coordinar visita desde la carta: Reagendar, Cambiar inspector y «Coordinar visita» de la barra (con conexión), y «Coordinar visita» de la carta «Sin visita», Reagendar y Ver en Agenda (sin conexión). Todos abren lo que corresponde.
+- Teclado: Tab recorre Riesgo › filtros › Coordinar visita › carta V4 › Copiar enlace › sus acciones › «3 visitas anteriores» › carta V5. Al desplegar, el foco va a «Volver a apilar» y vuelve al botón al apilar. Las flechas cambian «Agrupar por».
+- Regresión de las escenas de Coordinación (agendada `coordvis`, `cabeceraver`, `coordagendada`; oferta `estadooferta`, `cxvisitacliente`; autoinspección `enlaceciclo`, `cxvisitaenlace`; enlace abierto `cxvisclienteagendada`; multirriesgo `cabeceracoordinar`, `cxcabecera`, `coordagrupartodos`): estado y acciones iguales.
+- La cabecera y la franja de `cxestadofases`, `cabeceraver` y `cxcabecera` salen iguales que antes. Las Agendas `cxagenda`, `agendamover`, `agendadia`, `agendaok` y `cxagendamover`, y `riesgosestados`, `bandejaexp` e `inicio`, también.
+- `sirius-conexion.js` sigue en 70 bytes. El catálogo tiene 790 escenas.
+
+**No verificado**
+
+- `envioenlace` abre el caso sin visitas: no comparé la carta después de enviar el enlace.
+- Firefox y Safari.
+- Que la base real envíe «Reagendada», `reemplazadaPor`, `canceladoPor`, `canceladoEn`, `motivoReagenda`, `reagendadaEn`, `reemplazoEn` y `avance`. Son los campos que lee la carta; sin ellos, el resumen de una anterior muestra lo que haya (estado, fecha, motivo de cancelación).
+
+**Diferencias**
+
+- La escena sin conexión usa el caso de ejemplo 20196, que tiene 3 vehículos, no 2. El tercero muestra la carta «Sin visita», que también pide la etapa. La maqueta con 2 vehículos (Martina Cordero) es `coordcartascx`.
+- La autoinspección del segundo vehículo es V5, no V1: el número de visita es único en el caso.
+- A 1280×720, las cuatro acciones de la carta agendada ocupan dos líneas; a 1920×1080 caben en una.
+- Un enlace caducado solo es la carta de arriba si es la visita más nueva del riesgo. Si el riesgo tuviera otra visita abierta, se muestra aparte con sus acciones, no detrás. «Reagendada» es una visita cerrada en todas partes (Agenda, estado del riesgo, filtros) y un enlace caducado no impide reagendar.
+
+**Escenas**
+
+| Escena | Qué se ve |
+|---|---|
+| `coordcartas` | 20196 sin conexión: PBA4521 con la V4 arriba y 3 anteriores detrás, GSE1098 con la autoinspección en curso y el tercero «Sin visita» |
+| `coordcartashist` | Las anteriores de PBA4521 desplegadas en línea de tiempo, con «Volver a apilar» (?fsel=V3 abre su resumen) |
+| `coordcartasvisita` | La pestaña agrupada por visita |
+| `coordcartascx` | 50054 con la conexión simulada, como la maqueta (?fhist=1 despliega las anteriores) |
+
+También abrí `coordvis`, `estadooferta`, `enlaceciclo`, `cabeceracoordinar`, `cxvisclienteagendada`, `cxcancelarvisitanumero`, `cxvisitacliente`, `coordcancelavisitas`, `coordrg` y `cxagenda` para la regresión.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (sección «Pestaña Coordinación en cartas»).
+
+Tiempo de la etapa: inicio 21/11/2026 00:31 · fin 21/11/2026 01:04 · 33 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-4
 
 Publiqué la versión 349 de SIRIUS (los archivos subieron en la 348; esta versión cierra el registro con el tiempo de la etapa). En Usuarios, la ficha de un inspector ya no deja editar su cobertura ni su jornada: muestra la tarjeta «Operación (solo lectura)» con lo que dice la Red de inspectores y el botón «Abrir en Red de inspectores». Tipo, agencia y honorarios siguen editables. En Administración › Portal del cliente hay una pestaña «Agenda» con los tres plazos editables. Cuatro decisiones mías están en **Diferencias**.

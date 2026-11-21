@@ -21,7 +21,7 @@
 <section data-screen-label="BO-04 Nueva solicitud" style="display:flex;flex-direction:column;gap:20px;min-width:0;font-family:var(--font-brand)">
 <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
 <div style="display:flex;flex-direction:column;gap:4px">
-<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">Nueva solicitud</h1>
+<h1 style="font-weight:300;font-size:36px;line-height:1.05;color:var(--text-strong);margin:0">{{ titulo }}</h1>
 <p style="font-size:14px;color:var(--text-muted);margin:0">{{ subtitle }}</p>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -29,6 +29,7 @@
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="md" on-click="{{ onDraft }}" hint-size="170px,40px">Guardar borrador</x-import>
 </div>
 </div>
+<sc-if value="{{ hayAvisoModo }}" hint-placeholder-val="{{ false }}"><div role="status" data-ns-modo="{{ modoTipo }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 16px;border-radius:var(--radius-sm);border:1.5px solid var(--color-brand);background:var(--color-brand-wash);font-size:15px;color:var(--text-strong)"><strong>{{ avisoModoTit }}</strong><span>{{ avisoModo }}</span></div></sc-if><!-- S-1b: editar o duplicar -->
 <datalist id="ns-brokers"><sc-for list="{{ brokerNames }}" as="b" hint-placeholder-count="4"><option value="{{ b }}"></option></sc-for></datalist>
 <datalist id="ns-casos"><sc-for list="{{ caseOpts }}" as="co" hint-placeholder-count="4"><option value="{{ co.id }}">{{ co.label }}</option></sc-for></datalist>
 <ol aria-label="Pasos de la solicitud" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
@@ -202,9 +203,15 @@
 </sc-for>
 </div>
 </sc-if>
+<sc-if value="{{ edMotivoShow }}" hint-placeholder-val="{{ false }}"><div data-ns-ed-motivo="" style="display:flex;flex-direction:column;gap:6px;padding:16px 20px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#FFFFFF"><!-- S-1b: «Editar solicitud» guarda con motivo -->
+<label for="ns-edMotivo" style="font-size:14px;font-weight:700;color:var(--text-strong)">Motivo del cambio <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="ns-edMotivo" rows="2" value="{{ edMotivo }}" onChange="{{ onEdMotivo }}" onBlur="{{ onEdMotivoBlur }}" aria-invalid="{{ edMotivoInv }}" aria-describedby="ns-edMotivo-help" placeholder="Ej. El cliente corrigió su dirección y el correo." style="width:100%;padding:10px 12px;border:1.5px solid {{ edMotivoBorde }};border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;resize:vertical"></textarea>
+<span id="ns-edMotivo-help" style="font-size:13px;color:{{ edMotivoColor }}">{{ edMotivoAyuda }}</span>
+<sc-if value="{{ edOkShow }}" hint-placeholder-val="{{ false }}"><span role="status" data-ns-ed-ok="" style="font-size:14px;font-weight:700;color:var(--color-success,#1D6B36)">{{ edOk }}</span></sc-if>
+</div></sc-if>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid var(--border-subtle);padding:16px 0 0">
 <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="ghost" size="lg" on-click="{{ onBack }}" hint-size="120px,48px">Anterior</x-import></sc-if>
-<sc-if value="{{ cxErrShow }}" hint-placeholder-val="{{ false }}"><div data-ns-cx-error="" role="alert" style="flex:1 1 100%;display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:1.5px solid var(--color-danger);border-radius:var(--radius-sm);background:#FFFFFF"><strong style="font-size:15px;color:var(--color-danger)">No se creó el caso</strong><span style="font-size:15px;color:var(--text-strong)">{{ cxErr }}</span><span style="font-size:13px;color:var(--text-muted)">Lo que escribiste se conserva: corrige y vuelve a registrar.</span></div></sc-if>
+<sc-if value="{{ cxErrShow }}" hint-placeholder-val="{{ false }}"><div data-ns-cx-error="" role="alert" style="flex:1 1 100%;display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:1.5px solid var(--color-danger);border-radius:var(--radius-sm);background:#FFFFFF"><strong style="font-size:15px;color:var(--color-danger)">{{ cxErrTit }}</strong><span style="font-size:15px;color:var(--text-strong)">{{ cxErr }}</span><span style="font-size:13px;color:var(--text-muted)">Lo que escribiste se conserva: corrige y vuelve a registrar.</span></div></sc-if>
 <span style="margin-left:auto;font-size:13px;color:var(--text-muted)">{{ pendingHint }}</span>
 <x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="primary" size="lg" on-click="{{ onNext }}" disabled="{{ cxEnviando }}" hint-size="200px,48px">{{ nextLabel }}</x-import>
 </div>
@@ -319,6 +326,22 @@ class Component extends DCLogic {
     return { provincia: String(l.provincia || (SL && l.ciudad ? SL.provDe(l.ciudad) : '') || ''), ciudad: String(l.ciudad || ''), direccion: String(l.direccion || '').trim(), referencia: String(l.referencia || '').trim(), punto: pt }; }
   // P-6f-c: en vehículos y equipos el lugar es opcional: lo que no se llenó no viaja (ni dirección, ni ciudad, ni punto).
   cxSin(o) { const r = {}; Object.keys(o || {}).forEach(k => { const v = o[k]; if (v !== '' && v != null) r[k] = v; }); return r; }
+  // ---------- Etapa S-1b · SQL 72: la solicitud completa llega a la base ----------
+  // Persona del contrato { tipoIdentificacion, identificacion, nombre, nombres, apellidos, fechaNacimiento, estadoCivil, genero, telefonoFijo, provincia, canton, direccion, contacto { nombre, celular, correo } }:
+  // lo que no se llenó no se envía. sinId: en «Editar solicitud» la identificación del asegurado no viaja (no se cambia).
+  cxPersona(p, sinId) { p = p || this.person(); const nm = (p.nombres + ' ' + (p.idType === 'RUC' ? '' : p.apellidos)).trim(), t = (v) => String(v == null ? '' : v).trim();
+    const o = this.cxSin({ tipoIdentificacion: sinId ? '' : p.idType, identificacion: sinId ? '' : t(p.idNum), nombre: nm, nombres: t(p.nombres), apellidos: p.idType === 'RUC' ? '' : t(p.apellidos), fechaNacimiento: p.idType === 'RUC' ? '' : t(p.nac), estadoCivil: p.idType === 'RUC' ? '' : t(p.civil), genero: p.idType === 'RUC' ? '' : t(p.genero), telefonoFijo: t(p.fijo), provincia: this.geoProvCod(p.prov), canton: this.geoCantonCod(p.prov, p.canton), direccion: t(p.dir) });
+    o.contacto = this.cxSin({ nombre: nm, celular: t(p.cel), correo: t(p.correo) }); return o; }
+  // Póliza { fechaSolicitud ('AAAA-MM-DDTHH:MM'), broker, correoAps, ordenEmision, tipoSolicitud }.
+  cxPoliza(d) { return this.cxSin({ fechaSolicitud: d.fechaSol || this.ahoraIso(), broker: String(d.broker || '').trim(), correoAps: String(d.aps || '').trim(), ordenEmision: String(d.orden || '').trim().toUpperCase(), tipoSolicitud: d.tipo || '' }); }
+  // Fecha y hora de la solicitud: con la conexión, la hora real de Ecuador; sin ella, el reloj del prototipo.
+  ahoraIso() { const z = (n) => String(n).padStart(2, '0'); if (this.cx()) return new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 16); const E = window.SIRIUS_EJEMPLO || {}, n = E.ahora ? E.ahora() : new Date(); return n.getFullYear() + '-' + z(n.getMonth() + 1) + '-' + z(n.getDate()) + 'T' + z(n.getHours()) + ':' + z(n.getMinutes()); }
+  fechaTxt(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1].slice(2) + ' · ' + m[4] + ':' + m[5] : '—'; }
+  modo() { const m = this.props.modo; return m && typeof m === 'object' && (m.tipo === 'editar' || m.tipo === 'duplicar') ? m : null; }
+  editando() { const m = this.modo(); return !!m && m.tipo === 'editar'; }
+  // «Editar solicitud»: solo lo que cambió { asegurado (sin su identificación), solicitante (null = es el asegurado), poliza }.
+  edCambios() { const d = this.state.d, o = this.state.d0 || d, ase = (x) => this.cxPersona(x.mismo ? x.sol : x.ase, true), sol = (x) => (x.mismo ? null : this.cxPersona(x.sol)), J = JSON.stringify, c = {};
+    if (J(ase(d)) !== J(ase(o))) c.asegurado = ase(d); if (J(sol(d)) !== J(sol(o))) c.solicitante = sol(d); if (J(this.cxPoliza(d)) !== J(this.cxPoliza(o))) c.poliza = this.cxPoliza(d); return c; }
   // crearCaso { grupoRamo, ramo, sucursal, asegurado { tipoIdentificacion, identificacion, nombre, provincia ('18'), canton ('1801'), direccion, contacto { nombre, celular, correo } }, solicitud { provincia, ciudad, direccion, referencia, punto | null } (en vehículos y equipos puede ir vacía),
   //   riesgos [{ composicion 'Vehículo' | 'Ubicación' | 'Equipo', placa, marca, modelo, anio, tipo | null, suma, descripcion, direccion, ciudad }], modalidadSugerida, observaciones, origen 'Back-office' }
   cxPayload() { const d = this.state.d, veh = d.tipoRiesgo === 'Vehículos', em = !veh && this.esEM(d), ase = d.mismo ? d.sol : d.ase, nm = (p) => (p.nombres + ' ' + (p.idType === 'RUC' ? '' : p.apellidos)).trim();
@@ -327,8 +350,10 @@ class Component extends DCLogic {
       : em ? d.eqs.map(q => Object.assign({ composicion: 'Equipo', placa: '', marca: q.marca || '', modelo: q.modelo || '', anio: num(q.anio), tipo: (ESx ? ESx.tipoTxt(q) : q.tipo) || null, suma: this.eqTotal(q), descripcion: [(ESx ? ESx.tipoTxt(q) : q.tipo), q.serie ? 'serie ' + q.serie : ''].filter(Boolean).join(' · ') }, this.cxSin({ direccion: L0.direccion, ciudad: L0.ciudad })))
       : d.ubics.map(u => { const l = this.cxLug(u.lugar); return { composicion: 'Ubicación', placa: '', marca: '', modelo: '', anio: null, tipo: u.tipoBien || null, suma: this.money(u.suma), descripcion: [u.tipoBien, d.ramosSel.join(', ')].filter(Boolean).join(' · '), direccion: l.direccion, ciudad: l.ciudad }; });
     const obs = String(d.cxObs || '').trim(), otros = !veh && d.ramosSel.length > 1 ? 'Ramos de la solicitud: ' + d.ramosSel.join(', ') : '';
-    return { grupoRamo: veh ? 'Vehículos' : 'Ramos Generales', ramo: veh ? 'Vehículos' : d.ramosSel[0] || '', sucursal: d.sucursal, asegurado: { tipoIdentificacion: ase.idType, identificacion: String(ase.idNum || '').trim(), nombre: nm(ase), provincia: this.geoProvCod(ase.prov), canton: this.geoCantonCod(ase.prov, ase.canton), direccion: String(ase.dir || '').trim(), contacto: { nombre: nm(ase), celular: String(ase.cel || '').trim(), correo: String(ase.correo || '').trim() } },
-      solicitud: mov ? this.cxSin(L0) : L0, riesgos, modalidadSugerida: d.cxModalidad || 'Presencial', observaciones: [obs, otros].filter(Boolean).join(' · '), origen: 'Back-office' }; }
+    const M = this.modo(), dup = M && M.tipo === 'duplicar' ? 'Duplicado del caso ' + M.caso : ''; /* S-1b: «Duplicado del caso N» al inicio de las observaciones */
+    return Object.assign({ grupoRamo: veh ? 'Vehículos' : 'Ramos Generales', ramo: veh ? 'Vehículos' : d.ramosSel[0] || '', sucursal: d.sucursal, asegurado: this.cxPersona(ase) /* S-1b: la persona completa */ },
+      d.mismo ? {} : { solicitante: this.cxPersona(d.sol) /* S-1b: solo si no es el asegurado */ }, { poliza: this.cxPoliza(d),
+      solicitud: mov ? this.cxSin(L0) : L0, riesgos, modalidadSugerida: d.cxModalidad || 'Presencial', observaciones: [dup, obs, otros].filter(Boolean).join(' · '), origen: 'Back-office' }); }
   // ---------- Marca y modelo desde el catálogo (etapa 10c-c · DEC-079): SIRIUS_CATALOGOS_MAESTROS.marcas ----------
   mmNorm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
   mmMarcas() { return ((window.SIRIUS_CATALOGOS_MAESTROS || {}).marcas || []); }
@@ -360,9 +385,12 @@ class Component extends DCLogic {
   initial() {
     const d = { broker: '', aps: '', sucursal: '', orden: '', tipoRiesgo: '', lineaVeh: '', ramosSel: [], ramoLinea: {}, tipo: '', garantias: false, casoOrig: '', sol: this.person(), mismo: true, ase: this.person(),
       vehs: [], eqs: [], vehForm: null, vehEditId: null, manualAdds: 0, ubic: { tipoBien: '', prov: '', canton: '', dir: '' }, ramoData: {}, cp: {}, lugar: {}, ubics: [this.ubicBlank()], cxObs: '', cxModalidad: 'Presencial' };
+    if (!d.fechaSol) d.fechaSol = ''; /* S-1b: fecha y hora de la solicitud */
     const s = { step: 1, cxEnv: false, cxErr: '', maxStep: 1, touched: {}, d, c360: { sol: 'idle', ase: 'idle' }, placaSt: 'idle', ramoQ: '', bulk: null, tpl: null, bpmSt: 'idle', bpmDup: '', cb: null };
+    const M = this.modo(); if (M) { Object.assign(d, JSON.parse(JSON.stringify(M.datos || {}))); ['sol', 'ase'].forEach(w => { d[w] = Object.assign(this.person(), d[w] || {}); }); d.vehs = (d.vehs || []).map(v => Object.assign(this.vehBlank(), v)); if (!d.ubics || !d.ubics.length) d.ubics = [this.ubicBlank()]; /* S-1b: editar o duplicar con los datos del caso */
+      s.d0 = JSON.parse(JSON.stringify(d)); s.maxStep = M.tipo === 'editar' ? 4 : 1; /* el duplicado recorre los pasos: la placa se completa en el paso 3 */ s.step = M.paso || 1; s.edMotivo = M.motivo || ''; s.edTocado = !!M.motivo; return s; }
     const pr0 = String(this.props.preset || ''), pr = pr0.split(':')[0], vr = pr0.split(':')[1] || ''; // «escena:variante»
-    if (!pr) return s;
+    if (!pr) { d.fechaSol = this.ahoraIso(); return s; }
     Object.assign(d, { broker: 'Broker Pacífico', aps: 'emisiones@brokerpacifico.ec', sucursal: 'Manta', tipo: 'Emisión nueva' });
     d.sol = Object.assign(this.person(), { idNum: '1309876543' }, this.c360db['1309876543']); s.c360.sol = 'found';
     if (/^(cxnueva|nuevasindir|nuevasinzonas|nuevalugarcontraido)/.test(pr)) { /* Etapa P-6f: escenas con la conexión simulada; P-6f-c: sin dirección y sin zonas */
@@ -432,7 +460,7 @@ class Component extends DCLogic {
   componentDidMount() { if (/^nuevageo/.test(String(this.props.preset || ''))) setTimeout(() => { const el = document.getElementById(this.state.cb && this.state.cb.path === 'sol.canton' ? 'ns-sol-canton' : 'ns-sol-prov'); if (el) { this._cbSkip = true; el.focus(); el.scrollIntoView({ block: 'center' }); } }, 400);
     if (this.props.preset === 'nuevasinzonas') setTimeout(() => { const el = document.querySelector('[data-lugar-mapa]'); if (el) el.scrollIntoView({ block: 'center' }); }, 600);
     if (this.props.preset === 'nsmarca') setTimeout(() => { const el = document.getElementById('ns-vehForm-modelo'); if (el) { el.focus(); el.scrollIntoView({ block: 'center' }); } }, 400); }
-  componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey) this.setState(this.initial()); }
+  componentDidUpdate(prev) { if (prev.formKey !== this.props.formKey || prev.modo !== this.props.modo) this.setState(this.initial()); }
   get(path) { return path.split('.').reduce((o, k) => (o == null ? o : o[k]), this.state.d); }
   set(path, v) {
     this.setState(st => {
@@ -542,11 +570,11 @@ class Component extends DCLogic {
       req('lineaVeh', d.lineaVeh, 'Selecciona la línea de negocio.');
       if (d.tipoRiesgo === 'Ramos Generales') { if (!d.ramosSel.length) e.ramos = 'Elige al menos un ramo.'; else if (this.esEM(d) && d.ramosSel.some(r => this.compDe(r) !== 'Equipo móvil')) e.ramos = 'Un caso no mezcla composiciones: Equipo y maquinaria (equipo móvil) va en su propia solicitud, sin ramos de ubicación.'; }
       req('tipo', d.tipo, 'Selecciona el tipo de solicitud.');
-      this.cpCampos('caso').forEach(x => { const m = this.cpErr(x, (d.cp || {})[x.clave]); if (m) e['cp.' + x.clave] = m; });
+      if (!this.editando()) this.cpCampos('caso').forEach(x => /* S-1b: los datos adicionales no se editan aquí */ { const m = this.cpErr(x, (d.cp || {})[x.clave]); if (m) e['cp.' + x.clave] = m; });
     }
     if (step === 2) {
       ['sol'].concat(d.mismo ? [] : ['ase']).forEach(w => {
-        const p = d[w], ie = this.idErr(p); if (ie) e[w + '.idNum'] = ie;
+        const p = d[w], ie = this.editando() && w === (d.mismo ? 'sol' : 'ase') ? '' : this.idErr(p); if (ie) e[w + '.idNum'] = ie;
         req(w + '.nombres', p.nombres, p.idType === 'RUC' ? 'Ingresa la razón social.' : 'Ingresa los nombres.');
         if (p.idType !== 'RUC') req(w + '.apellidos', p.apellidos, 'Ingresa los apellidos.');
         if (!/^09\d{8}$/.test((p.cel || '').trim())) e[w + '.cel'] = 'Ingresa un celular de 10 dígitos que empiece con 09.';
@@ -571,6 +599,9 @@ class Component extends DCLogic {
         d.ramosSel.forEach(r => { const x = d.ramoData[r] || {}; req('ramoData.' + r + '.detalles', x.detalles, 'Describe los detalles de emisión.'); if (this.money(x.valor) <= 0) e['ramoData.' + r + '.valor'] = 'Ingresa el valor asegurado.'; });
       }
     }
+    if (step === 3 && this.editando()) return {}; /* S-1b: en «Editar solicitud» los riesgos no se editan */
+    if (step === 3 && d.tipoRiesgo === 'Vehículos' && !d.vehForm) { const sp = d.vehs.findIndex(v => !v.sinPlaca && !String(v.placa || '').trim()); if (sp >= 0) e['vehs.placa'] = '!Completa la placa del vehículo ' + (sp + 1) + ' (duplicado: la placa y el VIN quedan vacíos)'; }
+    if (step === 4 && this.editando()) { if (String(this.state.edMotivo || '').trim().length < 10) e.edMotivo = 'Escribe el motivo del cambio (10 caracteres o más).'; return e; }
     if (step === 4) { this.cpCampos('caso').forEach(x => { const m = this.cpErr(x, (d.cp || {})[x.clave]); if (m) e['cp.' + x.clave] = m; }); if (d.tipoRiesgo === 'Vehículos') Object.assign(e, this.vehsCpErrors()); }
     return e;
   }
@@ -617,10 +648,15 @@ class Component extends DCLogic {
     }, cmb);
   }
   personFields(w) {
-    const p = this.state.d[w], ruc = p.idType === 'RUC';
+    const p = this.state.d[w], ruc = p.idType === 'RUC', d = this.state.d, fija = this.editando() && w === (d.mismo ? 'sol' : 'ase'); /* S-1b: la identificación del asegurado no se cambia */
+    if (fija) return [this.F(w + '.idType', 'Tipo de identificación', 'ro', { value: p.idType, help: 'No se cambia al editar.' }), this.F(w + '.idNum', 'Número de identificación', 'ro', { value: p.idNum, help: 'La identificación del asegurado no se cambia.' })].concat(this.personFields2(w, p, ruc));
     return [
       this.F(w + '.idType', 'Tipo de identificación', 'select', { options: ['Cédula', 'RUC', 'Pasaporte'], req: true, after: () => this.setState(st => ({ c360: Object.assign({}, st.c360, { [w]: 'idle' }) })) }),
       this.F(w + '.idNum', 'Número de identificación', 'input', { req: true, inputMode: p.idType === 'Pasaporte' ? 'text' : 'numeric', onBlur: () => this.lookup(w) }),
+    ].concat(this.personFields2(w, p, ruc));
+  }
+  personFields2(w, p, ruc) {
+    return [
       this.F(w + '.nombres', ruc ? 'Razón social' : 'Nombres', 'input', { req: true, ac: 'given-name' }),
       ruc ? null : this.F(w + '.apellidos', 'Apellidos', 'input', { req: true, ac: 'family-name' }),
       ruc ? null : this.F(w + '.nac', 'Fecha de nacimiento', 'input', { type: 'date', max: 'hoy' }),
@@ -635,7 +671,7 @@ class Component extends DCLogic {
     ].filter(Boolean);
   }
   personGroup(w, title) {
-    const st = this.state.c360[w], p = this.state.d[w], dup = this.dupFor('id', p.idNum);
+    const st = this.state.c360[w], p = this.state.d[w], dup0 = this.dupFor('id', p.idNum), M = this.modo(), dup = dup0 && !(M && M.tipo === 'editar' && String(dup0.id) === String(M.caso)) ? dup0 : null; /* S-1b: al editar, su propio caso no es un aviso */
     return { hid: 'ns-g-' + w, title, hasBadge: st === 'found' || (w === 'sol' && this.state.bpmSt === 'found'), badge: w === 'sol' && this.state.bpmSt === 'found' ? 'Datos del BPM de Emisión' : 'Datos de Cliente 360', fields: this.personFields(w),
       hasStatus: st === 'loading', loading: st === 'loading', statusText: 'Consultando Cliente 360…',
       hasAlert: st === 'notfound', alertText: 'No se encontró en Cliente 360; ingresa los datos manualmente.',
@@ -859,7 +895,8 @@ class Component extends DCLogic {
     const labels = ['Datos de la solicitud', 'Solicitante y asegurado', 'Objeto a asegurar', 'Revisión y envío'];
     const steps = labels.map((label, i) => {
       const n = i + 1, cur = n === step, done = n < step || (n <= s.maxStep && n !== step);
-      return { n: String(n), label, current: cur ? 'step' : undefined, locked: n > s.maxStep, tip: n > s.maxStep ? 'Completa los pasos anteriores para continuar' : undefined, go: () => n <= s.maxStep && this.setState({ step: n }),
+      const ed3 = this.editando() && n === 3; /* S-1b: los riesgos no se editan aquí */
+      return { n: String(n), label, current: cur ? 'step' : undefined, locked: n > s.maxStep || ed3, tip: ed3 ? 'Los riesgos no se editan aquí' : n > s.maxStep ? 'Completa los pasos anteriores para continuar' : undefined, go: () => n <= s.maxStep && !ed3 && this.setState({ step: n }),
         mark: done && !cur ? '✓' : String(n), sr: cur ? 'Paso actual' : done ? 'Completado' : 'Pendiente',
         bar: cur ? 'var(--color-brand)' : done ? 'var(--cyan-300)' : 'var(--border-subtle)', bg: cur ? 'var(--color-brand-wash)' : 'transparent', cursor: n <= s.maxStep ? 'pointer' : 'default',
         dotBg: done && !cur ? 'var(--cyan-500)' : '#FFFFFF', dotBorder: cur || done ? 'var(--cyan-500)' : 'var(--neutral-300)', dotFg: done && !cur ? '#FFFFFF' : cur ? 'var(--cyan-700)' : 'var(--text-muted)', fg: cur ? 'var(--text-strong)' : 'var(--text-body)', fw: cur ? 700 : 500 };
@@ -873,7 +910,7 @@ class Component extends DCLogic {
         onDel: () => this.set(path, list.filter(y => y.id !== x.id)) })) });
     if (step === 1) {
       groups = [{ hid: 'ns-g1', title: 'Datos de la solicitud', hasRamos: rg, hasBadge: s.bpmSt === 'found', badge: 'Datos del BPM de Emisión', hasStatus: s.bpmSt === 'loading', loading: s.bpmSt === 'loading', statusText: 'Consultando el BPM de Emisión…', hasAlert: s.bpmSt === 'notfound', alertText: 'No encontramos esa orden en el BPM de Emisión. Revisa el número o continúa sin orden.', hasDup: s.bpmSt === 'dup', dupText: 'La orden ' + d.orden + ' ya tiene el caso ' + s.bpmDup + ', creado por integración.', dupPending: false, dupAcked: false, onVerCaso: () => this.props.onOpenCase && this.props.onOpenCase(s.bpmDup), fields: [
-        this.F('fecha', 'Fecha y hora de solicitud', 'ro', { value: '16/10/26 · 13:40' }),
+        this.F('fecha', 'Fecha y hora de solicitud', 'ro', { value: this.fechaTxt(d.fechaSol || this.ahoraIso()) }), /* S-1b: la fecha real de la solicitud (se envía a la base) */
         this.F('broker', 'Broker', 'input', { req: true, list: 'ns-brokers', ph: 'Busca por nombre', after: (v) => { const b = this.brokers.find(x => x.n === v); if (b) this.set('aps', b.aps); } }),
         this.F('aps', 'Correo electrónico APS', 'input', { type: 'email', inputMode: 'email', help: 'Se precarga con el broker; puedes editarlo.' }),
         this.F('orden', 'Número de orden de emisión (opcional)', 'inputbtn', { upper: true, ph: 'Ej. EMI-408400', help: s.bpmSt === 'found' ? '' : 'Si lo dejas vacío, el caso queda “Sin orden de emisión”.', btnLabel: s.bpmSt === 'loading' ? 'Consultando…' : 'Consultar en BPM', btnDisabled: !d.orden.trim() || s.bpmSt === 'loading', btnWhy: s.bpmSt === 'loading' ? 'Consultando en BPM…' : !d.orden.trim() ? 'Escribe el número de orden para consultar' : '', onBtn: () => this.lookupBPM(), after: () => this.setState({ bpmSt: 'idle' }), span: '1 / span 2' }),
@@ -882,10 +919,10 @@ class Component extends DCLogic {
       ].concat(
         [this.F('tipoRiesgo', 'Tipo de riesgo', 'radio', { req: true, options: ['Vehículos', 'Ramos Generales'], span: '1 / span 2', after: () => this.patchD(x => { x.vehForm = null; x.vehEditId = null; }) })],
         [this.F('lineaVeh', 'Línea de negocio', 'select', { req: true, options: this.lineas, help: 'Una sola por caso, para todos sus ramos o vehículos.' })]) }];
-      const cpf = this.cpFields('', 'caso', d.cp); if (cpf.length) groups.push({ hid: 'ns-gcp', title: 'Datos adicionales', fields: cpf });
+      const cpf = this.editando() ? [] : this.cpFields('', 'caso', d.cp); if (cpf.length) groups.push({ hid: 'ns-gcp', title: 'Datos adicionales', fields: cpf });
     }
     if (step === 2) {
-      groups = [this.personGroup('sol', 'Solicitante'), { hid: 'ns-gm', title: 'Asegurado', fields: [this.F('mismo', 'El asegurado es el mismo solicitante', 'check', { span: '1 / -1' })] }];
+      groups = [this.personGroup('sol', 'Solicitante'), { hid: 'ns-gm', title: 'Asegurado', fields: [this.F('mismo', 'El asegurado es el mismo solicitante', 'check', { span: '1 / -1', onToggle: this.editando() ? () => this.patchD(x => { if (x.mismo) { x.ase = x.sol; x.sol = this.person(); x.mismo = false; } else { x.sol = x.ase; x.ase = this.person(); x.mismo = true; } }) : undefined /* S-1b: al editar, el asegurado conserva su identificación */ })] }];
       if (!d.mismo) groups.push(this.personGroup('ase', 'Datos del asegurado'));
     }
     if (step === 3 && veh && d.vehForm) {
@@ -946,7 +983,7 @@ class Component extends DCLogic {
     const nm = (p) => (p.nombres + ' ' + (p.idType === 'RUC' ? '' : p.apellidos)).trim();
     const fv = (label, value, nowrap, strong) => ({ label, value: value || '—', ws: nowrap ? 'nowrap' : 'normal', fw: strong ? 700 : 600, size: strong ? '17px' : '15px', border: strong ? '1px solid var(--border-default)' : 'none', pad: strong ? '10px' : '0' });
     const review = [
-      { title: 'Datos de la solicitud', edit: () => this.setState({ step: 1 }), editLabel: 'Editar datos de la solicitud', fields: [fv('Fecha y hora', '16/10/26 · 13:40', 1), fv('Broker', d.broker), fv('Correo APS', d.aps), fv('Orden de emisión', d.orden || 'Sin orden de emisión', 1), fv('Origen', s.bpmSt === 'found' ? 'BPM de Emisión' : 'Manual'), fv('Tipo de riesgo', d.tipoRiesgo)].concat([fv('Línea de negocio', d.lineaVeh)]).concat([fv('Tipo de solicitud', d.tipo)]).concat(this.cpReview(d.cp, 'caso', '')) },
+      { title: 'Datos de la solicitud', edit: () => this.setState({ step: 1 }), editLabel: 'Editar datos de la solicitud', fields: [fv('Fecha y hora', this.fechaTxt(d.fechaSol || this.ahoraIso()), 1), fv('Broker', d.broker), fv('Correo APS', d.aps), fv('Orden de emisión', d.orden || 'Sin orden de emisión', 1), fv('Origen', s.bpmSt === 'found' ? 'BPM de Emisión' : 'Manual'), fv('Tipo de riesgo', d.tipoRiesgo)].concat([fv('Línea de negocio', d.lineaVeh)]).concat([fv('Tipo de solicitud', d.tipo)]).concat(this.cpReview(d.cp, 'caso', '')) },
       { title: 'Solicitante y asegurado', edit: () => this.setState({ step: 2 }), editLabel: 'Editar solicitante y asegurado', fields: [fv(d.mismo ? 'Solicitante y asegurado' : 'Solicitante', nm(d.sol)), fv('Identificación', d.sol.idType + ' ' + d.sol.idNum, 1), fv('Celular (WhatsApp)', d.sol.cel, 1), fv('Correo', d.sol.correo), fv('Ubicación', [d.sol.canton, d.sol.prov].filter(Boolean).join(', '))].concat(d.mismo ? [] : [fv('Asegurado', nm(d.ase)), fv('Identificación del asegurado', d.ase.idType + ' ' + d.ase.idNum, 1)]) },
       { title: 'Objeto a asegurar', edit: () => this.setState({ step: 3 }), editLabel: 'Editar objeto a asegurar', fields: veh
         ? d.vehs.reduce((acc, v, i) => acc.concat([fv('Vehículo ' + (i + 1) + ' · ' + this.vehLabel(v), (v.sinPlaca ? 'Sin placa' : [v.marca, v.modelo, v.anio].join(', ')) + ' · ' + v.cobertura + ' · ' + this.usd(this.vehTotal(v)))], this.cpReview(v.cp, 'riesgo', 'Datos adicionales · vehículo ' + (i + 1))), []).concat([fv(d.vehs.length === 1 ? 'Total del caso · 1 vehículo' : 'Total del caso · ' + d.vehs.length + ' vehículos', this.usd(vehTotalAll), 1, 1)])
@@ -957,13 +994,18 @@ class Component extends DCLogic {
       if (rg && !this.esEM(d)) o3.fields = d.ubics.map((u, i) => fv('Ubicación ' + (i + 1) + (u.tipoBien ? ' · ' + u.tipoBien : ''), [this.lugarTxt(u.lugar), this.usd(this.money(u.suma))].filter(Boolean).join(' · '))).concat(o3.fields.slice(1));
       else o3.fields = [fv('Lugar de inspección', this.tengoLugar(d) ? this.lugarTxt(d.lugar) : 'Se confirmará en el contacto')].concat(veh ? [fv('Tipo de vehículo', d.vehs.map(v => this.vehLabel(v) + ': ' + (v.tipoVeh || 'Sin tipo')).join(' · '))] : [], o3.fields);
       o3.fields = o3.fields.concat([fv('Modalidad sugerida', d.cxModalidad || 'Presencial'), fv('Observaciones', String(d.cxObs || '').trim() || 'Sin observaciones')]); }
+    if (this.editando()) review[2] = { title: 'Objeto a asegurar', edit: () => {}, editLabel: 'Los riesgos no se editan aquí', fields: [fv('Riesgos', 'No se editan aquí: siguen como están en el caso ' + this.modo().caso + '.')] }; /* S-1b */
     const blocker = keys.map(k => errs[k]).find(m => m[0] === '!');
     const fieldN = keys.filter(k => errs[k][0] !== '!').length;
     const valid = keys.length === 0;
     const hint = valid ? '' : fieldN ? (fieldN === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + fieldN + ' campos obligatorios') : blocker.slice(1);
     const editing = d.vehEditId;
+    const M = this.modo(), ED = this.editando(), edM = String(s.edMotivo || ''), edErr = ED && edM.trim().length < 10, edShowErr = ED && edErr && !!s.edTocado; /* S-1b */
     return Object.assign({
-      subtitle: 'Completa los 4 pasos; puedes volver a cualquier paso sin perder datos.',
+      titulo: ED ? 'Editar solicitud · caso ' + M.caso : 'Nueva solicitud', modoTipo: M ? M.tipo : '', hayAvisoModo: !!M,
+      avisoModoTit: !M ? '' : ED ? 'Editar solicitud' : 'Duplicado del caso ' + M.caso + ':', avisoModo: !M ? '' : ED ? 'Cambia los datos del solicitante, del asegurado o de la póliza. La identificación del asegurado y los riesgos no se cambian aquí. Se guarda con motivo y queda en el Historial.' : (veh ? 'revisa los datos y completa la placa.' : 'revisa los datos.'),
+      edMotivoShow: ED && step === 4, edMotivo: edM, onEdMotivo: (e) => this.setState({ edMotivo: e.target.value, edOk: '' }), onEdMotivoBlur: () => this.setState({ edTocado: true }), edMotivoInv: edShowErr ? 'true' : undefined, edMotivoBorde: edShowErr ? 'var(--color-danger)' : 'var(--input-outlined-border)', edMotivoColor: edShowErr ? 'var(--color-danger)' : 'var(--text-muted)', edMotivoAyuda: edShowErr ? 'Escribe el motivo del cambio (10 caracteres o más).' : 'Obligatorio, 10 caracteres o más. Queda en el Historial del caso.', edOkShow: ED && !!s.edOk, edOk: s.edOk || '', cxErrTit: ED ? 'No se guardaron los cambios' : 'No se creó el caso',
+      subtitle: ED ? 'Pasos 1, 2 y 4: la identificación del asegurado y los riesgos no se editan.' : 'Completa los 4 pasos; puedes volver a cualquier paso sin perder datos.',
       brokerNames: this.brokers.map(b => b.n),
       caseOpts: (this.props.cases || []).filter(c => !c.parentId).map(c => ({ id: c.id, label: c.id + ' · ' + c.asegurado })),
       steps, groups, isForm: step < 4, isReview: step === 4, review,
@@ -1000,20 +1042,25 @@ class Component extends DCLogic {
       caseTotalLabel: veh ? (d.vehs.length === 1 ? '1 vehículo' : d.vehs.length + ' vehículos') : (d.ramosSel.length === 1 ? '1 ramo' : d.ramosSel.length + ' ramos') + ' · ' + (d.ubic.tipoBien || 'Ubicación') + (d.ubic.canton ? ', ' + d.ubic.canton : ''),
       caseTotal: this.usd(veh ? vehTotalAll : rgTotal),
       canBack: step > 1, onBack: () => this.setState({ step: step - 1 }),
-      pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : s.cxEnv ? 'Registrando…' : 'Registrar solicitud',
-      cxErrShow: step === 4 && !!s.cxErr, cxErr: s.cxErr || '', cxEnviando: !!s.cxEnv,
+      pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : s.cxEnv ? (ED ? 'Guardando…' : 'Registrando…') : ED ? 'Guardar cambios' : 'Registrar solicitud',
+      cxErrShow: (step === 4 || ED) && !!s.cxErr, cxErr: s.cxErr || '', cxEnviando: !!s.cxEnv,
       onNext: () => {
-        if (!valid) { const t = Object.assign({}, s.touched); keys.forEach(k => { t[k] = true; }); this.setState({ touched: t }); this.jumpErr(keys.find(k => errs[k][0] !== '!')); if (step === 4) { const back = keys.some(k => k.startsWith('cp.')) ? 1 : keys.some(k => k.startsWith('vehs.')) ? 3 : 0; if (back) { this.setState({ step: back }); this.jumpErr(keys.find(k => k.startsWith(back === 1 ? 'cp.' : 'vehs.'))); } } return; }
+        if (!valid) { const t = Object.assign({}, s.touched); keys.forEach(k => { t[k] = true; }); this.setState({ touched: t, edTocado: true }); this.jumpErr(keys.find(k => errs[k][0] !== '!')); if (step === 4) { const back = keys.some(k => k.startsWith('cp.')) ? 1 : keys.some(k => k.startsWith('vehs.')) ? 3 : 0; if (back) { this.setState({ step: back }); this.jumpErr(keys.find(k => k.startsWith(back === 1 ? 'cp.' : 'vehs.'))); } } return; }
         if (step < 4) {
-          this.setState({ step: step + 1, maxStep: Math.max(s.maxStep, step + 1) });
+          const sig = ED && step === 2 ? 4 : step + 1; /* S-1b: al editar se salta el paso 3 (riesgos) */
+          this.setState({ step: sig, maxStep: Math.max(s.maxStep, sig) });
           if (typeof window !== 'undefined') window.scrollTo(0, 0);
           return;
         }
+        if (ED) { if (s.cxEnv) return; const ch = this.edCambios(); if (!Object.keys(ch).length) { this.setState({ cxErr: 'No hay cambios que guardar.' }); return; } /* S-1b: editarSolicitud con motivo */
+          const r = this.props.onEditar && this.props.onEditar({ caso: M.caso, cambios: ch, motivo: edM.trim() }, JSON.parse(JSON.stringify(d)));
+          this.setState({ cxEnv: true, cxErr: '' }); Promise.resolve(r).then(x => { x = x || {}; if (x.ok === false) this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no guardó los cambios.' }); else this.setState({ cxEnv: false, edOk: x.mensaje || 'Cambios guardados.', d0: JSON.parse(JSON.stringify(this.state.d)) }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' }));
+          return; }
         if (this.cx()) { if (s.cxEnv) return; /* P-6f: crearCaso; con { ok: false } el formulario conserva lo escrito y muestra el mensaje */
-          const r = this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', cxCrear: this.cxPayload() }));
+          const r = this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', cxCrear: this.cxPayload(), duplicadoDe: M && M.tipo === 'duplicar' ? M.caso : '' }));
           if (r && typeof r.then === 'function') { this.setState({ cxEnv: true, cxErr: '' }); r.then(x => { x = x || {}; if (x.ok === false) { this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no pudo crear el caso.' }); setTimeout(() => { const el = document.querySelector('[data-ns-cx-error]'); if (el) el.scrollIntoView({ block: 'center' }); }, 60); } else this.setState({ cxEnv: false }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' })); }
           return; }
-        this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found' }));
+        this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', duplicadoDe: M && M.tipo === 'duplicar' ? M.caso : '' }));
       },
       onDraft: () => { this.props.onDraft && this.props.onDraft(); },
       onCancel: () => { this.props.onCancel && this.props.onCancel(); },

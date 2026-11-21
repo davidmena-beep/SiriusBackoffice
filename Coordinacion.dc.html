@@ -108,36 +108,9 @@
 </sc-if>
 <sc-if value="{{ fasesOn }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusCoordinar" from="./sirius-coordinar.js" key="{{ fasesKey }}" ctx="{{ fasesCtx }}" hint-size="0px,0px"></x-import></sc-if><!-- G-2c2 · DEC-237: Coordinar visita por fases -->
 <sc-if value="{{ showVisits }}" hint-placeholder-val="{{ true }}">
-<section aria-labelledby="co-vis-h" style="display:flex;flex-direction:column;gap:14px">
-<div style="display:flex;align-items:center;gap:10px"><h2 id="co-vis-h" style="margin:0;font-size:18px;font-weight:700;color:var(--text-strong)">Visitas del caso</h2><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="neutral" hint-size="28px,22px">{{ visitCount }}</x-import></div>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));gap:16px;align-items:start">
-<sc-for list="{{ visits }}" as="v" hint-placeholder-count="2">
-<article aria-label="{{ v.aria }}" data-visita="{{ v.id }}" style="display:flex;flex-direction:column;gap:14px;padding:20px 24px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:{{ v.bg }}">
-<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px">
-<span style="height:28px;padding:0 10px;display:inline-flex;align-items:center;border-radius:var(--radius-sm);background:var(--blue-900);color:#FFFFFF;font-size:14px;font-weight:700">{{ v.id }}</span>
-<span style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ v.mod }}</span>
-<sc-if value="{{ v.porCliente }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="brand" hint-size="240px,22px"><span style="white-space:nowrap">{{ v.porClienteTxt }}</span></x-import></sc-if>
-<sc-if value="{{ v.fuera }}" hint-placeholder-val="{{ false }}"><span data-fuera-tag="" title="{{ v.fueraTit }}" style="height:22px;padding:0 8px;display:inline-flex;align-items:center;border:1px solid var(--border-default);border-radius:var(--radius-pill);font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Fuera de cobertura</span></sc-if>
-<span style="margin-left:auto"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Badge" tone="{{ v.tone }}" hint-size="80px,22px"><span style="white-space:nowrap">{{ v.estado }}</span></x-import></span>
-</div>
-<dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
-<sc-for list="{{ v.fields }}" as="f" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:{{ f.span }}"><dt style="font-size:13px;color:var(--text-muted)">{{ f.label }}</dt><dd data-campo="{{ f.label }}" style="margin:0;font-size:15px;font-weight:600;color:{{ f.color }};white-space:{{ f.ws }}">{{ f.value }}</dd></div></sc-for>
-</dl>
-<div style="display:flex;flex-direction:column;gap:6px">
-<span style="font-size:13px;color:var(--text-muted)">{{ v.riesgosLabel }}</span>
-<ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ v.riesgos }}" as="vr" hint-placeholder-count="2"><li style="padding:4px 10px;border-radius:var(--radius-pill);background:var(--surface-subtle);font-size:13px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ vr }}</li></sc-for></ul>
-</div>
-<sc-if value="{{ v.hasEnlace }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusEnlaceTarjeta" from="./sirius-enlace.js" visita="{{ v.raw }}" ro="{{ v.ro }}" rev="{{ v.rev }}" on-reenviar="{{ v.onReenviar }}" on-nuevo="{{ v.onNuevo }}" on-accion="{{ v.onAccion }}" hint-size="100%,260px"></x-import></sc-if>
-<sc-if value="{{ v.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--text-body)">{{ v.note }}</span></sc-if>
-<sc-if value="{{ v.hasActions }}" hint-placeholder-val="{{ true }}">
-<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px;border-top:1px solid var(--border-subtle)">
-<sc-for list="{{ v.actions }}" as="va" hint-placeholder-count="3"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="{{ va.variant }}" size="sm" on-click="{{ va.onClick }}" aria-label="{{ va.aria }}" unavailable-reason="{{ va.why }}" hint-size="130px,36px">{{ va.label }}</x-import></sc-for>
-</div>
-</sc-if>
-</article>
-</sc-for>
-</div>
-<sc-if value="{{ noVisits }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:var(--text-muted)">{{ noVisitsTxt }}</p></sc-if>
+<section aria-labelledby="co-vis-h" data-co-cartas="" style="display:flex;flex-direction:column;gap:14px;min-width:0"><!-- G-4: la pestaña en cartas (maqueta aprobada): una pila por riesgo o por visita -->
+<h2 id="co-vis-h" style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0">Visitas del caso</h2>
+<x-import component-from-global-scope="SiriusCoordCartas" from="./sirius-coordcartas.js" datos="{{ cartas }}" hint-size="100%,420px"></x-import>
 </section>
 </sc-if>
 <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}"><div aria-hidden="true" onClick="{{ closePnl }}" style="position:fixed;inset:0;z-index:1500;background:var(--scrim-drawer)"></div></sc-if>
@@ -311,10 +284,10 @@ class Component extends DCLogic {
   // Visitas ocupadas de un inspector en un día, con el caso (para el tablero): las de la base o las de ejemplo y las de este caso.
   slotsInfo(name, fecha, exceptId) { const B = this.cxBase(), cid = String(this.props.caseId);
     if (B && Array.isArray(B.agenda)) { const mismo = (x) => String(x.caso) === cid, out = B.agenda.filter(x => x.inspector === name && x.fecha === fecha && !(mismo(x) && 'V' + x.n === exceptId)).map(x => ({ a: x.a, b: x.b, caso: String(x.caso) }));
-      this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
+      this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
       return out.sort((a, b) => a.a < b.a ? -1 : 1); }
     const i = this.INS.find(x => x.n === name), out = ((i && i.agenda && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1], caso: '' }));
-    this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
+    this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni), caso: cid }));
     return out.sort((a, b) => a.a < b.a ? -1 : 1); }
   capacidad(n) { const A = window.SIRIUS_AGENDA || {}, B = this.cxBase(), E = B && B.escena && Array.isArray(B.escena.disponibilidad) ? B.escena.disponibilidad : [], d = E.concat(A.disponibilidad || []).find(x => x && x.inspector === n); return d && d.capacidadDia ? d.capacidadDia : null; }
   // DEC-237: modalidades según las reglas parametrizadas, evaluadas con los riesgos elegidos (props.modalidadesPara del Back-office: SiriusModalidades.ofrecerPara).
@@ -330,10 +303,10 @@ class Component extends DCLogic {
   // Lo que recibe SiriusCoordinar (la vista por fases): el formulario, sus errores y las acciones de Coordinación.
   fasesCtx(p, o) { const P = this.props, s = this.state, SLg = this.SL(), LC = this.lugarCaso(), onA = P.onAction || (() => {}), rs = P.riesgos || [], E = o.errs;
     const ids = p.riesgos || [], vid = p.mode === 'nueva' ? (p.ofertaId || o.nextId) : p.visitId, srcIds = o.src ? (o.src.riesgos || []) : [];
-    const conRies = !o.single, conVeh = !!o.veh && conRies, ocup = (id) => { if (!conRies) return null; /* G-2c6 · DEC-237: un riesgo en una sola visita abierta, en todos los grupos de ramo */ const v = o.vis.find(x => x.estado !== 'Cancelada' && x.id !== p.visitId && x.id !== p.ofertaId && (x.riesgos || []).includes(id)); return v ? { id: v.id, estado: v.estado } : null; }; // G-2c4 · DEC-237: la línea de vehículos muestra todos; el de otra visita abierta queda deshabilitado
+    const conRies = !o.single, conVeh = !!o.veh && conRies, ocup = (id) => { if (!conRies) return null; /* G-2c6 · DEC-237: un riesgo en una sola visita abierta, en todos los grupos de ramo */ const v = o.vis.find(x => x.estado !== 'Cancelada' && x.estado !== 'Reagendada' && x.id !== p.visitId && x.id !== p.ofertaId && (x.riesgos || []).includes(id)); return v ? { id: v.id, estado: v.estado } : null; }; // G-2c4 · DEC-237: la línea de vehículos muestra todos; el de otra visita abierta queda deshabilitado
     const opc = p.mode === 'nueva' ? (conRies ? rs : rs.filter(r => o.pend.some(x => x.id === r.id) || ids.includes(r.id))) : (conVeh && p.mode === 'reagendar' && this.cxBase() ? rs : rs.filter(r => srcIds.includes(r.id) || ids.includes(r.id)));
-    const ENC = ['En curso', 'Por sincronizar', 'En curso por el cliente'], vEnc = o.vis.find(v => ENC.includes(v.estado)), vAbi = o.vis.filter(v => !['Cancelada', 'Realizada'].includes(v.estado) && !ENC.includes(v.estado));
-    const r0 = this.rById(ids[0] || (rs[0] || {}).id), prev = o.vis.filter(v => v.estado !== 'Cancelada' && v.id !== p.visitId && v.mod === 'Presencial' && (v.lugar || v.dir)).slice(-1)[0];
+    const ENC = ['En curso', 'Por sincronizar', 'En curso por el cliente'], vEnc = o.vis.find(v => ENC.includes(v.estado)), vAbi = o.vis.filter(v => !['Cancelada', 'Reagendada', 'Realizada'].includes(v.estado) && !ENC.includes(v.estado));
+    const r0 = this.rById(ids[0] || (rs[0] || {}).id), prev = o.vis.filter(v => v.estado !== 'Cancelada' && v.estado !== 'Reagendada' && v.id !== p.visitId && v.mod === 'Presencial' && (v.lugar || v.dir)).slice(-1)[0];
     const ofV = p.ofertaId ? o.vis.find(v => v.id === p.ofertaId && v.oferta && v.estado === 'Oferta enviada') : null;
     const r = this.reloj(), nowM = r ? (r.min != null ? r.min : (window.SiriusFecha ? window.SiriusFecha.aMin(r.hora) : 0)) : (() => { const m = /T(\d\d):(\d\d)/.exec(this.nowIso); return m ? +m[1] * 60 + +m[2] : 0; })();
     const cpL = this.cpPide(p) ? this.cpCampos().map(x => ({ k: 'cp_' + x.clave, label: x.etiqueta, ph: x.ayuda, value: this.cpVal(p, x) })) : [];
@@ -397,13 +370,13 @@ class Component extends DCLogic {
     if (li) { o.lugar = li.l; o.dir = li.l.direccion; o.ref = li.l.referencia; o.lugarBuscar = !!((li.fijo || li.sol) && !li.l.punto && li.l.direccion); o.lugarNoUbica = false; }
     return { pnl: Object.assign({}, p, o) }; }); }
   agrupCtx(p, o) { const ids = p.riesgos || [], P0 = this.propuestasDe(o.pend), igual = (a) => a.length === ids.length && a.every(id => ids.includes(id));
-    const abiertas = Array.from(new Set(o.vis.filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && (v.riesgos || []).length).map(v => v.id)));
+    const abiertas = Array.from(new Set(o.vis.filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && (v.riesgos || []).length).map(v => v.id)));
     return { propuestas: P0.map(g => ({ title: g.title, dir: g.dir && g.dir !== 'Sin dirección' ? g.dir : 'Sin dirección', count: g.n === 1 ? '1 vehículo' : g.n + ' vehículos', labels: g.list.map(r => r.label), ids: g.ids, enUso: igual(g.ids), usar: () => this.usarGrupo(g.ids) })), vacio: !P0.length,
       vacioTxt: 'No quedan vehículos por coordinar' + (abiertas.length ? ': todos están en una visita abierta (' + abiertas.join(', ') + ').' : '.'), bloqueada: p.ofertaId ? 'Para cambiar los vehículos, anula la oferta.' : '' }; }
   // Enlace de autoagendamiento desde Contacto: canal (WhatsApp, SMS o correo, vía Genesis) y destinatario; usa la acción de enlaces de siempre (enlaceAgenda).
   // N-2b · DEC-257: el enlace de autoagendamiento no se envía si todos los riesgos del caso ya están en una visita abierta (la base lo rechazaría).
   // La misma función bloquea el botón de Contacto (Coordinar visita) y el de la pestaña Coordinación.
-  agBloqueo() { const rs = this.props.riesgos || [], vis = this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección', 'Realizada', 'Inspeccionada'].includes(v.estado)), en = new Set();
+  agBloqueo() { const rs = this.props.riesgos || [], vis = this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección', 'Realizada', 'Inspeccionada'].includes(v.estado)), en = new Set();
     vis.forEach(v => (v.riesgos || []).forEach(id => en.add(id))); if (!rs.length || !rs.every(r => en.has(r.id))) return '';
     const cita = vis.filter(v => v.fecha && v.hIni).sort((a, b) => (a.fecha + a.hIni) < (b.fecha + b.hIni) ? -1 : 1)[0];
     return cita ? 'Hay una cita agendada para el ' + cita.fecha.slice(8, 10) + '/' + cita.fecha.slice(5, 7) + ' · ' + cita.hIni + ': no se puede enviar el enlace' : 'Todos los riesgos del caso ya están en una visita abierta: no se puede enviar el enlace'; }
@@ -412,10 +385,45 @@ class Component extends DCLogic {
     const okMod = ['Presencial', 'Virtual guiada'].includes(p.mod), bloq = this.agBloqueo(), mot = bloq ? bloq : this.props.estadoCaso === 'Cancelado' ? 'el caso está cancelado' : this.props.canEdit === false ? 'Tu rol no coordina este caso' : !okMod ? 'solo en Presencial y Virtual guiada (la modalidad es ' + p.mod + ')' : '';
     const est = AG && window.SiriusEnlace && AG.token ? ((window.SiriusEnlace.estado(AG.token) || {}).nombre || '') : '';
     return { motivo: mot, canales: L.length ? L : null, estado: AG ? [est, 'por ' + (AG.canales || []).map(k => ck[k] || k).join(' y ') + (AG.cName ? ' a ' + AG.cName : ''), AG.envio ? 'el ' + this.fmtDT(AG.envio) : '', AG.venceTxt ? 'vence el ' + AG.venceTxt : ''].filter(Boolean).join(' · ') : '' }; }
-  enviarAutoagenda(p, q) { const onA = this.props.onAction || (() => {}), d = q.destinatario || {}, k = { WhatsApp: 'whatsapp', SMS: 'sms', Correo: 'correo' }[q.canal] || 'whatsapp';
-    const pl = { modalidad: p.mod === 'Virtual guiada' ? 'Virtual guiada' : 'Presencial', cName: d.nombre || p.cName, cCel: q.canal === 'Correo' ? p.cCel : (d.numero || ''), cMail: p.cMail, canales: [k], destinatario: d };
+  enviarAutoagenda(p, q) { const onA = this.props.onAction || (() => {}), d = q.destinatario || {}, K = { WhatsApp: 'whatsapp', SMS: 'sms', Correo: 'correo' }, L = Array.isArray(q.canales) && q.canales.length ? q.canales : [q.canal || 'WhatsApp'], ks = L.map(c => K[c] || 'whatsapp'), num = L.some(c => c !== 'Correo'); /* S-1b: uno o varios canales */
+    const pl = { modalidad: p.mod === 'Virtual guiada' ? 'Virtual guiada' : 'Presencial', cName: d.nombre || p.cName, cCel: num ? (d.numero || '') : p.cCel, cMail: p.cMail, canales: ks, destinatario: d };
     return Promise.resolve(onA('enlaceAgenda', pl)); }
   // Etapa G-2c · DEC-222: lugar de la inspección (SiriusLugar). prop lugarCaso = { sucursal, ciudad (COD_CANTON del caso), fijo (Ramos Generales no móvil), porRiesgo { id: lugar del riesgo } }.
+  // ---------- G-4 · Pestaña Coordinación en cartas ----------
+  // Una carta por visita con el estado y las acciones de la tarjeta de siempre (vm, acts2). Datos: número, modalidad, estado, origen,
+  // fecha grande, Lugar · Inspector · Recibe · Enlace, y el resumen que se ve cuando ya es anterior (Reagendada → Vn, Cancelada, Enlace caducado…).
+  DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  diaDe(f) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getDay() : -1; }
+  cartaDe(v, vm, o) { const est = o.est, SL = this.SL(), l = this.lugarDeVisita(v), cxB = o.cxB || null, H = v.hist || {}, d = this.diaDe(v.fecha), dm = v.fecha ? v.fecha.slice(8, 10) + '/' + v.fecha.slice(5, 7) : '';
+    const anterior = ['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(est), auto = v.mod === 'Autoinspección';
+    const hora = v.hIni ? v.hIni + (v.hFin ? ' a ' + v.hFin : '') : '', grande = !auto && !o.ofe && v.fecha && d >= 0 ? this.DIAS[d] + ' ' + dm + (hora ? ' · ' + hora : '') : '';
+    const zona = l && SL ? SL.texto(l) : '', ori = l && (v.lugarCliente || v.porCliente) ? ({ GPS: 'GPS del cliente', Mapa: 'mapa del cliente', 'Búsqueda': 'dirección buscada por el cliente', Solicitud: 'la de la solicitud' })[l.origen] || '' : '';
+    const dirTxt = v.mod === 'Presencial' ? [zona, String(v.dir || '').replace(/,\s*[^,]*$/, (x) => zona && zona.indexOf(x.replace(/^,\s*/, '')) === 0 ? '' : x)].filter(Boolean).join(' · ') + (ori ? ' (' + ori + ')' : '') : '';
+    const insRow = o.ofe ? { label: 'Oferta', value: o.ofe.inspectores.length + (o.ofe.inspectores.length === 1 ? ' inspector: ' : ' inspectores: ') + o.ofe.inspectores.join(', ') + (o.ofe.porCliente ? ' (pedida por el cliente)' : '') }
+      : !auto ? { label: 'Inspector', value: v.inspector ? v.inspector + ((this.INS.find(i => i.n === v.inspector) || {}).tipo ? ' · ' + this.INS.find(i => i.n === v.inspector).tipo : '') : 'Sin inspector' } : null;
+    const EI = !cxB && v.enlaceInfo ? v.enlaceInfo : !cxB && auto && v.canal && !['Realizada', 'Cancelada'].includes(est) ? { texto: 'Enviado por ' + v.canal + (v.vence ? ' · vence ' + this.fmtDT(v.vence) : '') } : null, /* S-1b: por qué canales se envió */ urlC = cxB && cxB.url ? cxB.url : EI && EI.url ? EI.url : '', copiar = urlC ? { label: 'Copiar enlace', fn: () => o.onA('cxCopiar', { id: v.id, url: urlC }) } : null;
+    const enlTxt = EI ? EI.texto || '' : cxB && (cxB.url || cxB.vence || cxB.enviado) ? (auto ? 'Enviado' + (cxB.canales ? ' por ' + cxB.canales.toLowerCase().replace('whatsapp', 'WhatsApp').replace('sms', 'SMS') : '') + (cxB.enviadoDia ? ' el ' + cxB.enviadoDia : '')
+      : (/curso/i.test(cxB.enlEstado || '') ? 'Abierto por el cliente' : 'Enviado') + (cxB.canales ? ' · enviado por ' + cxB.canales.toLowerCase().replace('whatsapp', 'WhatsApp').replace('sms', 'SMS') : '')) + (cxB.vence ? ' · vence ' + (auto ? cxB.vence.replace(/^(\d{2}\/\d{2})\/\d{2}\s*·\s*/, '$1 ') : cxB.vence.replace(/\s*·.*$/, '').slice(0, 5)) : '') : '';
+    const filas = [dirTxt && { label: 'Lugar', value: dirTxt }, insRow, !auto && v.cName && { label: 'Recibe', value: v.cName + (v.cCel ? ' · ' + v.cCel : '') },
+      enlTxt && { label: 'Enlace', value: enlTxt, link: anterior ? null : copiar }, v.avance && { label: 'Último avance', value: v.avance.texto || '' },
+      !grande && !auto && o.when && !o.ofe && !enlTxt && o.when !== 'No aplica' && { label: vm.fields && vm.fields[1] ? vm.fields[1].label : 'Fecha', value: o.when },
+      o.ofe && { label: 'Rango', value: o.when }, !grande && auto && !enlTxt && o.when && { label: vm.fields && vm.fields[1] ? vm.fields[1].label : 'Vencimiento', value: o.when }].filter(Boolean);
+    const tipoAcc = (a) => a.label === 'Cancelar visita' ? 'peligro' : a.variant === 'primary' ? 'pri' : a.variant === 'ghost' ? 'link' : 'sec';
+    const acc = (o.acts || []).filter(a => !(copiar && a.label === 'Copiar enlace')).map(a => ({ label: a.label === 'Cancelar visita' ? 'Cancelar visita…' : a.label, tipo: tipoAcc(a), fn: a.onClick, why: a.why || '', aria: a.label + ' ' + v.id }));
+    if (['Agendada', 'En camino'].includes(est) && v.fecha && !o.ofe) { const k = acc.findIndex(a => a.tipo === 'peligro'), va = { label: 'Ver en Agenda', tipo: 'link', fn: () => o.onA('verAgenda', { id: v.id, fecha: v.fecha, inspector: v.inspector || '' }), aria: 'Ver ' + v.id + ' en la Agenda' }; if (k < 0) acc.push(va); else acc.splice(k, 0, va); }
+    const corto = (f) => { const x = this.diaDe(f); return x >= 0 ? this.DIAS[x].slice(0, 3).toLowerCase() + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) : ''; };
+    const cab = v.fecha ? v.mod + ' · ' + corto(v.fecha) + (v.hIni ? ' · ' + (anterior || !v.hFin ? v.hIni : v.hIni + ' a ' + v.hFin) : '') : v.porCliente && v.origenCita === 'red' ? v.mod + (zona ? ' · ' + zona.split(' · ')[0] : '') + ' · pedida a la red' : (H.enlaceTipo || (cxB && cxB.tipo)) && !v.fecha && v.mod !== 'Autoinspección' && !v.porCliente ? 'Enlace de ' + String(H.enlaceTipo || cxB.tipo).toLowerCase() : v.mod;
+    const lugarCorto = [v.inspector || '', zona].filter(Boolean).join(' · ');
+    const estAnt = est === 'Reagendada' ? 'Reagendada' + (H.reemplazo ? ' → ' + H.reemplazo : '') : est;
+    const linea = est === 'Reagendada' ? [H.motivo || 'Reagendada', H.en, lugarCorto].filter(Boolean).join(' · ')
+      : est === 'Cancelada' ? [(v.motivoCancel || H.motivo) ? 'Motivo: «' + (v.motivoCancel || H.motivo) + '»' : 'Cancelada', H.por, H.en].filter(Boolean).join(' · ')
+      : est === 'Enlace caducado' ? [H.enviado ? 'Enviado ' + H.enviado : 'Enlace caducado', H.reemplazoEn ? 'reemplazado por uno nuevo el ' + H.reemplazoEn : ''].filter(Boolean).join(' · ')
+      : est === 'Cerrada sin inspección' ? (vm.note || 'Cerrada sin inspección') : [o.when, lugarCorto].filter(Boolean).join(' · ');
+    const detalle = filas.filter(f => f.label !== 'Último avance').map(f => ({ label: f.label, value: f.value })).concat((v.motivoCancel || H.motivo) ? [{ label: 'Motivo', value: v.motivoCancel || H.motivo }] : [], H.por || H.en ? [{ label: est === 'Reagendada' ? 'Reagendada' : est === 'Cancelada' ? 'Cancelada por' : 'Registro', value: [H.por, H.en].filter(Boolean).join(' · ') }] : [], H.reemplazo ? [{ label: 'La reemplaza', value: H.reemplazo }] : []);
+    const prog = v.avance && v.avance.fotos != null && v.avance.total ? ' · ' + v.avance.fotos + ' de ' + v.avance.total + ' fotos' : '';
+    return { id: v.id, n: Number(String(v.id).replace(/\D/g, '')) || 0, mod: v.mod, estado: est, estadoTxt: est + prog, tone: est === 'Agendada' ? 'success' : o.tone, origen: v.porCliente && est !== 'Cancelada' ? 'Por el cliente · ' + (v.origenCita === 'red' ? 'red' : 'agenda fija') : '',
+      grande, filas, acciones: anterior ? [] : acc, enlace: vm.hasEnlace && !anterior ? { visita: vm.raw, ro: vm.ro, rev: vm.rev, onReenviar: vm.onReenviar, onNuevo: vm.onNuevo, onAccion: vm.onAccion } : null, nota: vm.hasNote && !anterior ? vm.note : '',
+      riesgos: (v.riesgos || []).slice(), anterior, res: { cab, estado: estAnt, linea, lugarCorto, detalle } }; }
   SL() { return window.SiriusLugar || null; }
   lugarCaso() { const x = this.props.lugarCaso; return x && typeof x === 'object' ? x : {}; }
   // Visita sin lugar (las de antes): se arma con la dirección de texto y la ciudad del caso, con «Zona por confirmar».
@@ -426,7 +434,7 @@ class Component extends DCLogic {
     if (x.mode === 'reagendar' || x.mode === 'dividir') return { l: SL.desdeTexto(x.dir, LC.ciudad, x.ref) };
     const pr = (LC.porRiesgo || {})[ids[0]]; if (LC.fijo && pr) { const l = SL.normalizar(pr); return { l, fijo: true }; }
     if (String(x.dir || '').trim()) return { l: SL.desdeTexto(x.dir, LC.ciudad, x.ref || ''), sol: true }; // G-2c2 · DEC-237: por defecto, la dirección de la solicitud (se busca al abrir y queda «por revisar»)
-    const prev = this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && v.lugar).slice(-1)[0]; if (prev) return { l: SL.normalizar(prev.lugar) };
+    const prev = this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.lugar).slice(-1)[0]; if (prev) return { l: SL.normalizar(prev.lugar) };
     return { l: SL.desdeTexto(x.dir || '', LC.ciudad, x.ref || '') }; }
   usaLugar(p) { return !!p && !!this.SL() && p.mod === 'Presencial' && ['nueva', 'reagendar', 'dividir'].includes(p.mode); }
   lugarPara(p) { if (!p) return null; if (this.usaLugar(p)) return p.lugar || null; if (p.mode === 'inspector') return this.lugarDeVisita(this.visits().find(v => v.id === p.visitId)); return null; }
@@ -444,11 +452,11 @@ class Component extends DCLogic {
   initial() {
     const p = this.props, pr = p.preset || '';
     const s = { sel: [], grouped: pr === 'agrupar', pnl: null, touched: {}, insQ: '', insOpen: false, wa: null, cancel: null, intF: null, cc: null };
-    if (/^cxcancelar(:V\d+)?$/.test(pr)) { const v0 = (p.visitas || []).find(v => v && v.cxBase && !['Cancelada', 'Realizada'].includes(v.estado) && (pr === 'cxcancelar' || v.id === pr.slice(11))); /* G-2c9: «cxcancelar:V3» abre la visita elegida */ if (v0) s.cancel = { id: v0.id, motivo: '', touched: false }; } // etapa P-6e-3 · escena cxvisitacancelar
+    if (/^cxcancelar(:V\d+)?$/.test(pr)) { const v0 = (p.visitas || []).find(v => v && v.cxBase && !['Cancelada', 'Reagendada', 'Realizada'].includes(v.estado) && (pr === 'cxcancelar' || v.id === pr.slice(11))); /* G-2c9: «cxcancelar:V3» abre la visita elegida */ if (v0) s.cancel = { id: v0.id, motivo: '', touched: false }; } // etapa P-6e-3 · escena cxvisitacancelar
     const rs = p.riesgos || [];
-    if (/^agenda:V\d+$/.test(pr)) { const v0 = this.visits().find(x => x.id === pr.slice(7) && !['Cancelada', 'Realizada'].includes(x.estado) && !x.oferta && x.estado !== 'Oferta enviada'); if (v0 && p.canEdit !== false) { s.pnl = this.newForm(v0.riesgos, Object.assign({}, v0, { mode: 'reagendar', visitId: v0.id, riesgos: v0.riesgos })); s.pnl.fase = 'horario'; s.insQ = v0.inspector || ''; } } // G-2e: «Abrir Coordinar visita» desde la Agenda: reagendar esa visita en la fase Inspector y horario
-    if (pr === 'porcoordinar') { const vv = this.visits(), tomados = new Set(); vv.filter(v => v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => tomados.add(id))); const KC = window.SiriusCoordEstado ? window.SiriusCoordEstado.riesgos({ riesgos: rs }, vv) : {}, ids = rs.filter(r => !tomados.has(r.id) && (!KC[r.id] || KC[r.id].estado === 'Por coordinar')).map(r => r.id); const ids2 = ids.length ? ids : rs.filter(r => !tomados.has(r.id)).map(r => r.id); /* P-6g-2d: sin estado por riesgo, los que no están en una visita abierta */ if (p.canEdit !== false && p.estadoCaso !== 'Cancelado') { s.pnl = ids2.length ? this.newForm(ids2) : this.newForm([], { mode: 'contacto' }); s.pnl.fase = 'contacto'; } } // G-2e2
-    if (pr === 'cancelar' && p.canEdit !== false) { const tom = new Set(); this.visits().filter(v => v.estado !== 'Cancelada').forEach(v => (v.riesgos || []).forEach(id => tom.add(id))); const ids = rs.filter(r => !tom.has(r.id)).map(r => r.id); s.pnl = ids.length ? this.newForm(ids) : this.newForm([], { mode: 'contacto' }); s.pnl.fase = 'contacto'; s.pnl.ctoEsc = { cancelar: { motivo: '', detalle: '' } }; } // P-6g-2d: «Cancelar la solicitud…» del menú «⋯» abre Coordinar visita › Contacto con la cancelación abierta · DEC-238: «Coordinar visita» de la cabecera del caso: Coordinar visita con los riesgos por coordinar ya marcados
+    if (/^agenda:V\d+$/.test(pr)) { const v0 = this.visits().find(x => x.id === pr.slice(7) && !['Cancelada', 'Reagendada', 'Realizada'].includes(x.estado) && !x.oferta && x.estado !== 'Oferta enviada'); if (v0 && p.canEdit !== false) { s.pnl = this.newForm(v0.riesgos, Object.assign({}, v0, { mode: 'reagendar', visitId: v0.id, riesgos: v0.riesgos })); s.pnl.fase = 'horario'; s.insQ = v0.inspector || ''; } } // G-2e: «Abrir Coordinar visita» desde la Agenda: reagendar esa visita en la fase Inspector y horario
+    if (pr === 'porcoordinar') { const vv = this.visits(), tomados = new Set(); vv.filter(v => v.estado !== 'Cancelada' && v.estado !== 'Reagendada').forEach(v => (v.riesgos || []).forEach(id => tomados.add(id))); const KC = window.SiriusCoordEstado ? window.SiriusCoordEstado.riesgos({ riesgos: rs }, vv) : {}, ids = rs.filter(r => !tomados.has(r.id) && (!KC[r.id] || KC[r.id].estado === 'Por coordinar')).map(r => r.id); const ids2 = ids.length ? ids : rs.filter(r => !tomados.has(r.id)).map(r => r.id); /* P-6g-2d: sin estado por riesgo, los que no están en una visita abierta */ if (p.canEdit !== false && p.estadoCaso !== 'Cancelado') { s.pnl = ids2.length ? this.newForm(ids2) : this.newForm([], { mode: 'contacto' }); s.pnl.fase = 'contacto'; } } // G-2e2
+    if (pr === 'cancelar' && p.canEdit !== false) { const tom = new Set(); this.visits().filter(v => v.estado !== 'Cancelada' && v.estado !== 'Reagendada').forEach(v => (v.riesgos || []).forEach(id => tom.add(id))); const ids = rs.filter(r => !tom.has(r.id)).map(r => r.id); s.pnl = ids.length ? this.newForm(ids) : this.newForm([], { mode: 'contacto' }); s.pnl.fase = 'contacto'; s.pnl.ctoEsc = { cancelar: { motivo: '', detalle: '' } }; } // P-6g-2d: «Cancelar la solicitud…» del menú «⋯» abre Coordinar visita › Contacto con la cancelación abierta · DEC-238: «Coordinar visita» de la cabecera del caso: Coordinar visita con los riesgos por coordinar ya marcados
     if (pr === 'choque') { s.pnl = Object.assign(this.newForm(rs.slice(0, 2).map(r => r.id)), { inspector: 'Marco Tapia', fecha: '2026-10-17', hIni: '09:30', hFin: '11:00', inter: 'De los Juncos', ref: 'Patio de la empresa; ingreso por la puerta 2' }); s.insQ = 'Marco Tapia'; s.grouped = true; s.pnl.fase = 'horario'; }
     else if (pr === 'auto') { s.pnl = this.newForm(rs.slice(2, 3).map(r => r.id)); s.grouped = true; s.pnl.fase = s.pnl.mod === 'Autoinspección' ? 'enlace' : 'contacto'; }
     else if (pr === 'autouno') s.pnl = this.newForm(rs.map(r => r.id), { mod: 'Autoinspección', fase: 'enlace' });   // etapa 12b · envioenlace (20186)
@@ -470,7 +478,7 @@ class Component extends DCLogic {
       if (E.inspector) { const pr2 = this.proponer(E.inspector); Object.assign(s.pnl, { inspector: E.inspector }, pr2 || {}); s.insQ = E.inspector; s.touched = { inspector: true }; }
       if (E.motivo) s.pnl.fueraMot = E.motivo; if (E.abrir) s.insOpen = true; if (E.fueraAbierto) s.insFuera = true; s.pnl.fase = E.fase || (E.inspector || E.enviar ? 'horario' : 'lugar'); if (E.enviar) s.pnl.enviar = 'principal'; }
     else if (pr === 'fases' && rs.length) { const E = ((this.cxBase() || {}).escena || {}).fases || {}, SL = this.SL(), U = window.SiriusUbicacion; // G-2c2: escenas coordfases, coordmodalidades, coordfechahora, coordoferta, coordautoinsp, coordvirtual y cxcoordfases · G-2c3: coordcontacto, coordotronumero, coordenlaceauto, coordcancelar, coordeditarcontacto y cxcoordcontacto
-      const ids = Array.isArray(E.riesgos) && E.riesgos.length ? rs.filter(r => E.riesgos.includes(r.label)).map(r => r.id) : [rs[0].id]; s.pnl = this.newForm(ids.length ? ids : [rs[0].id]); { const ml = this.modsLista(s.pnl.riesgos), ok = (m) => ml.some(x => x.label === m && x.ok); s.pnl.mod = E.mod && ok(E.mod) ? E.mod : ok('Presencial') ? 'Presencial' : s.pnl.mod; } // DEC-237: con las reglas evaluadas para los riesgos elegidos
+      const ids = Array.isArray(E.riesgos) && E.riesgos.length ? rs.filter(r => E.riesgos.includes(r.label)).map(r => r.id) : [rs[0].id]; s.pnl = this.newForm(ids.length ? ids : [rs[0].id]); { const ml = this.modsLista(s.pnl.riesgos), ok = (m) => ml.some(x => x.label === m && x.ok); s.pnl.mod = E.mod && ok(E.mod) ? E.mod : ok('Presencial') ? 'Presencial' : s.pnl.mod; } if (Array.isArray(E.canales) && E.canales.length) { s.pnl.canales = E.canales.slice(); s.pnl.canal = E.canales.length < 2 ? E.canales[0] : E.canales.slice(0, -1).join(', ') + ' y ' + E.canales[E.canales.length - 1]; } /* S-1b: escena enlacecanales */ // DEC-237: con las reglas evaluadas para los riesgos elegidos
       if (E.texto && SL && U && s.pnl.lugar) { const r = U.buscarLocal(E.texto, s.pnl.lugar.ciudad); if (r.length && r[0].punto) { const l = SL.calcular(Object.assign({}, s.pnl.lugar, { direccion: r[0].texto, ciudad: r[0].ciudad, provincia: SL.provDe(r[0].ciudad), punto: r[0].punto, zona: null, estadoZona: '', origen: 'Búsqueda' })); Object.assign(s.pnl, { lugar: l, dir: l.direccion, ref: l.referencia, lugarBuscar: false }); } }
       const dia = (k) => { const d = new Date(this.today + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + k); return d.toISOString().slice(0, 10); };
       if (E.fecha != null) s.pnl.fecha = typeof E.fecha === 'number' ? dia(E.fecha) : E.fecha; if (E.hIni) s.pnl.hIni = E.hIni; if (E.hFin) s.pnl.hFin = E.hFin; if (E.inspector) s.pnl.inspector = E.inspector; if (E.fueraMot) s.pnl.fueraMot = E.fueraMot;
@@ -509,7 +517,7 @@ class Component extends DCLogic {
   copiarEnlace() { const u = (this.state.wa || {}).enlace || '', ok = () => this.setState({ waCopied: true }), viejo = () => { try { const t = document.createElement('textarea'); t.value = u; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.select(); const r = document.execCommand('copy'); document.body.removeChild(t); if (r) ok(); } catch (e) { /* sin portapapeles */ } };
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, viejo); else viejo(); } catch (e) { viejo(); } }
   visits() { return this.props.visitas || []; }
-  activeVisit() { return this.visits().find(v => v.estado !== 'Cancelada'); }
+  activeVisit() { return this.visits().find(v => v.estado !== 'Cancelada' && v.estado !== 'Reagendada'); }
   rById(id) { return (this.props.riesgos || []).find(r => r.id === id) || { id, label: id }; }
   // Etapa C2-2 · DEC-182: Ramos Generales y Equipo y maquinaria, solo presencial por ahora (sin Virtual guiada ni Autoinspección).
   soloPresencial() { return (this.props.tipo || 'Vehículos') !== 'Vehículos'; }
@@ -539,10 +547,10 @@ class Component extends DCLogic {
     const B = this.cxBase();
     if (B && Array.isArray(B.agenda)) { // DEC-231: la carga y los choques salen de las visitas de la base (todas las de los casos, sin Cancelada, Enviada ni Terminada) y de las de esta sesión que la base aún no tiene
       const mismo = (x) => String(x.caso) === String(this.props.caseId), out = B.agenda.filter(x => x.inspector === name && x.fecha === fecha && !(mismo(x) && 'V' + x.n === exceptId)).map(x => ({ a: x.a, b: x.b }));
-      this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
+      this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni && !B.agenda.some(x => mismo(x) && 'V' + x.n === v.id && x.fecha === v.fecha && x.a === v.hIni && x.inspector === v.inspector)).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
       return out; }
     const i = this.INS.find(x => x.n === name); const out = ((i && i.agenda[fecha]) || []).map(s => ({ a: s[0], b: s[1] }));
-    this.visits().filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
+    this.visits().filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado) && v.inspector === name && v.fecha === fecha && v.id !== exceptId && v.hIni).forEach(v => out.push({ a: v.hIni, b: v.hFin || this.addH(v.hIni) }));
     return out;
   }
   addH(h) { const [x, y] = h.split(':').map(Number); return String(Math.min(23, x + 1)).padStart(2, '0') + ':' + String(y).padStart(2, '0'); }
@@ -614,7 +622,7 @@ class Component extends DCLogic {
     const btn = (variant, label, onClick, disabled) => NS.Button ? React.createElement(NS.Button, { key: label, variant, onClick, disabled }, label) : null;
     const rs = P.riesgos || [], single = rs.length === 1, veh = P.tipo === 'Vehículos';
     const vis = this.visits();
-    const assigned = new Set(), enVis = {}; vis.filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado)).forEach(v => (v.riesgos || []).forEach(id => { assigned.add(id); if (!enVis[id] || ['Cancelada', 'Realizada'].includes(enVis[id].estado)) enVis[id] = { id: v.id, estado: v.estado }; })); // G-2c4 · DEC-237: cuenta toda visita que no esté Cancelada (también «Oferta enviada», «Buscando inspector», «En camino»…): un vehículo, una sola visita abierta
+    const assigned = new Set(), enVis = {}; vis.filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado)).forEach(v => (v.riesgos || []).forEach(id => { assigned.add(id); if (!enVis[id] || ['Cancelada', 'Reagendada', 'Realizada'].includes(enVis[id].estado)) enVis[id] = { id: v.id, estado: v.estado }; })); // G-2c4 · DEC-237: cuenta toda visita que no esté Cancelada (también «Oferta enviada», «Buscando inspector», «En camino»…): un vehículo, una sola visita abierta
     const pend = P.estadoCaso === 'Cancelado' ? [] : rs.filter(r => !assigned.has(r.id)); // G-2c4: un caso cancelado ya no tiene nada por coordinar
     const sel = s.sel.filter(id => pend.some(r => r.id === id));
     /* Etapa G-2c8 · DEC-238: «coordinado» = visita abierta con cita (Agendada o En camino), en curso, o autoinspección con enlace vigente; una oferta, una visita por agendar o un enlace de autoagendamiento sin respuesta no cuentan. */
@@ -648,7 +656,7 @@ class Component extends DCLogic {
     const recMod = p ? this.recFor(p.mode === 'dividir' && p.split ? [p.split] : p.riesgos) : '';
     const src = p && p.visitId ? vis.find(v => v.id === p.visitId) : null;
     const nextId = 'V' + (vis.length + 1);
-    const tone = { 'Oferta enviada': 'brand', 'Buscando inspector': 'brand', 'En camino': 'brand', 'Sin respuesta': 'warning', 'Por sincronizar': 'warning', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'Enlace abierto por el cliente': 'neutral' /* G-3e */, 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral' };
+    const tone = { 'Oferta enviada': 'brand', 'Buscando inspector': 'brand', 'En camino': 'brand', 'Sin respuesta': 'warning', 'Por sincronizar': 'warning', Agendada: 'brand', 'Enlace enviado': 'brand', 'Autoinspección enviada': 'brand', 'Enlace abierto por el cliente': 'neutral' /* G-3e */, 'En curso por el cliente': 'warning', 'Por agendar': 'neutral', 'Enlace caducado': 'danger', 'En curso': 'warning', Realizada: 'success', Cancelada: 'neutral', Reagendada: 'neutral' /* G-4 */ };
     const fMot = this.pideMotivoCx(p) ? [this.F('motivoCx', p.mode === 'inspector' ? 'Motivo del cambio de inspector' : 'Motivo del cambio de fecha', 'textarea', { req: true, span: '1 / -1', ph: 'Mínimo 10 caracteres. Queda en el historial y se envía a la base.' })] : []; // DEC-231
     const fields0 = !p || p.mode === 'inspector' ? [] : p.mod === 'Presencial' ? [
       this.F('fecha', 'Fecha', 'input', { req: true, type: 'date', min: this.today }), this.F('hIni', 'Hora de inicio', 'input', { req: true, type: 'time' }), this.F('hFin', 'Hora de fin', 'input', { req: true, type: 'time' }),
@@ -670,7 +678,7 @@ class Component extends DCLogic {
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
       if (this.usaLugar(p) && p.lugar) Object.assign(base, { lugar: Object.assign({}, p.lugar), dir: p.lugar.direccion, ref: p.lugar.referencia, inter: '' }); // G-2c · DEC-222
       if (this.needsIns(p)) base.fueraCobertura = fueraC; // G-2c · DEC-225 (null si cubre)
-      if (p.mod === 'Autoinspección') base.canal = p.canal || 'WhatsApp'; // G-2c2 · DEC-237: canal del enlace de autoinspección
+      if (p.mod === 'Autoinspección') { base.canales = Array.isArray(p.canales) && p.canales.length ? p.canales.slice() : String(p.canal || 'WhatsApp').split(/, | y /); base.canal = base.canales.length < 2 ? base.canales[0] : base.canales.slice(0, -1).join(', ') + ' y ' + base.canales[base.canales.length - 1]; } // G-2c2 · DEC-237 · S-1b: uno o varios canales
       base.sitio = { nombre: String(p.sNom || '').trim(), cel: String(p.sCel || '').replace(/\s/g, '') }; // G-2c3: contacto en sitio (fase Lugar)
       if (p.mod === 'Autoinspección') base.destino = this.destinoDe(p, base.canal); // G-2c3: «Enviar a» de la fase Enlace
       let v, rA = null;
@@ -681,7 +689,7 @@ class Component extends DCLogic {
         if (mode === 'dividir') onA('dividir', { fromId: p.visitId, visit: v }); else rA = onA('agendar', { visit: v }); }
       const sg = mode === 'nueva' && p.agrup && veh ? this.siguienteDe(pend.filter(r => !p.riesgos.includes(r.id)), true) : null, desde = { mod: p.mod, cName: p.cName, cCel: p.cCel, cMail: p.cMail, dest: p.dest, sNom: p.sNom, sCel: p.sCel, chain: p.chain || 0 }; // P-6g-2e: lo que queda por coordinar tras esta visita
       this.trasEnvio(rA, (x) => { const vx = this.conCx(v, x), txt = this.waMessage(vx);
-      this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { sig: sg ? { txt: sg.txt, corto: sg.corto, ids: sg.ids, desde } : null, title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), to: v.cName + ' · ' + v.cCel, text: txt, enlace: this.enlaceCopia(vx), ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null }); if (sg && !txt) this.abrirSiguiente(sg.ids, desde); /* P-6g-2e: sin mensaje que mostrar, sigue con la siguiente propuesta */ });
+      this.setState({ pnl: null, sel: [], touched: {}, wa: txt ? { sig: sg ? { txt: sg.txt, corto: sg.corto, ids: sg.ids, desde } : null, title: (mode === 'reagendar' ? 'Visita ' + v.id + ' reagendada' : v.mod === 'Autoinspección' ? 'Enlace de autoinspección ' + v.id + ' enviado' : 'Visita ' + v.id + ' agendada'), desc: v.mod === 'Autoinspección' && v.canal ? 'Vista previa del mensaje enviado por ' + v.canal + ' · solo lectura' : undefined /* S-1b */, to: v.cName + ' · ' + [/WhatsApp|SMS/.test(v.canal || 'WhatsApp') ? v.cCel : '', /Correo/.test(v.canal || '') ? v.cMail : ''].filter(Boolean).join(' · '), text: txt, enlace: this.enlaceCopia(vx), ins: v.inspector ? 'Notificación enviada a ' + v.inspector + ' en la aplicación' : '' } : null }); if (sg && !txt) this.abrirSiguiente(sg.ids, desde); /* P-6g-2e: sin mensaje que mostrar, sigue con la siguiente propuesta */ });
     };
     this._submit = submit; { const E = ((this.cxBase() || {}).escena || {}).lugar || {}; if (P.preset === 'lugar' && E.enviar && p && !this._lugEnv && !window.SiriusCoordinar) { this._lugEnv = true; setTimeout(() => this._submit && this._submit(), 700); } } // G-2c: escenas que guardan solas
     const fieldN = eKeys.filter(k => k !== 'riesgos').length;
@@ -745,10 +753,10 @@ class Component extends DCLogic {
       const z2 = (n) => String(n).padStart(2, '0'), corto = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + ' ' + m[4] + ':' + m[5] : ''; };
       const ofe = vis.find(v => v.estado === 'Oferta enviada' && v.oferta); if (ofe) { const n = (ofe.oferta.inspectores || []).length, vc = corto(ofe.oferta.vence); return 'Oferta enviada a ' + n + (vc ? ' · vence ' + vc : ''); }
       if (SCE && rs.length > 1) { const k = rs.filter(r => KC[r.id] && KC[r.id].coordinado).length; if (k > 0) return k + ' de ' + rs.length + (k === 1 ? ' agendado' : ' agendados'); }
-      const ag = vis.filter(v => !['Cancelada', 'Realizada', 'Cerrada sin inspección'].includes(v.estado)); if (ag.length && rs.length <= 1) { const v = ag[0]; return v.estado + (v.fecha ? ' · ' + this.fmtD(v.fecha).slice(0, 5) + (v.hIni ? ' ' + v.hIni : '') : ''); }
+      const ag = vis.filter(v => !['Cancelada', 'Reagendada', 'Realizada', 'Cerrada sin inspección'].includes(v.estado)); if (ag.length && rs.length <= 1) { const v = ag[0]; return v.estado + (v.fecha ? ' · ' + this.fmtD(v.fecha).slice(0, 5) + (v.hIni ? ' ' + v.hIni : '') : ''); }
       const nI = (P.intentos || []).length, ult = (P.intentos || []).slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1)[0];
       return (ult && ult.resultado === 'Contestó' ? 'Contactado' : 'Sin contacto') + ' · ' + nI + (nI === 1 ? ' intento' : ' intentos'); })();
-    const nAl = (rec.alertas || []).length;
+    const nAl = (rec.alertas || []).length, cartasL = []; /* G-4: las cartas de la pestaña (una por visita) */
     return {
       ...intVals,
       franja: { estado: franjaEstado, hayAlertas: nAl > 0, alTxt: nAl === 1 ? '1 alerta' : nAl + ' alertas', alAbierto: nAl > 0 && !!s.alOpen, alAria: s.alOpen ? 'true' : 'false', alToggle: () => this.setState(st => ({ alOpen: !st.alOpen })) },
@@ -764,13 +772,13 @@ class Component extends DCLogic {
           return { label: r.label + ' · en ' + o.id, ws: 'nowrap', sub: r.sub || '', dir: r.dir || '—', estado: k ? k.estado : 'En ' + o.id, estadoFull: k ? SCE.texto(k) + ' · ' + tip : tip, checked: false, cbLabel: tip, border: '1px solid var(--border-subtle)', bg: 'var(--surface-subtle)', ariaDis: 'true', tip, cur: 'not-allowed', oc: o.id, noInsp: '', hasNoInsp: false, revisar: false, toggle: () => {} }; })),
       hasProposals: proposals.length > 0 && !ro, canEdit: !ro, readOnly: ro, propTitle: veh ? 'Propuesta por dirección' : 'Propuesta del sistema',
       proposals: proposals.map(g => ({ title: g.title, dir: g.dir, count: g.list.length === 1 ? (veh ? '1 vehículo' : '1 ramo') : g.list.length + (veh ? ' vehículos' : ' ramos'), items: g.list.map(r => r.label), mod: this.recFor(g.list.map(r => r.id)), create: () => openNew(g.list.map(r => r.id)) })),
-      showVisits: !inline || vis.length > 0, noVisits: !vis.length, visitCount: String(vis.filter(v => !['Cancelada', 'Cerrada sin inspección'].includes(v.estado)).length),
+      showVisits: !inline || vis.length > 0, noVisits: !vis.length, visitCount: String(vis.filter(v => !['Cancelada', 'Reagendada', 'Cerrada sin inspección'].includes(v.estado)).length),
       visits: vis.map(v => {
         const live = v.estado === 'Agendada' || v.estado === 'En curso', pendRamos = v.riesgos.filter(id => !['Pendiente calificación', 'Pendiente calificación de suscripción', 'Inspeccionado: aprobado', 'Inspeccionado: no aprobado'].includes(this.rById(id).estado));
         const ofe = v.oferta && v.estado === 'Oferta enviada' ? v.oferta : null; // G-2c2 · DEC-237: visita ofertada a inspectores
         const when = ofe ? 'Del ' + this.fmtD(ofe.desde) + ' al ' + this.fmtD(ofe.hasta) + (ofe.vence ? ' · la oferta vence el ' + this.fmtDT(ofe.vence) : '') : v.cuandoTxt ? v.cuandoTxt /* C2-21: con la conexión, cita, llegada y fin de la base */ : v.mod === 'Presencial' ? this.fmtD(v.fecha) + ' · ' + v.hIni + '–' + v.hFin : v.mod === 'Virtual guiada' ? this.fmtD(v.fecha) + ' · ' + v.hIni : v.mod === 'Documental' ? 'Revisión hasta ' + this.fmtD(v.fecha) : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? this.fmtDT(v.envio) : v.vence ? 'Vence el ' + this.fmtDT(v.vence) : 'Enlace válido por ' + v.validez) : 'No aplica';
         const place = v.mod === 'Presencial' ? v.dir + (v.inter ? ' y ' + v.inter : '') : this.enlaceVer(v) || (v.mod === 'Autoinspección' ? 'WhatsApp ' + v.cCel : '—');
-        const Eo = window.SiriusEnlace, tkE = Eo && v.mod === 'Autoinspección' ? Eo.tokenDe(v.enlace) : '', stE = tkE ? Eo.estado(tkE) : null, conTarjeta = !!stE && v.estado !== 'Cancelada'; // etapa 13: estado del enlace calculado por el motor
+        const Eo = window.SiriusEnlace, tkE = Eo && v.mod === 'Autoinspección' ? Eo.tokenDe(v.enlace) : '', stE = tkE ? Eo.estado(tkE) : null, conTarjeta = !!stE && v.estado !== 'Cancelada' && v.estado !== 'Reagendada'; // etapa 13: estado del enlace calculado por el motor
         const cxB = v.cxBase || null; // etapa P-6e-3 · DEC-209: visita de la base (visitasBase) con su enlace; el estado ya viene resuelto
         const est = cxB ? v.estado : v.mod === 'Autoinspección' && v.estado === 'Agendada' ? ((v.vence && v.vence < this.nowIso) || (stE && stE.id === 'vencido') ? 'Enlace caducado' : 'Enlace enviado') : v.estado;
         const onA = P.onAction || (() => {});
@@ -780,6 +788,9 @@ class Component extends DCLogic {
           { label: 'Reenviar enlace', variant: 'secondary', onClick: () => onA('cxReenviar', { id: v.id, tipo: cxB.tipo }) },
           { label: 'Generar nuevo enlace', variant: 'secondary', onClick: () => this.setState({ regen: { id: v.id, motivo: '', touched: false, cx: cxB.tipo } }) },
           { label: 'Copiar enlace', variant: 'secondary', onClick: () => onA('cxCopiar', { id: v.id, url: cxB.url }), why: cxB.url ? '' : 'La base no envió la dirección del enlace' },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : est === 'En curso por el cliente' ? [ /* G-4: como en la maqueta; «Copiar enlace» va en la fila Enlace */
+          { label: 'Reenviar enlace', variant: 'secondary', onClick: () => onA('cxReenviar', { id: v.id, tipo: cxB.tipo }) },
           { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
         ] : est === 'Por agendar' ? [
           { label: 'Enviar enlace de autoagendamiento', variant: 'secondary', onClick: () => onA('cxEnviar', { id: v.id, tipo: 'Autoagendamiento', modalidad: v.mod === 'Autoinspección' ? 'Presencial' : v.mod }) },
@@ -801,6 +812,9 @@ class Component extends DCLogic {
         ] : est === 'Enlace caducado' ? [
           { label: 'Generar nuevo enlace', variant: 'primary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }) },
           { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
+        ] : est === 'En curso por el cliente' ? [ /* G-4: autoinspección en curso por el cliente (sin conexión) */
+          { label: 'Reenviar enlace', variant: 'secondary', onClick: () => this.trasEnvio(onA('reenviar', { id: v.id }), (x) => showWa(this.conCx(v, x), 'Enlace de ' + v.id + ' reenviado')) },
+          { label: 'Cancelar visita', variant: 'ghost', onClick: () => this.setState({ cancel: { id: v.id, motivo: '', touched: false } }) },
         ] : est === 'En curso' ? [
           v.mod === 'Autoinspección' && P.onAction && this.conPortal(v) && { label: 'Abrir el portal del cliente', variant: 'secondary', onClick: () => onA('portal', { id: v.id, enlace: v.enlace }) },
           v.inspector && { label: 'Cambiar inspector', variant: 'secondary', onClick: () => this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'inspector', visitId: v.id, inspector: '' })), touched: {}, insQ: '', insOpen: true }) },
@@ -808,16 +822,19 @@ class Component extends DCLogic {
           { label: 'Ver informe', variant: 'secondary', onClick: () => onA('verInforme', { id: v.id }) },
         ] : [];
         const acts2 = acts.filter(Boolean).filter(a => !ro || a.label === 'Ver informe').filter(a => cxB || !conTarjeta || !['Generar uno nuevo', 'Reenviar enlace', 'Generar nuevo enlace'].includes(a.label)).map(a => Object.assign({ aria: a.label + ' ' + v.id }, a, a.why ? { onClick: () => {} } : { why: undefined }));
-        return { id: v.id, mod: v.mod, porCliente: !!v.porCliente && v.estado !== 'Cancelada', porClienteTxt: 'Agendada por el cliente · ' + (v.origenCita === 'red' ? 'red' : 'agenda fija'), estado: cxB && cxB.vence && ['Enlace enviado', 'Autoinspección enviada'].includes(est) ? est + ' · vence ' + cxB.vence : est, tone: tone[est] || 'neutral', aria: 'Visita ' + v.id + ' · ' + v.mod + ' · ' + est + (cxB && cxB.vence ? ' · vence ' + cxB.vence : ''), bg: v.estado === 'Cancelada' || v.estado === 'Cerrada sin inspección' ? 'var(--surface-subtle)' : '#FFFFFF',
+        const vm = { id: v.id, mod: v.mod, porCliente: !!v.porCliente && v.estado !== 'Cancelada' && v.estado !== 'Reagendada', porClienteTxt: 'Agendada por el cliente · ' + (v.origenCita === 'red' ? 'red' : 'agenda fija'), estado: cxB && cxB.vence && ['Enlace enviado', 'Autoinspección enviada'].includes(est) ? est + ' · vence ' + cxB.vence : est, tone: tone[est] || 'neutral', aria: 'Visita ' + v.id + ' · ' + v.mod + ' · ' + est + (cxB && cxB.vence ? ' · vence ' + cxB.vence : ''), bg: v.estado === 'Cancelada' || v.estado === 'Cerrada sin inspección' ? 'var(--surface-subtle)' : '#FFFFFF',
           fields: this.camposVisita(v, [{ label: ofe ? 'Oferta a inspectores' + (ofe.porCliente ? ' (pedida por el cliente)' : '') : 'Inspector', value: ofe ? ofe.inspectores.length + ': ' + ofe.inspectores.join(', ') : (v.inspector || 'Sin inspector'), ws: 'normal', span: 'auto' }, { label: ofe ? 'Rango de la oferta' : v.cuandoLbl ? v.cuandoLbl : v.mod === 'Documental' ? 'Plazo' : v.mod === 'Autoinspección' ? (v.estado === 'Realizada' && v.envio ? 'Enviada por el cliente' : 'Vencimiento') : 'Fecha y hora', value: when, ws: 'normal', span: 'auto' }, { label: v.lugarLbl ? v.lugarLbl : v.mod === 'Presencial' ? 'Dirección' : v.mod === 'Autoinspección' ? 'Enlace enviado' : 'Enlace', value: v.lugarLbl ? v.lugarTxt : place, ws: 'normal', span: '1 / -1' }].concat(cxB && cxB.enviado ? [{ label: 'Último envío', value: cxB.enviado, ws: 'normal', span: 'auto' }] : []).concat(v.porCliente && !v.cx ? [{ label: 'Agendada por el cliente', value: 'Desde el portal' + (v.agendadaEn ? ' el ' + v.agendadaEn.slice(8, 10) + '/' + v.agendadaEn.slice(5, 7) + '/' + v.agendadaEn.slice(2, 4) + ' · ' + v.agendadaEn.slice(11, 16) : '') + (v.cName ? ' · recibe ' + v.cName + (v.cCel ? ' (' + v.cCel + ')' : '') : '') + (v.ref ? ' · ' + v.ref : '') + (v.origenCita === 'red' ? ' · la aceptó ' + v.inspector + ' (' + (v.organizacion || '—') + (v.credencial ? ' · credencial ' + v.credencial : '') + ') en la red de inspectores' : ' · inspector de agenda fija con el horario libre' + (v.organizacion ? ' (' + v.organizacion + ')' : '')), ws: 'normal', span: '1 / -1' }] : []).concat(v.obs && String(v.obs).trim() ? [{ label: v.mod === 'Autoinspección' ? 'Indicaciones para el contacto' : 'Observaciones para el inspector', value: String(v.obs).trim(), ws: 'normal', span: '1 / -1' }] : []) /* G-2c3: se ven en la tarjeta */.concat((v.anteriores || []).length ? [{ label: 'Enlaces anteriores', value: v.anteriores.map(x => x.enlace + ' · ' + x.estado + (x.at ? ' el ' + x.at : '')).join(' | '), ws: 'normal', span: '1 / -1' }] : [])), // G-2c · DEC-222: «Ciudad y zona» (en ámbar si está por confirmar)
-          fuera: !!(v.fueraCobertura && v.fueraCobertura.motivo) && v.estado !== 'Cancelada', fueraTit: v.fueraCobertura && v.fueraCobertura.motivo ? 'Asignada fuera de cobertura' + (v.fueraCobertura.inspector ? ' a ' + v.fueraCobertura.inspector : '') + ' · Motivo: ' + v.fueraCobertura.motivo : '',
+          fuera: !!(v.fueraCobertura && v.fueraCobertura.motivo) && v.estado !== 'Cancelada' && v.estado !== 'Reagendada', fueraTit: v.fueraCobertura && v.fueraCobertura.motivo ? 'Asignada fuera de cobertura' + (v.fueraCobertura.inspector ? ' a ' + v.fueraCobertura.inspector : '') + ' · Motivo: ' + v.fueraCobertura.motivo : '',
           riesgosLabel: v.riesgos.length === 1 ? 'Riesgo incluido' : v.riesgos.length + ' riesgos incluidos', riesgos: v.riesgos.map(id => this.rById(id).label),
           hasNote: !!(v.estado === 'Cancelada' && v.motivoCancel) || v.estado === 'Cerrada sin inspección' || v.mod === 'No requiere inspección', note: v.estado === 'Cerrada sin inspección' ? (window.SiriusCoordEstado ? window.SiriusCoordEstado.cierreTexto(v) : 'Cerrada sin inspección') + ' · sus vehículos volvieron a «Por coordinar»' : v.estado === 'Cancelada' ? 'Cancelada · ' + (v.motivoCancel || '') : 'Motivo: ' + (v.motivo || '') + (v.nrObs ? ' · ' + v.nrObs : '') + (v.by ? ' · ' + v.by + ' · ' + v.at : ''),
           hasActions: acts2.length > 0, actions: acts2,
           hasEnlace: conTarjeta, raw: v, ro, rev: P.enlaceRev || 0, onAccion: onA,
           onReenviar: () => this.trasEnvio(onA('reenviar', { id: v.id }), (x) => showWa(this.conCx(v, x), 'Enlace de ' + v.id + ' reenviado')),
           onNuevo: () => { const sn = Eo ? Eo.estado(tkE) : null; if (sn && sn.terminal) this.setState({ pnl: this.newForm(v.riesgos, Object.assign({}, v, { mode: 'enlace', visitId: v.id, validez: this.vigDef() })), touched: {} }); else this.setState({ regen: { id: v.id, motivo: '', touched: false } }); } };
+        cartasL.push(this.cartaDe(v, vm, { est, ofe, when, acts: acts2, onA, cxB, tone: tone[est] || 'neutral' })); /* G-4: la carta usa el mismo estado y las mismas acciones */ return vm;
       }),
+      cartas: { visitas: cartasL, ro, riesgos: rs.map(r => { const sub = veh && r.nowrap && r.sub ? String(r.sub).replace(/,\s*/g, ' ') : ''; return { id: r.id, label: r.label + (sub ? ' · ' + sub : ''), corto: r.label, chip: r.label + (sub ? ' · ' + String(sub).replace(/\s+\d{4}$/, '') : '') }; }),
+        coordinar: ro ? null : { fn: () => this.abrirContacto(pend, false), why: '' }, coordinarRiesgo: ro ? null : (id) => openNew([id]), inicial: P.cartasInicial || {} },
       hasForm: !!p && !fasesOn, drawer, fasesOn, fasesKey: 'fases-' + (P.formKey || '') + '-' + (p ? p.mode + (p.visitId || '') + '-c' + (p.chain || 0) : ''), fasesCtx: fasesOn ? this.fasesCtx(p, { errs, submit, intVals, pend, nextId, single, veh, vis, actual, src }) : null,
       openInt: () => this.abrirContacto(pend, false), openCc: () => this.abrirContacto(pend, true), // G-2c3 · DEC-237: sin formulario aparte
       ctaShow: false /* P-6g-2d: la tarjeta «Coordinar inspección» salió; la única entrada es la acción principal de la cabecera */, ctaTxt: 'Agenda la visita por fases: contacto, lugar e inspector y horario.', ctaOpen: () => openNew(pend.map(r => r.id)),

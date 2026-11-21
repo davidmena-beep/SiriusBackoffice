@@ -28,7 +28,7 @@
 (function () {
   const COORD = ['Registrado', 'En coordinación', 'Reaperturado', 'Enlace caducado', 'Agendado'];
   const ETIQ = ['Por coordinar', 'Oferta enviada', 'Enlace enviado', 'Agendado', 'En curso'];
-  const FIN = /cancel|termin|realiz|finaliz|complet|cerrad/i; // R-0 · DEC-245: «Cerrada sin inspección» tampoco es una visita abierta
+  const FIN = /cancel|termin|realiz|finaliz|complet|cerrad|reagend/i; // R-0 · DEC-245: «Cerrada sin inspección» tampoco es una visita abierta · G-4: «Reagendada» (la reemplazó otra visita) tampoco
   const num = (v) => (v && v.n != null ? Number(v.n) : parseInt(String((v && v.id) || '').replace(/\D/g, ''), 10) || 0);
   const txt = (v) => { if (v == null) return ''; if (typeof v === 'string') return v.trim(); if (typeof v === 'object' && typeof v.nombre === 'string') return v.nombre.trim(); return ''; };
   const dos = (n) => (n < 10 ? '0' : '') + n;
@@ -107,12 +107,12 @@
   // Visita asignada de un riesgo: «V6 · 17/10 10:00» (abierta con cita), «V6 · realizada 17/10», «V3» (abierta sin cita, p. ej. enlace enviado) o «Sin visita» (sin visita, o con la visita cancelada).
   function visitaTexto(k) {
     const v = k && k.visita;
-    if (!v || !v.n || /cancel/i.test(String(v.estado || ''))) return 'Sin visita';
+    if (!v || !v.n || /cancel|reagend/i.test(String(v.estado || ''))) return 'Sin visita';
     if (/realiz|finaliz|complet|termin/i.test(String(v.estado || ''))) return 'V' + v.n + ' · realizada' + (v.inicio ? ' ' + fecha(v.inicio) : '');
     return 'V' + v.n + (v.inicio ? ' · ' + fecha(v.inicio) + (hora(v.inicio) ? ' ' + hora(v.inicio) : '') : '');
   }
   // Inspector de un riesgo: el de su visita (no cancelada), o «Por asignar».
-  function inspectorDe(k) { const v = k && k.visita; return v && v.inspector && !/cancel/i.test(String(v.estado || '')) ? v.inspector : 'Por asignar'; }
+  function inspectorDe(k) { const v = k && k.visita; return v && v.inspector && !/cancel|reagend/i.test(String(v.estado || '')) ? v.inspector : 'Por asignar'; }
   // R-0 · DEC-245: textos de los datos que llegan de las apps.
   const fh = (iso) => (iso && String(iso).length >= 16 ? fecha(iso) + ' ' + hora(iso) : fecha(iso));
   // «Moto · plantilla Motocicletas · confirmado en la app» y, si cambió, «antes: Sedán». Sin tipo confirmado: null.

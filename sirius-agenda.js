@@ -36,7 +36,7 @@
     if (e === 'Por confirmar' && v.fecha) { var E = window.SIRIUS_EJEMPLO, now = E && E.ahora ? E.ahora() : null, lim = A.parse(A.sumaDias(v.fecha, -1) + 'T' + ((((window.SIRIUS_APP_INSPECTOR || {}).confirmacionVisita) || {}).horaSinRespuesta || '18:00')); /* etapa 15-2: hora de SIRIUS_APP_INSPECTOR.confirmacionVisita */ if (now && now >= lim) e = 'Sin respuesta'; }
     return e; };
   A.dur = function (v) { var i = A.min(v.hIni), f = A.min(v.hFin); return i != null && f != null && f > i ? f - i : 60; };
-  A.ocupa = function (v) { return !!v.inspector && v.mod !== 'Autoinspección' && v.estado !== 'Cancelada'; };
+  A.ocupa = function (v) { return !!v.inspector && v.mod !== 'Autoinspección' && v.estado !== 'Cancelada' && v.estado !== 'Reagendada'; }; // G-4: una visita reagendada ya no ocupa al inspector
   // Valida mover la visita v a { inspector, fecha, hIni }. visitas: todas las visitas vigentes. Devuelve { ok, motivos: [{ tipo, texto }] }.
   A.validar = function (v, dst, visitas, caso) {
     var out = [], n = dst.inspector, d = A.disp(n), ini = A.min(dst.hIni), fin = ini + A.dur(v), suc = v.zona || (caso && caso.sucursal) || v.sucursal || ''; // etapa 14: la visita autoagendada lleva la zona del riesgo
@@ -72,7 +72,7 @@
     if (fer) out.push({ tipo: 'jornada', texto: 'El ' + A.diaNombre(dst.fecha) + ' ' + A.corta(dst.fecha) + ' es feriado (' + fer + ').' });
     else if (d.dias.indexOf(A.parse(dst.fecha).getDay()) < 0) out.push({ tipo: 'jornada', texto: n + ' no trabaja los ' + A.diaNombre(dst.fecha) + ' (' + jt + ').' });
     else if (ini < A.min(d.jornada[0]) || fin > A.min(d.jornada[1])) out.push({ tipo: 'jornada', texto: 'De ' + A.hhmm(ini) + ' a ' + A.hhmm(fin) + ' queda fuera de la jornada de ' + n + ' (' + jt + ').' });
-    (visitas || []).filter(function (x) { return x.key !== v.key && x.inspector === n && x.fecha === dst.fecha && x.hIni && !/cancel/i.test(String(x.estado || '')) && x.mod !== 'Autoinspección'; }).forEach(function (x) { var a = A.min(x.hIni), b = a + A.dur(x); if (ini < b && fin > a) out.push({ tipo: 'choque', texto: 'Choca con la visita V' + (x.n || '') + ' del caso ' + x.caso + ' (' + A.hhmm(a) + '–' + A.hhmm(b) + ').' }); });
+    (visitas || []).filter(function (x) { return x.key !== v.key && x.inspector === n && x.fecha === dst.fecha && x.hIni && !/cancel|reagend/i.test(String(x.estado || '')) && x.mod !== 'Autoinspección'; }).forEach(function (x) { var a = A.min(x.hIni), b = a + A.dur(x); if (ini < b && fin > a) out.push({ tipo: 'choque', texto: 'Choca con la visita V' + (x.n || '') + ' del caso ' + x.caso + ' (' + A.hhmm(a) + '–' + A.hhmm(b) + ').' }); });
     if (ctx.ahora && dst.fecha + 'T' + A.hhmm(ini) < String(ctx.ahora).slice(0, 16)) out.push({ tipo: 'pasada', texto: 'Las ' + A.hhmm(ini) + ' del ' + A.diaNombre(dst.fecha) + ' ' + A.corta(dst.fecha) + ' ya pasaron (ahora son las ' + String(ctx.ahora).slice(11, 16) + ' en Ecuador).' });
     var COB = window.SiriusCobertura, lug = v.lugar && typeof v.lugar === 'object' ? v.lugar : null;
     if (COB && lug && lug.ciudad) { var cb = COB.cubre(d, { sucursal: v.sucursal || '', ciudad: lug.ciudad, zonaId: lug.zona ? lug.zona.id : '' }); if (!cb.nivel) avisos.push({ tipo: 'zona', texto: n + ' no cubre ' + (v.lugarTxt || 'este lugar') + ' (su cobertura: ' + COB.corto(d) + '). Se puede mover con el motivo: la visita queda con la alerta «Fuera de cobertura».' }); }
