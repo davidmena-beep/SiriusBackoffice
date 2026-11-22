@@ -128,28 +128,34 @@
   // ---------- Portada (franja, logos, título, sello y tarjetas) ----------
   LP.portada = function (P) {
     const d = this.doc, M = this.M, R = PAG.W - M;
-    d.setFillColor(K.band); d.rect(0, 0, PAG.W, 89.5, 'F'); d.setFillColor('#FFFFFF'); d.circle(177.5, 25, 49, 'F');
-    // Logos: izquierda (por defecto SIRIUS con «by aseguradora del sur»), derecha (la compañía, su nombre, el proceso, ciudad y fecha) y la agencia debajo.
-    const izq = P.logoIzq, der = P.logoDer, ag = P.logoAg;
-    if (izq && izq.data) { const h = 13.5, w = Math.min(46, h * izq.w / izq.h); d.addImage(izq.data, 'PNG', M, 11, w, h, undefined, 'FAST'); }
-    if (P.lema) { this.t(P.lema, M + 15, 27.8, { s: 7.6, c: K.muted }); this.reg(P.lema, true); }
-    let yr = 12.5; if (der && der.data) { const h = 9.2, w = Math.min(48, h * der.w / der.h); d.addImage(der.data, 'PNG', R - w, yr, w, h, undefined, 'FAST'); yr += h; }
-    (P.derLineas || []).forEach((t, i) => { this.t(t, R, yr + 5.3 + i * 4.3 - (i ? 0.9 : 0), { s: i ? 7.8 : 9.6, b: !i, c: i ? K.muted : this.cp, a: 'right' }); this.reg(t, true); });
-    yr += 5.3 + Math.max(0, (P.derLineas || []).length - 1) * 4.3 + 1.5;
-    if (ag && ag.data) { const h = 5.6, w = Math.min(30, h * ag.w / ag.h); d.addImage(ag.data, 'PNG', R - w, yr, w, h, undefined, 'FAST'); }
-    else if (P.agTxt) { this.t(P.agTxt, R, yr + 3, { s: 7.4, c: K.muted, a: 'right' }); this.reg(P.agTxt, true); }
+    // Encabezado compacto (P-1c4 · DEC-272): la franja termina a 59 mm (un quinto de la hoja: 59,4 mm), con 5,5 mm de margen arriba y 2,5 mm abajo, en dos filas.
+    // Fila 1, logos (de 5,5 a unos 27 mm): a la izquierda el logo a 17 mm de alto (hasta 40 mm de ancho) y debajo «by aseguradora del sur» (8 pt), alineado con el texto del
+    // logo; a la derecha el logo a 11 mm de alto (hasta 40 mm), alineado a x = 196 mm, y debajo el nombre (10 pt negrita) y una sola línea de 8 pt («Proceso … · Ciudad, fecha»).
+    // La agencia (opcional, P-1c2b) va a la izquierda del logo de la derecha, en la misma fila, a 9 mm de alto y con la línea fina (sin logo: su nombre en 9 pt).
+    // Fila 2, identificación (de unos 29 a 56 mm): título (9 pt), placa (27 pt negrita) con «Caso N · vehículo i de n» (12,5 pt), vehículo (8,5 pt) y el sello de 27 mm
+    // (anillo de 1,1 mm) a la derecha. Cada logo se ajusta a su zona sin deformarse.
+    const FR = 59, Y0 = 5.5;
+    d.setFillColor(K.band); d.rect(0, 0, PAG.W, FR, 'F'); d.setFillColor('#FFFFFF'); d.circle(192, 0, 48, 'F'); /* círculo decorativo de unos 96 mm, en la esquina superior derecha */
+    const izq = P.logoIzq, der = P.logoDer, ag = P.logoAg, ajusta = (im, mw, mh) => { const k = Math.min(mw / im.w, mh / im.h); return { w: im.w * k, h: im.h * k }; }; this.rects = { franja: FR };
+    if (izq && izq.data) { const z = ajusta(izq, 40, 17); d.addImage(izq.data, 'PNG', M, Y0, z.w, z.h, undefined, 'FAST'); this.rects.izq = { x: M, y: Y0, w: z.w, h: z.h };
+      if (P.lema) { const xr = Math.max(M + z.w * (P.lemaFin || 1), M + this.w(P.lema, 8)), yb = Y0 + z.h + 3.7; /* nunca antes del margen */ this.t(P.lema, xr, yb, { s: 8, c: K.muted, a: 'right' }); this.rects.lema = { x: xr - this.w(P.lema, 8), x2: xr, y: yb - 2.8, y2: yb + 0.7 }; this.reg(P.lema, true); } }
+    let xDer = R; if (der && der.data) { const z = ajusta(der, 40, 11); d.addImage(der.data, 'PNG', R - z.w, Y0 + (11 - z.h) / 2, z.w, z.h, undefined, 'FAST'); this.rects.der = { x: R - z.w, y: Y0 + (11 - z.h) / 2, w: z.w, h: z.h }; xDer = R - z.w; }
+    if ((ag && ag.data) || P.agTxt) { const sx = xDer - 3; d.setDrawColor(K.line); d.setLineWidth(0.25); d.line(sx, Y0 + 1, sx, Y0 + 10); this.rects.sep = sx;
+      if (ag && ag.data) { const z = ajusta(ag, Math.max(8, Math.min(40, sx - 3 - 60)), 9); /* no entra en la zona izquierda (termina a unos 54 mm) */ d.addImage(ag.data, 'PNG', sx - 3 - z.w, Y0 + (11 - z.h) / 2, z.w, z.h, undefined, 'FAST'); this.rects.ag = { x: sx - 3 - z.w, y: Y0 + (11 - z.h) / 2, w: z.w, h: z.h }; }
+      else { this.t(P.agTxt, sx - 3, Y0 + 6.7, { s: 9, c: K.muted, a: 'right' }); this.rects.ag = { x: sx - 3 - this.w(P.agTxt, 9), y: Y0 + 3.5, w: this.w(P.agTxt, 9), h: 4 }; this.reg(P.agTxt, true); } }
+    this.rects.lineas = []; (P.derLineas || []).forEach((t, i) => { const yb = Y0 + 11 + (i ? 9.4 : 4.7), sz = i ? 8 : 10; this.t(t, R, yb, { s: sz, b: !i, c: i ? K.muted : this.cp, a: 'right' }); this.rects.lineas.push({ x: R - this.w(t, sz, !i), x2: R, y2: yb + 0.9 }); this.reg(t, true); });
     // Título, placa, caso y vehículo.
-    this.t(P.titulo, M, 53.5, { s: 10.3, c: this.ca, cs: 0.25 }); this.reg(P.titulo, true);
-    this.t(P.placa, M, 67.5, { s: 30, b: true, c: this.cp }); const wp = this.w(P.placa, 30, true); this.reg(P.placa, true);
-    this.t(P.casoTxt, M + wp + 3, 67.5, { s: 14.5, c: this.ca }); this.reg(P.casoTxt, true);
-    const vl = this.lineasTxt(P.vehLinea, 128, 9); this.t(vl[0] || '', M, 74.5, { s: 9, c: K.muted }); this.reg(P.vehLinea, true);
-    // Sello circular: estado del vehículo (DEC-271) y su veredicto.
-    const S = P.sello, cx = 174, cy = 63.5, col = S.color; d.setDrawColor(col); d.setLineWidth(0.3); d.circle(cx, cy, 19.2, 'S'); d.setLineWidth(1.6); d.setFillColor('#FFFFFF'); d.circle(cx, cy, 17, 'FD');
-    this.t(S.top, cx, cy - 5.8, { s: 5.8, c: col, a: 'center', cs: 0.15 }); this.reg(S.top, true);
-    let se = 9.6; while (se > 6.5 && this.w(S.estado, se, true) > 29) se -= 0.3; this.t(S.estado, cx, cy + (S.ver ? 0.6 : 1.6), { s: se, b: true, c: col, a: 'center' }); this.reg(S.estado, true);
-    if (S.ver) { let sv = 8.2; while (sv > 6 && this.w(S.ver, sv, true) > 27) sv -= 0.3; this.t(S.ver, cx, cy + 5.6, { s: sv, b: true, c: col, a: 'center' }); this.reg(S.ver, true); }
-    // Fila de 4 tarjetas (la última, oscura, con el resultado).
-    const y0 = 95.4, gap = 3.8, cw = (this.CW - 3 * gap) / 4, ch = 29;
+    this.t(P.titulo, M, 34.3, { s: 9, c: this.ca, cs: 0.25 }); this.reg(P.titulo, true);
+    this.t(P.placa, M, 45.7, { s: 27, b: true, c: this.cp }); const wp = this.w(P.placa, 27, true); this.reg(P.placa, true);
+    this.t(P.casoTxt, M + wp + 3, 45.7, { s: 12.5, c: this.ca }); this.reg(P.casoTxt, true); this.rects.caso = { x: M + wp + 3, x2: M + wp + 3 + this.w(P.casoTxt, 12.5) };
+    const vl = this.lineasTxt(P.vehLinea, 128, 8.5); this.t(vl[0] || '', M, 51.3, { s: 8.5, c: K.muted }); this.reg(P.vehLinea, true);
+    // Sello circular de 27 mm (anillo de 1,1 mm): estado del vehículo (DEC-271) y su veredicto; el texto cabe dentro del anillo.
+    const S = P.sello, cx = 179.5, cy = 43, col = S.color; d.setDrawColor(col); d.setLineWidth(0.25); d.circle(cx, cy, 13.5, 'S'); d.setLineWidth(1.1); d.setFillColor('#FFFFFF'); d.circle(cx, cy, 12.3, 'FD'); this.rects.sello = { cx, cy, r: 13.5, ri: 12.3 - 0.55 };
+    this.t(S.top, cx, cy - 5.4, { s: 5.5, c: col, a: 'center', cs: 0.12 }); this.reg(S.top, true);
+    let se = 8; while (se > 5.5 && this.w(S.estado, se, true) > 21.6) se -= 0.1; this.t(S.estado, cx, cy + (S.ver ? 0 : 1.2), { s: se, b: true, c: col, a: 'center' }); this.reg(S.estado, true); this.rects.selloTxt = [{ t: S.estado, s: se, w: this.w(S.estado, se, true), y: cy + (S.ver ? 0 : 1.2) }];
+    if (S.ver) { let sv = 7; while (sv > 5.2 && this.w(S.ver, sv, true) > 20.4) sv -= 0.1; this.t(S.ver, cx, cy + 4.4, { s: sv, b: true, c: col, a: 'center' }); this.reg(S.ver, true); this.rects.selloTxt.push({ t: S.ver, s: sv, w: this.w(S.ver, sv, true), y: cy + 4.4 }); }
+    // Fila de 4 tarjetas (la última, oscura, con el resultado): empiezan 5 mm debajo de la franja.
+    const y0 = FR + 5, gap = 3.8, cw = (this.CW - 3 * gap) / 4, ch = 29; this.rects.tarjetasY = y0;
     (P.tarjetas || []).slice(0, 4).forEach((c, i) => { const x = M + i * (cw + gap), osc = !!c.oscura;
       d.setFillColor(osc ? this.cp : '#FFFFFF'); d.setDrawColor(osc ? this.cp : K.line); d.setLineWidth(0.3); d.roundedRect(x, y0, cw, ch, 2.4, 2.4, osc ? 'F' : 'FD');
       this.t(c.l.toUpperCase(), x + 4, y0 + 5.8, { s: 6.2, c: osc ? '#C9D6E6' : K.muted, cs: 0.3 }); this.reg(c.l.toUpperCase(), true);
@@ -165,8 +171,7 @@
     let sp = 19.5; while (sp > 11 && this.w(I.placa, sp, true) + I.placa.length * 0.9 > w1 - 12) sp -= 0.5; this.t(I.placa, M + w1 / 2, y0 + 17.4, { s: sp, b: true, c: this.cp, a: 'center', cs: 0.9 }); this.reg(I.placa);
     (I.filas || []).slice(0, 4).forEach((f, k) => { const yy = y0 + 27 + k * 4.6; this.t(f.l, M + 4.2, yy, { s: 7.4, c: K.muted }); this.t(f.v, M + 14.5, yy, { s: 7.6, c: K.ink, fam: 'courier', b: false }); this.reg(f.l); this.reg(f.v); });
     const fw = (PAG.W - M - (M + w1 + 4) - 3.2) / 2;
-    (I.fotos || []).slice(0, 2).forEach((f, k) => { const x = M + w1 + 4 + k * (fw + 3.2); this.foto(f, x, y0, fw, 35); this.t(f.F, x, y0 + 38.6, { s: 7, b: true, c: K.ink }); const wf = this.w(f.F, 7, true);
-      this.t(' · ' + f.nombre, x + wf, y0 + 38.6, { s: 7, c: K.muted }); this.t(f.at, x, y0 + 41.8, { s: 6, c: K.muted }); this.reg(f.F + ' · ' + f.nombre, true); this.reg(f.at, true); });
+    (I.fotos || []).slice(0, 2).forEach((f, k) => { const x = M + w1 + 4 + k * (fw + 3.2); this.foto(f, x, y0, fw, 35); if (f.F) { this.t(f.F, x, y0 + 38.6, { s: 7, b: true, c: K.ink }); this.t(' · ' + f.nombre, x + this.w(f.F, 7, true), y0 + 38.6, { s: 7, c: K.muted }); } else this.t(f.nombre, x, y0 + 38.6, { s: 7, c: K.muted }); this.t(f.at, x, y0 + 41.8, { s: 6, c: K.muted }); this.reg(f.F ? f.F + ' · ' + f.nombre : f.nombre, true); this.reg(f.at, true); });
     this.y = y0 + h + 5; };
   // Foto o su marcador: imagen recortada, marcador de la demostración o «Foto no disponible».
   LP.foto = function (f, x, y, w, h) { const d = this.doc, im = f.url ? this.img[f.url] : null;

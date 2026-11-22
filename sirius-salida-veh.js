@@ -34,6 +34,9 @@
   function contexto(rid, ov, caso, asegurado) {
     const v = vehiculo(rid); if (!v) return null;
     if (v.eq) return contextoEq(v, rid, ov, caso, asegurado);
+    return contextoDe(v, rid, ov, caso, asegurado); }
+  // El mismo armado para el vehículo de ejemplo y para el que se arma con la base (contextoCx): valores, grillas, derivados, resultado y etiqueta.
+  function contextoDe(v, rid, ov, caso, asegurado) {
     const T = tpl(v), inf = v.informe || {}, IC = inf.campos || {}, IG = inf.grillas || {}, C = IV()[rid] || {}, CC = C.campos || {}, CG = C.grillas || {};
     const val = {}, meta = {}, put = (k, x, m) => { if (vacio(val[k]) && !vacio(x)) { val[k] = x; if (m) meta[k] = m; } };
     // 1) Informe del vehículo (con sus ediciones), 2) base, 3) complementos.
@@ -71,6 +74,72 @@
     ctx.res = resultado(ctx); ctx.placa = placaDe(v); ctx.etiqueta = etiqueta(v); ctx.descripcion = descripcion(v);
     return ctx;
   }
+
+  // ---------- Vehículo desde la base (etapa P-1c2 · DEC-272) ----------
+  // Con la conexión, el contexto del PDF se arma solo con SIRIUS_CONEXION y la misma lectura de la pestaña Informe (SiriusCxInforme, C2-8):
+  // valores y grillas de informes[caso] del vehículo; visita (modalidad, inspector, inicio, lugar); resultado de riesgo_estado y de la última
+  // calificación final del vehículo; trazabilidad de eventos[caso]; fotos de evidencias[caso] del vehículo. Después sigue el camino de contexto().
+  const isoTxt = (t) => { const m = /^(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d:\d\d))?/.exec(String(t || '')); return m ? m[3] + '/' + m[2] + '/' + m[1].slice(2) + (m[4] ? ' · ' + m[4] : '') : String(t || ''); };
+  const nombreDe = (x) => x == null ? '' : typeof x === 'string' ? x.trim() : String(x.nombre || x.n || '').trim();
+  const INF_EQ = (e) => { const t = String(e || '').toLowerCase(); return t === 'completo' || t === 'enviado' ? 'Enviado' : t === 'devuelto' ? 'Devuelto' : t ? 'Por completar' : ''; };
+  // P-1c3 · DEC-272: vehículos de un caso de la base, igual con uno o con varios. casos[].riesgos[] (varios vehículos, con riesgo_estado completo) o, si no
+  // existe, casos[].riesgosBase[] (también con un solo vehículo: id «50047-V1», estado, riesgo_estado y datos). Devuelve [{ id, r, rb }] con r = el riesgo
+  // (con su id) y rb = su riesgo de la solicitud (riesgosBase), en el orden del caso.
+  const esVehBase = (x) => !!x && typeof x === 'object' && !/equipo|ubica/i.test(String(x.composicion || ''));
+  function riesgosCx(caso) { const X = window.SIRIUS_CONEXION; if (!X || X.activo !== true) return [];
+    const c = (X.casos || []).find(k => k && String(k.id) === String(caso)); if (!c) return [];
+    const rbs = Array.isArray(c.riesgosBase) ? c.riesgosBase.filter(x => x && typeof x === 'object') : [], RS = Array.isArray(c.riesgos) ? c.riesgos.filter(x => x && x.id != null) : [];
+    if (RS.length) return RS.map((r, k) => { const rb = rbs.find(x => x.id != null && String(x.id) === String(r.id)) || rbs[k] || (RS.length < 2 ? rbs.find(esVehBase) : null) || null; return { id: String(r.id), r, rb }; });
+    return rbs.filter(esVehBase).map((rb, k) => { const id = String(rb.id != null ? rb.id : c.id + '-V' + (k + 1)), D = rb.datos || {}; return { id, r: Object.assign({}, rb, { id, placa: rb.placa || D.placa || '', label: rb.label || D.placa || '' }), rb }; }); }
+  function contextoCx(caso, ref, ov0, asegurado) {
+    const X = window.SIRIUS_CONEXION, M = window.SiriusCxInforme; if (!X || X.activo !== true || !M) return null;
+    const c = (X.casos || []).find(k => k && String(k.id) === String(caso)); if (!c) return null;
+    const LV = riesgosCx(caso), RS = LV.map(x => x.r), k = LV.findIndex(x => x.id === String(ref)), r = k >= 0 ? LV[k].r : null; if (!r) return null;
+    const rb = LV[k].rb, rbD = (rb && rb.datos) || {};
+    const L = ((X.informes || {})[c.id] || []).filter(i => i && (RS.length < 2 || M.ridDe(i, RS) === String(ref))), inf0 = L[0] || null;
+    const R = M.respuestas(L, M.claves(), rb), V = M.valores(R, inf0), G = M.grillas(L);
+    // Visita del vehículo: la de riesgos[].visita o, si no, la última de visitasBase que lo incluye (no cancelada).
+    const VB = (Array.isArray(c.visitasBase) ? c.visitasBase : Array.isArray(c.visitas) ? c.visitas : []), rv0 = r.visita && typeof r.visita === 'object' ? r.visita : null;
+    const vis = (rv0 && VB.find(x => x && Number(x.n) === Number(rv0.n))) || VB.filter(x => x && !/cancel|reagend/i.test(String(x.estado || '')) && (RS.length < 2 || (x.riesgos || []).map(String).includes(String(ref)))).pop() || rv0 || {};
+    const insN = nombreDe(vis.inspector) || nombreDe(rv0 && rv0.inspector), agencia = String(vis.agencia || (vis.inspector && vis.inspector.agencia) || '').trim();
+    // Resultado: estado y veredicto de riesgo_estado (DEC-271); quién calificó y cuándo, de la última calificación final del vehículo (una derivación a suscripción no es resultado).
+    const re = r.riesgo_estado && typeof r.riesgo_estado === 'object' ? r.riesgo_estado : rb && rb.riesgo_estado && typeof rb.riesgo_estado === 'object' ? rb.riesgo_estado : { estado: r.estado || (rb && rb.estado) || '' }; /* P-1c3: de riesgos[] o de riesgosBase */
+    const cals = ((X.calificaciones || {})[c.id] || []).filter(q => q && (String(q.riesgo || '') === String(ref) || (RS.length < 2 && !q.riesgo)) && !/deriv/i.test(String(q.resultado || '') + ' ' + String(q.veredicto || ''))), cal = cals[cals.length - 1] || null;
+    const ver = /^(Asegurable|No asegurable)$/.test(String(re.veredicto || '')) ? re.veredicto : (FINAL.includes(re.estado) && cal && /^(Asegurable|No asegurable)$/.test(cal.veredicto) ? cal.veredicto : '');
+    const det = !cal && ver && inf0 && String(inf0.decision || '') === 'determinar' ? { by: nombreDe(inf0.completadoPor || inf0.responsable) || insN, at: isoTxt(inf0.completadoEn || inf0.enviadoEn) } : null;
+    const ov = Object.assign({ cx: true, estado: re.estado || r.estado || '' }, ver ? { aseg: ver } : {}, ver && cal ? { user: nombreDe(cal.por), fecha: isoTxt(cal.hora), cobertura: cal.cobertura || '', motivoRech: ver === 'No asegurable' ? (cal.observacion || '') : '' } : {}, det ? { det } : {}, ov0 || {});
+    // Valores del informe con su origen (las lecturas de fotos o documentos llevan su confianza).
+    const TT = tpl({ formulario: 'Vehículos livianos v1' }) || {}, tipoDe = {}; Object.keys(TT.campos || {}).forEach(sid => (TT.campos[sid] || []).forEach(fd => { tipoDe[fd.k] = fd.t; }));
+    const comoNum = (kk, x) => { if (!/^(Número|Moneda)$/.test(tipoDe[kk] || '')) return x; const t = String(x).trim(), n = Number(/,\d{1,2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '')); return t !== '' && isFinite(n) ? n : x; }; /* los números de la base llegan como texto */
+    const IC = {}; Object.keys(V).forEach(kk => { const x = R[kk] || {}, lec = /^(foto|ocr|lectura)/i.test(x.org || ''), val = comoNum(kk, V[kk]); IC[kk] = lec ? { v: val, src: 'ext', doc: x.doc || 'foto o documento', conf: x.conf } : { v: val }; });
+    const ciudad = String((vis.lugar && (vis.lugar.ciudad || vis.lugar.canton)) || c.ciudad || '').trim();
+    // P-1c3: lugar de la inspección = la dirección o la ciudad de la visita (las coordenadas de las fotos solo lo complementan).
+    const lugarVis = String((vis.lugar && (vis.lugar.direccion || '')) || vis.direccion || (vis.lugar && (vis.lugar.ciudad || vis.lugar.canton)) || vis.ciudad || '').trim();
+    const v = { cx: true, caso: c.id, riesgo: String(ref), label: r.label || '', placa: V.veh_placa || r.placa || rbD.placa || (r.nowrap ? r.label : '') || '', marca: rbD.marca || r.marca, modelo: rbD.modelo || r.modelo, anio: rbD.anio || r.anio,
+      km: rbD.km, uso: rbD.uso || r.uso, carroceria: rbD.carroceria || r.carroceria, clase: rbD.clase || r.clase, modalidad: vis.modalidad || '', inspector: insN, sucursal: c.sucursal || '', lugar: ciudad, lugarVisita: lugarVis,
+      extras: [] /* como Informe con la conexión: la grilla de extras sale de las respuestas (extManual); los de la solicitud no se repiten */, accesorios: rbD.valorExtras,
+      informe: { estado: INF_EQ(inf0 && inf0.estado), inspeccion: isoTxt(vis.llegada || vis.inicio || ''), carga: isoTxt(inf0 && inf0.enviadoEn), campos: IC, grillas: G } };
+    const ctx = contextoDe(v, String(ref), ov, c.id, asegurado || c.asegurado || '');
+    // Trazabilidad (eventos[caso]): solicitud, inicio de la inspección, envío del informe, calificación y emisión, con fecha y hora.
+    const ev = ((X.eventos || {})[c.id] || []).slice().reverse(), pl = ctx.placa || '', deVeh = (e) => RS.length < 2 || [pl, String(ref)].some(q => q && String(e.detalle || '').indexOf(q) >= 0);
+    const busca = (re0, veh) => { const e = ev.find(x => x && re0.test(String(x.accion || '')) && (!veh || deVeh(x))); return e ? isoTxt(e.hora) : ''; };
+    ctx.traza = { 'Solicitud': busca(/^Solicitud recibida/) || isoTxt(c.registrado), 'Enlace enviado': busca(/[Ee]nlace enviado/, true), 'Inspección iniciada': busca(/Visita iniciada|Inspecci[oó]n iniciada|Llegada/, true) || v.informe.inspeccion,
+      'Informe enviado': busca(/^Informe enviado/, true) || v.informe.carga, 'Informe completado': busca(/^Informe completado/, true), 'Calificación': ver ? (busca(/^Calificaci[oó]n/, true) || (cal ? isoTxt(cal.hora) : '')) : '', 'Envío a emisión': busca(/[Ee]nviado a emisi/, true), 'Emisión': busca(/Emitid|BPM de Emisi/, true) };
+    ctx.inspCx = insN ? { n: insN, tipo: agencia ? 'Agencia' : String(vis.tipoInspector || (vis.inspector && vis.inspector.tipo) || 'Interno'), ag: agencia } : null;
+    ctx.cx = true; ctx.cxInforme = !!inf0; ctx.cxEstado = re; ctx.cxIdx = k; ctx.cxTotal = RS.length;
+    // P-1c3: registro de la declaración del cliente (autoinspección): solo con fecha y hora en la base (informe, respuestas o eventos).
+    const dc = (inf0 && (inf0.declaracion || (inf0.respuestas || {}).declaracion)) || null, dcAt = dc && typeof dc === 'object' ? (dc.at || dc.hora || dc.aceptadaEn || dc.fecha) : '', dcEv = ev.find(x => x && /^Declaraci[oó]n (aceptada|del cliente)/i.test(String(x.accion || '')) && deVeh(x));
+    const dcT = isoTxt(dcAt && /\d\d:\d\d/.test(String(dcAt)) ? dcAt : dcEv ? dcEv.hora : ''); ctx.declCx = /\d\d:\d\d/.test(dcT) ? dcT : '';
+    // Fotos sin el Back-office (SiriusFotosCx da las de la pestaña Evidencias): evidencias del vehículo, no descartadas, en el orden de los pasos de la plantilla.
+    const T = tpl(v) || {}, PA = T.pasos || [], EVs = ((X.evidencias || {})[c.id] || []).filter(e => e && e.paso && !/^(excluida|descartada)$/i.test(String(e.estado || '')) && (RS.length < 2 || !e.riesgo || String(e.riesgo) === String(ref)) && e.tipoArchivo !== 'video' && e.tipo !== 'video');
+    const ordenP = (e) => { const i = PA.findIndex(p => p.id === e.paso); return i < 0 ? 999 : i; }; let n = 0;
+    ctx.fotosCx = EVs.slice().sort((a, b) => ordenP(a) - ordenP(b)).map(e => { const p = PA.find(z => z.id === e.paso) || { id: e.paso, name: e.pasoNombre || e.paso, group: 'Otras fotos' }, g = Array.isArray(e.gps) ? e.gps : e.gps && e.gps.lat != null ? [e.gps.lat, e.gps.lng != null ? e.gps.lng : e.gps.lon] : null; n++;
+      return { n, F: 'F-' + n, p, f: { cx: true, at: isoTxt(e.hora || e.fecha), gps: g ? { lat: Number(g[0]), lng: Number(g[1]), prec: e.precision != null ? e.precision : null } : null, url: e.url || '', disp: e.dispositivo || e.disp || '' } }; });
+    return ctx;
+  }
+  function disponibilidadCx(ctx) { const ok = !!(ctx && ctx.cxInforme);
+    return { informe: ok ? { ok: true } : { ok: false, corto: 'sin informe', motivo: 'Disponible cuando el vehículo tenga informe (antes del resultado sale en borrador).' },
+      resumen: !ok ? { ok: false, corto: 'sin informe', motivo: 'Disponible cuando el vehículo tenga informe y veredicto (Asegurable o No asegurable).' } : ctx.res.veredicto ? { ok: true } : { ok: false, corto: 'sin veredicto', motivo: 'Disponible cuando el vehículo tenga veredicto (Asegurable o No asegurable).' } }; }
 
   // Equipo y maquinaria: valores del informe (em_*), grillas, valores calculados con SiriusEquipos (con el VRN ajustado en calificación) y resultado por niveles.
   function contextoEq(v, rid, ov, caso, asegurado) {
@@ -206,5 +275,5 @@
     return { id, nombre: d.nombre, destino: d.destino, archivo: archivo(id, ctx), pie, blocks: out };
   }
 
-  window.SiriusSalidaVeh = { contexto, resultado, disponibilidad, documento, archivo, zipNombre, adjuntos, etiqueta, vehiculo, placaDe };
+  window.SiriusSalidaVeh = { contexto, contextoCx, riesgosCx, disponibilidadCx, resultado, disponibilidad, documento, archivo, zipNombre, adjuntos, etiqueta, vehiculo, placaDe };
 })();

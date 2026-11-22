@@ -4,6 +4,361 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-1c4
+
+Publiqué la versión 385 de SIRIUS (los archivos subieron en la 384; esta versión cierra el registro con el tiempo de la etapa). El encabezado del PDF de Vehículos ahora ocupa un quinto de la página (la franja termina en 58,9 mm, con el tope en 59 mm), en dos filas como el modelo, y el contenido tiene dos ajustes: la frase completa del conductor habitual y los números de foto en el orden en que se imprimen.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia |
+|---|---|
+| `sirius-pdf-vector.js` | Solo `LP.portada` (franja, logos, sello, título, placa y tarjetas); las demás piezas, la paginación y el pie no se tocan |
+| `sirius-documentos-pdf.js` | `documentoVector`: línea de la aseguradora («Proceso de Inspecciones · Nuevo Riesgo · <ciudad>, <fecha>» en una sola línea, también con la fecha del registro); frase del conductor habitual; nueva `fotosEnOrden` y `preparar(ctx, opts, secs)` (numeración F-n), llamada desde `documento()` y `documentoVector()` |
+| Sin cambio | `datos-documentos-pdf.js`, `sirius-salida-veh.js`, `datos-cx-pdfveh.js`, `SalidaVeh.dc.html`, `SIRIUS Back-office.dc.html`, `DocumentoPdf.dc.html`, `datos-escenas.js`, `sirius-conexion.js` (70 bytes). Ningún archivo vigilado cambió, por eso no subió ninguna versión de configuración (DEC-262) |
+
+**Qué cambió**
+
+1. **Encabezado compacto (franja de 59 mm como máximo).** Fila 1 (5,5 a 27 mm): a la izquierda el logo de SIRIUS de 17 mm de alto (hasta 40 mm de ancho) con «by aseguradora del sur» de 8 pt debajo; a la derecha, a 196 mm, el logo de la aseguradora de 11 mm de alto (hasta 40 mm), debajo «ASEGURADORA DEL SUR C.A.» de 10 pt en negrita y una sola línea de 8 pt «Proceso de Inspecciones · Nuevo Riesgo · <ciudad>, <fecha>». Con el logo de la agencia activado, va a la izquierda del logo de la aseguradora, en la misma fila, de 9 mm de alto y con la línea fina. Fila 2 (29 a 56 mm): «INFORME DE INSPECCIÓN VEHICULAR» (o «RESUMEN…») de 9 pt; la placa de 27 pt en negrita con «Caso N · vehículo i de n» de 12,5 pt en la misma línea; el vehículo de 8,5 pt; el sello de 27 mm de diámetro (aro de 1,1 mm), centrado bajo el bloque de la aseguradora, con «SIRIUS · v1» de 5,5 pt, el estado de 8 pt y el veredicto de 7 pt, todo dentro del aro. El círculo blanco decorativo es más pequeño (96 mm) y queda en la esquina superior derecha. Margen de la franja: 5,5 mm arriba y 2,5 mm abajo; las tarjetas empiezan 5 mm bajo la franja. Los logos se ajustan a su zona sin deformarse.
+2. **Conductor habitual.** Con el asegurado como conductor, el informe imprime «El conductor habitual es el asegurado.» (frase completa); con otro valor, «El conductor habitual es <valor>.».
+3. **Números de foto en el orden de impresión.** Primero las fotos de la portada (frontal y posterior), después el registro fotográfico y por último los documentos, sin saltos. La tabla de averías (columna «Foto») y las dos fotos de la portada leen el mismo número que la foto impresa, porque salen del mismo registro. La vista previa de la hoja usa la misma numeración.
+
+**Prueba visual (contra la imagen del modelo)**
+
+| Escena | La franja termina en | Texto del sello | Texto de la izquierda termina en |
+|---|---|---|---|
+| pdfvehvector | 58,9 mm | 21,5 mm de ancho dentro del aro | 115,3 mm (el sello empieza en 166 mm) |
+| pdfvehresumen | 58,9 mm | 21,5 mm | 115,3 mm |
+| pdfvehasegurable | 58,9 mm | 21,5 mm | 115,3 mm |
+| pdfvehborrador | 58,9 mm | 15,6 mm («POR COMPLETAR») | 115,3 mm |
+| pdfvehagencia (logo de la agencia activado) | 58,9 mm | 21,5 mm | 81,7 mm |
+| pdfvehcxuno | 58,9 mm | 21,5 mm | 81,7 mm |
+| pdfvehagenciaoff, pdfvehcx, pdfvehcxvacio | 58,9 mm | de 15,6 a 21,5 mm | de 81,7 a 115,3 mm |
+
+El texto del sello queda entre 168,7 y 190,4 mm, dentro del interior del aro (167,2 a 191,8 mm), incluido «INSPECCIONADO». Ningún texto se cruza con el sello, ni con los logos o la línea fina. Capturé la portada de las nueve escenas con la franja y las tarjetas debajo: las cuatro filas del modelo (logos y aseguradora, título, placa con caso y vehículo, sello) se ven en cada una.
+
+**Prueba cruzada**
+
+| Prueba | Resultado |
+|---|---|
+| pdfvehvector: números de foto | F-1 a F-45 consecutivos, sin saltos ni repetidos, en el orden impreso |
+| pdfvehvector: tabla de averías | «Puerta delantera derecha» → F-38 y «Parachoques posterior» → F-37; coinciden con «F-38 · Daños · Puerta delantera derecha» y «F-37 · Daños · Parachoques posterior» |
+| pdfvehvector: fotos de la portada | F-1 Frontal y F-2 Posterior, iguales a las del registro fotográfico |
+| pdfvehresumen | Frontal F-1, Posterior F-2, lateral izquierdo F-3 y lateral derecho F-4, en el orden impreso (antes F-1, F-2, F-6 y F-4) |
+| pdfvehcxuno | «El conductor habitual es el asegurado.» y fotos F-1 a F-7 consecutivas |
+
+**Verificado**
+
+- **Escenas:** las diez escenas de P-1c1 a P-1c3 se descargan con «Descargar PDF» sin errores de página (pdfvehcxerror sigue sin PDF y con el mensaje de la base, como antes). Pantalla revisada a 1280×720 y a 1920×1080 (pdfvehvector y pdfvehcxuno).
+- **Regresión de texto (9 escenas con PDF):** mismo texto y mismo número de páginas que antes de la etapa, salvo lo que esta etapa cambia:
+  - **Portada:** «Proceso de Inspecciones · Nuevo Riesgo» y «<ciudad>, <fecha>» pasan de dos líneas a una sola.
+  - **Fotos:** los números F-n siguen el orden de impresión (en pdfvehvector, pdfvehborrador, pdfvehasegurable, pdfvehagencia y pdfvehagenciaoff, de F-21… a F-14…; en pdfvehcx y pdfvehcxuno, Kilometraje F-6 y Matrícula frontal F-7; en pdfvehresumen, lateral izquierdo F-6 a F-3) y la tabla de averías lee F-38 y F-37 en lugar de F-45 y F-44.
+  - **Conductor:** «el asegurado.» pasa a «El conductor habitual es el asegurado.» (pdfvehcxuno).
+  - **Cortes de página:** como el encabezado es más corto, algunos títulos y bloques de la primera y la segunda página suben antes del pie; el contenido es el mismo.
+- **Archivos sin cambio:** `sirius-conexion.js` sigue en 70 bytes; `datos-documentos-pdf.js` es idéntico al anterior; los archivos vigilados no se tocaron.
+
+**No verificado**
+
+- Firefox y Safari.
+- El logo real de una agencia (se probó con el de demostración, Eurosurvey).
+- Un nombre de vehículo o una ciudad muy largos en el encabezado (el texto ajusta a la zona izquierda, pero no probé un caso extremo).
+- La base real, igual que en P-1c3 (forma de `documentoRegistrar`, `riesgosBase`, registro de la declaración y URL firmadas).
+
+**Diferencias**
+
+- **Alto del encabezado:** antes la franja terminaba a 89,4 mm de la parte superior; ahora termina en 58,9 mm (tope 59 mm).
+- **Líneas de la derecha:** la aseguradora ya no lleva tres líneas, sino el nombre y una sola línea de 8 pt.
+- **Sello:** de 27 mm, con el estado dentro del aro; el texto largo reduce su tamaño solo si no cabe.
+- **Fotos:** el número de una foto puede cambiar entre versiones del PDF si cambian las fotos que se imprimen, porque ahora siempre es consecutivo.
+
+**Escenas**
+
+Sin escenas nuevas: las seis pedidas (pdfvehvector, pdfvehresumen, pdfvehasegurable, pdfvehborrador, pdfvehagencia y pdfvehcxuno) ya existen en «Salida PDF» y usan el motor nuevo.
+
+Registro: este archivo. Inventario: filas actualizadas y la sección «PDF de Vehículos: encabezado en un quinto de la página (etapa P-1c4 · DEC-272)».
+
+Tiempo de la etapa: inicio 22/11/2026 12:43 · fin 22/11/2026 12:57 · 14 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-1c3
+
+Publiqué la versión 383 de SIRIUS (los archivos subieron en la 382; esta versión cierra el registro con el tiempo de la etapa). Corregí los seis problemas que la asesoría encontró con la base real:
+
+- Un caso de un solo vehículo tiene PDF.
+- Con la conexión se imprime «· vehículo i de n».
+- El PDF solo afirma lo que tiene respaldo en el informe: sin datos de hallazgos sale un texto neutro, la declaración del cliente solo aparece con su registro fechado y los datos vacíos no se imprimen.
+- El recuadro del resultado dice el mismo estado que el sello y la tarjeta.
+- El lugar es la dirección de la visita.
+
+En la demostración, lo que tiene datos queda igual; las diferencias están anotadas abajo.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia |
+|---|---|
+| `sirius-salida-veh.js` | Nueva `riesgosCx(caso)`: los vehículos del caso desde `riesgos[]` o, si no existe, desde `riesgosBase` (id, estado, `riesgo_estado` y datos). `contextoCx` la usa y agrega el lugar de la visita (`lugarVisita`) y el registro de la declaración (`declCx`) |
+| `sirius-documentos-pdf.js` | Hallazgos con respaldo, declaración fechada, recuadro DEC-271, campos vacíos fuera, filas vacías fuera de las tablas, lugar de la visita e «i de n» con la conexión |
+| `SIRIUS Back-office.dc.html` | `svVehiculos` usa `riesgosCx` (también con un solo vehículo); escenas en el registro |
+| `datos-cx-pdfveh.js` (v1.1) | Casos 50047 y 50068, `documentoRegistrar` con `riesgosBase`, la sección de daños respondida en 50091-V1 |
+| `SalidaVeh.dc.html`, `datos-escenas.js` | Escenas `pdfvehcxuno` y `pdfvehcxvacio` (823 escenas) |
+| Sin cambio | `datos-documentos-pdf.js` (su texto se usa tal cual cuando las cuatro revisiones tienen datos), `sirius-pdf-vector.js` (el motor lee los mismos bloques), `DocumentoPdf.dc.html`, Equipo y maquinaria, `sirius-conexion.js` (70 bytes) |
+
+**Qué cambió**
+
+1. **Un solo vehículo:** si `casos[].riesgos` no existe, el vehículo sale de `casos[].riesgosBase` (id, o «<caso>-V<n>» si falta). El estado y el veredicto salen de `riesgo_estado` de `riesgos[]` o de `riesgosBase`. Lo usan `contextoCx`, `disponibilidadCx`, la lista de la Salida y `documentoRegistrar` de la base simulada. Un caso de ejemplo sin informe en la base sigue con los datos del ejemplo, como en C2-18; `calpdfcx` no cambia.
+2. **Hallazgos:** sin hallazgos, el resumen nombra solo las revisiones con datos: testigos registrados, al menos una verificación «Verificado», la sección de daños respondida y consultas externas con resultado; en el resumen, también neumáticos. Si están todas, se usa el texto del modelo tal cual. Si no hay ninguna, sale «El informe todavía no tiene los datos para evaluar hallazgos.» en gris, sin el verde de «bien».
+3. **Declaración del cliente:** con la conexión, solo si la base trae su registro con fecha y hora (en el informe, en las respuestas o en el evento «Declaración aceptada»). Si no lo trae, el bloque no aparece. En la demostración se usa la fecha de la inspección, como antes.
+4. **Recuadro del resultado:** dice «Informe por completar», «Devuelto al inspector», «Pendiente calificación», «Pendiente calificación de suscripción» o «Inspeccionado · <veredicto> · <cobertura o motivo>». En el PDF toma el estado final, también el que devuelve el registro en la base. Equipo y maquinaria no cambia.
+5. **Datos vacíos:** un campo sin valor no se imprime, aunque el modelo lo marque «siempre»; tampoco sale «— km/año». Las filas de neumáticos, extras y verificaciones externas sin ningún valor no se imprimen, y la celda vacía de una fila con datos lleva «—». Las tarjetas de la portada siguen con «—».
+6. **Lugar e i de n:** con la conexión, el lugar es la dirección o la ciudad de la visita, con las coordenadas como complemento; sin dirección ni ciudad, el par no aparece. «Vehículo i de n» y «Riesgo i de n» usan los vehículos del caso en la base (`cxIdx`, `cxTotal`).
+
+**Prueba cruzada**
+
+| Prueba | Resultado |
+|---|---|
+| pdfvehcxuno (50047, un solo vehículo, sin `riesgos[]`) | El PDF existe: 4 páginas, código IV-50047-V1-…, sello «INSPECCIONADO · ASEGURABLE» |
+| pdfvehcxuno frente a Informe › Formulario | 41 datos impresos iguales (inspección, identificación, matrícula, uso, verificaciones, accesorios, testigos y valores). No se imprimen la fecha de carga y el tipo de carrocería, porque no están en el modelo del documento, como en 50091. La identificación del propietario sale como «Cédula» del asegurado |
+| pdfvehcxuno: fotos y trazabilidad | Las 7 fotos de Evidencias (F-1 a F-7); trazabilidad 15/11 16:20 · 16/11 09:03 · 09:45 · 16:05, igual que el Historial |
+| pdfvehcxvacio (50068-V1): texto del PDF | No aparecen «testigos apagados», «identificación verificada», «sin averías», «novedades externas», «aceptada» ni «Declaración». Hallazgos: «El informe todavía no tiene los datos para evaluar hallazgos.» |
+| pdfvehcxvacio: «—» | Solo en la tarjeta fija de la portada (Kilometraje) y en dos celdas de la tabla de valores (sugerido y diferencia). Ningún par de datos con «—» |
+| pdfvehcxvacio: i de n | «Caso 50068 · vehículo 1 de 2» con la conexión |
+| Estado «Informe por completar» (50091-V2) | Recuadro: «Informe por completar» · sello: «POR COMPLETAR» · tarjeta: «Por completar» · Riesgos: «Por completar» |
+| Estado «Devuelto al inspector» | Recuadro: «Devuelto al inspector» · sello: «DEVUELTO» · tarjeta: «Devuelto» · Riesgos: «Devuelto» |
+| Estado «Pendiente calificación» | Recuadro: «Pendiente calificación» · sello: «EN CALIFICACIÓN» · tarjeta: «En calificación» · Riesgos: «En calificación» |
+| Estado «Inspeccionado · No asegurable» | Recuadro: «Inspeccionado · No asegurable» · sello: «INSPECCIONADO · NO ASEGURABLE» · tarjeta: «No asegurable» · Riesgos: «Inspeccionado · No asegurable» |
+
+El recuadro usa el nombre largo del estado; el sello, la tarjeta y Riesgos usan el nombre corto de `SIRIUS_FLUJO` (DEC-271). En los cuatro casos es el mismo estado.
+
+**Verificado**
+
+- **Escenas nuevas:** pdfvehcxuno y pdfvehcxvacio se descargan con «Descargar PDF» sin errores de página. Pantalla revisada a 1280×720 (pdfvehcxvacio) y 1920×1080 (pdfvehcxuno).
+- **Regresión de las 8 escenas de P-1c1, P-1c2 y P-1c2b:** mismo texto, salvo lo que corrige esta etapa:
+  - **Recuadro:** en todas, «Inspeccionado · <veredicto> · <detalle>» en lugar de «<veredicto> · <detalle>».
+  - **pdfvehborrador:** el recuadro pasa de «Pendiente de calificación» a «Informe por completar».
+  - **pdfvehcx:** el lugar pasa de «Quito» a la dirección de la visita, «Av. Amazonas N34-120». Salen 3 filas de verificaciones externas sin datos en la base («Fiscalía por cédula», «Siniestralidad», «Codificación del VIN», que salían «— — —»), y el PDF pasa de 5 a 4 páginas.
+  - **pdfvehagencia y pdfvehagenciaoff (30003-V1, demostración):** hallazgos «Sin hallazgos relevantes: testigos apagados.», porque ese vehículo de ejemplo solo tiene testigos registrados. Además sale el par «Matrícula vigente hasta —».
+  - **pdfvehcxerror:** igual, sin PDF y con el mensaje de la base.
+- **Vista previa de otras escenas:** en svpdq, svresumen y dp1veh solo cambia el título del recuadro («Inspeccionado · …»). empdf (Equipo y maquinaria), calpdfcx (C2-18) y dpestilo quedan iguales.
+- **Archivos sin cambio:** `sirius-conexion.js` sigue en 70 bytes. `datos-documentos-pdf.js`, `sirius-pdf-vector.js` y `DocumentoPdf.dc.html` no cambiaron.
+
+**No verificado**
+
+- La base real: que `riesgosBase[]` traiga `id`, `estado` y `riesgo_estado` con un solo vehículo, y la forma del registro de la declaración del cliente (acepto `declaracion.at`/`hora`/`aceptadaEn` en el informe o sus respuestas, o el evento «Declaración aceptada»).
+- Un caso de la base con un solo vehículo y `riesgos[]` presente (sigue el camino de varios).
+- Firefox y Safari.
+
+**Diferencias**
+
+- **Título del recuadro:** con veredicto, ahora empieza con «Inspeccionado ·» en el informe, en el resumen y en la vista previa, como pide DEC-271.
+- **Demostración:** 30003-V1 pierde las afirmaciones sin datos (identificación, averías y externas) y el par «Matrícula vigente hasta —». En 50091-V1 agregué la sección de daños respondida sin averías, para que su resumen siga completo como antes.
+- **Caso de ejemplo con un solo vehículo:** si la base no tiene informe, sigue con los datos del ejemplo (C2-18). Con informe en la base, sale de la base.
+- **Estado «Devuelto» en Riesgos:** la segunda línea de Riesgos sigue diciendo «Esperando informe»; esa pestaña no es parte de esta etapa.
+
+**Escenas**
+
+En el área «Salida PDF», con la conexión simulada:
+
+- `pdfvehcxuno`: el caso 50047, de un solo vehículo, Inspeccionado · Asegurable y con el informe completo.
+- `pdfvehcxvacio`: 50068-V1, vehículo 1 de 2, con el informe en «Datos de campo» y sin respuestas.
+
+Registro: este archivo. Inventario: filas actualizadas y la sección «PDF de Vehículos: un solo vehículo y contenido con respaldo (etapa P-1c3 · DEC-272, DEC-125)».
+
+Tiempo de la etapa: inicio 22/11/2026 11:41 · fin 22/11/2026 11:57 · 16 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-1c2b
+
+Publiqué la versión 381 de SIRIUS (los archivos subieron en la 380; esta versión cierra el registro con el tiempo de la etapa). El logo de la agencia que inspeccionó ya no sale siempre: ahora es una opción del documento, «Incluir el logo de la agencia que inspeccionó», en Documento PDF › Estilo y logos, desactivada por defecto. Con la opción desactivada la portada lleva solo el logo de la aseguradora con sus tres líneas; con la opción activada y un vehículo inspeccionado por una agencia, el logo de la agencia va a su izquierda, en la misma fila, a 12 mm de alto y con la línea fina; sin logo, su nombre en 9 pt. Si el vehículo no lo inspeccionó una agencia, sale solo la aseguradora en los dos casos.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia |
+|---|---|
+| `DocumentoPdf.dc.html` | La casilla en Estilo y logos (solo en los documentos de Vehículos), su nota y el texto de la muestra del encabezado |
+| `sirius-documentos-pdf.js` | `estiloBase` con `logoAgencia: false`; el motor vectorial y la vista previa de Vehículos usan la agencia solo con la opción activada; el listado de cambios del borrador la nombra |
+| `SalidaVeh.dc.html` y `SIRIUS Back-office.dc.html` | La escena nueva `pdfvehagenciaoff`; `pdfvehagencia` activa la opción en el estilo del documento |
+| `datos-escenas.js` | 1 escena nueva (821) y la descripción de `pdfvehagencia` |
+| Sin cambio | `datos-documentos-pdf.js`, `sirius-pdf-vector.js`, `sirius-salida-veh.js`, `datos-cx-pdfveh.js`, Equipo y maquinaria, Ramos Generales, `sirius-conexion.js` (70 bytes) |
+
+**Qué cambió**
+
+- **Estilo del documento:** la opción se guarda como `logoAgencia` en `estiloDoc`, igual que los logos y el pie. Su valor por defecto está en `estiloBase` del renderizador; los documentos publicados en la base no la traen y quedan desactivados, así que `datos-documentos-pdf.js` no se tocó.
+- **Diseñador:** la casilla aparece solo en el informe y el resumen de Vehículos (no en Equipo y maquinaria ni en Ramos Generales). Al marcarla se crea el borrador, el listado de cambios de la publicación dice «Logo de la agencia que inspeccionó: se incluye en la portada» y se versiona como los demás cambios. La muestra del encabezado dice «Sin logo de la agencia» o «Logo de la agencia (si inspeccionó una)».
+- **Motor y vista previa:** `documentoVector` y el encabezado de la vista previa de Vehículos leen `estiloDoc.logoAgencia === true`. Equipo y maquinaria sigue como antes.
+- **Escenas:** `pdfvehagencia` activa la opción; `pdfvehagenciaoff` es el mismo vehículo (30003-V1) con la opción desactivada.
+
+**Prueba cruzada (portada, descargada con «Descargar PDF»)**
+
+| Caso | Opción | Portada |
+|---|---|---|
+| 30003-V1 (agencia Eurosurvey con logo de prueba) | Activada | Logo de la agencia, línea fina y logo de la aseguradora en la misma fila (6 imágenes en la página 1) |
+| 30003-V1 | Desactivada (pdfvehagenciaoff) | Solo la aseguradora con sus tres líneas (4 imágenes) |
+| 20196-V1 (inspector interno) | Activada | Solo la aseguradora, igual que desactivada |
+| 20196-V1 | Desactivada / por defecto | Solo la aseguradora |
+
+La vista previa de la hoja muestra lo mismo que el PDF en cada caso.
+
+**Verificado**
+
+- **Diseñador:** a 1280×720 y 1920×1080 la casilla sale desmarcada, se marca y se desmarca; al marcarla el borrador pasa a `logoAgencia: true` y el listado de cambios la nombra; al desmarcarla el listado queda vacío. En Equipo y maquinaria (dppresentacion) y en Ramos Generales (dprg) no aparece; en Vehículos sí (dpestilo, dpnuevo).
+- **Regresión:** las escenas pdfvehvector, pdfvehresumen, pdfvehborrador, pdfvehasegurable y pdfvehagencia dan el mismo texto y las mismas páginas que en la versión anterior. pdfvehcx también, salvo una línea: el inspector del 50091 es de Eurosurvey y la portada ya no repite su nombre arriba (la sección Inspector del informe sigue nombrándolo).
+- **Sin errores de página** en ninguna escena probada; `sirius-conexion.js` sigue en 70 bytes y `datos-documentos-pdf.js` no cambió.
+
+**No verificado**
+
+- Una agencia con logo real subido en Usuarios y roles › Agencias (solo con el de prueba).
+- La publicación del borrador con la opción en la base real.
+- Firefox y Safari.
+
+**Diferencias**
+
+- **Cambio de comportamiento:** los PDF de Vehículos que antes llevaban el nombre o el logo de la agencia en la portada ya no lo llevan hasta que se active la opción en Estilo y logos y se publique la versión.
+- **Equipo y maquinaria:** su encabezado sigue mostrando la agencia como antes; la opción pedida es solo de Vehículos.
+- **Lado derecho «Agencia de inspección»:** en el selector de logos sigue existiendo como elección del encabezado de las demás plantillas.
+
+**Escenas**
+
+En el área «Salida PDF»: `pdfvehagencia` (30003-V1, opción activada) y `pdfvehagenciaoff` (el mismo vehículo, opción desactivada). En Administración, `dpestilo` muestra la casilla en Estilo y logos.
+
+Registro: este archivo. Inventario: filas actualizadas y la sección «El logo de la agencia en el PDF, opcional (etapa P-1c2b · DEC-272)».
+
+Tiempo de la etapa: inicio 22/11/2026 11:25 · fin 22/11/2026 11:33 · 8 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-1c2
+
+Publiqué la versión 379 de SIRIUS (los archivos subieron en la 378; esta versión cierra el registro con el tiempo de la etapa). Con la conexión, el PDF de Vehículos se arma solo con la base: lee las respuestas igual que la pestaña Informe, que ahora toma esa lectura de un módulo común, y trae las fotos reales del vehículo. Antes de dibujarlo, lo registra con `documentoRegistrar`: el pie lleva el código que devuelve la base, y el sello, su estado y su veredicto. La portada lleva los logos ampliados aprobados, con o sin conexión. En la demostración, el contenido no cambia.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `sirius-cx-informe.js` (nuevo) | La lectura C2-8 de las respuestas (antes `cxResp` y `cxSpecInforme` del Back-office), más las grillas | — |
+| `SIRIUS Back-office.dc.html` | `cxResp` y `cxSpecInforme` usan el módulo; Informe muestra las grillas de las respuestas; con varios vehículos, el casco y los extras de la solicitud son los del vehículo elegido; `svVehiculos` con la conexión; `SiriusFotosCx.lista(caso, rid)`; `documentoRegistrar` en la conexión simulada; 3 escenas | El resto de la pantalla |
+| `sirius-salida-veh.js` | `contextoDe` (el armado de siempre), `contextoCx` y `disponibilidadCx` | `contexto()` de la demostración, `resultado`, `disponibilidad`, archivos |
+| `sirius-documentos-pdf.js` | Registro y código en `documentoVector`; inspector, fotos y trazabilidad de la base; respaldo de la foto sin los datos que faltan (solo con la conexión) | `documento()` de la demostración y las reglas de cada sección |
+| `sirius-pdf-vector.js` | Zonas de logos de la portada | El resto del diseño y del motor de P-1c1 |
+| `SalidaVeh.dc.html` | Vehículos de la base, mensaje de la base sin PDF (también en el .zip), logo de prueba de la agencia en su escena | La vista previa y la selección |
+| `datos-cx-pdfveh.js` (nuevo), `assets/prueba-pdf/`, `datos-escenas.js` | Escenas pdfvehcx, pdfvehcxerror y pdfvehagencia, con fotos y logo de prueba | — |
+| `datos-documentos-pdf.js`, `sirius-pdf.js`, Ramos Generales, `DocumentoPdf.dc.html`, `sirius-conexion.js` | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+**Qué cambió**
+
+- **Contexto con la conexión (`SiriusSalidaVeh.contextoCx(caso, ref)`):** usa la misma forma de siempre (val, meta, neu, ext, ave, vex, res, fotos, caso) y después sigue el camino de `contexto()`.
+  - Valores y grillas: de `SiriusCxInforme`, la misma lectura de Informe. Los números llegan como texto y se toman como número.
+  - Datos de la inspección: de la visita (modalidad, llegada o inicio, lugar, inspector y su agencia) y de las respuestas.
+  - Resultado: el estado y el veredicto de `riesgo_estado`. Quién calificó y cuándo, de la última calificación final del vehículo (una derivación no cuenta). Si el inspector determinó dentro de su facultad, «Determinado por el inspector». Regla y emisión solo si existen.
+  - Trazabilidad: de `eventos[caso]` (solicitud recibida, visita iniciada, informe enviado, calificación), con fecha y hora.
+  - Firmas: atendió (respuestas), inspeccionó (visita) y calificó (calificación).
+  - Fotos: las de la pestaña Evidencias de ese vehículo, con su número y su respaldo, desde la URL firmada; la que no carga queda «Foto no disponible». Un dato que falta en el respaldo no se imprime.
+- **Lectura común:** la pestaña Informe lee desde `sirius-cx-informe.js`. Ahora también muestra las grillas que llegan en las respuestas (neumáticos, extras, averías y verificaciones externas).
+- **Registro:**
+  - Antes de dibujar, se llama a `documentoRegistrar({ caso, riesgo, documento: 'veh-informe' | 'veh-resumen', version, huella })`, con la huella SHA-256 (`crypto.subtle`) de la portada, la identificación y los bloques.
+  - El pie lleva «mostrar», con la fecha y el usuario del registro; la fecha de la portada es la del registro.
+  - El sello y la tarjeta del resultado usan el estado y el veredicto que devuelve la base.
+  - Si la base responde { ok: false }, no se genera el PDF y se muestra su mensaje.
+- **Salida con la conexión:** se listan todos los vehículos del caso. El informe se descarga cuando el vehículo tiene informe (antes del resultado sale en borrador); el resumen, cuando además tiene veredicto.
+- **Portada:**
+  - «Caso N · vehículo i de n» cuando hay varios vehículos (también en la demostración).
+  - Logos ampliados: la franja de logos empieza a 8 mm.
+  - Zona izquierda, desde x = 14 mm: logo hasta 62 × 28 mm, y «by aseguradora del sur» en 9,5 pt alineado al final del texto del logo (nunca antes del margen). Termina a 41 mm.
+  - Zona derecha, alineada a x = 196 mm: logo hasta 62 × 16 mm, nombre en 11,5 pt negrita, proceso y «Ciudad, fecha» en 9 pt. Termina a 41 mm.
+  - Agencia: a la izquierda del logo de la derecha, a 12 mm de alto, con una línea fina, sin entrar en la zona izquierda. Sin logo, su nombre en 9 pt.
+
+**Prueba cruzada (pdfvehcx, PRA7781 · 50091-V1)**
+
+| Dato (Informe › Formulario) | Valor en Informe | En el PDF |
+|---|---|---|
+| Fecha y hora de inspección | 18/11/2026 · 10:04 | Igual (Datos de la inspección) |
+| Modalidad · Sucursal · Inspector | Presencial · Quito · Mauricio Endara | Igual (con «Eurosurvey») |
+| Persona que atiende · Relación | Gabriela Montúfar · Empleado | Igual («Gabriela Montúfar · empleado») |
+| Placa · Marca · Modelo · Año | PRA7781 · Toyota · Hilux · 2023 | Igual |
+| VIN · Motor · Carrocería · Color | 8AJHA3CD5P2604417 · 2GD-4417203 · Camioneta · Gris | Igual |
+| CAMV o CPN · Nombre en la matrícula · GAD · Vigencia | CAMV-2023-778120 · Transportes del Pacífico S.A. · Quito · 30/04/2027 | Igual |
+| Uso · Ciudad · Año de compra · Kilometraje | Comercial · Quito · 2023 · 18450 | Igual (18.450 km) |
+| Conductor: nombre · edad · licencia · caducidad | Wilson Cando · 41 · E · 15/02/2029 | Igual |
+| Verificación (chasis, sticker VIN, plaqueta) | Verificado ×3 | «Chasis, sticker VIN y plaqueta verificados.» |
+| Accesorios (radio, aros, airbags, vidrios, aire, cámara) | Fijo · Aluminio · 6 · Sí · Sí · Sí | Igual («Tiene: radio fijo, aros de aluminio…, 6 airbags») |
+| Testigos (check engine, ABS, airbag, frenos) | Apagado ×4 | «Todos apagados (4 revisados).» |
+| Neumáticos | Bridgestone 265/65 R17, 6,4 a 7,1 mm, repuesto 8,0 | Igual |
+| Extras | Barra antivuelco (Toyota, 1.200) · Cubre balde (Roll-N-Lock, 600) | Igual (total USD 1.800,00) |
+| Verificaciones externas | Fiscalía por placa, ANT, SRI: Sin novedad | Igual (las demás con «—») |
+| Valores: casco · extras · sugerido | USD 36.500,00 · USD 1.800,00 · USD 35.200,00 | Igual |
+| Fotos (Evidencias del vehículo) | 7: F-1 Frontal … F-6 Matrícula frontal, F-7 Kilometraje | Las mismas 7 con sus números (F-6 en Documentos) |
+| Estado (Riesgos) y calificación | Inspeccionado · Asegurable · Todo riesgo · Daniela Ruiz 19/11 09:40 | Sello «INSPECCIONADO · ASEGURABLE»; «Calificado por Daniela Ruiz el 19/11/2026 · 09:40» |
+| Historial | Solicitud recibida 17/11 09:10 · Visita iniciada 18/11 10:04 · Informe enviado 18/11 11:05 · Calificación 19/11 09:40 | Trazabilidad con las mismas fechas y horas |
+
+No van en el PDF, por diseño de sus secciones como en la demostración: la fecha de carga y el «Otra persona» del conductor habitual. La identificación del propietario va como RUC del asegurado.
+
+Además, la prueba de contenido de P-1c1 (PDF frente a la vista previa HTML) da 0 diferencias para 50091-V1.
+
+**Prueba visual de la portada (frente a la imagen aprobada)**
+
+| Bloque | Zona | Medido |
+|---|---|---|
+| Logo izquierdo (SIRIUS) | x 14–76, y 8–36 (hasta 41 con el texto) | x 14–63,6 · y 8–36 (49,6 × 28 mm); «by aseguradora del sur» x 28,3–62,4, hasta y 41 |
+| Logo derecho (aseguradora) | x 134–196, y 8–24 | x 157,5–196 · y 8–24 (38,5 × 16 mm) |
+| Nombre, proceso y fecha | a la derecha, hasta y 41 | x 135,8–196, terminan a 39,2 mm |
+| Logo de prueba más ancho (1200 × 100 y 1300 × 90) | Ancho máximo | Izquierda 62 × 5,2 mm; derecha 62 × 4,3 mm; proporción 12 y 14,5, igual que la imagen |
+| Logo de prueba más alto (100 × 420 y 120 × 500) | Alto máximo | Izquierda 6,7 × 28 mm; derecha 3,8 × 16 mm; proporción 0,24 |
+| Con agencia (Eurosurvey, pdfvehagencia) | En la misma fila, sin encimarse | Agencia x 111,5–151,5 · línea x 154,5 · aseguradora x 157,5–196 |
+
+Los tres logos quedan sin encimarse y sin deformarse.
+
+**Verificado**
+
+- **Sintaxis:** `node --check` de los .js y el verificador de los .dc.html, sin errores. Escenas: 820.
+- **pdfvehcx:**
+  - «Descargar PDF» genera el PDF de PRA7781 (5 páginas, 287 KB con 7 fotos) con el código IV-50091-V1-6F38598E, registrado en la base simulada.
+  - PRA7782 sale en borrador (sello ámbar «POR COMPLETAR», marca de agua, «vehículo 2 de 2»).
+  - El resumen sale con «RV-50091-V1-…».
+- **pdfvehcxerror:** muestra «La base no registró el documento…» y no hay descarga.
+- **Prueba interna (copia aparte con una conexión activa temporal):**
+  - Con { ok: true, mostrar: 'IV-50052-V1-1B8F2C13' }, el pie lleva ese código.
+  - Con { ok: false }, no hay PDF y llega el mensaje.
+  - La base recibió { caso, riesgo, documento, version, huella }.
+  - En el proyecto, `sirius-conexion.js` sigue en 70 bytes.
+- **Regresión:**
+  - pdfvehvector, pdfvehresumen, pdfvehborrador y pdfvehasegurable: el mismo texto y las mismas páginas que en P-1c1; solo cambian los logos de la portada.
+  - Informe con la conexión simulada: cxr0bcompletar, cxr0cauto, cxr0cvacio, cxr0dcalidad, calpdfcx y cxlimpio, iguales.
+  - En cxr0b y cxriesgosestados aparece la barra «Informe en PDF», porque ahora los vehículos de la base se pueden descargar.
+- **Pantalla:** a 1280×720 y 1920×1080.
+
+**No verificado**
+
+- La base real: forma real de `documentoRegistrar` y de `riesgo_estado`, y las URL firmadas reales (con su vencimiento y CORS).
+- Un caso de un solo vehículo de la base sin `riesgos[]` (calpdfcx sigue con el camino anterior).
+- Firefox y Safari.
+
+**Diferencias**
+
+- **Informe:** ahora muestra las grillas que llegan en las respuestas (antes quedaban vacías con la conexión).
+- **Extras con la conexión:** salen de las respuestas, como en Informe; los de la solicitud no se repiten.
+- **Trazabilidad:** la sección del modelo no tiene «Informe completado». El evento se lee, pero agregarlo pide cambiar `datos-documentos-pdf.js` (subir su versión, DEC-262).
+- **Código en borrador:** con la conexión, un borrador lleva el código que devuelve la base (en la demostración, «…-BORRADOR»).
+- **Escena de la agencia:** el logo de Eurosurvey es una imagen de prueba que pone la escena; ninguna agencia lo tiene en los datos.
+- **Fotos de la escena:** las fotos de 50091 son imágenes de prueba del proyecto (`assets/prueba-pdf`).
+
+**Escenas**
+
+Nuevas (área «Salida PDF»):
+
+- `pdfvehcx`: 50091, con dos vehículos; V1 calificado Asegurable con fotos y V2 por completar.
+- `pdfvehcxerror`: `documentoRegistrar` responde { ok: false }.
+- `pdfvehagencia`: 30003-V1 de Eurosurvey con logo.
+
+Registro: `project/registro-envios.md`. Inventario:
+
+- Filas nuevas de `sirius-cx-informe.js`, `datos-cx-pdfveh.js` y `assets/prueba-pdf/`.
+- Filas actualizadas de los archivos cambiados.
+- Sección «PDF de Vehículos con los datos de la base (etapa P-1c2 · DEC-272)».
+
+Tiempo de la etapa: inicio 22/11/2026 10:30 · fin 22/11/2026 10:56 · 26 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-1c1
 
 Publiqué la versión 377 de SIRIUS (los archivos subieron en la 376; esta versión cierra el registro con el tiempo de la etapa). El informe y el resumen de Vehículos se descargan ahora con un motor vectorial (jsPDF con Helvetica) y el diseño aprobado de la maqueta (DEC-272). El texto se puede buscar y copiar, y el informe completo de 20196-V1 pesa 210 KB en 8 páginas. El contenido es el mismo: `documentoVector` lee los bloques que arma `documento()` (las mismas secciones, el mismo orden, las mismas reglas, números y frases) y los dibuja con las piezas nuevas.
