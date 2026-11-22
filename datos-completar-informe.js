@@ -166,7 +166,8 @@
   // ---------- Casos de ejemplo en SIRIUS_EJEMPLO ----------
   const E = window.SIRIUS_EJEMPLO; if (!E || !E.casos || E.casos.some(c => c.id === '30004')) return;
   const iso2 = (s) => s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(2, 4) + ' · ' + s.slice(11, 16);
-  const molde = E.vehiculos.find(v => v.caso === '20202'), evMolde = (E.evidencias || {})['20202-V1'];
+  const molde = (E.vehiculos || []).find(v => v.caso === '20202'), evMolde = (E.evidencias || {})['20202-V1'];
+  if (!molde) return;   // 21/11 · sin el caso molde (la conexión ya vació los ejemplos, DEC-195): no se siembran ejemplos
   const tx = (v) => v.valor === 'Asegurable' ? 'Asegurable' : v.valor;
   C.ejemplos.forEach(([id, aseg, ced, placa, marca, modelo, anio, km, valor, insp, mod, estado, fecha, dir, cNom, cCel]) => {
     const K = C.casos[id], fin = K.visitaFin, ini = fin.slice(0, 11) + String(Number(fin.slice(11, 13)) - 1).padStart(2, '0') + fin.slice(13);

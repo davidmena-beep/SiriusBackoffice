@@ -33,6 +33,8 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 21/11/2026 · A · SQL 77: visitas[].avance = { fotos (sin el video), total (el que ve el cliente en la app; antes de la primera foto, la estimación
+//   de la base con la misma regla), video (true si ya lo subió), vehiculos?[{ ref, fotos, total, enviado }] (con varios vehículos), ultimo, paso }.
 // 21/11/2026 · R-5c · SQL 76 · DEC-266: la Red es la única fuente. usuarios[] e inspectores[] ya no traen zonas, cobertura (forma de un solo modo),
 //   modalidades, ramos, recibeOfertas ni jornada desde la ficha (usuarios.datos): coberturaFilas, coberturaMixta, jornada, recibeOfertas,
 //   capacidadDia, modalidades y ramos salen solo de SIRIUS_CONEXION.red (ponerRedEnUsuarios). Sin fila en la Red, esos campos no vienen.
@@ -249,7 +251,7 @@
       return { n: i + 1, motivoCierre: v.motivo_cierre || '', noInspeccionados: Array.isArray(v.no_inspeccionados) ? v.no_inspeccionados.map(function (x) { return { placa: x.placa || '', motivo: x.motivo || '', detalle: x.detalle || '', por: x.por || '', origen: x.origen || '' }; }) : [], modalidad: v.modalidad || '', estado: v.estado || '', inicio: isoLocal(v.inicio), fin: isoLocal(v.fin), agendadoEn: isoLocal(v.agendado_en), origen: v.origen || '',
                inspector: v.inspector ? v.inspector.nombre : '', enlace: ens[0] || null, enlaces: ensCanal,
                canceladoPor: v.cancelado_por || '', canceladoEn: isoLocal(v.cancelado_en),
-               avance: v.avance_autoinspeccion ? { fotos: +(v.avance_autoinspeccion.fotos || 0), total: null, ultimo: isoLocal(v.avance_autoinspeccion.ultimo), paso: v.avance_autoinspeccion.paso || '' } : null,
+               avance: v.avance_autoinspeccion ? { fotos: +(v.avance_autoinspeccion.fotos || 0), total: v.avance_autoinspeccion.total != null ? +v.avance_autoinspeccion.total : null, video: !!v.avance_autoinspeccion.video, vehiculos: Array.isArray(v.avance_autoinspeccion.vehiculos) ? v.avance_autoinspeccion.vehiculos : undefined, ultimo: isoLocal(v.avance_autoinspeccion.ultimo), paso: v.avance_autoinspeccion.paso || '' } : null,   // SQL 77: total de fotos (el de la app del cliente o su estimación) y video
                plantilla: v.plantilla && v.plantilla.nombre ? { nombre: v.plantilla.nombre, version: v.plantilla.version == null ? null : v.plantilla.version } : null,   // P-6f-0b · DEC-217 (SQL 36)
                riesgos: Array.isArray(v.riesgo_ids) && v.riesgo_ids.length ? rsOrden.filter(function (o) { return v.riesgo_ids.indexOf(o.uuid) >= 0; }).map(function (o) { return o.id; }) : undefined,
                direccion: v.direccion && typeof v.direccion === 'object' && v.direccion.direccion ? String(v.direccion.direccion) : undefined,   // P-6f-0f · DEC-232
