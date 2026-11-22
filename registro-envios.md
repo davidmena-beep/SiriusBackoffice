@@ -4,6 +4,109 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa AV-1
+
+Publiqué la versión 371 de SIRIUS (los archivos subieron en la 370; esta versión cierra el registro con el tiempo de la etapa). Las cartas de Coordinación ya muestran el avance de la autoinspección por vehículo. Bajo un vehículo («Agrupar por: Riesgo») la carta muestra el estado con las fotos de ese vehículo («N de M fotos») y su «Último avance» («Hoy 09:15 · Posterior»). Con «Agrupar por: Visita» muestra el total de la visita y, si hay más de un vehículo, la fila «Por vehículo» («PAU6044 5 de 17 · AU044M 2 de 16»). El «Último avance» usa el nombre del paso, nunca su código. Sin `avance.vehiculos`, todo queda como antes.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `SIRIUS Back-office.dc.html` | Un solo constructor del avance (`cxAvanceTxt`, el texto «Hoy 12:40 · paso») y `avance.vehiculos` con `{ ref, fotos, total, enviado, texto }`; la escena nueva en `KNOWN_ESC`, en las escenas simuladas y en `cartasIni` | Los datos que entrega la conexión, los permisos y el resto de las visitas |
+| `Coordinacion.dc.html` | `cartaDe`: `porRiesgo[ref]` (estado con fotos y último avance) y la fila «Por vehículo» | Las demás filas de la carta, el estado de la visita y el orden |
+| `sirius-coordcartas.js` | La pila pasa su `rid` a la carta (visita principal, historia vigente y «otras»); `delRiesgo` elige el avance del vehículo | Las pilas, la historia y los botones |
+| `datos-cx-coordinacion.js`, `datos-escenas.js` | Caso 50057 con dos vehículos y la escena `cxautoavance` (813 escenas) | Los demás casos y escenas |
+| Archivos vigilados, `sirius-conexion.js`, `sirius-agenda.js` | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+**Qué cambió**
+
+- **Una sola regla del texto:** `cxAvanceTxt(ultimo, paso)` da «Hoy 12:40 · Lateral derecho» (o «19/11 16:05 · Frontal»), con el día de Ecuador y `pasoNombre || paso`. Se usa para la visita y para cada vehículo.
+- **Por vehículo:** la carta recibe `porRiesgo[ref] = { estadoTxt, ultimo }`. Cuando la visita tiene más de un vehículo, agrega «Por vehículo» con la placa (o la referencia si no hay placa) y «N de M».
+- **Carta bajo un vehículo:** el estado dice «estado · N de M fotos» con las fotos de ese vehículo, «Último avance» es el suyo (si no tiene, «—») y no aparece «Por vehículo». Lo mismo en la visita vigente de la historia y en «Otra visita abierta de este riesgo».
+- **Carta por visita:** total de la visita («7 de 33 fotos»), el último avance de la visita y «Por vehículo».
+- **Antes:** ambos vehículos mostraban «7 de 33 fotos» y el código «exteriores_posterior».
+
+**Prueba cruzada (escena cxautoavance)**
+
+| Vista | PAU6044 | AU044M | Visita |
+|---|---|---|---|
+| Riesgo | 5 de 17 fotos · 19/11 16:05 · Frontal | 2 de 16 fotos · Hoy 09:15 · Posterior | — |
+| Visita | — | — | 7 de 33 fotos · Hoy 09:15 · Posterior · Por vehículo: PAU6044 5 de 17 · AU044M 2 de 16 |
+
+5 + 2 = 7 y 17 + 16 = 33. Ningún vehículo muestra los números del otro, y no sale ningún código de paso. `?fagrupar=visita` da lo mismo que hacer clic en «Visita».
+
+**Verificado**
+
+- **Sintaxis:** `node --check` de los .js y el verificador de los .dc.html, sin errores.
+- **Regresión (antes y después, IGUAL):** coordcartas (también `?fhist=1` y `?fhist=1&fsel=V3`), coordcartashist, coordcartasvisita, coordcartascx (también `?fhist=1` y Visita), cxvisclienteagendada, cxvisitaenlace y estadoparcial.
+- **Pantalla:** capturas de la carta por riesgo y por visita a 1280×720 y a 1920×1080, sin texto cortado.
+- `sirius-conexion.js` sigue en 70 bytes. Total de escenas: 813.
+
+**No verificado**
+
+- La historia (vigente) con `vehiculos`: la escena tiene una sola visita y no hay anteriores.
+- La conexión real con `avance.vehiculos` de la base: usé datos simulados.
+- Firefox y Safari.
+
+**Diferencias**
+
+- El «Último avance» de un vehículo sin avance muestra «—».
+- «Por vehículo» tampoco aparece en el detalle de la historia.
+- En la escena, el encabezado del caso dice «Agendado 3/8 · Coordinación 2 de 2 agendados», derivado de los datos simulados (igual que en 50054).
+- La fecha del primer vehículo depende del día real («hace 2 días»).
+
+**Escenas**
+
+Nueva: `cxautoavance` (área «Coordinación», conexión simulada): dos vehículos en una visita de autoinspección, 5 de 17 (hace 2 días, «Frontal») y 2 de 16 (hoy, «Posterior»); con `?fagrupar=visita`, «7 de 33 fotos» y «Por vehículo».
+
+Registro: `project/registro-envios.md`. Inventario: filas de `SIRIUS Back-office.dc.html`, `Coordinacion.dc.html`, `sirius-coordcartas.js`, `datos-cx-coordinacion.js` y `datos-escenas.js`, y la sección «Avance de la autoinspección por vehículo en las cartas (etapa AV-1)».
+
+Tiempo de la etapa: inicio 21/11/2026 21:49 · fin 21/11/2026 21:56 · 7 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa A-1
+
+Publiqué la versión 369 de SIRIUS (los archivos subieron en la 368; esta versión cierra el registro con el tiempo de la etapa). `datos-completar-informe.js` ya no falla cuando los ejemplos están vaciados: sin el caso molde 20202 no siembra nada. Reproduje a la letra el reemplazo de la asesoría.
+
+**Mapa de impacto**
+
+| Archivo | Qué cambia |
+|---|---|
+| `datos-completar-informe.js` | Una línea por dos, en la siembra de los casos 30004 a 30007 |
+| Todo lo demás | Sin cambio: ningún archivo de configuración vigilado (no sube ninguna versión) y `sirius-conexion.js` sigue en 70 bytes |
+
+**Qué cambió**
+
+- La línea `const molde = E.vehiculos.find(v => v.caso === '20202'), evMolde = …` pasó a `const molde = (E.vehiculos || []).find(v => v.caso === '20202'), evMolde = …`.
+- Se agregó debajo `if (!molde) return;` con el comentario «21/11 · sin el caso molde (la conexión ya vació los ejemplos, DEC-195): no se siembran ejemplos».
+- Sin la conexión no cambia nada: el molde existe y la demostración siembra sus casos como antes.
+
+**Verificado**
+
+- **Sintaxis:** `node --check` sin errores. El diff contra el archivo anterior son exactamente esas dos líneas.
+- **Sin molde:** con `SIRIUS_EJEMPLO` sin `vehiculos`, el script termina sin error y no agrega casos (antes: «Cannot read properties of undefined (reading 'informe')»).
+- **Escenas** con los casos 30004 a 30007 (infcompletar, ctrllista y calcxcalif), frente a la versión anterior: los 4 casos se siembran, el texto de la pantalla es idéntico y no hay errores.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+
+- La conexión real: probé el caso sin molde con datos simulados, no con la base.
+
+**Diferencias**
+
+- Ninguna visible. Solo cambia el comportamiento cuando el molde no existe.
+
+**Escenas**
+
+Sin escenas nuevas.
+
+Registro: `project/registro-envios.md`. Inventario: fila de `datos-completar-informe.js` (sin sección nueva).
+
+Tiempo de la etapa: inicio 21/11/2026 21:12 · fin 21/11/2026 21:14 · 2 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa AG-1
 
 Publiqué la versión 367 de SIRIUS (los archivos subieron en la 366; esta versión cierra el registro con el tiempo de la etapa). La Agenda tiene ahora un encabezado compacto (DEC-269). Arriba queda una fila de título con ⓘ y «Más». Debajo va una barra de trabajo en una línea que queda fija al desplazar: vista, navegación, rango, buscador de inspector, «Filtros», hora y «Leyenda». Si hay filtros activos, aparece una línea de fichas. La tabla ocupa el resto de la pantalla, con el encabezado de días y la columna «Inspector» fijos. Solo cambió el diseño: con los mismos filtros, la tabla muestra las mismas visitas e inspectores que antes.
