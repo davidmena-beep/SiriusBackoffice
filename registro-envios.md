@@ -4,6 +4,74 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa AV-3
+
+Publiqué la versión 375 de SIRIUS (los archivos subieron en la 374; esta versión cierra el registro con el tiempo de la etapa). Los datos de demostración siguen ahora el estado por fases de cada vehículo (DEC-271): un vehículo con la visita realizada y su informe en Datos de campo dice «Informe por completar», «Inspeccionado» queda solo para quien ya tiene su resultado, y «N de M inspeccionados» pasó a «N de M con informe». Solo cambiaron datos de escenas.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `datos-cx-fases.js` | Estados e informes de PRB1212 y PR121A en cxriesgosestados, r0noinsp, r0nomio, r0evidencias, cxr0 y cxr0d/e (infcal); la acción simulada `completarInforme` deja «Pendiente calificación» | Las visitas, los inspectores y las demás escenas |
+| `datos-cx-colacal.js` | Caso 50051: estados de sus tres vehículos y el subestado «2 de 3 con informe» | Los informes y las calificaciones de la cola |
+| `SIRIUS Back-office.dc.html` | Solo los datos de las escenas riesgosestados y r0informes (`riesgoOv`) | Todo el código de la pantalla |
+| `datos-escenas.js` | Texto de dos descripciones | Las 813 escenas |
+| Archivos vigilados, `sirius-conexion.js` | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+**Qué cambió**
+
+- **Con la visita realizada y el informe en Datos de campo:** r0noinsp, r0nomio, r0evidencias y cxr0 ahora le dan a PRB1212 y PR121A su informe en Datos de campo y el estado «Informe por completar» (en pantalla, «Por completar»). Antes figuraban «Inspeccionado» sin informe, y el Informe decía «Ningún vehículo tiene informe todavía».
+- **Con el informe completo y determinado por el inspector:** cxriesgosestados (PRB1212 y PR121A) queda «Inspeccionado», ahora con su informe completo y «Determinado por el inspector · Dentro de su facultad».
+- **Completo y enviado a calificación:** en cxr0dcalificar, cxr0emodulo, cxr0ebandeja y cxr0eresumen, PR121A pasa de «Inspeccionado» a «Pendiente calificación» (en pantalla, «En calificación»), como dice «1 por calificar».
+- **colacalconsistente, caso 50051:** PBA5101 (informe enviado a calificación) «Pendiente calificación», PBA5102 (determinado por el inspector) «Inspeccionado», PBA5103 «Por coordinar»; el subestado dice «2 de 3 con informe».
+- **Sin conexión (riesgosestados y r0informes):** los dos vehículos con informe quedan «Inspeccionado» con Asegurable determinado por el inspector.
+- **Simulación de la base:** al completar un informe y enviarlo a calificación, el vehículo queda «Pendiente calificación» (antes «En calificación», un alias).
+- **«No asegurable» como estado:** no hay ninguno. Solo aparece como veredicto (`aseg`, `criterioInspector`, `veredicto`).
+
+**Prueba cruzada (estado de cada vehículo contra su Informe y su Calificación; el caso)**
+
+| Escena | Vehículos (estado · Informe) | Caso |
+|---|---|---|
+| cxriesgosestados | PRB1212 y PR121A Inspeccionado · informe Enviado, determinado por el inspector; PRB1213 En curso · sin informe | En curso (el más atrasado) |
+| r0noinsp, r0nomio, r0evidencias | PRB1212 y PR121A Por completar · informe Por completar; PRB1213 Por coordinar o En curso · sin informe | En coordinación (r0noinsp, r0nomio) o En curso (r0evidencias), como antes |
+| cxr0ebandeja | PRB1212 Por completar · PR121A En calificación (informe Enviado, «por calificar») · PRB1213 Por coordinar | En coordinación · «1 por calificar» |
+| colacal 50051 | PBA5101 En calificación (Enviado) · PBA5102 Inspeccionado (Enviado, determinado) · PBA5103 Por coordinar (sin informe) | En coordinación · «2 de 3 con informe» |
+| r0informes | PBA4521 y GSE1098 Inspeccionado · informe Enviado, Asegurable; Kia Sportage Por completar | Agendado, como antes |
+
+**Verificado**
+
+- **Sintaxis:** `node --check` de los .js y el verificador del .dc.html, sin errores. Escenas: 813.
+- **Búsqueda en todo el proyecto:** «inspeccionados» solo queda en «Inspeccionados sin orden» (Inicio, casos Inspeccionado sin orden de emisión) y en un texto del Monitor sobre casos; no hay «No asegurable» como estado.
+- **Regresión (antes y después, IGUAL):** riesgos, bandejaexp, coordagrupar, cxestadoparcial, cxestadofases, estadofasecurso, estadofaseinspeccion, r0sininsp, cxr0b (también en Calificación), cxr0bcompletar, cxr0cauto, cxr0cvacio, cxr0dcalidad, cxr0emodulo, calveh, calcola y colacalconsistente (bandeja, Calificación, Inicio, `?frol=admin` y `?frol=sus`: 4 casos · 6 informes · 2 vencidos).
+- **Cambian, a propósito:** los estados de los vehículos en las escenas de la prueba cruzada, con el mismo estado del caso que antes.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+
+- La conexión real: el estado por fases que entrega la base en `riesgos[].riesgo_estado` (usé datos simulados).
+- La acción «Completar y enviar» sobre estos informes con el nuevo estado (cambié la simulación, no la probé en pantalla).
+- Las escenas de un caso con un solo vehículo, ni las de calificación con vehículos ya calificados (no las toqué).
+- Firefox y Safari.
+
+**Diferencias**
+
+- **Código por corregir (no tocado):** `recalc` del Back-office pone el caso en «Pendiente calificación» si algún vehículo lo está, aunque otro siga «En curso» o «Informe por completar», y deja «Agendado» con un vehículo «Informe por completar» (r0informes). DEC-239 pide el más atrasado. Por eso riesgosestados, r0informes y cxriesgosestados quedan con «Inspeccionado» con resultado y no con «Pendiente calificación», y su caso sigue como antes.
+- En riesgosestados y r0informes, la Calificación ahora dice «2 de 3 vehículos calificados · 2 asegurables» (antes «0 de 3 · Por calificar»), porque el resultado del inspector es Asegurable.
+- En riesgosestados, el Informe de Kia Sportage (En curso) sigue diciendo «Enviado»: viene del informe de ejemplo del caso 20196, igual que antes.
+- «N de M agendados» del caso en Coordinación sigue contando los vehículos ya coordinados, aunque ya tengan informe (lo calcula `SiriusCoordEstado`, no los datos).
+- Los vehículos 50044 (garantías) y 50086 (inspectores) siguen «Inspeccionado» sin informe: son casos de otras pantallas, sin informe en su escena.
+- La leyenda del PDF de calificación aún dice «No asegurable» como franja de estado (código, no datos).
+
+**Escenas**
+
+Sin escenas nuevas; cambian los datos de cxriesgosestados, r0noinsp, r0nomio, r0evidencias, cxr0, cxr0dcalificar, cxr0emodulo, cxr0ebandeja, cxr0eresumen, colacalconsistente, riesgosestados y r0informes.
+
+Registro: `project/registro-envios.md`. Inventario: filas de `datos-cx-fases.js`, `datos-cx-colacal.js`, `SIRIUS Back-office.dc.html` y `datos-escenas.js`, y la sección «Estado por fases de cada vehículo en los datos de demostración (etapa AV-3 · DEC-271)».
+
+Tiempo de la etapa: inicio 21/11/2026 22:38 · fin 21/11/2026 22:56 · 18 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa AV-2
 
 Publiqué la versión 373 de SIRIUS (los archivos subieron en la 372; esta versión cierra el registro con el tiempo de la etapa). Con «Agrupar por: Riesgo», la carta de un vehículo ya enviado dice «Enviado por el cliente · N de N fotos», con tono de éxito, igual que el «✓ Enviado» de la app del cliente. En «Agrupar por: Visita», la fila «Por vehículo» lo muestra como «PAU6044 5 de 5 · enviado». Sin `enviado`, nada cambia.

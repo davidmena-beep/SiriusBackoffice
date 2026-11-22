@@ -22,7 +22,7 @@
     sucursal: 'Quito', backoffice: DR, estado, comercial: 'Santiago Ortiz', flujoVersion: 2, visitasBase: [] }, extra || {});
   const veh = (id, estado, aseg, placas, extra) => base(id, estado, Object.assign({ ramo: 'Vehículos', tipoRiesgo: 'Vehículos', asegurado: aseg, placa: placas[0][0], placas: placas.map((p) => p[0]), bien: placas[0][0],
     solicitud: { formularios: placas.map(() => 'Vehículos livianos') },
-    riesgos: placas.map((p, i) => ({ id: id + '-V' + (i + 1), label: p[0], nowrap: true, detalle: p[1], cobertura: 'Todo riesgo', total: 20000 + i * 1500, estado: p[2] || 'Inspeccionado', visita: p[2] === 'En coordinación' ? null : { n: 1, estado: 'Realizada', inicio: '2026-10-14T10:00', inspector: 'Mauricio Endara' } })) }, extra || {}));
+    riesgos: placas.map((p, i) => ({ id: id + '-V' + (i + 1), label: p[0], nowrap: true, detalle: p[1], cobertura: 'Todo riesgo', total: 20000 + i * 1500, estado: p[2] || 'Inspeccionado', visita: p[2] === 'Por coordinar' ? null : { n: 1, estado: 'Realizada', inicio: '2026-10-14T10:00', inspector: 'Mauricio Endara' } })) }, extra || {}));
   const rg = (id, estado, aseg, bien, resp, extra) => base(id, estado, Object.assign({ ramo: 'Incendio y líneas aliadas', ramos: ['Incendio y líneas aliadas'], tipoRiesgo: 'Ramos Generales', asegurado: aseg, placa: '', bien,
     responsable: resp, solicitud: { formularios: ['Ubicación – Ramos Generales'] }, riesgos: [{ id: id + '-R1', label: bien, detalle: bien, cobertura: 'Incendio y líneas aliadas', estado }] }, extra || {}));
   // Informe de un vehículo: completo, con por qué llegó (fuera de facultad, enviado a calificación o determinado dentro de la facultad) y desde cuándo.
@@ -33,7 +33,7 @@
     : como === 'enviar' ? { criterio: 'Enviar a calificación', decision: 'enviar' } : { criterio: 'Asegurable', decision: 'determinar' });
   const datos = () => {
     const casos = [
-      veh('50051', 'En coordinación', 'Transportes Cotopaxi Cía. Ltda.', [['PBA5101', 'Chevrolet, D-Max, 2022'], ['PBA5102', 'Toyota, Hilux, 2021'], ['PBA5103', 'Nissan, Frontier, 2023', 'En coordinación']], { responsable: 'Andrea Salazar', subestado: '2 de 3 inspeccionados' }),
+      veh('50051', 'En coordinación', 'Transportes Cotopaxi Cía. Ltda.', [['PBA5101', 'Chevrolet, D-Max, 2022', 'Pendiente calificación'], ['PBA5102', 'Toyota, Hilux, 2021'], ['PBA5103', 'Nissan, Frontier, 2023', 'Por coordinar']], { responsable: 'Andrea Salazar', subestado: '2 de 3 con informe' } /* AV-3 · DEC-271: PBA5101 con su informe enviado a calificación (fuera de facultad); PBA5102 determinado por el inspector (Inspeccionado); PBA5103 sin informe */),
       veh('50052', 'Pendiente calificación', 'Agroexportadora del Valle S.A.', [['GBF2201', 'Hyundai, Tucson, 2020', 'Pendiente calificación'], ['GBF2202', 'Kia, Sportage, 2022', 'Pendiente calificación']], { responsable: DR, backoffice: VL }),
       veh('50053', 'Pendiente calificación', 'Constructora Pichincha S.A.', [['PCA3301', 'Mazda, BT-50, 2019', 'Pendiente calificación'], ['PCA3302', 'Ford, Ranger, 2021', 'Pendiente calificación']], { responsable: DR }),
       rg('50054', 'Pendiente calificación', 'Bodegas Andinas Cía. Ltda.', 'Bodega · Av. Galo Plaza, Quito', DR),
