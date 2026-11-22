@@ -81,9 +81,9 @@
   const tipoIns = (n) => ((EJ().inspectores || []).find((x) => x.n === n) || {}).tipo || 'Interno';
   const orgDe = (n) => { const x = (EJ().inspectores || []).find((y) => y.n === n) || {}, r = RF() ? RF().deRed(n) : null; return r ? r.organizacion : x.tipo === 'Agencia' ? (x.ag || 'Agencia') : x.tipo === 'Externo' ? 'Independiente' : 'Aseguradora del Sur'; };
   // Agenda fija: internos y de agencia con disponibilidad en SIRIUS, de la zona y la modalidad (los externos van por la red).
-  // Etapa G-2b · DEC-223: «cubre» usa la cobertura del inspector con la sucursal del caso (d.zona); sin SiriusCobertura, sus zonas como antes.
+  // Etapa G-2b · DEC-223: «cubre» usa la cobertura del inspector con la sucursal del caso (d.zona). R-5b · DEC-266: la cobertura son solo las filas de la Red.
   // Etapa G-2c · DEC-222: con el lugar de la visita (d.lugar), también su ciudad y su zona.
-  const cubre = (x, d) => { const C = W.SiriusCobertura, lg = d.lugar && typeof d.lugar === 'object' ? d.lugar : null; return C ? !!C.cubre(x, { sucursal: d.zona, ciudad: lg ? lg.ciudad : '', zonaId: lg && lg.zona ? lg.zona.id : '' }).nivel : (x.zonas || []).indexOf(d.zona) >= 0; };
+  const cubre = (x, d) => { const C = W.SiriusCobertura, lg = d.lugar && typeof d.lugar === 'object' ? d.lugar : null; return C ? !!C.cubre(x, { sucursal: d.zona, ciudad: lg ? lg.ciudad : '', zonaId: lg && lg.zona ? lg.zona.id : '' }).nivel : false; }; // R-5b: solo las filas de la Red
   function fijos(d) { return FIJA().filter((x) => cubre(x, d) && (x.modalidades || []).indexOf(d.modalidad) >= 0 && tipoIns(x.inspector) !== 'Externo'); }
   // Red (DEC-172): externos y agencias habilitados para la zona, el grupo de ramo y la modalidad.
   function redDe(d) { const AP = W.SiriusAppInspectorLogic; return OFERTAS().map((x) => AP && AP.alcanceRed ? AP.alcanceRed(x) : x).filter((x) => x.activo !== false && (!AP || !AP.recibe || AP.recibe(x.inspector)) && cubre(x, d) && (x.grupos || []).indexOf(d.grupo) >= 0 && (x.modalidades || []).indexOf(d.modalidad) >= 0); }

@@ -53,7 +53,6 @@
     // Etapa G-2c · DEC-222: con el lugar de la visita, también su ciudad y su zona (un inspector «Por ciudad y zona» cubre la visita de su zona).
     var lug = v.lugar && typeof v.lugar === 'object' ? v.lugar : null;
     if ((suc || lug) && COB) { var cb = COB.cubre(d, { sucursal: suc, ciudad: lug ? lug.ciudad : '', zonaId: lug && lug.zona ? lug.zona.id : '' }); if (!cb.nivel) { var dn = lug && window.SiriusLugar ? window.SiriusLugar.texto(lug) : suc; out.push({ tipo: 'zona', texto: cb.faltaLugar ? n + ': falta el lugar de la inspección para saber si cubre ' + dn + ' (' + COB.corto(d) + ').' : n + ' no cubre ' + dn + ' (su cobertura: ' + COB.corto(d) + ').' }); } }
-    else if (suc && d.zonas.indexOf(suc) < 0) out.push({ tipo: 'zona', texto: n + ' no cubre ' + suc + ' (sus zonas: ' + A.lista(d.zonas) + ').' });
     if (v.mod && d.modalidades.indexOf(v.mod) < 0) out.push({ tipo: 'modalidad', texto: n + ' no hace visitas «' + v.mod + '» (hace ' + A.lista(d.modalidades.map(function (m) { return '«' + m + '»'; })) + ').' });
     if (otras.length + 1 > d.capacidadDia) out.push({ tipo: 'capacidad', texto: n + ' ya tiene ' + otras.length + ' de ' + d.capacidadDia + ' visitas el ' + A.corta(dst.fecha) + '.' });
     if (v.fecha === dst.fecha && v.hIni === dst.hIni && v.inspector === n) out.push({ tipo: 'igual', texto: 'Es la misma fecha, hora e inspector: no hay nada que mover.' });

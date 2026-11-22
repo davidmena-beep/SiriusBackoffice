@@ -43,21 +43,23 @@
 
   // ---------- escenas (etapa G-2d) ----------
   // Cobertura de demostración: quién cubre qué en Quito, Guayaquil, Ambato y Cuenca (para que se vea el filtro por lugar).
+  // R-5b · DEC-266: son filas de la Red de la sesión (SiriusCobertura.fijarFilas); una ciudad entera = fila «ciudad», cada zona = fila «zona».
+  const Z_ = (cod, ...zonas) => (zonas.length ? zonas.map((z) => ({ nivel: 'zona', ciudad: cod, zona: z })) : [{ nivel: 'ciudad', ciudad: cod }]);
   const COB = () => ({
-    'Marco Tapia': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] },
-    'Cristian Vaca': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-3'] }, { cod: '1308', zonas: [] }] },
-    'Luis Andrade': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1'] }, { cod: '1801', zonas: [] }] },
-    'Diana Cárdenas': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: [] }, { cod: '0901', zonas: [] }] },
-    'Paola Vinueza': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '0901', zonas: ['z0901-1', 'z0901-2'] }] },
-    'Jorge Pazmiño': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1801', zonas: [] }, { cod: '0101', zonas: [] }] },
-    'Mauricio Endara': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-1', 'z1701-2'] }] },
-    'Sofía Arteaga': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-5'] }, { cod: '0101', zonas: [] }] },
-    'Pedro Lasso': { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '0901', zonas: [] }, { cod: '1308', zonas: [] }] } });
+    'Marco Tapia': Z_('1701', 'z1701-1', 'z1701-2'),
+    'Cristian Vaca': Z_('1701', 'z1701-3').concat(Z_('1308')),
+    'Luis Andrade': Z_('1701', 'z1701-1').concat(Z_('1801')),
+    'Diana Cárdenas': Z_('1701').concat(Z_('0901')),
+    'Paola Vinueza': Z_('0901', 'z0901-1', 'z0901-2'),
+    'Jorge Pazmiño': Z_('1801').concat(Z_('0101')),
+    'Mauricio Endara': Z_('1701', 'z1701-1', 'z1701-2'),
+    'Sofía Arteaga': Z_('1701', 'z1701-5').concat(Z_('0101')),
+    'Pedro Lasso': Z_('0901').concat(Z_('1308')) });
   PL.ESCENAS = ['portallugargps', 'portallugarbuscar', 'portalsinubicar', 'portalsinhorarios', 'portalrgconfirmar', 'portalautoinsplugar'];
   PL.GPS_QUITO_NORTE = [-0.1525, -78.4835];
   // Prepara una escena: cobertura de demostración, GPS simulado (o denegado con ?fgps=denegado) y qué hace sola. Devuelve el lugar con el que abre (o null).
   PL.escena = (e, q) => { q = q || {}; PL.sim = { gps: null, ajuste: null, buscar: '', elegir: null, resp: null, rgDir: '', paso: '' }; if (PL.ESCENAS.indexOf(e) < 0) return null;
-    const C0 = CB(); if (C0 && C0.ed) { const s = COB(); if (e === 'portalsinhorarios') s['Diana Cárdenas'] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '0901', zonas: [] }] }; Object.keys(s).forEach((n) => { C0.ed[n] = s[n]; }); }
+    const C0 = CB(); if (C0 && C0.fijarFilas) { const s = COB(); if (e === 'portalsinhorarios') s['Diana Cárdenas'] = Z_('0901'); Object.keys(s).forEach((n) => { C0.fijarFilas(n, s[n]); }); }
     const den = q.gps === 'denegado';
     if (e === 'portallugargps' || e === 'portalautoinsplugar') { PL.sim.gps = den ? 'denegado' : { punto: PL.GPS_QUITO_NORTE.slice() }; if (e === 'portallugargps' && !den) PL.sim.ajuste = [-0.1478, -78.4800]; PL.sim.auto = !q.manual; }
     if (e === 'portallugarbuscar') { PL.sim.buscar = 'Kennedy Norte'; PL.sim.elegir = 0; PL.sim.auto = !q.manual; }

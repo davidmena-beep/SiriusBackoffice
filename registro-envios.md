@@ -4,6 +4,109 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa R-5b
+
+Publiqué la versión 365 de SIRIUS (los archivos subieron en la 364; esta versión cierra el registro con el tiempo de la etapa). Ahora la cobertura de un inspector son sus filas de la Red de inspectores, y solo ellas (DEC-266). El modelo viejo de la ficha salió de SiriusCobertura: el respaldo con zonas heredadas y las ediciones de la sesión ya no existen. Con la conexión, la pantalla ignora `u.cobertura` y `u.zonas`. El hallazgo principal: sin la conexión, la Agenda, Coordinar visita y el portal no usaban las filas, sino las «zonas» de cada inspector convertidas en sucursales. Por eso cambia la cobertura de 7 de los 10 inspectores de la demostración: son las diferencias aceptadas y van una por una en **Diferencias**. En las escenas con la conexión simulada convertí los datos viejos en filas equivalentes, y ahí no cambia ningún nivel.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué usaba | Ahora |
+|---|---|---|
+| `sirius-cobertura.js` | `S.de`, `deBase`, `S.migrar`, `S.zonasHeredadas`, `S.normalizar`, `S.ed`, `S.enSesion`, `S.quitarSesion`, `S.avisos`, `S.guardar` y el `Editor`; `cubre`, `corto`, `resumen` y `sinCobertura` con respaldo del modelo viejo | Solo filas; `filasDe` por el lector |
+| `sirius-red-fuente.js` | — | `filas(n)`, el único lector de las filas |
+| `Usuarios.dc.html` | `ufVmCx` (`u.cobertura` o `migrar(zonas)`), `ufVmDemo` (`C.de`), `sinCobertura`, `normalizar`/`limpiar`/`quitarSesion` al guardar, la tarjeta con el `Editor` | Filas; tarjeta de solo lectura |
+| `sirius-usuarios-base.js` | Campo `cobertura` y «(migrada de sus zonas)» en el historial | Solo `coberturaFilas` |
+| `sirius-usuarios-ficha.js` | `CoberturaCampo` (corto, resumen, normalizar, MODOS y avisos) | Sale (no se usaba desde R-4) |
+| `sirius-maestros.js` | `S.ed` en maestrosrenombrar | Sale |
+| `sirius-portal-lugar.js` | `S.ed` con coberturas de demostración | Filas en la Red de la sesión |
+| `sirius-agenda.js`, `Agenda.dc.html`, `sirius-portal-caso.js` | `cubre`/`corto` con respaldo de `zonas` | Solo filas |
+| `SIRIUS Back-office.dc.html` | `corto(i)` si traía `cobertura`; si no, sus zonas | `corto` de las filas |
+| `sirius-lugar.js`, `Coordinacion.dc.html` (resumen), `sirius-app-inspector.js` (resumen), `sirius-ciudades-zonas.js` (`conZona`), `sirius-zonas.js` (`quitarZonas`) | La API de SiriusCobertura por nombre | Sin cambio de código: ahora la API responde con filas |
+| `sirius-red.js` y `datos-red.js` | «Viene de la ficha» sin «Quitar»; `aplicar('retirar')` rechazaba esas filas | Filas normales con «Quitar» |
+| `datos-cx-usuarios.js`, `datos-cx-lugar.js`, `datos-cx-fases.js`, `datos-cx-inspectores.js` | `cobertura` y `zonas` de usuarios e inspectores simulados | `coberturaFilas` equivalentes |
+| `datos-usuarios.js` (vigilado) | No tiene cobertura ni zonas | **No cambia** (sigue en 1.7) |
+
+**Qué cambió**
+
+- `SiriusCobertura` 2.0 trabaja solo con filas:
+  - `filasDe` toma `coberturaFilas` del objeto o, por nombre o identificación, `SiriusRedFuente.filas`.
+  - `cubre`, `corto`, `resumen` y `sinCobertura` usan `cubreFilas`, `vigentes` y `ambitoTxt`.
+  - `inspectores()` usa la lista del lector.
+  - `conZona` y `quitarZonas` trabajan sobre las filas.
+  - `fijarFilas` sirve a las escenas para poner filas en la Red de la sesión.
+- `SiriusRedFuente.filas(n)`:
+  - Sin la conexión, lee la Red de la sesión o SIRIUS_RED.
+  - Con la conexión, lee `SIRIUS_CONEXION.red` y, si la Red no las trae, `coberturaFilas` del inspector o del usuario de la base. Nunca lee la demostración.
+- Red › Por inspector: sin «Viene de la ficha»; todas las filas tienen «Quitar». `datos-red.js` 1.3: la fila de Paola Vinueza pasa a origen «Red de inspectores» con historial «Cobertura traída de la ficha (R-5b)». La escena redcx ya no muestra «Viene de la ficha».
+- Usuarios: la tarjeta «Cobertura» es de solo lectura, con el resumen de las filas y «Abrir en Red de inspectores». Ya no hay cobertura de la sesión ni «Sin guardar en la base» para la cobertura.
+
+**Paridad** (foto ANTES y DESPUÉS, sin conexión y con la conexión simulada)
+
+| Punto | Resultado |
+|---|---|
+| (a) Nivel de cobertura, 246 lugares (cada zona, «zona por confirmar», cada ciudad sin zonas y cada sucursal), conexión simulada: cxcoordins (5 inspectores), lugarbuscar (6) y cxagenda (6) | Igual (0 diferencias) |
+| (a) Lo mismo sin la conexión (10 inspectores) | Igual en Marco Tapia, Paola Vinueza y Jorge Pazmiño; los otros 7 cambian donde el modelo viejo y las filas no coincidían (ver Diferencias) |
+| (b) Sugerencias de Coordinar visita en coord, cxcoordins y lugarbuscar (texto) | Igual |
+| (c) Portal de demostración (portalagenda, portalporagenda) | Horarios: 118 inmediatos y 18 por la red → 113 y 23 (Cristian Vaca ya no tiene cobertura). El texto que se ve es igual |
+| (d) Cobertura de la ficha (usfichaoperacion, cobertura, coberturazonainactiva, coberturasucursales) | Igual |
+| (d) Agenda (agendasemana, agendaok) | Cambia el texto corto junto al nombre («Sucursal Quito» en lugar de «Sucursales: Quito»; Cristian «Sin cobertura») |
+| (d) App del inspector | insphoy igual; inspyo: Mauricio «Atiende cualquier lugar de Quito» en lugar de «la sucursal Quito» |
+| (e) Red › Por zona y Por sucursal (redzona, redsucursal, redzonaprobar) | Igual |
+
+**Prueba cruzada**
+
+En la Red se quita la fila «Sucursal Quito» de Marco Tapia y se le da a Cristian Vaca «Quito (ciudad completa)»:
+
+| Pantalla | Antes | Después |
+|---|---|---|
+| Coordinar visita (Quito · Centro) | Marco en «ciudad»; Cristian «fuera» | Marco «fuera»; Cristian en «ciudad» |
+| Portal de demostración | Marco en 113 horarios inmediatos; Cristian en 0 | Marco en 0; Cristian en 118 |
+| Agenda | Marco «Sucursal Quito» y cubre; Cristian «Sin cobertura» | Marco «Sin cobertura» y no cubre; Cristian «Quito (toda la ciudad)» y cubre |
+| Red › Por zona (Quito · Centro) | Inmediata: Marco, Mauricio y Sofía | Inmediata: Cristian, Mauricio y Sofía |
+
+**Verificado**
+
+- **Conexión temporal activa (no simulada)** en una copia aparte: Gabriela Toapanta trae `cobertura` «todas» y `zonas` Guayaquil, que contradicen sus `coberturaFilas` (solo la zona Sur de Quito).
+  - SiriusCobertura, la Agenda conectada, Coordinar visita y Usuarios usan las filas: cubre Sur, no cubre Norte ni Guayaquil, y el texto corto es «Quito · Zona Sur».
+  - El usuario de la base ya no tiene el campo `cobertura`.
+  - `sirius-conexion.js` sigue en 70 bytes.
+- La fila traída de la ficha (Paola Vinueza) tiene «Quitar» y se quita con motivo. «Abrir en Red de inspectores» abre la Red con el inspector.
+- **Regresión del texto** contra la versión anterior: 27 escenas de la paridad y 88 más. Las 17 que cambian son las de Diferencias; ninguna da errores.
+- Capturas de redcx y coberturalectura a 1280×720 y 1920×1080.
+- **Búsqueda** de «migrar», «zonasHeredadas», «u.cobertura», «Viene de la ficha» y «Ficha de usuario»: solo quedan en comentarios históricos, en el historial de `datos-red.js` y en la migración de flujos (otro tema). `u.coberturaFilas` es el campo nuevo.
+
+**No verificado**
+
+- La base real (`red_inspectores` y las filas de producción).
+- Firefox y Safari.
+
+**Diferencias** (donde el modelo viejo daba distinto a las filas)
+
+- **Cristian Vaca:** antes, sucursales Quito y Manta; no tiene filas. Queda sin cobertura: «Sin cobertura» en la Agenda y en Usuarios, ya no aparece en el portal ni como candidato.
+- **Pedro Lasso:** antes, sucursales Manta y Guayaquil; no tiene filas. Queda sin cobertura.
+- **Renata Cobo (inactiva):** antes «Todas»; su única fila está vencida. Queda sin cobertura.
+- **Diana Cárdenas:** antes, sucursales Quito y Guayaquil; ahora solo la zona Norte de Quito. La zona Centro empieza el 01/11.
+- **Luis Andrade:** antes, sucursales Quito y Ambato; ahora la zona Valles Cumbayá y Tumbaco y la sucursal Ambato.
+- **Sofía Arteaga:** antes, sucursales Quito, Ambato y Cuenca; ahora la sucursal Quito y Riobamba (ciudad completa).
+- **Mauricio Endara:** antes, sucursal Quito; ahora Quito (ciudad completa). Cubre igual en Quito, pero por ciudad.
+- **Portal de demostración:** de 118 inmediatos y 18 por la red pasa a 113 y 23.
+- **Texto corto con el formato de las filas:** «Sucursal Quito» en lugar de «Sucursales: Quito»; «Quito · Zonas Norte y Centro» en lugar de «Quito: Norte y Centro». Se ve en la Agenda, la Agenda conectada, Usuarios y la cuenta bancaria.
+- **Usuarios:** la lista avisa «3 sin cobertura». La ficha de Mauricio (coberturalectura) muestra el resumen de sus filas en lugar del editor viejo.
+- **zonaseliminar:** nombra a «Diana Cárdenas y Mauricio Endara» (el orden de la Red) en lugar de «Mauricio Endara y Diana Cárdenas».
+- **Red › Por inspector:** sale la nota «Las filas que vienen de la ficha se cambian en Usuarios…».
+- **Escenas de cobertura de Usuarios:** cobertura, coberturalectura, coberturazonainactiva, usrsinguardar y cxusrsesion ya no siembran la cobertura de la sesión. Solo coberturazonainactiva sigue marcando la zona inactiva.
+- **Escenas con la conexión simulada:** `coberturaFilas` equivalentes a su cobertura o zonas anteriores. Con la conexión, la cobertura nunca sale de la demostración.
+
+**Escenas**
+
+Sin escenas nuevas. Cambian las descripciones de redcx, coberturalectura, zonaseliminar y maestrosrenombrar.
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (18 archivos y la sección «La cobertura sale solo de las filas de la Red»).
+
+Tiempo de la etapa: inicio 21/11/2026 18:16 · fin 21/11/2026 18:51 · 35 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-5a
 
 Publiqué la versión 363 de SIRIUS (los archivos subieron en la 362; esta versión cierra el registro con el tiempo de la etapa). La jornada, la capacidad, las modalidades, los ramos, «recibe ofertas» y los bloqueos de cada inspector ya se leen con un solo lector de la Red de inspectores (`sirius-red-fuente.js`, DEC-266 y DEC-268), y `SIRIUS_AGENDA` 1.2 ya no los tiene. Con los mismos datos, la Agenda, Coordinar visita, la Agenda conectada, el monitor y el portal dan exactamente lo mismo que antes. Un cambio hecho en la Red ahora se ve en todas esas pantallas. Antes de tocar nada te pregunté qué valores debían quedar en la Red para cuatro inspectores donde las fuentes no coincidían, y elegiste «Paridad primero».

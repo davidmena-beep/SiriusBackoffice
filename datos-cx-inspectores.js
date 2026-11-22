@@ -12,12 +12,14 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC) return;
   const U = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Coordinador de inspecciones', roles: ['Coordinador de inspecciones', 'Administrador'] };
   // Inspectores de la base: 3 activos que se listan, la agencia como registro propio y un inspector inactivo (estos dos no se listan).
+  // R-5b · DEC-266: la cobertura de los inspectores de la base son filas de la Red (coberturaFilas); las mismas que antes daba su «cobertura» o sus «zonas». zonas se ignora.
+  const FC = (nivel, x) => Object.assign({ id: 'rc-b-' + nivel + '-' + String((x && (x.zona || x.ciudad || x.sucursal)) || 't').replace(/\W/g, ''), nivel, sucursal: '', ciudad: '', zona: '', desde: '2026-01-01', hasta: '', vigente: true, origen: 'Red de inspectores', motivo: 'Cobertura de la base' }, x || {});
   const INSPECTORES = [
-    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo' },
-    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Activo' },
-    { nombre: 'Gabriela Toapanta', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo' },
-    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo' },
-    { nombre: 'Diego Salinas', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Inactivo' },
+    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' })] },
+    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' })] },
+    { nombre: 'Gabriela Toapanta', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' })] },
+    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' }), FC('sucursal', { sucursal: 'Guayaquil' })] },
+    { nombre: 'Diego Salinas', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Inactivo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' })] },
   ];
   // escena → [caso, quién se elige en el panel, motivo escrito]
   const ESC = { cxcoordins: ['50081', '', ''], cxcoordpasado: ['50085', 'Luis Andrade', ''], cxcoordcambiar: ['50084', 'Luis Andrade', 'El inspector asignado tiene otra cita en el sur de Quito a esa hora.'],

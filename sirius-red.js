@@ -3,7 +3,7 @@
 // Una sola fuente: la cobertura, la operación, la jornada y los bloqueos de cada inspector se leen y se guardan solo aquí. Con la conexión: SIRIUS_CONEXION.red y
 // SIRIUS_CONEXION.redAccion(tipo, datos) → { ok, mensaje }; sin la conexión: SIRIUS_RED (datos-red.js), con redAccion simulada en la sesión (SIRIUS_RED.aplicar).
 // La cobertura se resume y se decide con SiriusCobertura (resumenFilas, cortoFilas, cubreFilas): lo que muestra Por inspector = SiriusCobertura.cubre = la base.
-// Filas que vienen de la ficha del usuario: «Viene de la ficha», sin «Quitar» (se cambian allí durante la transición). R-5a · DEC-266: los bloqueos son todos de la Red (con «Quitar»).
+// R-5b · DEC-266: todas las filas de cobertura son de la Red (con «Quitar»); R-5a: los bloqueos también.
 // Componente: window.SiriusRedInspectores({ rol, usuario, escena, rev, onIr, inspector }). Escenas: red, redsincob, redasignar, redoperacion y redcx; R-3b: redzona, redzonasinzonas, redzonaprobar, redzonaconfirmar, redzonaasignar, redsucursal, redsucursalasignar, redzonacx y redzonacxerror. Lógica: window.SiriusRed.
 (function () {
   'use strict';
@@ -176,11 +176,11 @@
       filas.length ? h('table', { className: 'rdi-tb' }, h('caption', { className: 'rdi-sr' }, 'Filas de cobertura de ' + actual.nombre),
         h('colgroup', null, h('col', { style: { width: '17%' } }), h('col', { style: { width: '21%' } }), h('col', { style: { width: '18%' } }), h('col', { style: { width: '15%' } }), h('col', { style: { width: '17%' } }), h('col', { style: { width: '12%' } })),
         h('thead', null, h('tr', null, ['Nivel', 'Ámbito', 'Vigencia', 'Asignó', 'Motivo'].map((t) => h('th', { key: t, scope: 'col' }, t)), h('th', { scope: 'col' }, h('span', { className: 'rdi-sr' }, 'Acción')))),
-        h('tbody', null, filas.map((f) => { const vig = COB() ? COB().filaVigente(f, hoy) : true, ficha = f.origen === 'Ficha de usuario';
+        h('tbody', null, filas.map((f) => { const vig = COB() ? COB().filaVigente(f, hoy) : true;
           return h('tr', { key: f.id, className: vig ? '' : 'nv', 'data-red-fila': f.id, 'data-vigente': vig ? '1' : '0' }, h('td', { style: { fontWeight: 700, color: 'var(--text-strong)' } }, S.nivel(f.nivel)), h('td', null, S.ambito(f)), h('td', null, vigenciaTxt(f, hoy)), h('td', null, f.creadoPor || '—'), h('td', null, f.motivo || '—'),
-            h('td', { style: { textAlign: 'right' } }, ficha ? h('span', { className: 'rdi-vie' }, 'Viene de la ficha') : ro ? null : h('button', { type: 'button', className: 'rdi-q', 'aria-label': 'Quitar cobertura ' + S.nivel(f.nivel) + ' · ' + S.ambito(f), onClick: (e) => { retRef.current = e.currentTarget; setDlg({ k: 'retirar', id: f.id, txt: S.nivel(f.nivel) + ' · ' + S.ambito(f), motivo: '' }); } }, 'Quitar'))); })))
+            h('td', { style: { textAlign: 'right' } }, ro ? null : h('button', { type: 'button', className: 'rdi-q', 'aria-label': 'Quitar cobertura ' + S.nivel(f.nivel) + ' · ' + S.ambito(f), onClick: (e) => { retRef.current = e.currentTarget; setDlg({ k: 'retirar', id: f.id, txt: S.nivel(f.nivel) + ' · ' + S.ambito(f), motivo: '' }); } }, 'Quitar'))); })))
         : null,
-      h('p', { style: { margin: '14px 0 0', fontSize: 13, color: 'var(--text-muted)' } }, 'Niveles: todas · sucursal · ciudad completa · zona. Una asignación con fecha «hasta» sirve para reemplazos y temporadas. Las filas que vienen de la ficha se cambian en Usuarios mientras dura la transición.'));
+      h('p', { style: { margin: '14px 0 0', fontSize: 13, color: 'var(--text-muted)' } }, 'Niveles: todas · sucursal · ciudad completa · zona. Una asignación con fecha «hasta» sirve para reemplazos y temporadas.'));
     const gTg = (lbl, lista0, val, k) => h('div', { style: { minWidth: 0 } }, h('span', { className: 'rdi-lbl', id: 'rdi-l-' + k }, lbl),
       h('div', { role: 'group', 'aria-labelledby': 'rdi-l-' + k, style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, lista0.map((m) => h('button', { key: m, type: 'button', className: 'rdi-tg', disabled: ro, 'aria-pressed': val.indexOf(m) >= 0 ? 'true' : 'false', onClick: () => setDr(k, toggle(val, m)) }, m))),
       h('span', { style: { display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 6 } }, val.length ? '' : 'Ninguna marcada: ' + (k === 'ramos' ? 'todos los ramos.' : 'todas las modalidades.')));

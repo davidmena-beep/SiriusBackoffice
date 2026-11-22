@@ -9,8 +9,8 @@
 // «Operación (solo lectura)» con «Abrir en Red de inspectores» y ya no los edita ni los envía al guardar.
 // Cada cambio se resalta con su valor anterior («antes: Interno»); abajo, la barra fija «N cambios sin guardar · Motivo · Descartar · Guardar en la base», que envía
 // un solo editarUsuario con todos los cambios (con la conexión) o los aplica en la sesión (sin ella). Lo guardado manda: la ficha parte de lo que tiene la base;
-// si la base rechaza un cambio, el mensaje sale en su sección y el cambio sigue resaltado; si lo que ven otras pantallas no coincide con la base (una cobertura
-// que quedó solo en la sesión), la sección dice «Sin guardar en la base». Correo de acceso: de un Activo no se cambia escribiendo encima (lleva a «Volver a
+// si la base rechaza un cambio, el mensaje sale en su sección y el cambio sigue resaltado; si lo que ven otras pantallas no coincide con la base, la sección
+// dice «Sin guardar en la base» (R-5b: la cobertura ya no se guarda en la sesión: son las filas de la Red). Correo de acceso: de un Activo no se cambia escribiendo encima (lleva a «Volver a
 // invitar» con «Correo nuevo»); de un Invitado, cambiarlo genera una invitación nueva. Modo nuevo: la misma ficha; «Invitar» llama a crearUsuario.
 // Es la vista: los datos, las validaciones y el guardado los entrega Usuarios.dc.html en props (adaptador con o sin la conexión).
 (function () {
@@ -47,7 +47,6 @@
   const DIAS = [[1, 'L', 'lunes'], [2, 'M', 'martes'], [3, 'X', 'miércoles'], [4, 'J', 'jueves'], [5, 'V', 'viernes'], [6, 'S', 'sábado'], [7, 'D', 'domingo']];
   const lista = (a) => { a = (a || []).slice(); if (a.length <= 1) return a.join(''); const u = a.pop(); return a.join(', ') + ' y ' + u; };
   const jorTxt = (j) => { if (!j || !j.desde) return 'Sin jornada'; const F = W.SiriusFecha; return F && F.jornadaTxt ? F.jornadaTxt(j) : (j.dias || []).map((d) => (DIAS.find((x) => x[0] === d) || [0, '?'])[1]).join('') + ', ' + j.desde + '–' + j.hasta; };
-  const cobTxt = (c) => { const C = CB(); return C && c ? C.corto(c) : '—'; };
   // Campos editables: [clave, sección, etiqueta, texto del valor]
   const CAMPOS = {
     nombre: ['datos', 'Nombre completo'], tipoId: ['datos', 'Tipo de identificación'], ident: ['datos', 'Identificación'], email: ['datos', 'Correo de acceso'], celular: ['datos', 'Celular'], sucursal: ['datos', 'Sucursal'],
@@ -93,27 +92,7 @@
       act.map((z) => { const q0 = xy(z.punto), on = !p.marcadas.length || p.marcadas.indexOf(z.id) >= 0, todo = !p.marcadas.length, lab = z.nombre + (on && !todo ? ' ✓' : ''), w = Math.max(70, lab.length * 7.4 + 20), q = [Math.min(Wd - w / 2 - 6, Math.max(w / 2 + 6, q0[0])), Math.min(Hd - 24, Math.max(24, q0[1]))]; return h('g', { key: z.id, 'data-uf-zona-mapa': z.id, 'data-on': on ? '1' : '0', style: { cursor: p.onToggle ? 'pointer' : 'default' }, onClick: () => p.onToggle && p.onToggle(z.id) },
         h('rect', { x: q[0] - w / 2, y: q[1] - 17, width: w, height: 34, rx: 10, fill: on ? (todo ? 'rgba(0,163,224,.10)' : 'rgba(0,163,224,.22)') : '#FFFFFF', stroke: on ? 'var(--color-brand,#00A3E0)' : 'var(--border-default,#C9CED6)', strokeWidth: on && !todo ? 2.5 : 1.5 }),
         h('text', { x: q[0], y: q[1] + 5, textAnchor: 'middle', fontSize: 12.5, fontWeight: 700, fill: 'var(--text-strong,#011E41)' }, lab)); })); }
-  function CoberturaCampo(p) { const React = R(), C = CB(), Z = SZ(), [q, setQ] = React.useState(''); if (!C) return h('p', null, 'Cobertura no disponible.');
-    const c = C.normalizar(p.valor), ro = !!p.ro, set = (f) => { if (ro) return; const n = clon(c); f(n); p.onCambio(n); };
-    const modos = h('div', { role: 'radiogroup', 'aria-label': 'Modo de cobertura', style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, C.MODOS.map((m) => h('button', { key: m[0], type: 'button', role: 'radio', className: 'uf-ch', 'aria-checked': c.modo === m[0] ? 'true' : 'false', 'data-uf-cob-modo': m[0], title: m[2], disabled: ro, onClick: () => set((x) => { x.modo = m[0]; }) }, 'Modo: ' + m[1].toLowerCase())));
-    let cuerpo = null;
-    if (c.modo === 'sucursales') cuerpo = h('div', { role: 'group', 'aria-label': 'Sucursales', className: 'uf-grp' }, C.sucursales().map((s) => h('button', { key: s, type: 'button', className: 'uf-ch', 'aria-pressed': c.sucursales.indexOf(s) >= 0 ? 'true' : 'false', disabled: ro, onClick: () => set((x) => { x.sucursales = x.sucursales.indexOf(s) >= 0 ? x.sucursales.filter((y) => y !== s) : x.sucursales.concat([s]); }) }, s)));
-    if (c.modo === 'ciudad') { const res = !ro && q.trim() && Z ? Z.buscar(q, false).filter((y) => !c.ciudades.some((x) => x.cod === y.cod)).slice(0, 6) : [];
-      cuerpo = h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } }, c.ciudades.map((x, k) => { const act = C.zonasActivas(x.cod) || [], nom = C.ciudadNombre(x.cod), tg = (id) => set((y) => { const L = y.ciudades[k].zonas; y.ciudades[k].zonas = L.indexOf(id) >= 0 ? L.filter((v) => v !== id) : L.concat([id]); });
-        return h('div', { key: x.cod, 'data-uf-ciudad': x.cod, style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,300px),1fr))', gap: 12, alignItems: 'start' } },
-          act.length ? h(Mapa, { cod: x.cod, marcadas: x.zonas, onToggle: ro ? null : tg }) : null,
-          h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } }, h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } }, h('strong', { style: { fontSize: 14, color: 'var(--text-strong)' } }, nom), ro ? null : h('button', { type: 'button', className: 'uf-lk', 'aria-label': 'Quitar ' + nom, onClick: () => set((y) => { y.ciudades.splice(k, 1); }) }, 'Quitar')),
-            act.length ? [h('label', { key: 't', style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 } }, h('input', { type: 'checkbox', checked: !x.zonas.length, disabled: ro, onChange: () => set((y) => { y.ciudades[k].zonas = []; }) }), nom + ' · toda la ciudad')].concat(act.map((z) => h('label', { key: z.id, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, padding: '6px 10px', border: '1px solid var(--border-subtle)', borderRadius: 8 } },
-              h('input', { type: 'checkbox', 'data-uf-zona': z.id, checked: x.zonas.indexOf(z.id) >= 0, disabled: ro, onChange: () => tg(z.id) }), nom + ' · Zona ' + z.nombre))) : h('p', { style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Ciudad sin zonas: atiende toda la ciudad.'))); }),
-        ro ? null : h('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } }, h('label', { htmlFor: 'uf-agr-ciu', style: { fontSize: 14, fontWeight: 700, color: 'var(--text-link,var(--cyan-700))' } }, '+ Agregar ciudad'),
-          h('input', { id: 'uf-agr-ciu', className: 'uf-in', type: 'search', value: q, placeholder: 'Escribe una ciudad (por ejemplo: Ambato)', onChange: (e) => setQ(e.target.value), onKeyDown: (e) => { if (e.key === 'Enter' && res.length) { e.preventDefault(); setQ(''); set((y) => { y.ciudades.push({ cod: res[0].cod, zonas: [] }); }); } }, style: { maxWidth: 360 } }),
-          res.length ? h('div', { role: 'listbox', 'aria-label': 'Ciudades que coinciden', style: { display: 'flex', flexWrap: 'wrap', gap: 6 } }, res.map((y) => h('button', { key: y.cod, type: 'button', className: 'uf-ch', role: 'option', 'aria-selected': 'false', onClick: () => { setQ(''); set((z) => { z.ciudades.push({ cod: y.cod, zonas: [] }); }); } }, y.nombre + ' · ' + y.provNombre))) : null)); }
-    const av = C.avisos(c);
-    return h('div', { 'data-uf-cobertura': '', style: { display: 'flex', flexDirection: 'column', gap: 12 } }, modos, cuerpo,
-      av.length ? h('div', { role: 'note', style: { padding: '8px 12px', borderRadius: 8, background: 'var(--alert-warning-bg,#FDF3DC)', fontSize: 13, fontWeight: 600 } }, av.join(' · ')) : null,
-      h('p', { 'data-uf-cob-resumen': '', style: { margin: 0, fontSize: 14, color: 'var(--text-strong)' } }, h('span', { style: { color: 'var(--text-muted)' } }, 'Resumen: '), C.resumen(c))); }
-
-  // ---------- Ficha única ----------
+  // R-5b · DEC-266: el editor de cobertura de la ficha (CoberturaCampo, modelo { modo, sucursales, ciudades }) salió: la cobertura son las filas de la Red de inspectores.
   function Ficha(p) { const React = R(); ponerCss(); const u = p.u, nuevo = !!p.nuevo, opc = p.opc;
     const base0 = React.useMemo(() => (nuevo ? p.vacio : clon(u)), []); // lo guardado (la base) al abrir
     const pre = p.preset || {};
@@ -227,5 +206,5 @@
       h('div', { style: { display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' } }, h('div', { style: { flex: '0 0 220px', minWidth: 200, alignSelf: 'stretch' } }, nav),
         h('div', { style: { flex: '1 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 } }, cab, secs, bar))); }
   const btn = (variant, txt, fn, o) => { o = o || {}; const B = NS().Button; return B ? h(B, Object.assign({ key: txt, variant, size: 'md', onClick: fn }, o.razon ? { unavailableReason: o.razon } : {}, o.dis ? { disabled: true } : {}, o.id ? { id: o.id } : {}), txt) : h('button', { key: txt, type: 'button', onClick: fn, disabled: !!o.dis, id: o.id }, txt); };
-  W.SiriusUsuariosFicha = { Lista, Ficha, CoberturaCampo, Mapa, CAMPOS, RECIBE, TIPOS, valTxt, jorTxt };
+  W.SiriusUsuariosFicha = { Lista, Ficha, Mapa, CAMPOS, RECIBE, TIPOS, valTxt, jorTxt };
 })();

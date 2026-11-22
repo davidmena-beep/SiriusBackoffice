@@ -1,4 +1,6 @@
-// SIRIUS · Lector único de la operación de los inspectores (v1.0 · etapa R-5a · DEC-266 y DEC-268 · 21/11/2026).
+// SIRIUS · Lector único de la operación y la cobertura de los inspectores (v1.1 · etapa R-5b · DEC-266 · 21/11/2026; v1.0 en R-5a · DEC-266 y DEC-268).
+// R-5b: filas(n) = las filas de cobertura de la Red. Sin la conexión, las de la Red de la sesión o SIRIUS_RED. Con la conexión (real o simulada), solo las de la base:
+// SIRIUS_CONEXION.red (inspectores[].cobertura) y, si la Red no las trae, coberturaFilas del inspector o del usuario de la base. Nunca el modelo viejo (u.cobertura, zonas).
 // Red de inspectores es la única dueña de la jornada, la capacidad por día, las modalidades, los ramos, «recibe ofertas» y los bloqueos (DEC-262).
 // Toda la pantalla los lee aquí: la Agenda (SiriusAgenda), Coordinar visita, la Agenda conectada, la ficha de Usuarios, el monitor, el portal del cliente,
 // la app del inspector, SiriusCobertura y Configuración general. Fuente: SIRIUS_CONEXION.red si la conexión (real o simulada) está activa y trae la red;
@@ -33,6 +35,15 @@
   R.modalidades = (n) => (op(n).modalidades || []).slice();   // vacía = todas
   R.ramos = (n) => (op(n).ramos || []).slice();               // vacía = todos
   R.recibe = (n) => { const r = op(n).recibeOfertas; return r === 'red' || r === 'coord' || r === 'no' ? r : 'coord'; };
+  // ---------- Cobertura (R-5b · DEC-266): las filas de la Red, y solo ellas ----------
+  const arr = (x) => (Array.isArray(x) ? x : null), cx = () => { const X = W.SIRIUS_CONEXION; return X && X.activo === true ? X : null; };
+  const deLista = (L, n) => (Array.isArray(L) ? L.find((x) => x && (x.nombre === n || x.email === String(n).toLowerCase() || mismo(x.nombre, n) || (x.identificacion && mismo(x.identificacion, n)))) : null);
+  R.filas = (n) => { if (!n) return []; const X = cx();
+    if (!X) { const i = R.inspector(n); return i && Array.isArray(i.cobertura) ? i.cobertura : []; }
+    const ri = X.red && Array.isArray(X.red.inspectores) ? deLista(X.red.inspectores, n) : null; if (ri && Array.isArray(ri.cobertura) && ri.cobertura.length) return ri.cobertura;
+    const ii = deLista(X.inspectores, n); if (ii && arr(ii.coberturaFilas)) return ii.coberturaFilas;
+    const UB = W.SiriusUsuariosBase, u = UB && UB.activo && UB.activo() ? deLista(UB.lista(), n) : null; if (u && arr(u.coberturaFilas)) return u.coberturaFilas;
+    return ri && Array.isArray(ri.cobertura) ? ri.cobertura : []; };
   // ---------- Bloqueos ----------
   // Un bloqueo de 00:00 a 23:59 es «todo el día»: se lee con fechas sin hora, como los anotaba la Agenda.
   const norm = (b) => { let a = String(b.desde || ''), z = String(b.hasta || ''); if (/T00:00$/.test(a) && /T23:59$/.test(z)) { a = a.slice(0, 10); z = z.slice(0, 10); } return Object.assign({}, b, { desde: a, hasta: z }); };
@@ -56,7 +67,7 @@
   R.deRed = (n) => { const i = R.inspector(n); return i && (R.recibe(i.nombre) === 'red' || (i.ficha || {}).red) ? redDe(i) : null; };
   // ---------- Escenas con la conexión simulada ----------
   // conJornadas(L): una red para la escena = SIRIUS_RED con la jornada, la capacidad y las modalidades de L (registros con la forma de la Agenda: dias 0 a 6).
-  R.conJornadas = (L) => { const B = W.SIRIUS_RED || { inspectores: [] }, red = { listo: true, puedeGestionar: !!B.puedeGestionar, inspectores: JSON.parse(JSON.stringify(B.inspectores || [])), historial: [] };
+  R.conJornadas = (L) => { const B = W.SIRIUS_RED || { inspectores: [] }, red = { listo: true, puedeGestionar: !!B.puedeGestionar, inspectores: JSON.parse(JSON.stringify(B.inspectores || [])).map((i) => Object.assign(i, { cobertura: [] })), historial: [] }; // R-5b: solo la operación; la cobertura de la escena va en sus inspectores (coberturaFilas)
     (L || []).forEach((d) => { let i = red.inspectores.find((x) => x.nombre === d.inspector);
       if (!i) { const f = {}; ['credencial', 'ciudadBase', 'base'].forEach((k) => { if (d[k] != null) f[k] = d[k]; }); f.zonas = (d.zonas || []).slice();
         i = { nombre: d.inspector, tipo: 'Interno', tipoInspector: 'Interno', agencia: '', estado: 'Activo', cuenta: true, operacion: { modalidades: [], ramos: [], recibeOfertas: 'coord' }, cobertura: [], bloqueos: [], ficha: f }; red.inspectores.push(i); }

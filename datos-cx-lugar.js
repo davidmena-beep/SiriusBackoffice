@@ -1,6 +1,6 @@
 // SIRIUS · Lugar de la inspección en Coordinación con la conexión simulada (v1.0 · provisional · etapa G-2c · DEC-222, DEC-224 y DEC-225 · 18/10/2026)
 // Escenas: lugarbuscar, lugarmapa (?lpunto=1), lugarlejos (?lconf=1), lugarfuera (?lguardar=1), lugarrg (?lmod=1) y cxlugar (?cxok=0).
-// Inspectores de la base con su cobertura (SIRIUS_CONEXION.inspectores[].cobertura, DEC-223): Mauricio Endara (Quito, zona Norte), Cristian Vaca (Quito, zona Sur),
+// Inspectores de la base con su cobertura (R-5b: SIRIUS_CONEXION.inspectores[].coberturaFilas, filas de la Red; antes .cobertura, DEC-223): Mauricio Endara (Quito, zona Norte), Cristian Vaca (Quito, zona Sur),
 // Gabriela Toapanta (toda Quito), Luis Andrade (sucursal Quito), Marco Tapia (todas) y Paola Vinueza (toda Guayaquil: fuera de cobertura en Quito).
 // agendarVisita { …, lugar: { provincia, ciudad, direccion, referencia, punto, zona: { id, nombre } | null, estadoZona, lejos, origen }, fueraCobertura: { motivo } | null }:
 // la base simulada guarda el lugar y la alerta en visitasBase[] y deja la línea en el historial del caso (eventos). Caso 50013: Ramos Generales no móvil con riesgosBase
@@ -9,14 +9,16 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxInspectores) return;
   const U = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Coordinador de inspecciones', roles: ['Coordinador de inspecciones', 'Administrador'] };
   const Q = '1701';
+  // R-5b · DEC-266: la cobertura de los inspectores de la base son filas de la Red (coberturaFilas); las mismas que antes daba su «cobertura» o sus «zonas». zonas se ignora.
+  const FC = (nivel, x) => Object.assign({ id: 'rc-b-' + nivel + '-' + String((x && (x.zona || x.ciudad || x.sucursal)) || 't').replace(/\W/g, ''), nivel, sucursal: '', ciudad: '', zona: '', desde: '2026-01-01', hasta: '', vigente: true, origen: 'Red de inspectores', motivo: 'Cobertura de la base' }, x || {});
   const INSPECTORES = [
-    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: ['z1701-1'] }] } },
-    { nombre: 'Cristian Vaca', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: ['z1701-3'] }] } },
-    { nombre: 'Gabriela Toapanta', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: [] }] } },
-    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'sucursales', sucursales: ['Quito'], ciudades: [] } },
-    { nombre: 'Marco Tapia', tipo: 'Interno', agencia: null, zonas: [], estado: 'Activo', cobertura: { modo: 'todas', sucursales: [], ciudades: [] } },
-    { nombre: 'Paola Vinueza', tipo: 'Independiente', agencia: null, zonas: ['Guayaquil'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '0901', zonas: [] }] } },
-    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo' },
+    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('zona', { ciudad: Q, zona: 'z1701-1' })] },
+    { nombre: 'Cristian Vaca', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('zona', { ciudad: Q, zona: 'z1701-3' })] },
+    { nombre: 'Gabriela Toapanta', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('ciudad', { ciudad: Q })] },
+    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' })] },
+    { nombre: 'Marco Tapia', tipo: 'Interno', agencia: null, zonas: [], estado: 'Activo', coberturaFilas: [FC('todas')] },
+    { nombre: 'Paola Vinueza', tipo: 'Independiente', agencia: null, zonas: ['Guayaquil'], estado: 'Activo', coberturaFilas: [FC('ciudad', { ciudad: '0901' })] },
+    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' }), FC('sucursal', { sucursal: 'Guayaquil' })] },
   ];
   const qp = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
   const MOT = 'El cliente pidió a Paola Vinueza, que ya inspeccionó el local el año pasado.';

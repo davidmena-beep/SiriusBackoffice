@@ -18,14 +18,16 @@
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxLugar) return;
   const U = { nombre: 'Andrea Salazar', email: 'andrea.salazar@asur.ec', rol: 'Coordinador de inspecciones', roles: ['Coordinador de inspecciones', 'Administrador'] };
   const Q = '1701', qp = (k) => { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } };
+  // R-5b · DEC-266: la cobertura de los inspectores de la base son filas de la Red (coberturaFilas); las mismas que antes daba su «cobertura» o sus «zonas». zonas se ignora.
+  const FC = (nivel, x) => Object.assign({ id: 'rc-b-' + nivel + '-' + String((x && (x.zona || x.ciudad || x.sucursal)) || 't').replace(/\W/g, ''), nivel, sucursal: '', ciudad: '', zona: '', desde: '2026-01-01', hasta: '', vigente: true, origen: 'Red de inspectores', motivo: 'Cobertura de la base' }, x || {});
   const INSPECTORES = [
-    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: ['z1701-1', 'z1701-2'] }] } },
-    { nombre: 'Diana Cárdenas', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: [] }] } },
-    { nombre: 'Cristian Vaca', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', cobertura: { modo: 'ciudad', sucursales: [], ciudades: [{ cod: Q, zonas: ['z1701-3'] }] } },
-    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito', 'Ambato'], estado: 'Activo', cobertura: { modo: 'sucursales', sucursales: ['Quito', 'Ambato'], ciudades: [] } },
-    { nombre: 'Marco Tapia', tipo: 'Interno', agencia: null, zonas: [], estado: 'Activo', cobertura: { modo: 'todas', sucursales: [], ciudades: [] } },
-    { nombre: 'Paola Vinueza', tipo: 'Interno', agencia: null, zonas: ['Guayaquil'], estado: 'Activo', cobertura: { modo: 'sucursales', sucursales: ['Guayaquil'], ciudades: [] } },
-    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo' },
+    { nombre: 'Mauricio Endara', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('zona', { ciudad: Q, zona: 'z1701-1' }), FC('zona', { ciudad: Q, zona: 'z1701-2' })] },
+    { nombre: 'Diana Cárdenas', tipo: 'Agencia', agencia: 'Eurosurvey', zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('ciudad', { ciudad: Q })] },
+    { nombre: 'Cristian Vaca', tipo: 'Interno', agencia: null, zonas: ['Quito'], estado: 'Activo', coberturaFilas: [FC('zona', { ciudad: Q, zona: 'z1701-3' })] },
+    { nombre: 'Luis Andrade', tipo: 'Independiente', agencia: null, zonas: ['Quito', 'Ambato'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' }), FC('sucursal', { sucursal: 'Ambato' })] },
+    { nombre: 'Marco Tapia', tipo: 'Interno', agencia: null, zonas: [], estado: 'Activo', coberturaFilas: [FC('todas')] },
+    { nombre: 'Paola Vinueza', tipo: 'Interno', agencia: null, zonas: ['Guayaquil'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Guayaquil' })] },
+    { nombre: 'Eurosurvey', tipo: 'Agencia', agencia: null, zonas: ['Quito', 'Guayaquil'], estado: 'Activo', coberturaFilas: [FC('sucursal', { sucursal: 'Quito' }), FC('sucursal', { sucursal: 'Guayaquil' })] },
   ];
   const J = (n, dias, a, b, cap) => ({ inspector: n, dias: dias, jornada: [a, b], capacidadDia: cap, zonas: ['Quito'], modalidades: ['Presencial', 'Virtual guiada'] });
   const DISP = [J('Mauricio Endara', [1, 2, 3, 4, 5], '08:00', '17:00', 6), J('Diana Cárdenas', [1, 2, 3, 4, 5, 6], '08:30', '17:30', 6), J('Cristian Vaca', [1, 2, 3, 4, 5], '08:00', '17:00', 5),

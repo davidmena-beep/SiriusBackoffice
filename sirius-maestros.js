@@ -89,11 +89,11 @@
   // Catálogo de inspectores del ejemplo: cada uno lleva la identificación de su usuario.
   M.sincronizar = () => { const E = W.SIRIUS_EJEMPLO || {}; (E.inspectores || []).forEach((i) => { const p = M.persona(i.n); if (p && p.identificacion) i.id = p.identificacion; }); };
   // Escenas (solo en el prototipo). maestrosrenombrar: Diana Cárdenas (cédula de prueba 1709991127) pasa a «Diana Cárdenas Vela»; su cobertura y una tarifa propia quedan
-  // guardadas por su identificación. maestrossinid: Paola Vinueza y Peritajes del Pacífico quedan sin identificación. Idempotente: se vuelve a aplicar si los datos se recargan.
+  // guardadas por su identificación (R-5b: la cobertura son sus filas de la Red). maestrossinid: Paola Vinueza y Peritajes del Pacífico quedan sin identificación. Idempotente: se vuelve a aplicar si los datos se recargan.
   M.escena = (e) => { const U = W.SIRIUS_USUARIOS; if (!U) return;
     if (e === 'maestrossinid') { if (M.parches.quitarId.indexOf('Paola Vinueza') < 0) M.parches.quitarId.push('Paola Vinueza'); if (M.parches.quitarRuc.indexOf('pacifico') < 0) M.parches.quitarRuc.push('pacifico'); M.aplicar(); avisar(); }
     if (e === 'maestrosrenombrar') { const id = '1709991127', nuevo = 'Diana Cárdenas Vela', C = W.SiriusCobertura, TC = W.SiriusTarifasCuentas, TS = TC && TC.S ? TC.S() : null;
-      if (C && C.ed && !C.ed[id]) C.ed[id] = { modo: 'ciudad', sucursales: [], ciudades: [{ cod: '1701', zonas: ['z1701-2', 'z1701-3'] }] };
+      /* R-5b · DEC-266: la cobertura de Diana Cárdenas son sus filas de la Red (el lector las encuentra por su identificación aunque cambie el nombre) */
       if (TS && Array.isArray(TS.tarifas) && !TS.tarifas.some((x) => x.id === 'TAI-EUR-DC')) TS.tarifas.push({ id: 'TAI-EUR-DC', agencia: 'eurosurvey', inspector: 'Diana Cárdenas', inspectorId: id, grupo: 'Ramos Generales', unidad: 'hora', valor: 14, desde: '2026-10-01', hasta: null, motivo: 'Tarifa propia por su experiencia en Ramos Generales.', por: 'Carla Ponce', fecha: '2026-09-28T10:00' });
       const u = (U.usuarios || []).find((x) => x.identificacion === id); if (!u || u.nombre === nuevo) return;
       const SU = W.SiriusUsuarios; if (SU && !M.alias[u.nombre]) SU.editar(u.nombre, { nombre: nuevo }, 'Andrea Salazar', 'Actualizó su nombre según el registro civil.'); else { u.nombre = nuevo; avisar(); } } };
