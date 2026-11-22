@@ -4,6 +4,113 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa AG-1
+
+Publiqué la versión 367 de SIRIUS (los archivos subieron en la 366; esta versión cierra el registro con el tiempo de la etapa). La Agenda tiene ahora un encabezado compacto (DEC-269). Arriba queda una fila de título con ⓘ y «Más». Debajo va una barra de trabajo en una línea que queda fija al desplazar: vista, navegación, rango, buscador de inspector, «Filtros», hora y «Leyenda». Si hay filtros activos, aparece una línea de fichas. La tabla ocupa el resto de la pantalla, con el encabezado de días y la columna «Inspector» fijos. Solo cambió el diseño: con los mismos filtros, la tabla muestra las mismas visitas e inspectores que antes.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `Agenda.dc.html` | El encabezado (título, Pedidos y Duración, pestañas, navegación, seis filtros y leyenda), el ancho de la columna «Inspector» (190 → 240 px), el alto de la tabla y el espacio entre bloques (16 → 8 px) | `pasa()`, `filas()`, `rango()`, `mover()`, `pedirMover`/`validar`, el resumen, «Mover», los permisos (`puedeMover`, `gestionaRed`, `soloYo`, `alcanceSuc`) y los datos que recibe |
+| `SIRIUS Back-office.dc.html` | Solo se registran las 4 escenas nuevas (`KNOWN_ESC`, rol Coordinador y lista `agendaEscena`) | `agendaDatos` y `agendaCx` (los datos de la Agenda, sin y con la conexión) |
+| `datos-escenas.js` | 4 escenas nuevas en el área «Agenda» | — |
+| `sirius-agenda.js`, `sirius-red-fuente.js`, reglas de mover, datos y archivos vigilados | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+**Qué cambió**
+
+- **Fila de título (≈ 48 px):**
+  - «Agenda de inspecciones» (o «Mi agenda») a 24 px, el tamaño de título de sección.
+  - El botón ⓘ abre la descripción de siempre y anuncia los atajos.
+  - A la derecha, el menú «Más ▾» con «Pedidos de los inspectores» (con su número si tiene pedidos) y «Duración de las visitas», los dos con «(demostración)» cuando hay conexión. Abren lo mismo que antes, y al cerrarlos el foco vuelve a «Más». El menú se maneja con las flechas, Inicio y Fin, y se cierra con Esc.
+- **Barra de trabajo (52 px, `position: sticky`):**
+  - Selector segmentado Día / Semana / Lista, con el patrón de U-7.
+  - Botones ‹ · Hoy · › con `aria-label` «Semana anterior», «Semana siguiente» o «Día anterior», «Día siguiente», y con `aria-keyshortcuts`.
+  - El rango de fechas.
+  - «Buscar inspector…»: un cuadro con sugerencias que ignora las tildes. Elegir un nombre aplica el mismo filtro que el desplegable de antes, y ✕ lo quita.
+  - «Filtros» con el número de filtros activos.
+  - A la derecha, la hora en texto pequeño y «Leyenda».
+  - Debajo de 1440 px la hora se ve como «Ecuador 19:15»; el texto completo queda en el título del elemento y para el lector de pantalla.
+  - Pasa a dos líneas cuando no cabe, sin desplazamiento lateral: con el menú lateral abierto a 1280 px, o con «Filtros 2» a 1280 px.
+- **Panel «Filtros»:**
+  - Se despliega anclado al botón y no es modal.
+  - Muestra Sucursal, Tipo, Modalidad, Confirmación y, solo con la conexión, Ciudad y zona, en una cuadrícula de 3 columnas. Las opciones son las mismas de antes.
+  - Se aplica al cambiar, y al pie tiene «Limpiar filtros».
+  - Se cierra con Esc o con un clic fuera, y el foco vuelve al botón.
+  - Con filtros activos aparece la línea de fichas («Sucursal: Quito ✕», «Modalidad: Presencial ✕») y «Limpiar todo».
+- **Preferencias:** los filtros y el buscador se mantienen al pasar entre Día, Semana y Lista. Se recuerdan por usuario como las columnas de la bandeja (`localStorage`, clave `sirius.agenda.filtros.<usuario>`). Las escenas no los leen ni los guardan.
+- **Leyenda:** una ventanita con los mismos elementos de hoy y la nota de la carga.
+- **Tabla:**
+  - Mide su alto para llegar al pie de la pantalla (mínimo 260 px).
+  - El encabezado de días y la columna «Inspector» quedan fijos; en Lista también queda fijo el encabezado de columnas.
+  - La columna «Inspector» mide 240 px. La jornada y la cobertura se cortan en dos líneas con «…» y se leen completas en un tooltip al pasar el cursor o con el foco (solo cuando el texto se cortó; Esc lo oculta).
+- **Atajos:** ← y → mueven la semana o el día, H va a Hoy y F abre los filtros. No actúan en los campos, en los menús ni en las ventanitas. Tampoco dentro de la tabla, porque ahí las flechas desplazan la tabla, ni con una ventana abierta.
+
+**Medidas** (distancia de la primera fila de inspectores al inicio del área de contenido, debajo de la barra superior · inspectores visibles sin desplazarse)
+
+| Escena | Pantalla | Antes | Después |
+|---|---|---|---|
+| agendasemana | 1920 × 1080 | 344 px · 6 de 6 | **189 px · 6 de 6** |
+| cxagenda | 1920 × 1080 | 344 px · 4 | **189 px · 5** |
+| agendasemana | 1280 × 720 | 444 px · 2 | **189 px · 5** |
+| cxagenda | 1280 × 720 | 464 px · 0 | **189 px · 2** |
+| cxagenda con el menú lateral abierto (como tu navegador) | 1905 × 868 | 392 px · 2 | 189 px · 3 |
+
+Sin desplazamiento lateral de la página en ninguna (`scrollWidth = clientWidth`). La meta se cumple: ≤ 230 px y 4 o más inspectores visibles a 1920 × 1080, y 2 o más a 1280 × 720. Con el menú lateral abierto a 1280 × 720, la barra usa dos líneas: primera fila a 233 px y 2 inspectores visibles.
+
+**Prueba cruzada**
+
+- **Texto de la tabla antes y después, con los mismos filtros:** igual en agendasemana, agendadia, cxagenda y cxagendafiltros, en Semana, Día y Lista. También en agendaok, agendamover, cxagendamover, redfuentejornada y redfuentebloqueo. En cxagenda solo cambió el minuto de «vence» de las ofertas, que sigue la hora real.
+- **Cada filtro combinado con el buscador frente al desplegable «Inspector» de la versión anterior:** cada opción de cada filtro del panel, sola y con cada inspector. Fueron 294 combinaciones en cxagenda (los 5 filtros, Ciudad y zona incluida) y 182 en agendasemana. Las 476 dan el mismo texto de tabla.
+
+**Verificado**
+
+- **Teclado:**
+  - El orden de Tab recorre ⓘ, Más, Día, Semana, Lista, ‹, Hoy, ›, el buscador, Filtros, Leyenda y luego la tabla.
+  - Filtros con Enter pone el foco en «Sucursal», y Tab pasa a «Tipo».
+  - Esc cierra el panel, el menú «Más», la Leyenda y el ⓘ, y en cada caso el foco vuelve a su botón. Al cerrar Pedidos o Duración, el foco vuelve a «Más».
+  - Un clic fuera cierra el panel.
+- **Atajos:** → avanza una semana, ←← retrocede dos, H vuelve a hoy y F abre el panel con el foco en «Sucursal». Escribiendo «hf» y → dentro del buscador no se mueve la semana ni se abre el panel.
+- **Buscador:** «luis» sugiere «Luis Andrade» y Enter lo elige. El filtro se mantiene al pasar a Día, y ✕ lo quita y deja el foco en el cuadro.
+- **Tooltip:** con el foco en la jornada de Luis Andrade muestra «09:00–18:00 · Quito · Zona Valles Cumbayá y Tumbaco · Sucursal Ambato», y Esc lo oculta.
+- **Barra fija:** a 1280 × 420, con la página desplazada, la barra queda a 0 px del borde superior.
+- **Preferencias:** con Sucursal Quito, Modalidad Presencial y Marco Tapia elegidos, al recargar y volver a la Agenda siguen elegidos. «Limpiar todo» los quita.
+- **Regresión de las escenas de Agenda:** agendaok, agendamover, agendadia, redfuentejornada (también con `?fvista=semana`), redfuentebloqueo, cxagenda y cxagendamover (también con `?fmov=choque`). Los textos de los diálogos son iguales y no hay errores. Revisé las capturas del detalle del bloqueo a 1280 y de «Mover la visita» a 1920.
+- **Capturas antes y después** a 1280 × 720 y 1920 × 1080, y de las 4 escenas nuevas en ambas resoluciones.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+
+- Lector de pantalla real (NVDA o VoiceOver): revisé los roles y nombres accesibles en el DOM.
+- Firefox y Safari.
+- La conexión real (no simulada).
+
+**Diferencias** (todas de diseño)
+
+- **Encabezado:** las pestañas pasan a un selector segmentado. El desplegable «Inspector» pasa a ser un buscador. Los otros filtros pasan a un panel, la leyenda a una ventanita, Pedidos y Duración al menú «Más», y la descripción al ⓘ.
+- **Limpiar:** antes, «Limpiar filtros» quitaba los 6 filtros, el inspector incluido. Ahora, «Limpiar filtros» del panel quita los 5 del panel y «Limpiar todo» de las fichas quita también el inspector del buscador.
+- **Recordar filtros:** los filtros se recuerdan por usuario. Antes volvían a «Todas» al entrar.
+- **Columna «Inspector»:** 240 px en lugar de 190. El texto largo de jornada y cobertura se corta a dos líneas, pero sigue completo para el lector y en el tooltip.
+- **Alto de la tabla:** antes era `100vh − 300 px`, ahora se mide.
+- **Hora:** debajo de 1440 px se ve abreviada.
+- **No existe la escena agendalista:** comparé la Lista abriendo agendasemana, agendadia y cxagenda y pasando a Lista.
+- **Back-office:** se cambió solo para registrar las escenas nuevas.
+
+**Escenas**
+
+| Escena | Qué muestra |
+|---|---|
+| agendafiltros | El panel «Filtros» abierto con el foco en «Sucursal» |
+| agendafiltroschips | Sucursal Quito y Modalidad Presencial activos: «Filtros 2» y las fichas con «Limpiar todo» |
+| agendaleyenda | La ventanita «Leyenda» abierta |
+| agendamas | El menú «Más» abierto con «Pedidos de los inspectores» y «Duración de las visitas» |
+
+Registro: `project/registro-envios.md`. Inventario: `project/inventario-proyecto.md` (3 archivos y la sección «Agenda: encabezado compacto y más espacio para trabajar»).
+
+Tiempo de la etapa: inicio 21/11/2026 19:06 · fin 21/11/2026 19:27 · 21 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa R-5b
 
 Publiqué la versión 365 de SIRIUS (los archivos subieron en la 364; esta versión cierra el registro con el tiempo de la etapa). Ahora la cobertura de un inspector son sus filas de la Red de inspectores, y solo ellas (DEC-266). El modelo viejo de la ficha salió de SiriusCobertura: el respaldo con zonas heredadas y las ediciones de la sesión ya no existen. Con la conexión, la pantalla ignora `u.cobertura` y `u.zonas`. El hallazgo principal: sin la conexión, la Agenda, Coordinar visita y el portal no usaban las filas, sino las «zonas» de cada inspector convertidas en sucursales. Por eso cambia la cobertura de 7 de los 10 inspectores de la demostración: son las diferencias aceptadas y van una por una en **Diferencias**. En las escenas con la conexión simulada convertí los datos viejos en filas equivalentes, y ahí no cambia ningún nivel.
