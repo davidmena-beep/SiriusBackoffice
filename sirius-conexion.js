@@ -33,6 +33,9 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 21/11/2026 · R-5c · SQL 76 · DEC-266: la Red es la única fuente. usuarios[] e inspectores[] ya no traen zonas, cobertura (forma de un solo modo),
+//   modalidades, ramos, recibeOfertas ni jornada desde la ficha (usuarios.datos): coberturaFilas, coberturaMixta, jornada, recibeOfertas,
+//   capacidadDia, modalidades y ramos salen solo de SIRIUS_CONEXION.red (ponerRedEnUsuarios). Sin fila en la Red, esos campos no vienen.
 // 21/11/2026 · R-3b · SQL 75 · DEC-265: SIRIUS_CONEXION.redLugar(datos) → red_lugar (solo lectura, permiso de la Red) → { ok, mensaje? , … }:
 //   { vista: 'ciudad', ciudad } → { ciudad, ciudadNombre, sucursal, radio, zonas[{ id, nombre, punto, area, inmediata[], red[], coordinacion[], propios[{ nombre, tipo, inmediata, red }], alerta, alertaTipo }],
 //     porConfirmar{ inmediata[], red[], redAmpliada, coordinacion[] }, todaCiudad[{ nombre, tipo, nivel, inmediata, red }], porSucursal[…], resumen{ zonas, inmediata, red, coordinacion,
@@ -49,7 +52,7 @@
 //   bloqueos: [{ id, desde, hasta, motivo, origen }] }], historial: [{ inspector, accion, detalle, motivo, por, hora }] } (null si la base no tiene el SQL 68)
 //   y SIRIUS_CONEXION.redAccion(tipo, datos) → red_accion (asignar, retirar, operacion, bloquear, desbloquear) → { ok, mensaje }.
 //   usuarios[] e inspectores[] reciben coberturaFilas (vigentes), coberturaMixta y, desde el perfil, jornada, recibeOfertas, capacidadDia
-//   (y modalidades y ramos si tienen); cobertura conserva su forma (modo único) para las pantallas actuales.
+//   (y modalidades y ramos si tienen). Desde R-5c ya no se arma la cobertura de un solo modo.
 // 19/11/2026 · G-3b · DEC-224: visitasBase[].oferta incluye la oferta dirigida que pidió el cliente desde el portal (origen 'Cliente', SQL 46), con porCliente: true.
 // 14/11/2026 · G-2c · DEC-222 y DEC-225: visitasBase[].lugar y visitasBase[].fueraCobertura (SQL 38 guarda lo que envía agendarVisita).
 // 14/11/2026 · G-2a2 · DEC-222: SIRIUS_CONEXION.buscarDireccion(texto, codCiudad) con OpenStreetMap (Nominatim): espera al teclear, 1 consulta por segundo, memoria de búsquedas y respaldo en el diccionario de prueba.
@@ -387,20 +390,11 @@
       ponerRedEnUsuarios();
     }).catch(function (e) { if (CX.red !== null) console.warn('[SIRIUS] Red de inspectores (¿falta el SQL 68?):', e.message); CX.red = null; });
   }
-  // La forma de siempre para las pantallas actuales: cobertura de un solo modo (con filas mixtas, la parte geográfica; coberturaMixta: true).
-  function coberturaLegada(filas) {
-    var v = filas.filter(function (c) { return c.vigente; }); if (!v.length) return { modo: 'ciudad', sucursales: [], ciudades: [] };
-    if (v.some(function (c) { return c.nivel === 'todas'; })) return { modo: 'todas', sucursales: [], ciudades: [] };
-    var geo = v.filter(function (c) { return c.nivel === 'ciudad' || c.nivel === 'zona'; });
-    if (!geo.length) return { modo: 'sucursales', sucursales: v.map(function (c) { return c.sucursal; }), ciudades: [] };
-    var m = {}; geo.forEach(function (c) { var x = m[c.ciudad] = m[c.ciudad] || { cod: c.ciudad, zonas: [], todas: false }; if (c.nivel === 'ciudad') x.todas = true; else x.zonas.push(c.zona); });
-    return { modo: 'ciudad', sucursales: [], ciudades: Object.keys(m).map(function (k) { return { cod: k, zonas: m[k].todas ? [] : m[k].zonas }; }) };
-  }
   function ponerRedEnUsuarios() {
     if (!CX.red) return; var por = {}; CX.red.inspectores.forEach(function (i) { por[i.nombre] = i; });
     [CX.usuarios, CX.inspectores].forEach(function (lista) { (lista || []).forEach(function (u) { var i = por[u.nombre]; if (!i) return;
       var vig = i.cobertura.filter(function (c) { return c.vigente; }), niveles = {}; vig.forEach(function (c) { niveles[c.nivel === 'zona' ? 'ciudad' : c.nivel] = 1; });
-      u.coberturaFilas = vig; u.coberturaMixta = Object.keys(niveles).length > 1; u.cobertura = coberturaLegada(i.cobertura);
+      u.coberturaFilas = vig; u.coberturaMixta = Object.keys(niveles).length > 1;   // R-5c: sin la cobertura de un solo modo (coberturaLegada)
       if (i.operacion) { u.jornada = { dias: i.operacion.jornada.dias, desde: i.operacion.jornada.desde, hasta: i.operacion.jornada.hasta }; u.recibeOfertas = i.operacion.recibeOfertas; u.capacidadDia = i.operacion.capacidadDia;
         if (i.operacion.modalidades.length) u.modalidades = i.operacion.modalidades; if (i.operacion.ramos.length) u.ramos = i.operacion.ramos; } }); });
   }
@@ -438,12 +432,11 @@
         return { nombre: u.nombre, email: u.email, rol: u.rol, roles: Array.isArray(d.roles) && d.roles.length ? d.roles : [u.rol],
                  tipo: u.agencia ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', tipoInspector: t || null, agencia: u.agencia ? u.agencia.nombre : null,
                  estado: u.estado || 'Activo', celular: d.celular || '', alcance: { sucursales: Array.isArray(al.sucursales) ? al.sucursales : [], grupos: Array.isArray(al.grupos) ? al.grupos : [] },
-                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, vinculado: !!u.auth_id,
+                 vinculado: !!u.auth_id,   // R-5c · SQL 76: la cobertura, las zonas y la operación ya no salen de la ficha (las pone ponerRedEnUsuarios desde la Red)
                  historial: Array.isArray(d.historial) ? d.historial : [], tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null,
                  agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null,
                  sucursal: u.sucursal || (Array.isArray(al.sucursales) && al.sucursales[0] && al.sucursales[0] !== 'Todas' ? al.sucursales[0] : '') || '',   // SQL 62: todos los campos de la ficha única
-                 modalidades: Array.isArray(d.modalidades) ? d.modalidades : undefined, ramos: Array.isArray(d.ramos) ? d.ramos : undefined,
-                 recibeOfertas: d.recibeOfertas !== undefined ? d.recibeOfertas : undefined, jornada: d.jornada && typeof d.jornada === 'object' ? d.jornada : undefined }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base) · P-6f-b · DEC-214
+                 }; });   // P-6f-0g · DEC-233 (historial: lo que guarda la base) · P-6f-b · DEC-214
       if (Array.isArray(res[4])) CX.agencias = res[4].map(function (a) { return { nombre: a.nombre, estado: a.estado || 'Activa', ruc: a.ruc || null, razonSocial: a.razon_social || a.nombre, nombreComercial: a.nombre_comercial || null }; });   // P-6f-b · DEC-214
       if (Array.isArray(res[5])) {   // P-6g · SQL 53 · DEC-247/248/249: contrato de SiriusLiqProceso
         var provDe = function (tipo, ag, us) { return tipo === 'agencia' ? { tipo: 'agencia', nombre: ag ? ag.nombre : '', identificacion: ag ? ag.ruc || '' : '' } : { tipo: 'inspector', nombre: us ? us.nombre : '', identificacion: us ? us.identificacion || '' : '' }; };
@@ -478,7 +471,7 @@
           fecha: a.creado ? isoLocal(a.creado) : null, leido: a.estado === 'Leído', rol: a.rol_destino || '' }; });   // N-1c · SQL 61: avisos de la campana (canal App) del usuario actual
       if (Array.isArray(res[2])) CX.inspectores = res[2].map(function (u) { var d = u.datos || {}, t = String(u.tipo_inspector || '').toLowerCase();
         return { nombre: u.nombre, tipo: t === 'agencia' ? 'Agencia' : t === 'independiente' ? 'Independiente' : 'Interno', agencia: u.agencia ? u.agencia.nombre : null,
-                 zonas: Array.isArray(d.zonas) ? d.zonas.filter(Boolean) : [], cobertura: d.cobertura && typeof d.cobertura === 'object' ? d.cobertura : undefined, estado: u.estado || 'Activo',
+                 estado: u.estado || 'Activo',   // R-5c: sin zonas ni cobertura de la ficha
                  tipoIdentificacion: u.tipo_identificacion || null, identificacion: u.identificacion || null, agenciaRuc: u.agencia && u.agencia.ruc ? u.agencia.ruc : null }; });   // P-6f-b · DEC-214 · G-2b · DEC-223: sin cobertura, el prototipo migra las zonas
       evs.forEach(function (e) { (porCaso[e.caso_id] = porCaso[e.caso_id] || []).push(e); });
       var nuevo = { casos: casos.map(function (k) { return aCaso(k, porCaso[k.id]); }), eventos: {} };
