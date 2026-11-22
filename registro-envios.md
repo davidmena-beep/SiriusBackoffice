@@ -4,6 +4,114 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-1c5
+
+Publiqué la versión 387 de SIRIUS. Los archivos subieron en la 386 y esta versión cierra el registro con el tiempo de la etapa.
+
+Con la conexión, la decisión y el resultado de cada vehículo salen ahora de la base. El bloque «Informe completado», «Resultado», Riesgos, Calificación, el encabezado, la cola y las bandejas leen el informe de ese vehículo y su `riesgo_estado`. La pantalla ya no guarda estados propios por número de caso, y después de completar, devolver o reenviar vuelve a leer la base.
+
+La determinación al completar (nivel 0) cuenta como resultado. La vista previa de Vehículos muestra el mismo PDF que se descarga, dibujado con pdf.js. Corregí siete detalles del PDF y del formulario.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia |
+|---|---|
+| `SIRIUS Back-office.dc.html` | **Decisión por vehículo.** Nueva `cxDecVeh(c)`, que lee el informe del vehículo (`decision` con `tipo`, `criterio`, `motivo`, `por`, `rol`, `hora` y `facultad`) y su `riesgo_estado`. La usan el bloque «Informe completado», `cpRelevante` y las filas de la bandeja.<br>**Completar, devolver y reenviar.** Con la conexión no dejan `overrides`, `riesgoOv` ni `infOv`, y después vuelven a leer la base (`cxRecargarCaso`).<br>**Lectura de la base.** `riesgo_estado` pasa a `estado` y `aseg`. La calificación de nivel 0 deja `detCx`. El estado del caso es el de `casos[].estado`.<br>**Calificación.** Solo lectura con «Determinado al completar…», «N de M vehículos con resultado» y sin «Calificar inspección» cuando todos tienen resultado. `cxInfVeh` acepta `decision` como objeto.<br>**Formulario.** La fecha de la autoinspección es la hora del envío. Lo vacío en pantalla ya no borra lo que la base tiene.<br>**Escenas** nuevas en el registro. |
+| `sirius-completar.js` | `registrarDecision(id, d, rid)` e `info(id, rid)` con clave caso + vehículo (solo para la demostración) |
+| `sirius-salida-veh.js` | `contextoCx`: `decision` como objeto, el nivel 0 como resultado y el motivo de No asegurable (observación o motivo de la decisión). En autoinspección, la hora de inspección es el envío. |
+| `sirius-documentos-pdf.js` | Preexistencias del resumen («en lo revisado»), «todavía» solo con el informe por completar, trazabilidad «21/11 · 22:55», conductor «Es el asegurado» y «vehículo i de n» en la demostración |
+| `SalidaVeh.dc.html` | Vista previa con pdf.js 3.11.174 (cdnjs). Aviso con «Descargar PDF» si pdf.js no carga. Control de calidad tomado del PDF y descarga del mismo PDF. |
+| `FotosEvidencias.dc.html` | El aviso de la foto queda dentro de su tarjeta: «…» y el texto completo al pasar el cursor |
+| Nuevos | `datos-cx-determinado.js` (base simulada de `caldeterminado` y `caldeterminadoflujo`) y las tres escenas en `datos-escenas.js` (826 escenas) |
+| Sin cambio | `sirius-pdf-vector.js` (motor y diseño del PDF), `datos-documentos-pdf.js`, `sirius-conexion.js` (70 bytes) y los archivos de configuración vigilados: no se subió ninguna versión (DEC-262) |
+
+**Qué cambió**
+
+1. **«Informe completado» y «Resultado» por vehículo.** Con la conexión, el bloque lee el informe del vehículo y muestra:
+   - quién y cuándo (`decision.por`, `rol` y `hora`);
+   - qué decidió (confirmar, cambiar o determinar, con el criterio) y su motivo;
+   - la facultad: «Dentro de la facultad <fac> de <agencia>» o «Fuera de la facultad: va a calificación»;
+   - «Resultado: <estado> · <veredicto>», de `riesgo_estado`.
+
+   El registro en memoria queda solo para la demostración, con la clave caso + vehículo. También se usa cuando una base simulada antigua no aplica la acción (`local`).
+2. **Completar, devolver y reenviar.** Con la conexión, la pantalla ya no deja su propio destino. Con `{ ok: true }` quita lo que la sesión tuviera del caso y de sus vehículos, vuelve a leer la base y el aviso dice lo que respondió la base («Informe completado · PCX5140 · Inspeccionado · Asegurable»).
+   - El estado del caso es el de `casos[].estado`. Antes, con varios vehículos, se recalculaba y un caso con dos informes por completar salía «Agendado».
+   - `riesgos[].riesgo_estado` manda en el estado y el veredicto de cada vehículo.
+3. **Determinación al completar (nivel 0).** Es un resultado:
+   - el vehículo muestra en Calificación «Resultado de <placa>», con la etiqueta «Determinado al completar», el veredicto, el motivo si es No asegurable y «Determinado al completar por <quien> · dentro de su facultad · <fecha>»;
+   - está en solo lectura: sin formulario ni «Cambiar veredicto»;
+   - el contador dice «N de M vehículos con resultado · K asegurables»;
+   - no entra en la cola ni en el menú Calificación;
+   - con todos los vehículos con resultado, no aparece «Calificar inspección».
+
+   Con un solo vehículo, la tarjeta «Determinada al completar el informe» se muestra en solo lectura, con el aviso.
+4. **Vista previa = PDF.** La ventana genera el PDF vectorial de la descarga y dibuja sus páginas con pdf.js, a todo el ancho y con desplazamiento, para el informe y el resumen.
+   - «Descargar PDF» guarda ese mismo PDF y el diseño no cambia.
+   - Si pdf.js no carga, aparece el aviso con el botón de descarga, nunca la versión HTML.
+   - El control de calidad («N páginas A4 · mayor espacio libre…») se mide en el PDF.
+5. **PDF.**
+   - **Motivo de No asegurable:** va en el recuadro, en la tarjeta y en el resumen. Sale de la observación de la calificación o, en la determinación, del motivo de la decisión.
+   - **Preexistencias:** el resumen lista las encontradas. Si no hay, dice «Sin preexistencias en lo revisado: <solo las revisiones con datos>». Sin datos dice «El informe no registra datos de preexistencias», y «todavía» solo aparece con el informe por completar.
+   - **Trazabilidad:** «21/11 · 22:55». Antes, un año de cuatro cifras quedaba «21/1126».
+   - **Conductor:** con la opción «Es el asegurado», la frase es «El conductor habitual es el asegurado.», sin «es es».
+   - **«Vehículo i de n»:** también en la demostración, con los vehículos del caso.
+6. **Fecha de la autoinspección.** Es la hora en que el cliente envió ese vehículo (`enviadoEn` de su informe). Se precarga con origen «Sistema» y la nota «Envío del cliente (autoinspección)», y ya no es un pendiente. El PDF imprime la misma hora. En presencial no cambia.
+7. **Aviso de la foto.** Queda dentro de su tarjeta, cortado con «…», con el texto completo al pasar el cursor.
+
+Otro hallazgo: al completar, la pantalla mandaba a la base las grillas vacías (averías, neumáticos, verificaciones externas) y borraba lo que el cliente había enviado. Por eso el resumen de un informe completo podía decir que no tenía datos, como el de AU044M. Ahora lo vacío en pantalla no reemplaza lo que la base ya tiene, y una grilla respondida aunque esté vacía («sin averías») se conserva.
+
+**Prueba cruzada**
+
+| Escena · vehículo | Base simulada | Bloque «Informe completado» | Riesgos | Calificación | Encabezado · cola · bandeja | PDF |
+|---|---|---|---|---|---|---|
+| caldeterminado · PCX5140 | Completo; nivel 0 Asegurable; 22/11 14:24; `riesgo_estado` Inspeccionado · Asegurable | Patricia Andrade · Control de calidad (agencia) · 22/11/26 · 14:24 · Determinó: Asegurable · Motivo · Dentro de la facultad Asegurable y No asegurable de Eurosurvey · Resultado: Inspeccionado · Asegurable | Asegurable · Determinado al completar por Patricia Andrade · dentro de su facultad · 22/11/26 · 14:24 | Solo lectura; «2 de 2 vehículos con resultado · 1 asegurable»; sin formulario ni «Cambiar veredicto» | «Inspeccionado»; sin «Calificar inspección»; no está en la cola (0 informes) | Sello «INSPECCIONADO · ASEGURABLE»; recuadro «Inspeccionado · Asegurable · Todo riesgo»; vehículo 1 de 2; fecha de inspección 21/11/2026 · 22:55 (envío); «El conductor habitual es el asegurado.» |
+| caldeterminado · PCX5141 | Completo; nivel 0 No asegurable con motivo; 22/11 14:31 | Patricia Andrade · 14:31 · Determinó: No asegurable · Motivo: Hundimiento profundo… · Resultado: Inspeccionado · No asegurable | No asegurable · Determinado al completar · 14:31 | Solo lectura; motivo de rechazo | Igual | Sello «NO ASEGURABLE»; recuadro, tarjeta y resumen con el motivo; Preexistencias «1 avería: guardafango posterior izquierdo (Alta)»; fecha 21/11/2026 · 23:07 (envío) |
+| caldeterminadoflujo · después de completar PCX5140 | V1 Inspeccionado · Asegurable (nivel 0, 14:24); V2 y caso «Informe por completar» | V1: Andrea Salazar · Administrador · 14:24 · Determinó: Asegurable · Resultado: Inspeccionado · Asegurable; V2 sigue por completar | V1 Asegurable · Determinado al completar; V2 Esperando informe | «1 de 2 vehículos con resultado · 1 asegurable»; V2 «Esperando el informe» | «Informe por completar», como la base; sin `overrides` (nulos) | — |
+| caldeterminadoflujo · después de completar PCX5141 | V2 Inspeccionado · No asegurable (14:31); caso Inspeccionado | V1 sigue con lo suyo (14:24, Asegurable); V2: 14:31 · No asegurable · Motivo · Resultado: Inspeccionado · No asegurable | Los dos con su veredicto y su hora | «2 de 2 vehículos con resultado · 1 asegurable» | «Inspeccionado»; sin «Calificar inspección»; cola 0; Completados: PCX5141 «Inspeccionado · No asegurable · Andrea Salazar» (14:31) y PCX5140 «Inspeccionado · Asegurable» | PDF generado en la misma sesión: sellos y recuadros como la base; fechas 22:55 y 23:07 |
+| Formulario (caldeterminadoflujo, PCX5140) | `enviadoEn` 21/11/26 22:55 | «Fecha y hora de inspección» 21/11/26 · 22:55, origen «Sistema»; ya no es un pendiente | | | | 21/11/2026 · 22:55 |
+| Vista previa = PDF | | pdfvehpreview (informe, 8 páginas; resumen, 2) y caldeterminado (PCX5141 informe, 4 páginas; resumen, 1; PCX5140 informe, 4): las mismas páginas, el mismo texto en cada página (pdf.js frente al PDF descargado) y una diferencia media de píxeles de 0,4 a 3,2 sobre 255 (suavizado). Con la conexión, una sola llamada a `documentoRegistrar` para la vista previa y la descarga. Sin pdf.js: el aviso con «Descargar PDF» (8 páginas A4) | | | | |
+
+**Verificado**
+
+- **Escenas nuevas:** caldeterminado, caldeterminadoflujo y pdfvehpreview, sin errores de página. Revisé las pantallas a 1280×720 y 1920×1080 (Calificación, el bloque «Informe completado», la vista previa e Informe › Fotos), sin desborde horizontal.
+- **Aviso de la foto:** queda dentro de su tarjeta (174 a 409 px, con la tarjeta de 163 a 420 px) a 1280×720 y 1920×1080, con «…» y el texto completo al pasar el cursor.
+- **Un solo vehículo** determinado al completar (sin `riesgos[]`): Calificación en solo lectura con «Determinada al completar el informe», sin «Calificar inspección» ni «Editar calificación». El bloque se lee de la base.
+- **Regresión:**
+  - Al abrir, el texto de la pantalla es igual en infcompletar, infcompletarcaso, infcompletarcambiar, infcompletarind, cxr0bcompletar, autodecision, autointerno, autotercero, calveh, calvehapply, calrapida, calcola y n2done.
+  - Al completar en la demostración (infcompletarcaso e infcompletarcambiar) y en autodecision (base simulada sin aplicar), el estado, el bloque y el aviso no cambian.
+  - Con la conexión simulada, es igual en cxestadoparcial, cxcabecera, cxestadofases, cxriesgosestados, cxr0, cxr0cauto, cxr0dcalidad, cxr0dcalificar, cxr0dadmin, cxr0emodulo, cxr0ebandeja, cxr0eresumen, cxlimpio, calcxcalif, coordagrupar y coordfases, salvo cxr0b (ver Diferencias).
+  - El texto de los PDF es igual y tiene las mismas páginas en pdfvehvector, pdfvehresumen, pdfvehborrador, pdfvehasegurable, pdfvehcx, pdfvehagencia, pdfvehagenciaoff, pdfvehcxuno y pdfvehcxvacio. pdfvehcxerror sigue sin PDF y con el mensaje de la base.
+- **Archivos sin cambio:** `sirius-conexion.js` sigue en 70 bytes. `datos-documentos-pdf.js` y `sirius-pdf-vector.js` no cambiaron, y no se tocó ningún archivo de configuración vigilado.
+
+**No verificado**
+
+- **Base real:** que `informes[caso][].decision` traiga `tipo`, `criterio`, `motivo`, `por`, `rol`, `hora` y `facultad { fac, dentro, agencia }`; si falta `agencia`, el bloque usa el nombre del responsable del completado. Tampoco verifiqué que la calificación de nivel 0 traiga el motivo en `observacion` o `motivo`, ni que `casos[].estado` y `riesgo_estado` se actualicen antes de responder `{ ok: true }`.
+- **Hallazgo de las grillas:** que la causa del resumen de AU044M sea la de las grillas vacías. Si la base real ya las borró, hay que volver a pedir el informe a la base o corregir los datos.
+- **pdf.js** desde cdnjs en la red de la compañía, Firefox y Safari. La prueba usó la misma versión 3.11.174 servida localmente.
+- **Devolver al inspector y reenviar** con la conexión real: probé completar en las dos escenas, no la devolución.
+
+**Diferencias**
+
+- **Encabezado con la conexión:** el estado del caso es el de la base (`casos[].estado`) y ya no se recalcula con los vehículos. En las escenas con la conexión probadas no cambia nada.
+- **cxr0b:** PRB1212, que la base trae «Completo», ahora muestra su bloque «Informe completado» (Mauricio Endara · Determinó: Asegurable · Resultado: Inspeccionado), leído de la base. Antes no aparecía.
+- **Vista previa:** en Vehículos ya no es la versión HTML: son las páginas del PDF. Con la conexión, abrirla registra el documento en la base, como la descarga: el código que se ve es el mismo que se descarga, y descargar después no lo registra otra vez. Las escenas dp1diag, dp1veh y svpdq muestran ahora el PDF y dp1diag ya no lleva la vista al diagrama de averías. Equipo y maquinaria sigue con la versión HTML.
+- **Preexistencias:** el resumen sin preexistencias dice «Sin preexistencias en lo revisado: …» con solo las revisiones con datos. Sin datos, «El informe no registra datos de preexistencias». Con el informe por completar, «El informe todavía no tiene los datos para evaluar preexistencias».
+- **Texto neutro de hallazgos:** con el informe completo y sin datos, dice «El informe no registra datos para evaluar hallazgos.»
+- **Completados (bandeja):** la columna «Completado» muestra la hora en que se completó, no la del envío.
+- **Avisos al completar con la conexión:** dicen lo que respondió la base. Antes decían lo que la pantalla calculaba.
+
+**Escenas**
+
+- `caldeterminado` (Calificación, conexión simulada): caso 50140 con los dos vehículos determinados al completar, Daniela Ruiz como Ejecutivo de inspecciones.
+- `caldeterminadoflujo` (Calificación, conexión simulada): caso 50141. Completa PCX5140 y luego PCX5141 en la misma sesión, como Administrador.
+- `pdfvehpreview` (Salida PDF): la vista previa del 20196 con pdf.js.
+
+Registro: este archivo. Inventario: filas actualizadas y la sección «Decisión y resultado por vehículo desde la base, y vista previa = PDF (etapa P-1c5 · DEC-271, DEC-272)».
+
+Tiempo de la etapa: inicio 22/11/2026 14:49 · fin 22/11/2026 15:56 · 67 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-1c4
 
 Publiqué la versión 385 de SIRIUS (los archivos subieron en la 384; esta versión cierra el registro con el tiempo de la etapa). El encabezado del PDF de Vehículos ahora ocupa un quinto de la página (la franja termina en 58,9 mm, con el tope en 59 mm), en dos filas como el modelo, y el contenido tiene dos ajustes: la frase completa del conductor habitual y los números de foto en el orden en que se imprimen.

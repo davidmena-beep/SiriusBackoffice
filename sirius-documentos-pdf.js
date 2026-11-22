@@ -76,7 +76,8 @@
     if (!caso.asegurado && ctx.asegurado) caso.asegurado = ctx.asegurado;
     const fotos = fotosVeh(ctx), insp = ctx.inspCx || (E().inspectores || []).find(i => i.n === (ctx.val.veh_inspector_ejecuto || ctx.val.em_inspector_ejecuto)) || null; /* P-1c2: con la conexión, el inspector y su agencia de la visita */
     const cxN = ctx.cx && ctx.cxTotal > 0; /* P-1c3: con la conexión, «vehículo i de n» con los vehículos del caso en la base */
-    const d = Object.assign({}, ctx, { def, caso, fotos, insp, usuario: o.usuario || '', idx: cxN ? ctx.cxIdx : o.idx || 0, total: cxN ? ctx.cxTotal : o.total || 1 });
+    const VD = !ctx.cx && !ctx.em ? (E().vehiculos || []).filter(x => x.caso === ctx.caso) : [], kD = VD.findIndex(x => x.riesgo === ctx.rid), demoN = VD.length > 1 && kD >= 0; /* P-1c5: en la demostración, «vehículo i de n» con los vehículos del caso, aunque se descargue uno solo */
+    const d = Object.assign({}, ctx, { def, caso, fotos, insp, usuario: o.usuario || '', idx: cxN ? ctx.cxIdx : demoN ? kD : o.idx || 0, total: cxN ? ctx.cxTotal : demoN ? VD.length : o.total || 1 });
     if (secs && !ctx.em) d.fotos = fotosEnOrden(d, secs);
     return d;
   }
@@ -297,8 +298,10 @@
       ave: !!((d.tieneGrilla || {}).ave) || d.ave.length > 0, vex: d.vex.some(x => !vacio(x.res)), neu: d.neu.some(x => !vacio(x.labrado) || !vacio(x.marca)) };
     const REV = [[/testigo/i, 'tes'], [/identificaci/i, 'ver'], [/aver[ií]a/i, 'ave'], [/extern/i, 'vex'], [/neum[aá]tico/i, 'neu']], tok = m[2].split(/(,\s*|\s+y\s+|\s+ni\s+)/);
     const partes = []; for (let i = 0; i < tok.length; i += 2) { const t = tok[i].trim(), ni = i > 0 && /ni/.test(tok[i - 1]); if (t) partes.push({ t: ni && !/^sin /i.test(t) ? 'sin ' + t : t, rev: (REV.find(x => x[0].test(t)) || [])[1] || '' }); }
-    const quedan = partes.filter(p => !p.rev || tiene[p.rev]); if (quedan.length === partes.length) return { t: base, ok: true };
-    if (!quedan.some(p => p.rev)) return { t: NEUTRO_HALL, ok: false };
+    const quedan = partes.filter(p => !p.rev || tiene[p.rev]); if (quedan.length === partes.length && !/preexist/i.test(String(s.titulo || '') + ' ' + m[1])) return { t: base, ok: true };
+    const pre = /preexist/i.test(String(s.titulo || '') + ' ' + m[1]), porC = /por completar/i.test(String(estadoVeh(d) || '')); /* P-1c5 · DEC-125: «todavía» solo mientras el informe está por completar */
+    if (!quedan.some(p => p.rev)) return { t: porC ? (pre ? 'El informe todavía no tiene los datos para evaluar preexistencias.' : NEUTRO_HALL) : (pre ? 'El informe no registra datos de preexistencias.' : 'El informe no registra datos para evaluar hallazgos.'), ok: false };
+    if (pre) return { t: m[1] + ' en lo revisado: ' + unir(quedan.filter(p => p.rev).map(p => p.t)) + '.', ok: true }; /* P-1c5: el resumen dice solo lo revisado */
     return { t: m[1] + ': ' + unir(quedan.map(p => p.t)) + '.', ok: true }; }
   R.hallazgos = (d, s, n) => { const L = hallazgos(d, Array.isArray(s.reglas) ? s.reglas : null), sh = L.length ? null : sinHallazgos(d, s);
     const body = L.length ? '<ul style="list-style:none;margin:0;padding:0">' + L.map(h => { const v = SEV[h.sev] || SEV.baja; return '<li style="display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px dotted ' + C.line + ';font-size:9.5pt;color:' + C.ink + '">' + tag(v.t, v.bg, v.fg) + '<span>' + esc(String(h.texto).replace(/\.+$/, '')) + '.</span></li>'; }).join('') + '</ul>' : P(esc(sh.t), sh.ok ? ';color:' + C.ok + ';font-weight:700' : ';color:' + C.muted);
@@ -314,7 +317,7 @@
       rows += '<tr>' + TD('Total', tot) + TD(celda(ta), tot + ';text-align:right;white-space:nowrap') + TD(celda(ts), tot + ';text-align:right;white-space:nowrap') + TD(dt == null ? RAYA : pct(dt, true), tot + ';text-align:right' + (dt != null && Math.abs(dt) > 10 ? ';color:' + C.bad : '')) + '</tr>'; }
     const head = TH('') + (s.mostrarDiferencias ? TH('Asegurado (solicitud)', 'right') + TH('Sugerido (inspección)', 'right') + TH('Diferencia', 'right') : '');
     return H2(n, s.titulo) + TABLE(head, rows); };
-  R.campos = (d, s, n) => { if (!cumple(d, s.condiciones || s.condicion)) { if (s.resumenSiNo && !vacio(d.val.veh_conductor_habitual) && d.val.veh_conductor_habitual !== 'Otra persona') { /* P-1c4: una frase completa, nunca un fragmento suelto */ const q = String(d.val.veh_conductor_habitual).trim(), fr = /^asegurado$/i.test(q) ? 'El ' + lc1(s.titulo) + ' es ' + lc1(quitaTitulo(s.resumenSiNo, s.titulo)) : 'El ' + lc1(s.titulo) + ' es ' + lc1(q) + '.'; return RUN(n, s.titulo, esc(fr)); } return ''; }
+  R.campos = (d, s, n) => { if (!cumple(d, s.condiciones || s.condicion)) { if (s.resumenSiNo && !vacio(d.val.veh_conductor_habitual) && d.val.veh_conductor_habitual !== 'Otra persona') { /* P-1c4: una frase completa, nunca un fragmento suelto */ const q = String(d.val.veh_conductor_habitual).trim().replace(/^es\s+/i, '').replace(/\.+$/, ''), fr = /^(el\s+)?asegurad[oa]$/i.test(q) ? 'El ' + lc1(s.titulo) + ' es ' + lc1(quitaTitulo(s.resumenSiNo, s.titulo)) : 'El ' + lc1(s.titulo) + ' es ' + lc1(q) + '.'; /* P-1c5: la opción es «Es el asegurado»: una sola frase, sin «es es» */ return RUN(n, s.titulo, esc(fr)); } return ''; }
     const L = (s.campos || []).map(c => Array.isArray(c) ? campo(d, c[0], c[1]) : campo(d, c, s.modoPorDefecto)).filter(Boolean); if (!L.length || L.every(x => x.v === RAYA)) return '';
     const grid = (cols) => H2(n, s.titulo) + '<div style="display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));gap:4px 16px">' + L.map(x => campoHtml(x.l, x.v)).join('') + '</div>';
     return { html: grid(s.columnas || 2), media: grid(2) }; };
@@ -376,7 +379,7 @@
     const enlace = busca(/[Ee]nlace/), envEmi = busca(/[Ee]nviado a emisi/), emi = (r.emi && r.emi.fecha) || busca(/BPM de Emisi|Emitid/);
     const F = d.traza ? Object.assign({}, d.traza) /* P-1c2: con la conexión, de eventos[caso] con fecha y hora */ : { 'Solicitud': d.caso.fecha ? f4(d.caso.fecha).slice(0, 5) : '', 'Enlace enviado': enlace, 'Inspección iniciada': inf.inspeccion || '', 'Informe enviado': inf.carga || '', 'Calificación': r.veredicto ? ((r.calificador || {}).fecha || '') : '', 'Envío a emisión': envEmi, 'Emisión': r.emi ? emi : '' };
     const L = (s.eventos || []).map(e => ({ e, f: F[e] })).filter(x => !vacio(x.f)); if (L.length < 2) return '';
-    const corto = (f) => String(f).replace(/^(\d\d\/\d\d)\/\d\d/, '$1');
+    const corto = (f) => String(f).replace(/^(\d\d\/\d\d)\/(\d{4}|\d\d)(?!\d)/, '$1'); /* P-1c5: «21/11/2026 · 22:55» → «21/11 · 22:55» */
     return H2(n, s.titulo) + '<div style="display:flex;justify-content:space-between;font-size:7.8pt;color:' + C.muted + ';position:relative;margin-top:6px"><div style="position:absolute;left:4%;right:4%;top:6px;border-top:2px solid ' + C.line + '"></div>'
       + L.map(x => '<div style="position:relative;text-align:center;flex:1 1 0;min-width:0"><div style="width:12px;height:12px;border-radius:50%;background:' + C.acc + ';margin:0 auto 4px"></div><b style="display:block;color:' + C.ink + ';font-size:8pt">' + esc(x.e) + '</b><span style="white-space:nowrap">' + esc(corto(x.f)) + '</span></div>').join('') + '</div>'; };
   R.firmas = (d, s) => { const val = d.val, mod = val.veh_modalidad_realizada || '', L = ((s.segunModalidad || {})[mod]) || [], sep = (s.espacio || {}).separacion || '16mm', esp = (s.espacio || {}).firma || '20mm';

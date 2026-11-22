@@ -106,19 +106,24 @@
     const re = r.riesgo_estado && typeof r.riesgo_estado === 'object' ? r.riesgo_estado : rb && rb.riesgo_estado && typeof rb.riesgo_estado === 'object' ? rb.riesgo_estado : { estado: r.estado || (rb && rb.estado) || '' }; /* P-1c3: de riesgos[] o de riesgosBase */
     const cals = ((X.calificaciones || {})[c.id] || []).filter(q => q && (String(q.riesgo || '') === String(ref) || (RS.length < 2 && !q.riesgo)) && !/deriv/i.test(String(q.resultado || '') + ' ' + String(q.veredicto || ''))), cal = cals[cals.length - 1] || null;
     const ver = /^(Asegurable|No asegurable)$/.test(String(re.veredicto || '')) ? re.veredicto : (FINAL.includes(re.estado) && cal && /^(Asegurable|No asegurable)$/.test(cal.veredicto) ? cal.veredicto : '');
-    const det = !cal && ver && inf0 && String(inf0.decision || '') === 'determinar' ? { by: nombreDe(inf0.completadoPor || inf0.responsable) || insN, at: isoTxt(inf0.completadoEn || inf0.enviadoEn) } : null;
-    const ov = Object.assign({ cx: true, estado: re.estado || r.estado || '' }, ver ? { aseg: ver } : {}, ver && cal ? { user: nombreDe(cal.por), fecha: isoTxt(cal.hora), cobertura: cal.cobertura || '', motivoRech: ver === 'No asegurable' ? (cal.observacion || '') : '' } : {}, det ? { det } : {}, ov0 || {});
+    // P-1c5: decision del informe = { tipo, criterio, motivo, por, hora, facultad } (o la forma anterior: decision/completadoPor/completadoEn). La determinación al completar
+    // dentro de la facultad deja una calificación de nivel 0: es el resultado (quién y cuándo); su motivo sale de la observación o del motivo de la decisión.
+    const DEC = inf0 && inf0.decision && typeof inf0.decision === 'object' ? inf0.decision : null, decT = DEC ? String(DEC.tipo || '') : String((inf0 && inf0.decision) || ''), decMot = String((DEC && DEC.motivo) || '');
+    const det = ver && inf0 && decT === 'determinar' && (!cal || Number(cal.nivel) === 0) ? { by: nombreDe((DEC && DEC.por) || (cal && cal.por) || inf0.completadoPor || inf0.responsable) || insN, at: isoTxt((DEC && DEC.hora) || (cal && cal.hora) || inf0.completadoEn || inf0.enviadoEn) } : null;
+    const motR = ver === 'No asegurable' ? String((cal && (cal.observacion || cal.motivo)) || decMot || '') : '';
+    const ov = Object.assign({ cx: true, estado: re.estado || r.estado || '' }, ver ? { aseg: ver } : {}, ver && cal ? { user: nombreDe(cal.por), fecha: isoTxt(cal.hora), cobertura: cal.cobertura || '' } : {}, motR ? { motivoRech: motR } : {}, det ? { det } : {}, ov0 || {});
     // Valores del informe con su origen (las lecturas de fotos o documentos llevan su confianza).
     const TT = tpl({ formulario: 'Vehículos livianos v1' }) || {}, tipoDe = {}; Object.keys(TT.campos || {}).forEach(sid => (TT.campos[sid] || []).forEach(fd => { tipoDe[fd.k] = fd.t; }));
     const comoNum = (kk, x) => { if (!/^(Número|Moneda)$/.test(tipoDe[kk] || '')) return x; const t = String(x).trim(), n = Number(/,\d{1,2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '')); return t !== '' && isFinite(n) ? n : x; }; /* los números de la base llegan como texto */
     const IC = {}; Object.keys(V).forEach(kk => { const x = R[kk] || {}, lec = /^(foto|ocr|lectura)/i.test(x.org || ''), val = comoNum(kk, V[kk]); IC[kk] = lec ? { v: val, src: 'ext', doc: x.doc || 'foto o documento', conf: x.conf } : { v: val }; });
-    const ciudad = String((vis.lugar && (vis.lugar.ciudad || vis.lugar.canton)) || c.ciudad || '').trim();
+    const ciudad = String((vis.lugar && (vis.lugar.ciudad || vis.lugar.canton)) || c.ciudad || '').trim(), autoI = /autoinspecci/i.test([vis.modalidad, c.modalidad, inf0 && inf0.canal, inf0 && inf0.plantilla, inf0 && inf0.plantillaClave].map(x => String(x || '')).join(' '));
+    if (autoI && inf0 && inf0.enviadoEn) IC.veh_fecha_hora_inspeccion = { v: isoTxt(inf0.enviadoEn) }; /* P-1c5: la misma hora que precarga el formulario */
     // P-1c3: lugar de la inspección = la dirección o la ciudad de la visita (las coordenadas de las fotos solo lo complementan).
     const lugarVis = String((vis.lugar && (vis.lugar.direccion || '')) || vis.direccion || (vis.lugar && (vis.lugar.ciudad || vis.lugar.canton)) || vis.ciudad || '').trim();
     const v = { cx: true, caso: c.id, riesgo: String(ref), label: r.label || '', placa: V.veh_placa || r.placa || rbD.placa || (r.nowrap ? r.label : '') || '', marca: rbD.marca || r.marca, modelo: rbD.modelo || r.modelo, anio: rbD.anio || r.anio,
       km: rbD.km, uso: rbD.uso || r.uso, carroceria: rbD.carroceria || r.carroceria, clase: rbD.clase || r.clase, modalidad: vis.modalidad || '', inspector: insN, sucursal: c.sucursal || '', lugar: ciudad, lugarVisita: lugarVis,
       extras: [] /* como Informe con la conexión: la grilla de extras sale de las respuestas (extManual); los de la solicitud no se repiten */, accesorios: rbD.valorExtras,
-      informe: { estado: INF_EQ(inf0 && inf0.estado), inspeccion: isoTxt(vis.llegada || vis.inicio || ''), carga: isoTxt(inf0 && inf0.enviadoEn), campos: IC, grillas: G } };
+      informe: { estado: INF_EQ(inf0 && inf0.estado), inspeccion: isoTxt(autoI && inf0 && inf0.enviadoEn ? inf0.enviadoEn : (vis.llegada || vis.inicio || '')), carga: isoTxt(inf0 && inf0.enviadoEn), campos: IC, grillas: G } }; /* P-1c5: en autoinspección, la hora del envío del cliente */
     const ctx = contextoDe(v, String(ref), ov, c.id, asegurado || c.asegurado || '');
     // Trazabilidad (eventos[caso]): solicitud, inicio de la inspección, envío del informe, calificación y emisión, con fecha y hora.
     const ev = ((X.eventos || {})[c.id] || []).slice().reverse(), pl = ctx.placa || '', deVeh = (e) => RS.length < 2 || [pl, String(ref)].some(q => q && String(e.detalle || '').indexOf(q) >= 0);
