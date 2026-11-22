@@ -12,7 +12,7 @@
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script>
 <script src="datos-compania.js"></script><script src="sirius-fecha.js"></script>
 <script src="datos-catalogos-maestros.js"></script><script src="datos-flujo.js"></script><script src="datos-ejemplo.js"></script><script src="datos-salida-rg.js"></script><script src="datos-salida-veh.js"></script><script src="datos-documentos-pdf.js"></script><script src="datos-informe-veh.js"></script>
-<script src="datos-motores-ia.js"></script><script src="sirius-placa.js"></script><script src="sirius-pdf.js"></script><script src="sirius-salida-veh.js"></script><script src="sirius-documentos-pdf.js"></script>
+<script src="datos-motores-ia.js"></script><script src="sirius-placa.js"></script><script src="sirius-pdf.js"></script><script src="sirius-pdf-vector.js"></script><script src="sirius-salida-veh.js"></script><script src="sirius-documentos-pdf.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>a{color:var(--text-link)}a:hover{opacity:.8}#sv-panel{transition:grid-template-rows 160ms ease-out}@media (prefers-reduced-motion: reduce){#sv-panel{transition:none}}</style>
 </helmet>
@@ -81,9 +81,9 @@ class Component extends DCLogic {
   JSZIP = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   state = (() => {
     const e = this.props.escena || '', st = { pv: false, open: false, veh: '', doc: '', idx: 0, tab: '', tip: '', pg: null, dl: null, sel: 0 };
-    const pre = { svpdq: 'informe', svresumen: 'resumen', svflota: 'ambos', svsinveredicto: 'informe', dp1veh: 'informe', dp1diag: 'informe', dp1sinhall: 'informe', dp1aps: 'resumen', empdf: 'informe', empdfaps: 'resumen', empdftarjetas: 'informe', empdfdiag: 'informe', empdfdiag3: 'informe', calpdfcx: 'ambos' }[e];
+    const pre = { svpdq: 'informe', svresumen: 'resumen', svflota: 'ambos', svsinveredicto: 'informe', dp1veh: 'informe', dp1diag: 'informe', dp1sinhall: 'informe', dp1aps: 'resumen', pdfvehvector: 'informe', pdfvehresumen: 'resumen', pdfvehborrador: 'informe', pdfvehasegurable: 'informe', empdf: 'informe', empdfaps: 'resumen', empdftarjetas: 'informe', empdfdiag: 'informe', empdfdiag3: 'informe', calpdfcx: 'ambos' }[e];
     // svflota: panel desplegado con «Todos los vehículos» y Ambos; las demás abren además la vista previa superpuesta.
-    if (pre) { st.open = true; st.doc = pre; if (e === 'svflota') st.veh = 'todos'; else if (e !== 'calpdfcx') st.pv = true; /* C2-18: calpdfcx deja el panel abierto, sin la vista previa */ if (/^dp1(veh|diag|aps)$/.test(e)) st.veh = '20196-V1'; if (/^empdf/.test(e)) st.veh = e === 'empdfdiag3' ? '20204-E3' : '20204-E1'; }
+    if (pre) { st.open = true; st.doc = pre; if (e === 'svflota') st.veh = 'todos'; else if (e !== 'calpdfcx') st.pv = true; /* C2-18: calpdfcx deja el panel abierto, sin la vista previa */ if (/^dp1(veh|diag|aps)$/.test(e)) st.veh = '20196-V1'; if (/^pdfveh/.test(e)) st.veh = e === 'pdfvehasegurable' ? '20196-V2' : '20196-V1'; /* P-1c1 */ if (/^empdf/.test(e)) st.veh = e === 'empdfdiag3' ? '20204-E3' : '20204-E1'; }
     return st;
   })();
   G() { return window.SiriusSalidaVeh || null; }
@@ -109,11 +109,14 @@ class Component extends DCLogic {
     const G = this.G(), E = window.SIRIUS_EJEMPLO || {}; if (!G || !E.vehiculos) return [];
     const src = (this.props.vehiculos && this.props.vehiculos.length) ? this.props.vehiculos : E.vehiculos.filter(v => v.caso === this.props.caseId).map(v => ({ riesgo: v.riesgo, ov: {}, inf: (v.informe || {}).estado || '' }));
     const key = JSON.stringify([this.props.caseId, this.props.asegurado, src, this.props.caso || null, this.props.usuario || '', (window.SIRIUS_DOCUMENTOS_PDF || {}).rev || 0, !!this.props.previa]); if (this._lk === key) return this._l;
-    this._lk = key; this._l = src.map(x => { const c = G.contexto(x.riesgo, x.ov || {}, this.props.caseId, this.props.asegurado); if (!c) return null; const d0 = G.disponibilidad(c, x.inf); return Object.assign(c, { disp: this.props.previa ? Object.assign({}, d0, { informe: { ok: true } }) : d0 }); }).filter(Boolean); this._docs = {}; return this._l; // C2-14: «Revisa el PDF antes de enviar» abre el mismo Informe de inspección mientras se completa
+    this._lk = key; this._l = src.map(x => { const c = G.contexto(x.riesgo, x.ov || {}, this.props.caseId, this.props.asegurado); if (!c) return null; const d0 = G.disponibilidad(c, x.inf); return Object.assign(c, { disp: this.props.previa || this.props.escena === 'pdfvehborrador' /* P-1c1: el PDF con el informe por completar */ ? Object.assign({}, d0, { informe: { ok: true } }) : d0 }); }).filter(Boolean); this._docs = {}; return this._l; // C2-14: «Revisa el PDF antes de enviar» abre el mismo Informe de inspección mientras se completa
   }
   D() { return window.SiriusDocumentosPdf || null; }
   // Etapa DP2: cada PDF descargado suma a «PDF generados» de la versión Vigente con la que se hizo.
   registrar(cd) { const D = this.D(); if (D && cd && D.registrarGenerado) D.registrarGenerado(cd.id, 1, cd.version); }
+  // Etapa P-1c1 · DEC-272: opciones del documento de un vehículo (las mismas de la vista previa) y si su PDF va con el motor vectorial (Vehículos; Equipo y maquinaria sigue con la captura).
+  optsOf(c) { const L = this.lista(), idx = L.indexOf(c), caso = Object.assign({ numero: this.props.caseId, asegurado: this.props.asegurado || '' }, this.props.caso || {}); return { caso, usuario: this.props.usuario || '', idx: Math.max(0, idx), total: L.length }; }
+  vector(c) { const D = this.D(); return !!(c && !c.em && D && D.documentoVector && window.SiriusPdfVector); }
   docOf(c, id) { const k = c.rid + '|' + id; this._docs = this._docs || {}; if (!this._docs[k]) { const L = this.lista(), idx = L.indexOf(c), caso = Object.assign({ numero: this.props.caseId, asegurado: this.props.asegurado || '' }, this.props.caso || {});
     this._docs[k] = this.D() ? this.D().documento(id, c, { caso, usuario: this.props.usuario || '', idx: Math.max(0, idx), total: L.length }) : null; } return this._docs[k]; }
   ids(doc) { return doc === 'ambos' ? ['resumen', 'informe'] : doc ? [doc] : []; }
@@ -144,6 +147,8 @@ class Component extends DCLogic {
   // ---------- Descargas ----------
   descargar() {
     const P = this.PDF(), cur = this._cur; if ((this.state.dl || {}).gen || !cur) return;
+    const cv = this._curC; if (cv && this.vector(cv.c)) { this.setState({ dl: { gen: true, txt: 'Generando PDF…' } }); /* P-1c1 · DEC-272: PDF vectorial con el mismo contenido de la vista previa */
+      this.D().documentoVector(cv.tab, cv.c, this.optsOf(cv.c)).then((R) => { if (!R) throw new Error('x'); const name = R.archivo || cur.archivo; R.doc.save(name); this.registrar(cur); this.setState({ dl: { ok: 'Descargado: ' + name + ' · ' + R.paginas + (R.paginas === 1 ? ' página' : ' páginas') } }); }).catch(() => this.setState({ dl: { err: 'No se pudo generar el PDF. Inténtalo de nuevo.' } })); return; }
     const els = this.paginas(); if (!els.length || !this.state.pg || this.state.pg.key !== this._sig) { this.setState({ dl: { err: 'La vista previa aún se está armando. Espera un momento e inténtalo de nuevo.' } }); return; }
     if (!P || !P.disponible()) { this.setState({ dl: { err: 'No se pudo cargar el generador de PDF. Revisa tu conexión e inténtalo de nuevo.' } }); return; }
     if (els.length !== this.state.pg.pages.length) { this.setState({ dl: { err: 'La vista previa cambió mientras se preparaba el PDF. Inténtalo de nuevo.' } }); return; }
@@ -159,6 +164,7 @@ class Component extends DCLogic {
       this.setState({ dl: { gen: true, txt: 'Preparando el .zip…' } });
       await P.cargar(this.JSZIP); const Z = new window.JSZip();
       for (let k = 0; k < tot; k++) { const it = S.items[k], idx = S.vehs.indexOf(it.c);
+        if (this.vector(it.c)) { this.setState({ dl: { gen: true, txt: 'Generando ' + (k + 1) + ' de ' + tot + ': ' + this.G().archivo(it.id, it.c) } }); const R = await this.D().documentoVector(it.id, it.c, this.optsOf(it.c)); if (!R) throw new Error('x'); Z.file(this.G().archivo(it.id, it.c), R.doc.output('arraybuffer')); this.registrar(this.docOf(it.c, it.id)); continue; } /* P-1c1 */
         await new Promise(r => this.setState({ idx, tab: it.id, dl: { gen: true, txt: 'Generando ' + (k + 1) + ' de ' + tot + ': ' + this.G().archivo(it.id, it.c) } }, r));
         const sig = this._sig; await this.listo(sig); const pdf = await P.capturar(this.paginas()); Z.file(this.G().archivo(it.id, it.c), pdf.output('arraybuffer')); this.registrar(this._cur); }
       const blob = await Z.generateAsync({ type: 'blob' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
@@ -190,10 +196,10 @@ class Component extends DCLogic {
       bd: on ? 'var(--color-brand)' : 'var(--input-outlined-border)', bg: on ? 'var(--color-brand-wash)' : '#FFFFFF', fg: o.ok ? 'var(--text-strong)' : 'var(--text-muted)', cur: o.ok ? 'pointer' : 'not-allowed',
       pick: () => { if (!o.ok || (st.dl || {}).gen) return; this.setState({ doc: o.id, idx: 0, tab: '', dl: null }); }, key: (e) => { if (['ArrowRight', 'ArrowDown'].includes(e.key)) { e.preventDefault(); move(o.id, 1); } else if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { e.preventDefault(); move(o.id, -1); } },
       tipOn: () => { if (!o.ok) this.setState({ tip: o.id }); }, tipOff: () => { if (st.tip === o.id) this.setState({ tip: '' }); } }; });
-    const docHelp = opts.filter(o => !o.ok && o.id !== 'ambos').map(o => o.l + ': ' + o.motivo).join(' ') || (S.veh === 'todos' ? 'Con «Todos los ' + nP + '» se descarga un .zip con un PDF por ' + nN + ' y documento.' : 'La descarga es idéntica a la vista previa.');
+    const docHelp = opts.filter(o => !o.ok && o.id !== 'ambos').map(o => o.l + ': ' + o.motivo).join(' ') || (S.veh === 'todos' ? 'Con «Todos los ' + nP + '» se descarga un .zip con un PDF por ' + nN + ' y documento.' : (S.elegidos.some(c => this.vector(c)) ? 'La descarga tiene el mismo contenido que la vista previa, con el diseño del PDF.' : 'La descarga es idéntica a la vista previa.'));
     // Vista previa: vehículo y documento actuales.
     const vehs = S.vehs, idx = Math.min(st.idx || 0, Math.max(0, vehs.length - 1)), c = vehs[idx] || null, tabs = c ? this.ids(S.doc).filter(id => c.disp[id].ok) : [], tab = tabs.includes(st.tab) ? st.tab : tabs[0] || '';
-    const cd = c && tab ? this.docOf(c, tab) : null; this._cur = cd;
+    const cd = c && tab ? this.docOf(c, tab) : null; this._cur = cd; this._curC = c && tab ? { c, tab } : null;
     const blocksI = cd ? cd.blocks.map((b, i) => ({ bi: i, brk: !!b.brk, isChap: !!b.isChap, conAnterior: !!b.conAnterior, html: b.html, ref: this.refFor(b.html) })) : [];
     const sig = cd ? c.rid + '|' + tab + '|' + this.hash(JSON.stringify(cd.blocks)) : ''; this._sig = sig; this._cdb = blocksI;
     const pgS = st.pg && st.pg.key === sig ? st.pg : null, T = pgS ? pgS.pages.length : 0, P = this.PDF();
@@ -213,7 +219,7 @@ class Component extends DCLogic {
     return {
       closed: !st.open, open: !!st.open, barText, expanded: st.open ? 'true' : 'false', rows: st.open ? '1fr' : '0fr', onToggle: () => { if (st.open) this.cerrar(); else this.abrir(); }, onOpen: () => this.abrir(), onClose: () => this.cerrar(),
       onPanelKey: (e) => { if (e.key === 'Escape' && st.open && !st.pv) { e.preventDefault(); this.cerrar(); } },
-      canVer: !!cd, onVer: () => this.verPrevia(), verNota: cd ? 'Se abre en una ventana superpuesta; la descarga es idéntica a la vista previa.' : '', pv: !!(st.pv && cd), onBackdrop: () => this.cerrarPrevia(), onCloseDlg: () => this.cerrarPrevia(), onDlgKey: (e) => this.dlgKey(e),
+      canVer: !!cd, onVer: () => this.verPrevia(), verNota: cd ? 'Se abre en una ventana superpuesta; ' + (c && this.vector(c) ? 'la descarga tiene el mismo contenido, con el diseño del PDF.' : 'la descarga es idéntica a la vista previa.') : '', pv: !!(st.pv && cd), onBackdrop: () => this.cerrarPrevia(), onCloseDlg: () => this.cerrarPrevia(), onDlgKey: (e) => this.dlgKey(e),
       nS, ns: nN, showCard: !this.props.oculto, rootMb: this.props.oculto ? '0px' : '20px', /* C2-14 */
       latShow: !!this.props.lateral, latAttr: this.props.lateral ? (st.full ? 'completa' : 'lateral') : 'no', fullAttr: st.full ? 'true' : 'false', fullTxt: st.full ? 'Panel lateral' : 'Pantalla completa', onFull: () => this.setState({ full: !st.full }),
       dlgLeft: this.props.lateral && !st.full ? 'auto' : 'max(16px, 2vw)', dlgW: this.props.lateral && !st.full ? 'min(940px, calc(100vw - 32px))' : 'auto',

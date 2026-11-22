@@ -4,6 +4,150 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-1c1
+
+Publiqué la versión 377 de SIRIUS (los archivos subieron en la 376; esta versión cierra el registro con el tiempo de la etapa). El informe y el resumen de Vehículos se descargan ahora con un motor vectorial (jsPDF con Helvetica) y el diseño aprobado de la maqueta (DEC-272). El texto se puede buscar y copiar, y el informe completo de 20196-V1 pesa 210 KB en 8 páginas. El contenido es el mismo: `documentoVector` lee los bloques que arma `documento()` (las mismas secciones, el mismo orden, las mismas reglas, números y frases) y los dibuja con las piezas nuevas.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `sirius-pdf-vector.js` (nuevo) | Primitivas de dibujo con jsPDF, lectura de los bloques, imágenes, paginación por flujo, marca de agua y pie | — |
+| `sirius-documentos-pdf.js` | `documentoVector(id, ctx, opts)` y `estadoVeh` (se agregan a `SiriusDocumentosPdf`) | `documento()`, `preparar()` y todos los renderizadores de sección: la vista previa HTML da los mismos bloques, byte a byte |
+| `SalidaVeh.dc.html` | En Vehículos, «Descargar PDF» y «Descargar .zip» usan `documentoVector`; la nota de la descarga; las 4 escenas | La vista previa paginada, la selección de vehículos y documentos, Equipo y maquinaria (sigue con la captura) |
+| `SIRIUS Back-office.dc.html` | Carga `sirius-pdf-vector.js` y registra las 4 escenas | Todo lo demás |
+| `datos-escenas.js` | 4 escenas en el área «Salida PDF» (817) | — |
+| `datos-documentos-pdf.js`, `sirius-pdf.js` (liquidación y captura), `CalificacionRG.dc.html`, `DocumentoPdf.dc.html`, `sirius-salida-veh.js`, `sirius-conexion.js` | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+Lugares donde se descarga hoy el PDF de Vehículos: la Salida de Vehículos (pestañas Informe y Calificación del caso): «Descargar PDF» en la vista previa y «Descargar .zip» con «Todos los vehículos».
+
+**Qué cambió**
+
+- **Motor:** jsPDF 2.5.1 vectorial, como la liquidación. Usa Helvetica, y Courier para VIN y motor. Las fotos y el diagrama de averías van como imagen; el diagrama es el SVG de siempre, rasterizado al doble de resolución.
+- **Portada:**
+  - Franja clara con el círculo blanco.
+  - Logos: SIRIUS con «by aseguradora del sur» a la izquierda. A la derecha, la aseguradora con «ASEGURADORA DEL SUR C.A.», «Proceso de Inspecciones · Nuevo Riesgo», ciudad y fecha. Si inspeccionó una agencia, su logo va debajo (o su nombre, si no subió logo).
+  - «INFORME DE INSPECCIÓN VEHICULAR» (o «RESUMEN…»), la placa en grande, «Caso 20196 · vehículo 1 de 3» y el vehículo en una línea.
+  - Sello «SIRIUS · v1» con el estado del vehículo (DEC-271) y su veredicto: verde Asegurable, rojo No asegurable, ámbar sin resultado («POR COMPLETAR», «EN CALIFICACIÓN»).
+  - Fila de 4 tarjetas: vehículo, kilometraje, valor asegurado y la tarjeta oscura del resultado.
+  - Tarjeta de identificación (placa, VIN, motor) con las 2 fotos referenciales.
+  - Recuadro del resultado con el texto de la sección Resultado.
+- **Cuerpo:**
+  - Capítulos numerados con línea fina.
+  - Tablas con cabecera oscura (se repite si la tabla sigue en otra página) y la fila de total en celeste.
+  - Datos en 3 columnas; frases con sus colores; hallazgos con su chip; observaciones en un recuadro.
+  - Trazabilidad en línea de tiempo.
+  - Firmas en recuadros: atendió, inspeccionó y, si hay calificación, calificó con borde verde.
+  - Registro fotográfico y documentos en 3 por fila, con número y respaldo.
+- **Pie en cada página:** «Documento generado por SIRIUS · Aseguradora del Sur C.A. · Código de verificación IV-20196-V1-NTCDSF4M · Generado el 18/10/2026 · 20:30 por Verónica Lema» y «Página N de M». En la demostración, el código es el de siempre (`codigo()`) sin el guion; en borrador, «IV-20196-V1-BORRADOR».
+- **Marca de agua:** «BORRADOR» mientras el vehículo no esté Inspeccionado.
+- **Paginación por flujo:**
+  - No se parte una fila de tabla, una foto con su respaldo ni una firma.
+  - Una tabla de hasta 70 mm va entera.
+  - Un capítulo o subgrupo no queda solo al pie de una página.
+  - Un salto de página del modelo se respeta si la página ya tiene más de la mitad ocupada.
+- **Fotos:** cada imagen se recorta al recuadro y se reduce (lado mayor 1400 px, JPEG 0,82). Si no carga, va «Foto no disponible» con su número y su respaldo, sin cortar el documento. En la demostración van los marcadores de siempre («Foto de ejemplo · …»).
+- **Logos:** la disposición aprobada es la de por defecto. Si el documento cambió los logos en Documento PDF › Estilo y logos, se usan los elegidos: el izquierdo a la izquierda, el derecho a la derecha y la agencia debajo.
+- **Resumen (veh-resumen):** el mismo diseño, con la portada (franja, sello y tarjetas) y sus secciones.
+
+**Prueba de contenido (20196-V1, informe): textos que dibuja `documentoVector` frente a la vista previa HTML, sección por sección**
+
+| Sección | Textos en la vista previa | Textos en el PDF | Resultado |
+|---|---|---|---|
+| Tarjeta (portada) | 17 | 12 + diseño | Diseño nuevo: todos los valores presentes (placa, ECUADOR, vehículo, color, uso, kilometraje, km/año, VIN, motor, fotos F-1 y F-2) |
+| Resultado | 6 | 3 | Igual |
+| 1 Hallazgos relevantes | 8 | 8 | Igual |
+| 2 Valores | 17 | 17 | Igual |
+| 3 Datos de la inspección | 18 | 18 | Igual |
+| 4 Asegurado y propiedad + 5 Conductor habitual | 22 | 22 | Igual |
+| 6 Estado del vehículo (Identificación, Equipamiento, Neumáticos, Testigos) | 11 | 10 | Igual |
+| 7 Extras | 13 | 13 | Igual |
+| 8 Averías (leyenda y tabla) | 27 | 27 | Igual |
+| 9 Verificaciones externas | 23 | 23 | Igual |
+| 10 Observaciones del inspector | 3 | 3 | Igual |
+| 11 Trazabilidad | 10 | 10 | Igual |
+| Firmas | 4 | 4 | Igual |
+| 12 Registro fotográfico | 124 | 124 | Igual |
+| 13 Documentos | 23 | 23 | Igual |
+
+Diferencias de contenido: 0. La comparación no tiene en cuenta los espacios, las mayúsculas, los dos puntos de las etiquetas ni «−»/«–»; los recuentos difieren donde una frase va en un solo trazo.
+
+Textos propios del diseño nuevo:
+
+- **Portada:** «by aseguradora del sur», «ASEGURADORA DEL SUR C.A.», «Proceso de Inspecciones · Nuevo Riesgo», «Quito, 18/10/2026», título, placa, caso, línea del vehículo, sello (SIRIUS · v1, INSPECCIONADO, NO ASEGURABLE) y las 4 tarjetas.
+- **Fotos de la identificación:** «F-1 · Frontal», «F-2 · Posterior».
+- **Firmas:** ATENDIÓ, INSPECCIONÓ, CALIFICÓ, «Registrado en SIRIUS» y el recuadro de quien calificó: Verónica Lema · Ejecutivo de inspecciones · Calificado en SIRIUS el 16/10/26 · 12:40.
+- **Pie y marca de agua.**
+
+La misma prueba con el resumen de 20196-V1, el informe de 20196-V2, el de 20196-V3 (sin placa) y el borrador de 20196-V1 también da 0 diferencias.
+
+**Prueba visual (pdfvehvector frente a la maqueta, página por página)**
+
+| Página | Maqueta | PDF generado |
+|---|---|---|
+| 1 | Portada, resultado, 1 Hallazgos | Igual, más 2 Valores (cabe en la página) |
+| 2 | 2 Valores a 7 Extras | 3 Datos de la inspección a 7 Extras |
+| 3 | 8 Averías a 11 Trazabilidad y firmas | Igual |
+| 4 | 12 Registro fotográfico: Exteriores F-1 a F-7 y Motor F-8 | Igual |
+| 5 | Identificación F-9 a F-13 e Interiores F-21 a F-26 | Igual |
+| 6 | F-27 a F-34 y Airbags F-35, F-36 | Igual |
+| 7 | Llantas F-37 a F-41, Extras F-42, F-43 y Daños F-44, F-45 | Igual |
+| 8 | 13 Documentos F-14 a F-20 | Igual |
+
+`pdftotext` extrae todo el texto (placa, valores, frases, pie), y `pdffonts` muestra Helvetica y Courier (WinAnsi).
+
+**Verificado**
+
+- **Sintaxis:** `node --check` de los .js y el verificador de los .dc.html, sin errores.
+- **Tamaño:** informe completo de 20196-V1, 210 KB (por debajo de 2 MB); resumen 82 KB; informe de 20196-V2 64 KB.
+- **Descarga desde la pantalla:**
+  - pdfvehvector, pdfvehresumen, pdfvehborrador y pdfvehasegurable: «Descargar PDF» guarda el PDF hecho con jsPDF («Descargado: … · 8 páginas»).
+  - svflota: el .zip trae 6 PDF vectoriales (3 informes y 3 resúmenes).
+- **Borrador (pdfvehborrador):** sello ámbar «POR COMPLETAR», tarjeta «Por completar · Esperando el informe», marca de agua BORRADOR, código IV-20196-V1-BORRADOR y la vista previa con «Pendiente de calificación».
+- **Asegurable (pdfvehasegurable, 20196-V2):** sello verde «INSPECCIONADO · ASEGURABLE» y tarjeta «Asegurable · Pérdida total».
+- **Fotos:** una imagen que carga se recorta y se reduce a JPEG; una que no carga queda como «Foto no disponible» con su número y su respaldo, sin cortar el documento.
+- **Regresión (antes y después, IGUAL):** calrg, calrgsalida, calrgemision, salrgtecnico, salrganexo (Ramos Generales), liqpdf (liquidación) y dpdocs (diseñador). Los bloques de `documento()` de 20196-V1 son idénticos byte a byte (vista previa HTML). En dp1veh, dp1aps y svflota solo cambia la nota de la descarga.
+- **Pantalla:** el panel de la Salida y la vista previa a 1280×720 y 1920×1080.
+- **Archivos sin cambio:** `sirius-conexion.js` sigue en 70 bytes; `datos-documentos-pdf.js` no cambió.
+
+**No verificado**
+
+- Fotos reales de la base (con la conexión); probé la carga y el «Foto no disponible» con imágenes del proyecto.
+- El logo de una agencia en la portada: ningún vehículo de ejemplo lo tiene; el camino sin logo muestra «Inspección: <agencia>».
+- Un documento con los logos cambiados en Estilo y logos.
+- Firefox y Safari, y la impresión en papel.
+
+**Diferencias**
+
+- **Página 1:** «2 Valores» cabe en la página 1 (en la maqueta empieza la página 2). Desde la página 3, las páginas coinciden con la maqueta.
+- **Resultado:** el recuadro usa el texto de la sección Resultado. La maqueta separaba la regla en otra línea con su detalle; aquí va como en la vista previa.
+- **Saltos de página:** el salto después de «Datos de la inspección» no se aplica porque la página no está a la mitad.
+- **Fotos de la demostración:** los marcadores dicen «Foto de ejemplo · …», como en la vista previa (la maqueta solo el nombre).
+- **Diagrama:** debajo va la leyenda «Alta / Media / Baja · Cada número es una avería…» de la vista previa.
+- **Firmas:** se agrega el recuadro de quien calificó (Verónica Lema), que la vista previa no tiene, y la línea «Registrado en SIRIUS». El rol va como «Ejecutivo de inspecciones», sin el nivel.
+- **Signo menos:** «−» se imprime como «–», porque Helvetica estándar no trae U+2212.
+- **Resumen:** ocupa 2 páginas (la portada nueva es más alta). La vista previa lo marcaba en una página.
+- **Vehículo sin placa:** la portada muestra «Sin placa» en grande.
+- **Notas de la pantalla:** dicen «la descarga tiene el mismo contenido que la vista previa, con el diseño del PDF».
+- **Equipo y maquinaria:** sigue con la captura.
+
+**Escenas**
+
+Nuevas (área «Salida PDF»):
+
+- `pdfvehvector`: informe de 20196-V1.
+- `pdfvehresumen`: resumen de 20196-V1.
+- `pdfvehborrador`: 20196-V1 con el informe por completar; sello ámbar y BORRADOR.
+- `pdfvehasegurable`: 20196-V2 Asegurable; sello verde.
+
+En cada una, «Descargar PDF» genera el PDF vectorial.
+
+Registro: `project/registro-envios.md`. Inventario: filas de `sirius-pdf-vector.js` (nueva), `sirius-documentos-pdf.js`, `SalidaVeh.dc.html`, `SIRIUS Back-office.dc.html` y `datos-escenas.js`, y la sección «PDF de Vehículos con motor vectorial (etapa P-1c1 · DEC-272)».
+
+Tiempo de la etapa: inicio 21/11/2026 23:37 · fin 22/11/2026 00:05 · 28 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa AV-3
 
 Publiqué la versión 375 de SIRIUS (los archivos subieron en la 374; esta versión cierra el registro con el tiempo de la etapa). Los datos de demostración siguen ahora el estado por fases de cada vehículo (DEC-271): un vehículo con la visita realizada y su informe en Datos de campo dice «Informe por completar», «Inspeccionado» queda solo para quien ya tiene su resultado, y «N de M inspeccionados» pasó a «N de M con informe». Solo cambiaron datos de escenas.
