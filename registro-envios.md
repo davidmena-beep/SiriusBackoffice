@@ -4,6 +4,63 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa AV-2
+
+Publiqué la versión 373 de SIRIUS (los archivos subieron en la 372; esta versión cierra el registro con el tiempo de la etapa). Con «Agrupar por: Riesgo», la carta de un vehículo ya enviado dice «Enviado por el cliente · N de N fotos», con tono de éxito, igual que el «✓ Enviado» de la app del cliente. En «Agrupar por: Visita», la fila «Por vehículo» lo muestra como «PAU6044 5 de 5 · enviado». Sin `enviado`, nada cambia.
+
+**Mapa de impacto (hecho antes de cambiar)**
+
+| Archivo | Qué cambia | Qué no cambia |
+|---|---|---|
+| `Coordinacion.dc.html` | `cartaDe`: `porRiesgo[ref]` usa `x.enviado` para el texto y trae su `tone`; la fila «Por vehículo» agrega «· enviado» | Estado de la visita, acciones, enlace, último avance |
+| `sirius-coordcartas.js` | La carta bajo un vehículo usa el `tone` de `porRiesgo` (también la visita vigente de la historia) | Pilas, botones, historia |
+| `datos-cx-coordinacion.js` | Escena `cxautoavance`: el primer vehículo pasa a `enviado = true`, 5 de 5 (total de la visita 7 de 21) | Los demás casos |
+| Archivos vigilados, `sirius-conexion.js` | Sin cambio | `sirius-conexion.js` sigue en 70 bytes; no sube ninguna versión |
+
+**Qué cambió**
+
+- El texto del estado de un vehículo enviado es «Enviado por el cliente · N de N fotos»; el de los demás sigue igual.
+- `porRiesgo` lleva su propio tono (`success` si está enviado) y la carta lo usa en lugar del de la visita.
+- La fila «Por vehículo» agrega « · enviado» solo al vehículo enviado.
+- En la escena, el total de la visita pasó de 33 a 21 para que sume con los dos vehículos (5 + 16).
+
+**Prueba cruzada (cxautoavance)**
+
+| Vista | PAU6044 (enviado) | AU044M |
+|---|---|---|
+| Riesgo | Enviado por el cliente · 5 de 5 fotos (verde) | En curso por el cliente · 2 de 16 fotos (ámbar), igual que antes |
+| Visita | Por vehículo: PAU6044 5 de 5 · enviado · AU044M 2 de 16; total 7 de 21 fotos | — |
+
+Las acciones de ambas cartas son las mismas de antes (Copiar enlace, Reenviar enlace, Cancelar visita…), y el último avance de cada una no cambió.
+
+**Verificado**
+
+- **Sintaxis:** `node --check` y el verificador de los .dc.html, sin errores.
+- **Regresión (antes y después, IGUAL):** coordcartas, coordcartascx, coordcartashist y coordcartasvisita.
+- **Pantalla:** capturas por riesgo y por visita a 1280×720 y 1920×1080, sin texto cortado.
+- `sirius-conexion.js` sigue en 70 bytes.
+
+**No verificado**
+
+- La conexión real con `enviado` de la base: usé datos simulados.
+- Un vehículo enviado en la historia (vigente): la escena tiene una sola visita.
+- Firefox y Safari.
+
+**Diferencias**
+
+- Una visita con todos los vehículos enviados sigue con el estado de la visita (la define la base, no esta etapa).
+- El total de la escena cambió de 33 a 21 fotos.
+
+**Escenas**
+
+Sin escenas nuevas; `cxautoavance` cambió (primer vehículo enviado).
+
+Registro: `project/registro-envios.md`. Inventario: filas de `Coordinacion.dc.html`, `sirius-coordcartas.js` y `datos-cx-coordinacion.js`, y la línea AV-2 en la sección de AV-1.
+
+Tiempo de la etapa: inicio 21/11/2026 22:03 · fin 21/11/2026 22:06 · 3 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa AV-1
 
 Publiqué la versión 371 de SIRIUS (los archivos subieron en la 370; esta versión cierra el registro con el tiempo de la etapa). Las cartas de Coordinación ya muestran el avance de la autoinspección por vehículo. Bajo un vehículo («Agrupar por: Riesgo») la carta muestra el estado con las fotos de ese vehículo («N de M fotos») y su «Último avance» («Hoy 09:15 · Posterior»). Con «Agrupar por: Visita» muestra el total de la visita y, si hay más de un vehículo, la fila «Por vehículo» («PAU6044 5 de 17 · AU044M 2 de 16»). El «Último avance» usa el nombre del paso, nunca su código. Sin `avance.vehiculos`, todo queda como antes.

@@ -75,8 +75,8 @@
     solicitud: { formularios: ['Vehículos livianos', 'Motos'] } };
   const autoavance = () => { const ec = (ms) => new Date(Date.now() - 5 * 3600e3 + ms).toISOString().slice(0, 10), hoy = ec(0), antes = ec(-2 * 86400e3);
     return [{ n: 1, modalidad: 'Autoinspección', estado: 'Por agendar', inicio: null, fin: null, agendadoEn: antes + 'T10:12', origen: 'Coordinador', inspector: '', riesgos: ['50057-V1', '50057-V2'],
-      avance: { fotos: 7, total: 33, video: false, ultimo: hoy + 'T09:15', paso: 'exteriores_posterior', pasoNombre: 'Posterior',
-        vehiculos: [{ ref: '50057-V1', fotos: 5, total: 17, enviado: false, ultimo: antes + 'T16:05', paso: 'exteriores_frontal', pasoNombre: 'Frontal' }, { ref: '50057-V2', fotos: 2, total: 16, enviado: false, ultimo: hoy + 'T09:15', paso: 'exteriores_posterior', pasoNombre: 'Posterior' }] },
+      avance: { fotos: 7, total: 21, video: false, ultimo: hoy + 'T09:15', paso: 'exteriores_posterior', pasoNombre: 'Posterior',
+        vehiculos: [{ ref: '50057-V1', fotos: 5, total: 5, enviado: true, ultimo: antes + 'T16:05', paso: 'exteriores_frontal', pasoNombre: 'Frontal' }, { ref: '50057-V2', fotos: 2, total: 16, enviado: false, ultimo: hoy + 'T09:15', paso: 'exteriores_posterior', pasoNombre: 'Posterior' }] },
       enlace: { tipo: 'Autoinspección', estado: 'En curso', vence: ec(3 * 86400e3) + 'T10:12', url: url('Autoinspección', 'AI-8K2M4V') }, enlaces: [{ tipo: 'Autoinspección', estado: 'En curso', enviadoEn: antes + 'T10:12', canal: 'WhatsApp', vence: ec(3 * 86400e3) + 'T10:12' }] }]; };
   // S-1b · SQL 72: casos con la solicitud completa (casos[].aseguradoDatos, solicitante, prov, canton, dir, correoAps, tipoSolicitud, fechaSolicitud, orden y broker).
   // 50059: «Agendado» (el asegurado es el solicitante; autoinspección en curso) → escena soleditarfuera. 50060: «En coordinación» con un solicitante distinto → escena solcx.

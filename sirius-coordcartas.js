@@ -89,7 +89,7 @@
     const why = (c.acciones || []).filter((a) => a.why).map((a) => a.label + ': ' + a.why);
     const filas = pr ? (c.filas || []).filter((f) => f.label !== 'Por vehículo').map((f) => f.label === 'Último avance' ? Object.assign({}, f, { value: pr.ultimo || '—' }) : f) : c.filas;
     return h('article', { className: 'cc-carta', tabIndex: 0, 'data-cc-carta': c.id, 'aria-label': 'Visita ' + c.id + ' · ' + c.mod + ' · ' + est + (c.origen ? ' · ' + c.origen : '') + (c.grande ? ' · ' + c.grande : '') },
-      h('div', { className: 'cc-cab' }, h('span', { className: 'cc-n' }, c.id), h('span', { className: 'cc-mod' }, c.mod), Estado(est, c.tone), c.origen ? h('span', { className: 'cc-ori' }, c.origen) : null),
+      h('div', { className: 'cc-cab' }, h('span', { className: 'cc-n' }, c.id), h('span', { className: 'cc-mod' }, c.mod), Estado(est, (pr && pr.tone) || c.tone), c.origen ? h('span', { className: 'cc-ori' }, c.origen) : null),
       c.grande ? h('p', { className: 'cc-grande' }, c.grande) : null,
       Filas(filas),
       c.enlace && ET ? h(ET, c.enlace) : null,
@@ -122,7 +122,7 @@
       h('div', { className: 'cc-hcab' }, h('h3', { id: 'cc-ht-' + g.key, className: 'cc-tit' }, g.corto + ' · ' + total + (total === 1 ? ' visita' : ' visitas')),
         h('button', { ref, type: 'button', className: 'cc-chip', 'aria-expanded': 'true', 'aria-controls': 'cc-h-' + g.key, 'data-cc-apilar': g.key, onClick: p.cerrar, style: { display: 'inline-flex', alignItems: 'center', gap: 6 } },
           'Volver a apilar', h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, 'aria-hidden': 'true' }, h('path', { d: 'M6 15l6-6 6 6' })))),
-      t ? h('div', { className: 'cc-vig', 'data-cc-vigente': t.id }, h('span', { className: 'cc-n' }, t.id), h('strong', { style: { fontSize: 15, color: 'var(--text-strong)' } }, t.res.cab), Estado((delRiesgo(t, g.rid) || t).estadoTxt + ' · vigente', t.tone), t.res.lugarCorto ? h('span', { className: 'cc-der' }, t.res.lugarCorto) : null)
+      t ? h('div', { className: 'cc-vig', 'data-cc-vigente': t.id }, h('span', { className: 'cc-n' }, t.id), h('strong', { style: { fontSize: 15, color: 'var(--text-strong)' } }, t.res.cab), Estado((delRiesgo(t, g.rid) || t).estadoTxt + ' · vigente', (delRiesgo(t, g.rid) || {}).tone || t.tone), t.res.lugarCorto ? h('span', { className: 'cc-der' }, t.res.lugarCorto) : null)
         : h('div', { className: 'cc-vig' }, Estado('Sin visita vigente', 'neutral')),
       h('ol', { className: 'cc-tl', 'aria-label': 'Visitas anteriores, de la más nueva a la más antigua' }, g.anteriores.map((a) => { const abierto = sel === a.id;
         return h('li', { key: a.id }, h('button', { type: 'button', className: 'cc-ant', 'aria-expanded': abierto ? 'true' : 'false', 'aria-controls': 'cc-d-' + g.key + '-' + a.id, 'data-cc-anterior': a.id, onClick: () => setSel(abierto ? '' : a.id) },
