@@ -1,5 +1,11 @@
 // SIRIUS · Honorarios precalculados, liquidaciones (orden de pago con versiones) y facturas con la clave de acceso del SRI
-// (v3.3 · provisional · etapa P-1d + H-3 · DEC-277 y DEC-275; v3.2 · P-6g-1e · DEC-249; v3.1 · P-6g-1d · DEC-247 ajustada y DEC-248; ajusta DEC-136 a 139, conserva DEC-174).
+// (v3.4 · provisional · etapa F-1 · DEC-279; v3.3 · etapa P-1d + H-3 · DEC-277 y DEC-275; v3.2 · P-6g-1e · DEC-249; v3.1 · P-6g-1d · DEC-247 ajustada y DEC-248; ajusta DEC-136 a 139, conserva DEC-174).
+// F-1 · DEC-279: la factura se arma en la Mesa de trabajo («En preparación», una por proveedor): facturaAgregar { liquidaciones, honorarios } y facturaQuitar
+// → { ok, mensaje, id, subtotal, elementos }, facturaDescartar {} (todo vuelve a «Por facturar») y facturaConfirmar { clave } → { ok, mensaje, id, numero, subtotal }
+// (49 dígitos, módulo 11, tipo 01, RUC del emisor = el del proveedor, no cargada antes; autorizada en el SRI con el mismo subtotal; pasa a «Por validar»).
+// Lo agregado queda RESERVADO: la liquidación sigue «Aprobada» y el honorario «Por facturar», con facturaId de la factura en preparación. facturas[] suma
+// enPreparacion, creada y devuelta { clave, numero, motivo, por, fecha }; devolverFactura regresa lo incluido a la factura en preparación del proveedor.
+// Con la conexión, estas acciones las aplica solo la base y la pantalla vuelve a cargar (LP.accionBase); sin ella, las mismas reglas sobre la sesión.
 // P-1d · DEC-277: el PDF de la liquidación sale de la conexión: liquidaciones[].aprobada { por, fecha (hora de Ecuador), version } y .periodo ('2026-11'),
 // versiones[].enviada en hora de Ecuador, el cargo de quien aprobó (sin la aseguradora como cargo) y el código registrado en la base (documentoRegistrar
 // { documento: 'liquidacion', liquidacion, huella } → mostrar «LQ-001416-v1-XXXXXXXX»; con { ok: false }, no se genera). Una liquidación sin líneas no tiene PDF.
@@ -39,7 +45,7 @@
   'use strict';
   const W = window; if (W.SiriusLiqProceso) return;
   const clon = (x) => JSON.parse(JSON.stringify(x === undefined ? null : x)), sd = (x) => String(x == null ? '' : x).trim(), ON = [];
-  const LP = { version: 0, EST_H: ['Por definir', 'Por liquidar', 'En liquidación', 'Por facturar', 'Facturado', 'Pagado'], EST_L: ['Borrador', 'Enviada', 'Por corregir', 'Aprobada', 'Facturada', 'Pagada', 'Anulada'], EST_F: ['Por validar', 'Validada', 'Pagada', 'Factura devuelta'],
+  const LP = { version: 0, EST_H: ['Por definir', 'Por liquidar', 'En liquidación', 'Por facturar', 'Facturado', 'Pagado'], EST_L: ['Borrador', 'Enviada', 'Por corregir', 'Aprobada', 'Facturada', 'Pagada', 'Anulada'], EST_F: ['En preparación', 'Por validar', 'Validada', 'Pagada', 'Factura devuelta', 'Descartada'],
     CAMPOS: ['nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'ajuste'], borr: [], cbOv: {}, ctx: { ahora: () => { const E = W.SIRIUS_EJEMPLO; return E && E.ahora ? E.ahora() : new Date(); }, usuario: () => '' }, local: null, _cs: null, _cc: null, pagaOv: {} };
   LP.on = (f) => { ON.push(f); return () => { const i = ON.indexOf(f); if (i >= 0) ON.splice(i, 1); }; };
   const avisar = () => { LP.version++; ON.slice().forEach((f) => { try { f(); } catch (e) { /* nada */ } }); };
@@ -151,14 +157,14 @@
   const CONTRATO_H = ['id', 'caso', 'orden', 'visita', 'riesgo', 'placa', 'bien', 'asegurado', 'linea', 'sucursal', 'ramo', 'modalidad', 'fecha', 'estadoCaso', 'inspector', 'inspectorId', 'proveedor', 'aprobacion', 'calificacion', 'calculo', 'ajuste', 'subtotal', 'estado', 'liquidacionId', 'facturaId', 'servicio'];
   const CONTRATO_C = ['tarifario', 'clase', 'ciudadBase', 'ciudadVisita', 'enBase', 'kmMedicion', 'nivel', 'nivelSugerido', 'horasVisita', 'horasRedaccion', 'medidoVisita', 'medidoRedaccion', 'equipos', 'base', 'km', 'kmSugeridos', 'valorKm', 'movilizacion', 'subtotal', 'modelo', 'lineas'];
   const CONTRATO_L = ['id', 'numero', 'version', 'proveedor', 'estado', 'lineas', 'observaciones', 'motivo', 'subtotal', 'iva', 'total', 'facturaId', 'versiones', 'historial', 'periodo', 'aprobada'];
-  const CONTRATO_F = ['id', 'proveedor', 'clave', 'numero', 'fecha', 'sri', 'liquidaciones', 'honorarios', 'subtotal', 'estado', 'motivo', 'pago', 'historial'];
+  const CONTRATO_F = ['id', 'proveedor', 'clave', 'numero', 'fecha', 'sri', 'liquidaciones', 'honorarios', 'subtotal', 'estado', 'motivo', 'pago', 'historial', 'enPreparacion', 'creada', 'devuelta'];
   const solo = (o, ks) => { const r = {}; ks.forEach((k) => { r[k] = o[k] === undefined ? null : clon(o[k]); }); return r; };
   // Lo que guarda la base (para la conexión simulada y la prueba del contrato).
   LP.aContrato = (S) => ({ honorarios: S.honorarios.map((h) => { const x = solo(h, CONTRATO_H); x.calculo = solo(h.calculo || {}, CONTRATO_C); return x; }),
     liquidaciones: S.liquidaciones.filter((l) => l.estado !== 'Borrador').map((l) => { const x = solo(l, CONTRATO_L); x.versiones = (l.versiones || []).map((v) => solo(v, ['version', 'enviada', 'resultado', 'por', 'cambios'])); return x; }),
     facturas: S.facturas.map((f) => solo(f, CONTRATO_F)) });
   LP.CONTRATO = { honorario: CONTRATO_H, calculo: CONTRATO_C, liquidacion: CONTRATO_L, factura: CONTRATO_F,
-    acciones: { ajustarHonorario: ['id', 'nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'valor', 'comentario'], quitarAjuste: ['id'], enviarLiquidacion: ['lineas'], editarLiquidacion: ['id', 'agregar', 'quitar'], reenviarLiquidacion: ['id'], anularLiquidacion: ['id', 'motivo'], aprobarLiquidacion: ['id'], devolverLiquidacion: ['id', 'observaciones', 'motivo'], aceptarSugerencia: ['id', 'linea'], enviarFactura: ['clave', 'liquidaciones', 'honorarios'], validarFactura: ['id'], devolverFactura: ['id', 'motivo'], registrarPago: ['facturas', 'fecha', 'referencia'] } };
+    acciones: { ajustarHonorario: ['id', 'nivel', 'horasVisita', 'horasRedaccion', 'equipos', 'km', 'valor', 'comentario'], quitarAjuste: ['id'], enviarLiquidacion: ['lineas'], editarLiquidacion: ['id', 'agregar', 'quitar'], reenviarLiquidacion: ['id'], anularLiquidacion: ['id', 'motivo'], aprobarLiquidacion: ['id'], devolverLiquidacion: ['id', 'observaciones', 'motivo'], aceptarSugerencia: ['id', 'linea'], enviarFactura: ['clave', 'liquidaciones', 'honorarios'], facturaAgregar: ['liquidaciones', 'honorarios'], facturaQuitar: ['liquidaciones', 'honorarios'], facturaDescartar: [], facturaConfirmar: ['clave'], validarFactura: ['id'], devolverFactura: ['id', 'motivo'], registrarPago: ['facturas', 'fecha', 'referencia'] } };
   LP.valorEquipos = (n, t) => { n = Math.max(0, Math.round(Number(n) || 0)); const T = (t && t.tramos) || []; if (!n || !T.length) return 0;
     if (t.aplicacion === 'tramoTotal') { const tr = T.find((x) => x.hasta == null || n <= x.hasta) || T[T.length - 1]; return LP.r2(n * tr.valor); }
     let s = 0, i = 0; for (let k = 1; k <= n; k++) { while (T[i].hasta != null && k > T[i].hasta && i < T.length - 1) i++; s += Number(T[i].valor) || 0; } return LP.r2(s); };
@@ -300,10 +306,44 @@
       const f = { id, proveedor: clon(provs[0]), clave, numero: sd(r.numero), fecha: sd(r.fecha), sri: { estado: sd(r.estado), ruc: sd(r.ruc), subtotal: LP.r2(Number(r.subtotal)), iva: LP.r2(Number(r.iva)), total: LP.r2(Number(r.total)) }, liquidaciones: ls, honorarios: hs, subtotal: LP.r2(Number(r.subtotal)), estado: 'Por validar', motivo: '', pago: null, historial: [] };
       LL.forEach((l) => { l.estado = 'Facturada'; l.facturaId = id; l.lineas.forEach((x) => { const h = H(x); if (h) { h.estado = 'Facturado'; h.facturaId = id; } }); }); HH.forEach((h) => { h.estado = 'Facturado'; h.facturaId = id; });
       hist(f, 'Enviada con la clave del SRI: ' + ls.length + (ls.length === 1 ? ' liquidación' : ' liquidaciones') + ' y ' + hs.length + (hs.length === 1 ? ' honorario preacordado' : ' honorarios preacordados') + ' · subtotal ' + LP.usd(f.subtotal), ctx); S.facturas.push(f); return { ok: true, mensaje: 'Factura ' + f.numero + ' enviada: queda por validar en Finanzas', id }; }
+    // ---------- F-1 · DEC-279: la factura en preparación (una por proveedor; lo agregado queda reservado con su facturaId) ----------
+    if (['facturaAgregar', 'facturaQuitar', 'facturaDescartar', 'facturaConfirmar'].indexOf(tipo) >= 0) { const ls = (d.liquidaciones || []).map(sd).filter(Boolean), hs = (d.honorarios || []).map(sd).filter(Boolean);
+      const LL = ls.map(L), HH = hs.map(H), prov = ctx.proveedor || (LL[0] && LL[0].proveedor) || (HH[0] && HH[0].proveedor) || null; if (!prov) return NO('No se sabe de qué proveedor es la factura');
+      let f = S.facturas.find((x) => x.estado === 'En preparación' && LP.mismo(x.proveedor, prov)); const subt = () => { f.subtotal = LP.r2(f.liquidaciones.reduce((a, id) => a + ((L(id) || {}).subtotal || 0), 0) + f.honorarios.reduce((a, id) => a + ((H(id) || {}).subtotal || 0), 0)); };
+      const res = (m) => ({ ok: true, mensaje: m, id: f.id, subtotal: f.subtotal, elementos: f.liquidaciones.length + f.honorarios.length });
+      if (tipo === 'facturaAgregar') { if (!ls.length && !hs.length) return NO('Marca al menos una liquidación aprobada o un honorario preacordado');
+        if (LL.some((l) => !l || l.estado !== 'Aprobada' || l.facturaId)) return NO('Alguna liquidación no está aprobada o ya está en una factura');
+        if (HH.some((h) => !h || h.estado !== 'Por facturar' || !libre(h))) return NO('Algún honorario no está «Por facturar» o ya está en una factura');
+        if (LL.map((l) => l.proveedor).concat(HH.map((h) => h.proveedor)).some((p) => !LP.mismo(p, prov))) return NO('Todo lo de una factura debe ser del mismo proveedor');
+        if (!f) { const nf = sigFac(S); S.seq = Object.assign({}, S.seq || {}, { fac: nf + 1 }); f = { id: 'FAC-' + String(nf).padStart(4, '0'), proveedor: clon(prov), clave: '', numero: '', fecha: '', sri: null, liquidaciones: [], honorarios: [], subtotal: 0, estado: 'En preparación', motivo: '', pago: null, historial: [], enPreparacion: true, creada: ctx.fecha, devuelta: null }; S.facturas.push(f); hist(f, 'Factura en preparación abierta', ctx); }
+        LL.forEach((l) => { l.facturaId = f.id; f.liquidaciones.push(l.id); }); HH.forEach((h) => { h.facturaId = f.id; f.honorarios.push(h.id); }); subt();
+        hist(f, 'Agregó ' + [ls.length ? ls.length + (ls.length === 1 ? ' liquidación' : ' liquidaciones') : '', hs.length ? hs.length + (hs.length === 1 ? ' preacordado' : ' preacordados') : ''].filter(Boolean).join(' y '), ctx);
+        return res((ls.length + hs.length) + ((ls.length + hs.length) === 1 ? ' agregado' : ' agregados') + ' a la factura en preparación'); }
+      if (!f) return NO('No tienes una factura en preparación');
+      if (tipo === 'facturaQuitar') { if (!ls.length && !hs.length) return NO('Elige qué quitar'); if (ls.some((id) => f.liquidaciones.indexOf(id) < 0) || hs.some((id) => f.honorarios.indexOf(id) < 0)) return NO('Eso no está en la factura en preparación');
+        LL.forEach((l) => { l.facturaId = ''; }); HH.forEach((h) => { h.facturaId = ''; }); f.liquidaciones = f.liquidaciones.filter((id) => ls.indexOf(id) < 0); f.honorarios = f.honorarios.filter((id) => hs.indexOf(id) < 0); subt();
+        hist(f, 'Quitó ' + (ls.length + hs.length) + ' (vuelve a «Por facturar»)', ctx); return res('Quitado: vuelve a «Por facturar»'); }
+      if (tipo === 'facturaDescartar') { f.liquidaciones.forEach((id) => { const l = L(id); if (l) l.facturaId = ''; }); f.honorarios.forEach((id) => { const h = H(id); if (h) h.facturaId = ''; });
+        f.estado = 'Descartada'; f.enPreparacion = false; hist(f, 'Descartada: lo incluido vuelve a «Por facturar»', ctx); return { ok: true, mensaje: 'Factura descartada: todo volvió a «Por facturar»' }; }
+      // facturaConfirmar: la base valida la clave y consulta el SRI.
+      if (!f.liquidaciones.length && !f.honorarios.length) return NO('La factura en preparación está vacía'); const SRI = W.SIRIUS_SRI, clave = sd(d.clave).replace(/\s/g, '');
+      const ec = SRI && SRI.validarClave ? SRI.validarClave(clave) : (/^\d{49}$/.test(clave) ? '' : 'La clave de acceso tiene 49 dígitos'); if (ec) return NO(ec);
+      const ruc = clave.slice(10, 23), rp = LP.rucProveedor(prov); if (ruc !== rp) return NO('El RUC del emisor (' + ruc + ') no es el del proveedor (' + rp + ')');
+      if (S.facturas.some((x) => (x.clave === clave && x.estado !== 'Descartada') || (x.devuelta && x.devuelta.clave === clave))) return NO('Esa factura ya fue cargada antes');
+      const r = ctx.sri && ctx.sri.clave === clave ? ctx.sri : (SRI && SRI.registro ? SRI.registro(clave) : null); if (!r || r.estado !== 'AUTORIZADO') return NO('El SRI no tiene una factura autorizada con esa clave de acceso');
+      if (Math.abs(Number(r.subtotal) - f.subtotal) > 0.005) return NO('El subtotal de la factura en el SRI (' + LP.usd(r.subtotal) + ') no es el de esta factura (' + LP.usd(f.subtotal) + ')');
+      f.clave = clave; f.numero = sd(r.numero); f.fecha = sd(r.fecha); f.sri = { estado: sd(r.estado), ruc: sd(r.ruc), subtotal: LP.r2(Number(r.subtotal)), iva: LP.r2(Number(r.iva)), total: LP.r2(Number(r.total)) }; f.estado = 'Por validar'; f.enPreparacion = false;
+      f.liquidaciones.forEach((id) => { const l = L(id); if (l) { l.estado = 'Facturada'; l.facturaId = f.id; l.lineas.forEach((x) => { const h = H(x); if (h) { h.estado = 'Facturado'; h.facturaId = f.id; } }); } }); f.honorarios.forEach((id) => { const h = H(id); if (h) { h.estado = 'Facturado'; h.facturaId = f.id; } });
+      hist(f, 'Confirmada con la clave del SRI · factura ' + f.numero + ' · subtotal ' + LP.usd(f.subtotal), ctx); return { ok: true, mensaje: 'Factura ' + f.numero + ' confirmada: queda por validar en Finanzas', id: f.id, numero: f.numero, subtotal: f.subtotal }; }
     if (tipo === 'validarFactura') { const f = F(d.id); if (!f || f.estado !== 'Por validar') return NO('La factura no está «Por validar»'); f.estado = 'Validada'; hist(f, 'Validada por Finanzas', ctx); return { ok: true, mensaje: 'Factura validada' }; }
     if (tipo === 'devolverFactura') { const f = F(d.id); if (!f || f.estado !== 'Por validar') return NO('La factura no está «Por validar»'); if (sd(d.motivo).length < 10) return NO('Escribe el motivo (mínimo 10 caracteres)');
-      f.liquidaciones.forEach((x) => { const l = L(x); if (l) { l.estado = 'Aprobada'; l.facturaId = ''; l.lineas.forEach((y) => { const h = H(y); if (h) { h.estado = 'Por facturar'; h.facturaId = ''; } }); } }); f.honorarios.forEach((x) => { const h = H(x); if (h) { h.estado = 'Por facturar'; h.facturaId = ''; } });
-      f.estado = 'Factura devuelta'; f.motivo = sd(d.motivo); hist(f, 'Devuelta: lo incluido vuelve a «Por facturar»', ctx, { motivo: sd(d.motivo) }); return { ok: true, mensaje: 'Factura devuelta' }; }
+      // F-1 · DEC-279: lo incluido vuelve a la factura en preparación del proveedor (reservado), con el motivo; si ya había otra en preparación, se suma a esa.
+      const dev = { clave: f.clave, numero: f.numero, motivo: sd(d.motivo), por: ctx.por, fecha: ctx.fecha }, otra = S.facturas.find((x) => x !== f && x.estado === 'En preparación' && LP.mismo(x.proveedor, f.proveedor)), dest = otra || f;
+      f.liquidaciones.forEach((x) => { const l = L(x); if (l) { l.estado = 'Aprobada'; l.facturaId = dest.id; l.lineas.forEach((y) => { const h = H(y); if (h) { h.estado = 'Por facturar'; h.facturaId = ''; } }); } }); f.honorarios.forEach((x) => { const h = H(x); if (h) { h.estado = 'Por facturar'; h.facturaId = dest.id; } });
+      if (otra) { otra.liquidaciones = otra.liquidaciones.concat(f.liquidaciones); otra.honorarios = otra.honorarios.concat(f.honorarios); otra.subtotal = LP.r2(otra.subtotal + f.subtotal); otra.devuelta = dev; hist(otra, 'Se sumó lo de la factura ' + f.numero + ' devuelta', ctx, { motivo: dev.motivo });
+        f.estado = 'Factura devuelta'; f.motivo = dev.motivo; f.enPreparacion = false; hist(f, 'Devuelta: lo incluido pasó a la factura en preparación', ctx, { motivo: dev.motivo }); }
+      else { f.estado = 'En preparación'; f.enPreparacion = true; f.motivo = dev.motivo; f.devuelta = dev; f.clave = ''; f.numero = ''; f.fecha = ''; f.sri = null; hist(f, 'Devuelta: vuelve a la factura en preparación', ctx, { motivo: dev.motivo }); }
+      return { ok: true, mensaje: 'Factura devuelta: vuelve a la factura en preparación del proveedor' }; }
     if (tipo === 'registrarPago') { const ids = (d.facturas || []).map(sd).filter(Boolean), FF = ids.map(F); if (!ids.length || FF.some((f) => !f || f.estado !== 'Validada')) return NO('Solo se paga una factura validada');
       if (!/^\d{4}-\d\d-\d\d$/.test(sd(d.fecha))) return NO('Escribe la fecha del pago'); if (!sd(d.referencia)) return NO('Escribe la referencia del pago');
       FF.forEach((f) => { f.estado = 'Pagada'; f.pago = { fecha: sd(d.fecha), referencia: sd(d.referencia) }; f.liquidaciones.forEach((x) => { const l = L(x); if (l) { l.estado = 'Pagada'; l.lineas.forEach((y) => { const h = H(y); if (h) h.estado = 'Pagado'; }); } }); f.honorarios.forEach((x) => { const h = H(x); if (h) h.estado = 'Pagado'; }); hist(f, 'Pagada · ' + LP.fecha(d.fecha) + ' · ref. ' + sd(d.referencia), ctx); });
@@ -337,6 +377,16 @@
   LP.devolver = (id, observaciones, motivo, por) => LP.accion('devolverLiquidacion', { id, observaciones: observaciones.map((o) => ({ linea: o.linea, texto: sd(o.texto), subtotalSugerido: o.subtotalSugerido == null || o.subtotalSugerido === '' ? null : LP.r2(Number(o.subtotalSugerido)) })), motivo: sd(motivo) }, por);
   LP.aceptar = (id, linea, por) => LP.accion('aceptarSugerencia', { id, linea }, por);
   LP.enviarFactura = (d, por) => LP.accion('enviarFactura', { clave: sd(d.clave), liquidaciones: d.liquidaciones.slice(), honorarios: d.honorarios.slice() }, por, { ctx: { sri: d.sri || null } });
+  // F-1 · DEC-279: con la conexión la acción la aplica solo la base y la pantalla vuelve a cargar lo que trae la conexión; sin ella, la regla sobre la sesión.
+  LP.accionBase = (tipo, carga, por, prov) => { if (LP.cx()) return base(tipo, carga).then((rb) => { LP._cc = null; avisar(); return rb && rb.ok ? rb : { ok: false, mensaje: (rb && rb.mensaje) || 'La base no guardó el cambio.' }; });
+    const S = tienda(), r = LP.ops(S, tipo, clon(carga), { por: por || LP.ctx.usuario() || '', fecha: LP.ahoraIso(), proveedor: prov || null }); avisar(); return Promise.resolve(r); };
+  LP.facturaPrep = (p) => LP.facturas().find((f) => f.estado === 'En preparación' && LP.deProv(p)(f)) || null;
+  LP.facAgregar = (ls, hs, por, p) => LP.accionBase('facturaAgregar', { liquidaciones: (ls || []).slice(), honorarios: (hs || []).slice() }, por, p);
+  LP.facQuitar = (ls, hs, por, p) => LP.accionBase('facturaQuitar', { liquidaciones: (ls || []).slice(), honorarios: (hs || []).slice() }, por, p);
+  LP.facDescartar = (por, p) => LP.accionBase('facturaDescartar', {}, por, p);
+  LP.facConfirmar = (clave, por, p) => LP.accionBase('facturaConfirmar', { clave: sd(clave).replace(/\s/g, '') }, por, p);
+  // El proveedor del usuario de la conexión (la base lo sabe por la sesión; la base simulada lo toma de aquí).
+  LP.provDeUsuario = (u) => { u = u || {}; if (u.agenciaRuc) return { tipo: 'agencia', identificacion: sd(u.agenciaRuc) }; if (u.tipoInspector === 'independiente' || u.tipo === 'Independiente' || u.tipo === 'Externo') return { tipo: 'inspector', identificacion: sd(u.identificacion) }; return null; };
   LP.validarFactura = (id, por) => LP.accion('validarFactura', { id }, por);
   LP.devolverFactura = (id, motivo, por) => LP.accion('devolverFactura', { id, motivo: sd(motivo) }, por);
   LP.registrarPago = (facturas, fecha, referencia, por) => LP.accion('registrarPago', { facturas: facturas.slice(), fecha: sd(fecha), referencia: sd(referencia) }, por);
@@ -370,7 +420,7 @@
     if (p) { const pl = LP.porLiquidar(p); if (pl.length) out.push({ tipo: 'liquidar', n: pl.length, texto: pl.length + (pl.length === 1 ? ' inspección «Por liquidar»' : ' inspecciones «Por liquidar»') + ': arma la liquidación', boton: 'Liquidar', tab: 'Por liquidar' });
       LP.liquidaciones().filter((l) => l.estado === 'Por corregir' && LP.mismo(l.proveedor, p)).forEach((l) => out.push({ tipo: 'corregir', id: l.id, texto: 'Liquidación ' + LP.numTxt(l) + ' devuelta para corregir: ' + String(l.motivo || '').replace(/\.$/, ''), boton: 'Corregir en la mesa', tab: 'Mesa de trabajo' }));
       const pf = LP.liqsPorFacturar(p).length + LP.preacordadosPorFacturar(p).length; if (pf) out.push({ tipo: 'facturar', n: pf, texto: pf + ' por facturar (liquidaciones aprobadas y honorarios preacordados)', boton: 'Facturar', tab: 'Por facturar' });
-      LP.facturas().filter((f) => f.estado === 'Factura devuelta' && LP.mismo(f.proveedor, p)).forEach((f) => out.push({ tipo: 'facturaDevuelta', id: f.id, texto: 'Factura ' + f.numero + ' devuelta: ' + String(f.motivo || '').replace(/\.$/, '') + '. Lo incluido volvió a «Por facturar»', boton: 'Corregir factura', tab: 'Por facturar' })); }
+      const fp = LP.facturaPrep(p); if (fp && fp.devuelta) out.push({ tipo: 'facturaDevuelta', id: fp.id, texto: 'Factura ' + fp.devuelta.numero + ' devuelta: ' + String(fp.devuelta.motivo || '').replace(/\.$/, '') + '. Volvió a tu factura en preparación', boton: 'Corregir factura', tab: 'Mesa de trabajo' }); }
     if (vista.aprueba) { const pa = LP.liquidaciones().filter((l) => l.estado === 'Enviada'); if (pa.length) out.push({ tipo: 'aprobar', n: pa.length, texto: pa.length + (pa.length === 1 ? ' liquidación por aprobar' : ' liquidaciones por aprobar'), boton: 'Revisar', tab: 'Por aprobar' }); }
     if (vista.finanzas) { const pv = LP.facturas().filter((f) => f.estado === 'Por validar'); if (pv.length) out.push({ tipo: 'validar', n: pv.length, texto: pv.length + (pv.length === 1 ? ' factura por validar' : ' facturas por validar'), boton: 'Validar', tab: 'Facturas por validar' }); const pp = LP.facturas().filter((f) => f.estado === 'Validada'); if (pp.length) out.push({ tipo: 'pagar', n: pp.length, texto: pp.length + (pp.length === 1 ? ' factura por pagar' : ' facturas por pagar'), boton: 'Registrar pago', tab: 'Por pagar' }); }
     return out; };

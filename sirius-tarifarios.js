@@ -9,7 +9,7 @@
 // Los cambios van a un único BORRADOR de la sesión { conceptos, tarifarios }; «Publicar cambios (n)» cuenta los cambios frente a la versión publicada.
 (function () {
   'use strict';
-  const VERSION = '1.0';
+  const VERSION = '1.1'; // F-02 (etapa F-1): equipos «n equipos · por tramos» y sin el subtítulo «publicada» repetido
   if (window.SiriusTarifas && window.SiriusTarifas.version === VERSION) return;
   const R = () => window.React, h = (...a) => R().createElement(...a);
   const clon = (x) => (x === undefined ? undefined : JSON.parse(JSON.stringify(x)));
@@ -402,11 +402,12 @@
         return upPr((s) => ({ cargando: false, vehs: (r && r.vehiculos) || s.vehs, res: s.res.concat([item]).slice(-4) })); })
         .catch((e) => upPr((s) => ({ cargando: false, res: s.res.concat([{ caso, ver: v, servicio: sv, r: { aplica: false, motivo: 'Error: ' + ((e && e.message) || e) } }]) }))); }
     tarjeta(it, i) { const r = it.r, D = it.D || ST.borr, cs = activos(D).filter((c) => c.servicio === it.servicio), lin = r.lineas || [], no = r.aplica ? cs.filter((c) => !lin.some((l) => l.concepto === c.id)) : [], tar = String(((r.proveedor || {}).tarifario) || '').replace(/^Contrato\s+/i, '').replace(/\s+\d{4}$/, '');
-      const det = (l) => (l.porDefinir ? 'Por definir' : num(l.cantidad) + ' ' + (l.unidad || '') + ' × ' + n2(l.unitario)) + (l.tramo ? ' · tramo ' + l.tramo : '') + ' · ' + (l.origen === 'contrato' ? 'del contrato ' + tar : 'del general');
+      const porTramos = (l) => { const c = (D.conceptos || []).find((x) => x.id === l.concepto); return (c && (c.formula || {}).tipo === 'tramos') || (!l.porDefinir && l.unitario == null); };
+      const det = (l) => (l.porDefinir ? 'Por definir' : porTramos(l) ? num(l.cantidad) + ' ' + (l.unidad || '') + ' · por tramos' : num(l.cantidad) + ' ' + (l.unidad || '') + ' × ' + n2(l.unitario)) + ' · ' + (l.origen === 'contrato' ? 'del contrato ' + tar : 'del general'); /* F-02: sin «× —» en los tramos */
       const ap = r.aprobacion === 'preacordada' ? h('span', { className: 'tf-pill', style: { background: '#DCEFC6', color: '#2F5A10' } }, 'Preacordado') : h('span', { className: 'tf-pill', style: { background: '#F1F5FF', color: '#0033A1' } }, 'Requiere liquidación');
       return h('article', { key: i, 'data-tf-prueba': it.ver, style: { flex: '1 1 440px', minWidth: 0, background: '#FFFFFF', border: '1px solid #E8E8E8', borderRadius: 16, boxShadow: 'var(--shadow-md)', padding: '22px 24px', boxSizing: 'border-box' } },
         h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' } }, h('h2', { style: { margin: 0, fontSize: 18, fontWeight: 700, color: '#011E41' } }, 'Caso ' + it.caso + (r.vehiculo ? ' · ' + r.vehiculo : '')), h('span', { className: 'tf-pill', style: it.ver === 'borr' ? { background: '#FBEFCB', color: '#6B5103' } : { background: '#F4F4F4', color: '#484848' } }, it.ver === 'borr' ? 'Borrador sin publicar' : 'Versión ' + it.version + ' publicada')),
-        h('p', { style: { margin: '4px 0 12px', fontSize: 13, color: '#5C6470' } }, r.con || (it.servicio === 'completado' ? 'Completado' : 'Inspección')),
+        h('p', { style: { margin: '4px 0 12px', fontSize: 13, color: '#5C6470' } }, r.detalle || (r.con && !/^(publicada|borrador)$/i.test(String(r.con).trim()) ? r.con : '') || [it.servicio === 'completado' ? 'Completado' : 'Inspección', r.proveedor && r.proveedor.nombre ? 'proveedor ' + r.proveedor.nombre + (r.proveedor.tarifario ? ' (' + r.proveedor.tarifario + ')' : '') : ''].filter(Boolean).join(' · ')), /* F-02: «con» dice qué versión se usó (ya está en la insignia) */
         r.aplica ? [lin.map((l, j) => h('div', { key: 'l' + j, className: 'tf-ln' }, h('span', null, l.nombre, h('small', null, det(l))), h('span', null, l.porDefinir ? h('span', { className: 'd' }, 'Por definir') : n2(l.valor)))),
           no.map((c) => h('div', { key: 'n' + c.id, className: 'tf-ln no' }, h('span', null, c.nombre, h('small', null, 'No aplica en este caso')), h('span', null, '—'))),
           h('div', { key: 't', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', paddingTop: 12, borderTop: '2px solid #011E41' } }, h('span', { style: { fontSize: 15, fontWeight: 700, color: '#011E41' } }, 'Honorario ', ap), h('span', { 'data-tf-total': '1', style: { fontSize: 22, fontWeight: 700, color: '#011E41' } }, r.subtotal == null ? h('span', { className: 'd' }, 'Por definir') : usd(r.subtotal)))]

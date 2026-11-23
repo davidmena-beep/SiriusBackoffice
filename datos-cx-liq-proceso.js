@@ -3,6 +3,8 @@
 // liqdocumento, liqcalculopanel, liqrevision, liqrevisionv2, liqfinanzas y cxliqproceso —esta, siempre con la conexión—)
 // con ?cx=1 arman SIRIUS_CONEXION con los mismos datos de datos-liq-proceso.js (honorarios[], liquidaciones[] y facturas[] de la base), el usuario de
 // cada escena y la base simulada: cada acción se aplica con SiriusLiqProceso.ops (las mismas reglas de la pantalla) y responde { ok, mensaje } (y { id, numero }).
+// F-1 · DEC-279: la base simulada también aplica facturaAgregar, facturaQuitar, facturaDescartar y facturaConfirmar (el proveedor sale del usuario de la sesión;
+// la hora, del reloj de la base si la escena lo trae) y responde { ok, mensaje, id, subtotal, elementos, numero }.
 // ?cxok=0 hace que la base responda { ok: false } a todo. Se suma a SIRIUS_CX_COORD (datos-cx-coordinacion.js) y a sus usuarios y agencias (datos-cx-usuarios.js).
 (function () {
   const CC = window.SIRIUS_CX_COORD; if (!CC || !CC.cxUsuarios) return;
@@ -24,13 +26,13 @@
   // La base guarda solo el contrato (LP.aContrato); los borradores del proveedor quedan en su sesión (LP.borr) y sus líneas, en la base, «Por liquidar».
   const baseDe = (S, LP) => { const B = LP.aContrato(S); B.honorarios.forEach((h) => { if (/^BOR-/.test(h.liquidacionId || '')) { h.estado = 'Por liquidar'; h.liquidacionId = ''; } });
     LP.borr = clon(S.liquidaciones.filter((l) => l.estado === 'Borrador')); LP._cc = null; return { honorarios: B.honorarios, liquidaciones: B.liquidaciones, facturas: B.facturas, seq: clon(S.seq || null) }; };
-  const TIPOS = ['ajustarHonorario', 'quitarAjuste', 'enviarLiquidacion', 'editarLiquidacion', 'reenviarLiquidacion', 'anularLiquidacion', 'aprobarLiquidacion', 'devolverLiquidacion', 'aceptarSugerencia', 'enviarFactura', 'validarFactura', 'devolverFactura', 'registrarPago'];
+  const TIPOS = ['ajustarHonorario', 'quitarAjuste', 'enviarLiquidacion', 'editarLiquidacion', 'reenviarLiquidacion', 'anularLiquidacion', 'aprobarLiquidacion', 'devolverLiquidacion', 'aceptarSugerencia', 'enviarFactura', 'validarFactura', 'devolverFactura', 'registrarPago', 'facturaAgregar', 'facturaQuitar', 'facturaDescartar', 'facturaConfirmar'];
   // Base simulada: aplica la acción a honorarios[], liquidaciones[] y facturas[] de SIRIUS_CONEXION con las mismas reglas (unicidad, versiones, factura que cuadra).
   CC.aplicar = function (X, tipo, d) { if (TIPOS.indexOf(tipo) < 0 || !X || !Array.isArray(X.honorarios)) return baseAp(X, tipo, d); const LP = window.SiriusLiqProceso; if (!LP) return { ok: false, mensaje: 'Sin el módulo de liquidaciones' };
     // La base trabaja con el contrato: prepara una copia (tarifa del honorario), aplica la regla y guarda solo los campos del contrato.
     X.liquidaciones = X.liquidaciones || []; X.facturas = X.facturas || []; const T = { honorarios: clon(X.honorarios).map(LP.prep), liquidaciones: clon(X.liquidaciones), facturas: clon(X.facturas), seq: clon(X.seq || null) };
-    const r = LP.ops(T, tipo, JSON.parse(JSON.stringify(d || {})), { por: (X.usuario || {}).nombre || '', fecha: LP.ahoraIso() });
+    const r = LP.ops(T, tipo, JSON.parse(JSON.stringify(d || {})), { por: (X.usuario || {}).nombre || '', fecha: (X.reloj && X.reloj.ahora) || LP.ahoraIso(), proveedor: LP.provDeUsuario ? LP.provDeUsuario(X.usuario) : null });
     if (r.ok) { const B = LP.aContrato(T); ['honorarios', 'liquidaciones', 'facturas'].forEach((k) => { X[k].splice(0, X[k].length, ...B[k]); }); X.seq = T.seq; }
-    return r.ok ? Object.assign({ mensaje: r.mensaje + ' en la base' }, r.id ? { id: r.id } : {}, r.numero ? { numero: r.numero } : {}, { ok: true }) : { ok: false, mensaje: r.mensaje }; };
+    return r.ok ? Object.assign({ mensaje: r.mensaje + ' en la base' }, r.id ? { id: r.id } : {}, r.numero ? { numero: r.numero } : {}, r.subtotal != null ? { subtotal: r.subtotal } : {}, r.elementos != null ? { elementos: r.elementos } : {}, { ok: true }) : { ok: false, mensaje: r.mensaje }; };
   CC.cxLiqProceso = { escenas: ESC };
 })();

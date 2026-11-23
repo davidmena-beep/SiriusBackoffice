@@ -70,5 +70,5 @@
   // Vistas de Liquidaciones (pestaña, panel del cálculo).
   const V = (window.SIRIUS_LIQ_PROCESO || {}).vistas; if (V) Object.assign(V, { pdfliq1416: { tab: 'Seguimiento' }, pdfliqsinlineas: { tab: 'Seguimiento' }, liqcompletado: { tab: 'Por facturar', calc: ['HON-50009-V1-C'] },
     liqdesglose: { tab: 'Por liquidar', calc: ['HON-50061-B1', 'HON-50062-V1'] }, liqpordefinir: { tab: 'Por liquidar' } });
-  CC.cxLiq1416 = { escenas: ESC };
+  CC.cxLiq1416 = { escenas: ESC, datos: { hon, calc, L, H1, H2, l1416, comp, CP, VL, pEur } }; // F-1: datos de la #001416 para las escenas de facturación
 })();

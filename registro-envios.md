@@ -4,6 +4,193 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa F-1b
+
+Publiqué la versión 400 de SIRIUS. Los archivos subieron en la 399 y esta versión cierra el registro con el tiempo de la etapa.
+
+En la Mesa › Factura en preparación, paso 3, con la conexión activa, la pantalla ya no consulta el registro simulado de `sirius-sri.js`. Antes mostraba «✗ El SRI no tiene un comprobante autorizado con esa clave de acceso (consulta simulada)» con una clave válida y después la base la aceptaba. Ahora el paso 3 hace solo las comprobaciones que puede hacer con la clave y los datos de la conexión, y la autorización la comprueba Finanzas al validar.
+
+### Mapa de impacto
+
+- **`sirius-facturacion.js` (51.160 bytes):** solo `checksClave` (el paso 3), el dibujo de la lista de comprobaciones y la llamada a `consultar`. Con `LP.cx()` activo no se pide la consulta al SRI simulado; sin la conexión queda igual que antes.
+- **`inventario-proyecto.md`:** fila de `sirius-facturacion.js` y una línea en la sección de facturación.
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-documentos-pdf.js`, `sirius-liq-proceso.js` (la base sigue validando al confirmar), `sirius-sri.js`, las escenas y los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Con la conexión,** en lugar de la línea ✓ / ✗ de autorización va una línea informativa en gris (#5C6470), sin ✓ ni ✗: «La autorización y el subtotal en el SRI los comprueba Finanzas al validar (consulta simulada en esta prueba)». Ya no hay consulta al SRI simulado, ni para la autorización ni para el subtotal.
+- **Se mantienen** las comprobaciones con la clave y los datos de la conexión: emisor (RUC y nombre del proveedor), número y fecha de emisión, y «No fue cargada antes» (contra `facturas[]`). También el aviso de clave inválida (dígito verificador), que se calcula con la propia clave.
+- **«Confirmar factura»** no depende de la línea informativa: se habilita con los 49 dígitos, como antes. Si la base rechaza (`ok: false`), su mensaje se muestra junto a la clave, como hoy.
+- **Sin la conexión (demostración):** igual que antes, con la consulta al registro simulado.
+
+### Verificado
+
+- **facclave con la conexión simulada:**
+  - Con la clave de la escena no aparece ningún ✗. Las comprobaciones son: ✓ Emisor RUC 1791456320001: Eurosurvey S.A. · ✓ Factura 001-001-000000123 · emitida el 23/11/2026 · línea gris informativa (rgb 92, 100, 112; sin icono) · ✓ No fue cargada antes.
+  - «Confirmar factura» confirma: FAC-0007 pasa de «En preparación» a «Por validar», a 1440×900 y a 1280×720, sin mensaje de la base.
+  - Reproduje el problema antes del cambio con una clave válida que el registro simulado no conoce: salía el ✗ de autorización. Con el cambio sale la línea gris y el botón queda habilitado. Esa clave la rechaza la base simulada de la escena, porque no la registró; su mensaje («El SRI no tiene una factura autorizada con esa clave de acceso») sale junto a la clave y la factura sigue «En preparación».
+  - `?fvista=dv`: sigue «✗ La clave de acceso no es válida: el dígito verificador no coincide.» `?fvista=emisor`: sigue «✗ Emisor RUC 1792788441001: Inspecciones Andinas Cía. Ltda. (no es Eurosurvey)», y la línea gris.
+- **Sin la conexión** (facturarmasivo → agregar → Mesa), antes y después con los mismos pasos: con una clave registrada, «✓ Autorizada en el SRI · subtotal USD 960,80 = el de esta factura»; con una no registrada, «✗ El SRI no tiene un comprobante autorizado con esa clave de acceso (consulta simulada).» Idéntico.
+- **Regresión** (texto de la página antes y después): facporfacturar, facpreparacion, facpreparacion `?fvista=abierto`, facdevuelta y facseguimiento, iguales. En facclave solo cambia la línea de autorización (✓ Autorizada… → línea gris).
+- **Página:** sin desplazamiento horizontal a 1440×900 ni a 1280×720; sin errores de consola.
+- **Archivos:** `sirius-conexion.js` y `datos-documentos-pdf.js` sin cambios (cmp con la copia anterior); `diff` del proyecto: solo cambia `sirius-facturacion.js`.
+
+### No verificado
+
+- La base real (SQL 86): que acepte la clave y qué mensaje devuelve al rechazar; aquí lo simula la escena.
+- Firefox y Safari.
+
+### Diferencias
+
+- Con la conexión, la pantalla ya no muestra si el subtotal del SRI coincide con el de la factura: lo comprueba Finanzas al validar. Con la conexión, una clave que la base va a rechazar se ve igual que una válida hasta pulsar «Confirmar factura».
+
+### Escenas
+
+Sin escenas nuevas ni cambios en las escenas. **`facclave`** (con `?fvista=dv` y `?fvista=emisor`) muestra la línea informativa. Las demás escenas de facturación (`facporfacturar`, `facpreparacion`, `facdevuelta`, `facseguimiento`) quedan iguales.
+
+Tiempo de la etapa: inicio 23/11/2026 09:57 · fin 23/11/2026 10:07 · 10 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa F-1
+
+Publiqué la versión 398 de SIRIUS. Los archivos subieron en la 397 y esta versión cierra el registro con el tiempo de la etapa.
+
+El proveedor ya no factura de una vez desde «Por facturar». Ahora va juntando la factura en la Mesa de trabajo, como una liquidación: Por liquidar → Mesa: liquidación → Por facturar → Mesa: factura en preparación → Seguimiento. La pantalla sigue la maqueta aprobada. Cada acción la aplica la base, y después la pantalla vuelve a cargar.
+
+### Mapa de impacto
+
+- **`sirius-liq-proceso.js` (v3.4):**
+  - Reglas nuevas: `facturaAgregar`, `facturaQuitar`, `facturaDescartar` y `facturaConfirmar`.
+  - `devolverFactura` devuelve lo incluido a la factura en preparación.
+  - `facturas[]` suma `enPreparacion`, `creada` y `devuelta`.
+  - `LP.accionBase`: con la conexión, la acción la aplica solo la base y la pantalla recarga; sin ella, la misma regla sobre la sesión.
+  - Funciones nuevas: `facturaPrep`, `facAgregar/Quitar/Descartar/Confirmar` y `provDeUsuario`.
+  - La tarea «Factura devuelta» del Inicio lleva a la Mesa.
+- **`sirius-facturacion.js` (nuevo):** Por facturar, Mesa › Factura en preparación, Seguimiento y el recorrido en fichas, con los estilos de la maqueta.
+- **`Liquidaciones.dc.html`:**
+  - En la vista del proveedor: subtítulo y recorrido de la maqueta, contadores en las pestañas, y Por facturar, Mesa (factura o liquidaciones) y Seguimiento con el módulo nuevo.
+  - `lpSemilla` lee `fx`, `facAbierto` y `mesaVista`.
+  - El «Por facturar» anterior queda solo como respaldo si el módulo no carga.
+- **Escenas:**
+  - `datos-cx-facturacion.js` (nuevo), con los datos reales de David.
+  - `datos-cx-liq-proceso.js`: la base simulada aplica las cuatro acciones. El proveedor sale del usuario de la sesión y la hora, del reloj de la base.
+  - `datos-cx-liq1416.js` expone los datos de la #001416.
+  - Back-office: scripts, KNOWN_ESC, la ruta (Carla Ponce; Mónica Ríos con `?fvista=finanzas`) y `liqEscena`.
+  - `datos-escenas.js`: 845 escenas.
+- **F-02:** `sirius-tarifarios.js` (v1.1) y `datos-tarifas-base.js`.
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-documentos-pdf.js` y los archivos de configuración vigilados. Tampoco cambian las pantallas de Finanzas ni la Mesa de liquidaciones.
+
+### Qué cambió
+
+- **Pestañas del proveedor:**
+  - Por liquidar (n) · Mesa de trabajo (n) · Por facturar (n) · Seguimiento (n) · Pagos a nuestros inspectores. Los números van en una píldora.
+  - «Mesa de trabajo» cuenta las liquidaciones abiertas más la factura en preparación, y se resalta en celeste si hay una.
+  - Bajo el título va el recorrido en fichas.
+- **Por facturar:**
+  - Lista de una línea por fila, sin lo reservado. Columnas: Referencia, Fecha, Detalle, (Sucursal), Tipo, Subtotal y «⋯».
+  - Por defecto, los más antiguos primero («Fecha ↑», se puede invertir). Bajo la fecha va la antigüedad; con más de 30 días, insignia ámbar.
+  - Los vehículos de un caso van en una fila («Caso 50042 · 2 vehículos», «V1 liviano 12,00 · V2 moto 10,00») y se seleccionan juntos.
+  - Encabezado de grupo con «Seleccionar los n · USD x».
+  - El menú «⋯» tiene Cálculo y Ajustar (el completado, solo Cálculo); el de una liquidación, Documento y Descargar PDF.
+  - Fichas Todo, Liquidaciones, Preacordados, «Noviembre 2026», «Más de 30 días (n)» y «Más filtros» (ramo, modalidad, sucursal, línea de negocio). El buscador busca por caso, placa, liquidación o asegurado.
+- **Panel «Factura en preparación»:**
+  - Contraído por defecto: un riel de 64 px con el nombre en vertical, el subtotal, el número de elementos y «+n» si hay una selección sin agregar.
+  - Abierto (380 px): lista resumida, subtotal, IVA 15 % (informativo), total, «Ver la factura en la mesa» y la nota.
+  - Un solo plegado para Por facturar y la Mesa. Con menos de 1100 px, el riel pasa a franja horizontal.
+- **«Agregar a la factura»** está en un solo lugar a la vez: en la barra inferior fija (panel contraído) o arriba en el panel (abierto). Llama a `facturaAgregar` y lo agregado sale de la lista.
+- **Mesa › Factura en preparación:**
+  - Elementos con «Quitar» (`facturaQuitar`) y «+ Agregar desde Por facturar».
+  - Tres pasos:
+    1. Arma la factura.
+    2. Emítela en el SRI: subtotal, IVA, total y la descripción sugerida «Honorarios de inspección · Liq. #001416 y 3 completados · nov. 2026», con «Copiar los valores».
+    3. Pega la clave: se descompone en emisor (RUC y nombre), número, fecha, «Autorizada en el SRI · subtotal = el de esta factura» y «No fue cargada antes».
+  - La barra lleva «Descartar la factura», que pide confirmación, y «Confirmar factura». Un `ok: false` de la base se muestra junto a la clave.
+  - Si la factura viene devuelta, arriba un aviso con el motivo, quién y cuándo, y la clave anterior.
+  - Panel derecho con «Cómo funciona» y las liquidaciones abiertas (con «Abrir»). La mesa de liquidaciones tiene un acceso «Abrir la factura».
+- **Seguimiento:**
+  - Facturas y liquidaciones juntas, con fichas Todas, Por validar, Por pagar, Devueltas y Pagadas.
+  - Columnas Documento (con Documento y PDF), Contiene, Estado, Subtotal y Siguiente paso.
+  - La factura en preparación y las descartadas no aparecen.
+- **F-02 (Probar con un caso):**
+  - La línea de equipos dice «3 equipos · por tramos · del general», sin «× —».
+  - Se quitó el subtítulo «publicada»: `con` dice qué versión se usó y eso ya está en la insignia. Ahora el subtítulo es el detalle del caso, o el proveedor y su tarifario.
+
+### Prueba visual (contra la maqueta)
+
+Comparé las capturas de SIRIUS con las de la maqueta en las mismas vistas, a 1440×900 y 1280×720:
+
+- **Por facturar contraído** (facpreparacion): la ficha del grupo, las 6 filas (20186-V1 con «40 días» ámbar, Caso 50042 · 2 vehículos), la barra «3 seleccionados · USD 36,00 · la factura en preparación quedaría en USD 283,02» y el riel con USD 247,02, 4 y +3. Coincide.
+- **Por facturar abierto** (`?fvista=abierto`): el bloque oscuro con «Agregar a la factura» arriba del panel, «Abierta desde el 23/11/2026», «Liquidación #001416 · v1 · 2 inspecciones 232,02», «3 completados de informe (50052 ×2, 50061) 15,00», 247,02, IVA 37,05 y USD 284,07. Coincide.
+- **Mesa** (facclave): los 4 elementos, los tres pasos con 247,02 / 37,05 / 284,07 y la descripción, la clave con sus 4 comprobaciones en verde y la barra. Coincide.
+- **Seguimiento** (facseguimiento): «Factura 001-001-000000123 · Confirmada el 23/11/2026», «Liquidación #001416 · 3 completados», Por validar y 247,02. Coincide, y además la #001416 facturada.
+- **Página:** ninguna escena tiene desplazamiento horizontal a 1440 ni a 1280 (scrollWidth = clientWidth). A 1280 con el panel abierto, la lista se angosta y algunos detalles van en dos renglones. A 1280 la maqueta misma desborda.
+
+### Prueba del botón
+
+- **Panel contraído** con 2 seleccionados: un solo «Agregar a la factura», en la barra inferior.
+- **Panel abierto:** un solo botón, en el panel; la barra desaparece.
+- **«Ver la factura en la mesa»:** no llamó a `accion()`; solo cambió a la pestaña Mesa.
+
+### Prueba de acciones (conexión simulada; lo que va a accion() y lo que muestra la pantalla)
+
+1. **`facturaAgregar` { honorarios: [20186-V1, 30001-V1] }** → { ok, id: FAC-0007, subtotal: 24, elementos: 2 }. Las dos filas salen de la lista, el riel marca USD 24,00 y «Mesa de trabajo» pasa a 1, resaltada.
+2. **`facturaAgregar` { liquidaciones: [LIQ-001416], honorarios: [los 3 completados] }** (grupo) → subtotal 271,02, 6 elementos. Por facturar baja de 9 a 5.
+3. **`facturaQuitar` { honorarios: [20186-V1] }** en la mesa → subtotal 259,02, 5 elementos. 20186-V1 vuelve a Por facturar.
+4. **Descartar:** pide confirmación («¿Descartar…? No toca el SRI…»). `facturaDescartar` {} → todo vuelve (11 por facturar) y FAC-0007 queda «Descartada».
+5. **`facturaAgregar`** de la #001416 y los 3 completados → FAC-0008 · 247,02 · 4 elementos.
+6. **`facturaConfirmar`** con el dígito verificador incorrecto → { ok: false, «La clave de acceso no es válida: el dígito verificador no coincide.» }, mostrado junto a la clave.
+7. **`facturaConfirmar`** con la clave de otro emisor → { ok: false, «El RUC del emisor (1792788441001) no es el del proveedor (1791456320001)» }.
+8. **`facturaConfirmar`** con la clave válida → { ok, numero 001-001-000000123, subtotal 247,02 }. La pantalla va a Seguimiento, con la factura «Por validar». Mesa vuelve a 0 y Seguimiento pasa a 2.
+9. **Devolución con otra factura en preparación** (FAC-0009 con 30006-V1): `devolverFactura` de Finanzas suma lo devuelto a FAC-0009 (264,02, 5 elementos, con el aviso de Mónica Ríos y la clave anterior). La 001-001-000000123 queda «Factura devuelta».
+10. **Devolución sin otra en preparación** (facseguimiento): la misma FAC-0007 vuelve a «En preparación» con sus 4 elementos y el aviso.
+11. **Finanzas** (facseguimiento `?fvista=finanzas`): Mónica Ríos ve la 001-001-000000123 en «Facturas por validar (1)», con la consulta al SRI y lo que incluye, como hoy.
+
+Además:
+- El menú «⋯» del caso 50042 tiene Cálculo y Ajustar de V1 y V2, y «Cálculo» abre el panel del cálculo. El completado solo tiene «Cálculo» y la liquidación, Documento y Descargar PDF.
+- Fichas y búsqueda: «Más de 30 días» deja solo 20186-V1; PGB8170 encuentra la #001416 y GRZ3277, el completado.
+- Sin la conexión (facturarmasivo), agregar crea la factura en preparación de la sesión.
+
+### Verificado
+
+- Las 5 escenas y sus variantes (9 vistas) con captura a 1440×900 y 1280×720, sin errores y sin desplazamiento horizontal.
+- **Regresión** antes y después:
+  - liqporliquidar, liqmesa, liqmesavarias, cxliqproceso y, con `?cx=1`, liqporliquidar y liqmesa: cambian solo la cabecera (el subtítulo, el recorrido en fichas y el formato de los contadores); el cuerpo es igual.
+  - liqfinanzas, liqfinanzas `?cx=1`, liqdevolver y tarifmatriz: iguales.
+  - tarifprobar: cambia solo la línea de equipos (F-02).
+
+### No verificado
+
+- La base real (SQL 86):
+  - Los mensajes exactos de sus `{ ok: false }`.
+  - Si `facturas[].creada` y `devuelta.fecha` llegan con zona horaria.
+  - Si `honorarioProbar` devuelve un `detalle`. Si no lo devuelve, el subtítulo muestra el proveedor y su tarifario.
+- El portapapeles de «Copiar los valores» en el navegador real (en la prueba sin interfaz solo muestra el aviso).
+- Firefox y Safari.
+
+### Diferencias
+
+- En «Por facturar», el Tipo del completado es «Completado de informe», como pide la definición. En la Mesa queda «Preacordado», como en la maqueta, porque el detalle ya dice «Completado de informe».
+- El encabezado de columnas se repite bajo cada grupo.
+- El riel muestra el subtotal (USD 247,02), como la maqueta.
+- La comprobación «Autorizada en el SRI» de la pantalla es informativa: consulta el SRI al pegar la clave. Quien decide al confirmar es la base.
+- «Más de 30 días (n)» y las demás fichas cuentan elementos (liquidaciones y honorarios), no filas.
+- Una factura devuelta que vuelve a estar en preparación no aparece en Seguimiento; está en la Mesa con su aviso.
+
+### Escenas
+
+- **`facporfacturar`:** todo por facturar, con el panel contraído.
+- **`facpreparacion`:** factura en preparación (247,02) y 3 seleccionados (36,00 → 283,02). Con `?fvista=abierto`, el panel abierto.
+- **`facclave`:** la mesa con la clave válida. Con `?fvista=dv` y `?fvista=emisor`, el mensaje de la base.
+- **`facdevuelta`:** la factura devuelta por Mónica Ríos, otra vez en preparación.
+- **`facseguimiento`:** la factura por validar. Con `?fvista=finanzas`, la vista de Mónica Ríos.
+
+Todas están en el área Liquidaciones y usan la conexión simulada.
+
+Tiempo de la etapa: inicio 23/11/2026 08:22 · fin 23/11/2026 08:43 · 21 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa H-2
 
 Publiqué la versión 396 de SIRIUS. Los archivos subieron en la 395 y esta versión cierra el registro con el tiempo de la etapa.
