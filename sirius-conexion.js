@@ -33,6 +33,9 @@
 // 15/11/2026 · Corrección: el responsable del caso es siempre texto y sale solo de la base; sin responsable en la base, el prototipo usa la regla del flujo (G-2c5 lo protege si llega un objeto).
 // 14/11/2026 · G-2c3/G-2c4: casos[].cancelacion; la búsqueda de direcciones es en todo el Ecuador (la ciudad solo da preferencia).
 // 14/11/2026 · G-2c2 · DEC-237: visitasBase[].oferta (ofertas abiertas del Coordinador: inspectores, desde, hasta, minutos, nota, vence); ofertarVisita y anularOferta van por bo_accion (SQL 39).
+// 23/11/2026 · H-2 · SQL 85: honorariosConfig() → { ok, version, publicada, datos: { conceptos, tarifarios, publicaciones }, puedePublicar, agencias[], independientes[] };
+//   honorarioProbar(caso, riesgo, servicio, borrador?) → el cálculo de la base { aplica, lineas[], subtotal, aprobacion, estado, proveedor, motivo, con: 'publicada' | 'borrador' };
+//   honorariosImpacto(borrador, desde?) → { ok, cambian, diferencia, enCero, filas[] }; honorariosPublicar(borrador, motivo, desde?) → { ok, mensaje, version, recalculados, cambiaron, totalAntes, totalDespues }.
 // 23/11/2026 · P-1d · SQL 84: honorarios[].calificacion por el veredicto del vehículo (estado_riesgo y veredicto de liq_honorarios, DEC-271); liquidaciones[].versiones[].enviada en hora de Ecuador.
 // 23/11/2026 · SQL 83 · DEC-275: honorarios[].servicio ('inspeccion' | 'completado'), .concepto y calculo.modelo ('fija' | 'horaHombre' | 'completado')
 //   y calculo.lineas (desglose por concepto: { concepto, nombre, cantidad, unidad, unitario, valor, origen, aprobacion, porDefinir }). Estado nuevo «Por definir».
@@ -356,6 +359,12 @@
     // 59f: los datos con que la base arma el correo de un caso (enlaces activos y destinatario típico de la plantilla), para la vista previa
     contextoNotificacion: function (caso, plantilla) { return rpc('notif_contexto', { p_caso: String(caso || ''), p_plantilla: String(plantilla || '') }).catch(function () { return null; }); },
     notificacionContexto: function (id) { return get('notificaciones?select=contexto,asunto,plantilla&id=eq.' + encodeURIComponent(id)).then(function (r) { return (r && r[0]) || null; }).catch(function () { return null; }); },
+    // H-2 · SQL 85 · Tarifarios por conceptos: lo que el panel lee, prueba, mide y publica (todo en la base, con el mismo motor que cobra)
+    honorariosConfig: function () { return rpc('honorarios_configuracion', {}).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; }); },
+    honorarioProbar: function (caso, riesgo, servicio, borrador) { return rpc('honorario_probar', { p_caso: String(caso || ''), p_riesgo: riesgo || null, p_servicio: servicio || 'inspeccion', p_borrador: borrador || null })
+      .then(function (r) { return r || { aplica: false, motivo: 'Sin respuesta de la base' }; }); },
+    honorariosImpacto: function (borrador, desde) { return rpc('honorarios_impacto', { p_borrador: borrador, p_desde: desde || null }).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; }); },
+    honorariosPublicar: function (borrador, motivo, desde) { return rpc('honorarios_publicar', { p_borrador: borrador, p_motivo: motivo || '', p_desde: desde || null }).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; }); },
     documentoRegistrar: function (datos) { return rpc('documento_registrar', { p_datos: datos || {} }).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; })   // P-1b · SQL 81
       .catch(function (e) { var m = String(e.message || e); return { ok: false, mensaje: /documento_registrar|PGRST202/.test(m) ? 'La base todavía no registra documentos (falta el SQL 81)' : m.slice(0, 200) }; }); },
     documentoValidar: function (codigo) { return rpc('documento_validar', { p_codigo: String(codigo || '') }).then(function (r) { return r || { ok: false, mensaje: 'Sin respuesta de la base' }; })
