@@ -4,6 +4,95 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa F-1c
+
+Publiqué la versión 403 de SIRIUS. Los archivos subieron en la 402 y esta versión cierra el registro con el tiempo de la etapa.
+
+El Inicio del proveedor ya no monta textos: cada fila de «Para hoy» tiene tres columnas (insignia, título con detalle gris y botón) y nunca usa un id como texto. Las tarjetas ahora cuentan lo mismo que «Para hoy» y que la factura en preparación. La pantalla sigue la maqueta aprobada.
+
+### Mapa de impacto
+
+- **`sirius-liq-proceso.js`:** solo `LP.tareas`. Cada tarea trae `titulo` y `detalle`, y hay una tarea nueva `facturaPrep` (factura en preparación sin devuelta). `facturar` ya usa solo lo no reservado. No cambia ninguna regla ni ninguna suma de dinero.
+- **`sirius-inicio.js`:** `lpFilas` (fila de tres columnas con `titulo` y `detalle`; la insignia «En preparación» en tono info), `lpInd` (tarjetas), la frase de arriba con el nombre del proveedor y el paso de `ver` e `irSiempre` en las tarjetas.
+- **`Inicio.dc.html`:** la fila `ini-row3` (132 px · texto · botón; con menos de 760 px se apila), la línea plana «En tu factura en preparación» dentro de la tarjeta y el texto propio del enlace («Ver la factura»). Las filas de los demás roles siguen igual.
+- **Escenas:** `datos-cx-facturacion.js` (4 escenas nuevas, v1.1), Back-office (KNOWN_ESC y la ruta de las escenas de Inicio) y `datos-escenas.js` (849 escenas).
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-documentos-pdf.js`, los archivos de configuración vigilados y Finanzas, Mesa y Tarifarios.
+
+### Qué cambió
+
+- **Filas de «Para hoy» (vista del proveedor):**
+  - Tres columnas: insignia de 132 px, título en negrita con el detalle en gris debajo (`overflow-wrap: anywhere`) y botón. Con menos de 760 px, la fila se apila en ese orden.
+  - El nombre del proveedor ya no está en cada fila: va una vez en la frase de arriba, «Liquida las inspecciones de Eurosurvey, factura lo aprobado y sigue cada envío a la aseguradora.». El inspector independiente conserva «tus inspecciones».
+  - El id de la factura y el de la liquidación solo sirven de clave y para abrir la liquidación.
+- **`LP.tareas`:**
+  - **facturaDevuelta** (danger, «Factura devuelta», «Corregir factura» → Mesa): «Factura 001-001-000000123 devuelta» · ««El valor no es correcto» · volvió a tu factura en preparación (4 elementos · USD 247,02)».
+  - **facturaPrep** (nueva; info, «En preparación», «Ver la factura» → Mesa): «Factura en preparación» · «4 elementos · USD 247,02 · emítela en el SRI y confírmala con la clave». Solo si la factura no está devuelta.
+  - **corregir** (danger, «Corregir en la mesa»): «Liquidación #001448 por corregir» · ««Revisar los kilómetros»». Abre la liquidación por su id.
+  - **liquidar:** «2 inspecciones por liquidar» · «USD 212,00 · márcalas y arma la liquidación en la mesa».
+  - **facturar**, solo con lo no reservado: «7 preacordados por facturar» · «USD 87,00 · agrégalos a tu factura en preparación». Con liquidaciones y preacordados juntos: «n por facturar» y el detalle «<a> liquidaciones aprobadas y <b> preacordados · USD <suma> · agrégalos a tu factura en preparación».
+  - El orden sigue igual: primero lo danger.
+- **Tarjetas del proveedor:**
+  - «Por corregir» con 0: «Ninguna liquidación devuelta».
+  - «Por facturar»: n y subtotal con lo no reservado. Con factura en preparación, una línea plana «En tu factura en preparación: 4 · USD 247,02». Si n = 0 pero hay factura, el enlace es «Ver la factura» → Mesa.
+  - «Facturas por validar o devueltas»: n = las «Por validar» + 1 si la factura en preparación tiene `devuelta`. El estado histórico «Factura devuelta» ya no cuenta. El subtítulo es «a por validar en Finanzas» y/o «1 devuelta · corrígela en la mesa»; en danger si hay devuelta; el enlace «Ver la factura» → Mesa o, sin devuelta, Seguimiento.
+- **Vistas internas** (Finanzas, quien aprueba): la misma fila de tres columnas, con título por tipo y sin ids. El proveedor va en el detalle: «2 liquidaciones por aprobar · De Eurosurvey y Luis Andrade · revísalas y apruébalas o devuélvelas»; «1 factura por validar · De Eurosurvey · valídala con la consulta al SRI»; por pagar, «De … · registra el pago».
+
+### Prueba visual (4 escenas × 1440×900, 1280×720 y 760 de ancho)
+
+- **inicioprovdevuelta:** Por liquidar 2 (USD 212,00) · Por facturar 7 preacordados (USD 87,00) con «En tu factura en preparación: 4 · USD 247,02» · Facturas por validar o devueltas 1 (en danger, «1 devuelta · corrígela en la mesa», «Ver la factura»). «Para hoy», 3 pendientes: Factura devuelta, Por liquidar y Por facturar. Coincide con la maqueta, incluido el saludo «Lunes 23 de noviembre de 2026 · 12:05».
+- **inicioprovprep:** la tercera fila es «En preparación · Factura en preparación», y «Facturas por validar o devueltas» marca 0.
+- **inicioprovcorregir:** Por corregir 1 y una sola fila, «Liquidación #001448 por corregir» · «Revisar los kilómetros».
+- **inicioprovnada:** las cinco tarjetas en 0 y «Nada pendiente para hoy».
+- A 760 px la fila se apila (insignia, título con detalle, botón) y las tarjetas pasan a dos columnas, sin desplazamiento horizontal. A 1440 y 1280 las filas tienen 3 columnas.
+
+### Prueba de no superposición
+
+- En las 12 vistas, en cada fila el título, el detalle y la fila no se desbordan (`scrollWidth ≤ clientWidth`), ningún texto de la fila ni de la página coincide con el patrón de un uuid, y no hay desplazamiento horizontal.
+- Antes, el título de la fila de la factura devuelta era su id interno (un uuid), sin espacios, y se encimaba sobre el detalle. Ahora la fila muestra «Factura 001-001-000000123 devuelta».
+
+### Prueba de coherencia y de enlaces
+
+- **La tarjeta «Facturas por validar o devueltas» coincide con las filas:** 1 = 1 «Factura devuelta» + 0 «Por validar» (devuelta); 0 = 0 + 0 (prep, corregir y nada).
+- **Enlaces** (probados con clic):
+  - La fila «Corregir factura» y la tarjeta «Ver la factura» abren Mesa de trabajo › Factura en preparación, con el aviso de devuelta.
+  - La fila «Ver la factura» abre la Mesa con la factura.
+  - La fila «Corregir en la mesa» abre la liquidación #001448.
+  - «Facturar» abre Por facturar.
+- **Todo reservado:** en inicioprovprep, agregué los 7 preacordados a la factura con la base simulada. La tarjeta «Por facturar» queda en 0, «Nada por facturar», con «En tu factura en preparación: 11 · USD 334,02», y su enlace «Ver la factura» abre la Mesa. «Para hoy» deja solo Por liquidar y la fila «En preparación».
+
+### Regresión
+
+- **Iguales** (texto de la página antes y después): inicio, inicioadm, iniciocom, iniciocoo, inicioins, inicioeje, iniciosus, iniciovacio, iniciofin y enlacetarea.
+- **Finanzas (Mónica Ríos), con una factura por validar:** solo cambia la fila, que pasa al formato del punto 4 («Por validar · 1 factura por validar · De Eurosurvey · valídala con la consulta al SRI»), sin el «Liquidaciones» repetido.
+- **Quien aprueba (Verónica Lema), con 2 liquidaciones por aprobar:** solo cambia esa fila («2 liquidaciones por aprobar · De Eurosurvey y Luis Andrade · …»). Las otras 4 filas, el contador «Ver todos (11)» y las tarjetas son iguales.
+- **inicioproveedorcx y facturadevuelta (el inspector independiente Luis Andrade):** cambian las filas al formato nuevo y la frase de arriba del primero; las tarjetas ya cuentan la factura en preparación devuelta («Facturas por validar o devueltas» pasa de 1 a 2).
+
+### No verificado
+
+- La base real (SQL 86): `reservado`, `creada` y `devuelta` de las facturas.
+- El inspector independiente con la conexión real y varias agencias: la frase de arriba usa `provNombre`, que probé con Eurosurvey.
+- Firefox y Safari.
+
+### Diferencias
+
+- «Por facturar» muestra solo las partes que no son 0 («7 preacordados · USD 87,00», como la maqueta), no «0 liquidaciones aprobadas y 7 preacordados».
+- Las tarjetas con 0 siguen diciendo «Nada que mostrar», como hasta ahora; la maqueta no las enlaza.
+- El saludo de las 4 escenas usa el día de la base (lunes 23/11/2026 · 12:05) en lugar del reloj de demostración (18/10/2026 · 20:30). No cambia nada fuera de esas escenas.
+- La insignia «En preparación» usa el tono info del sistema de diseño.
+
+### Escenas
+
+- **`inicioprovdevuelta`:** el estado de la captura de David (2 por liquidar, factura devuelta «El valor no es correcto», 7 preacordados).
+- **`inicioprovprep`:** lo mismo, con la factura en preparación sin devolver.
+- **`inicioprovcorregir`:** la #001448 v2 devuelta («Revisar los kilómetros»).
+- **`inicioprovnada`:** nada pendiente.
+
+Las cuatro están en el área Inicio, con la conexión simulada y Carla Ponce · Eurosurvey.
+
+Tiempo de la etapa: inicio 23/11/2026 12:30 · fin 23/11/2026 12:48 · 18 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa F-1b
 
 Publiqué la versión 400 de SIRIUS. Los archivos subieron en la 399 y esta versión cierra el registro con el tiempo de la etapa.

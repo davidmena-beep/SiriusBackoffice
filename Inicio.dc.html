@@ -26,6 +26,10 @@
 .ini-lk{border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-link);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .ini-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;align-items:center;gap:8px 16px;padding:12px 0;border-top:1px solid var(--border-subtle)}
 @media (max-width:1100px){.ini-row{grid-template-columns:76px minmax(0,1fr) auto}.ini-row>.ini-act{grid-column:2/4;justify-self:start}}
+.ini-row3{display:grid;grid-template-columns:132px minmax(0,1fr) auto;align-items:center;gap:8px 16px;padding:14px 0;border-top:1px solid var(--border-subtle)}
+.ini-row3>.ini-ins{justify-self:start}
+@media (max-width:760px){.ini-row3{grid-template-columns:minmax(0,1fr)}.ini-row3>.ini-act{justify-self:start}}
+.ini-nota{font-size:12.5px;line-height:1.4;color:var(--text-strong);background:#F1F5FF;border-radius:8px;padding:6px 8px;align-self:stretch}
 .ini-seg{border:none;padding:0;cursor:pointer;height:100%}
 .ini-nw{white-space:nowrap}
 </style>
@@ -49,14 +53,15 @@ class Component extends DCLogic {
   vacio(t) { return React.createElement('p', { key: 'v', style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, t); }
   // ---------- Indicadores ----------
   indicador(x) { const h = React.createElement, on = !!x.ir, color = x.tono === 'danger' ? 'var(--color-danger)' : x.tono === 'warning' ? 'var(--color-warning)' : 'var(--border-subtle)';
-    const ver = !on ? 'Nada que mostrar' : x.n === 1 ? 'Ver detalle' : 'Ver los ' + x.n;
+    const ver = !on ? 'Nada que mostrar' : x.ver ? x.ver : x.n === 1 ? 'Ver detalle' : 'Ver los ' + x.n;
     // Etapa 12d-3b · enlace secundario bajo el indicador (p. ej. «1 con alertas altas sin revisar»): la tarjeta pasa a contener dos botones hermanos.
-    if (x.extra) return h('div', { key: x.id, className: 'ini-card', style: { display: 'flex', flexDirection: 'column', minWidth: 0, borderLeftWidth: 4, borderLeftColor: color } }, this.indicador(Object.assign({}, x, { extra: null, _dentro: true })),
+    if (x.extra && !x.extra.plano) return h('div', { key: x.id, className: 'ini-card', style: { display: 'flex', flexDirection: 'column', minWidth: 0, borderLeftWidth: 4, borderLeftColor: color } }, this.indicador(Object.assign({}, x, { extra: null, _dentro: true })),
       h('button', { type: 'button', className: 'ini-lk', 'data-ini-extra': x.id, onClick: () => this.ir(x.extra.ir), style: { alignSelf: 'flex-start', margin: '-10px 20px 16px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, color: 'var(--color-danger)', textDecoration: 'underline', textUnderlineOffset: 3 } }, '! ' + x.extra.texto));
     return h('button', { key: x.id, type: 'button', className: 'ini-card ini-kpi', 'aria-disabled': on ? undefined : 'true', title: on ? x.regla + ' · Abre: ' + x.destino : 'No hay nada que mostrar con este indicador', 'aria-label': x.titulo + ': ' + (x.texto || x.n) + '. ' + (x.sub ? x.sub + '. ' : '') + (on ? ver + ' en ' + x.destino : 'Nada que mostrar'), onClick: on ? () => this.ir(x.ir) : undefined, style: x._dentro ? { border: 'none', background: 'transparent' } : { borderLeftColor: color } },
       h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--text-strong)', lineHeight: 1.3 } }, x.titulo),
       h('span', { className: 'ini-nw', style: { fontSize: x.texto ? 32 : 44, fontWeight: 300, lineHeight: 1, color: x.tono === 'danger' ? 'var(--color-danger)' : 'var(--text-strong)' } }, x.texto || String(x.n)),
       h('span', { style: { fontSize: 13, lineHeight: 1.4, color: 'var(--text-muted)', minHeight: 18 } }, x.sub || ''),
+      x.extra && x.extra.plano ? h('span', { className: 'ini-nota', 'data-ini-extra-plano': x.id }, x.extra.texto) : null,
       h('span', { 'aria-hidden': 'true', style: { fontSize: 14, fontWeight: 700, color: on ? 'var(--text-link)' : 'var(--neutral-500)', textDecoration: on ? 'underline' : 'none', textUnderlineOffset: 3 } }, ver)); }
   // ---------- Para hoy ----------
   paraHoy(p) { const h = React.createElement, todos = this.state.todos, filas = todos ? p.filas : p.filas.slice(0, 5);
@@ -66,7 +71,10 @@ class Component extends DCLogic {
         h('p', { style: { margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--text-body)' } }, s ? 'Siguiente vencimiento: ' + s.texto + ', el ' + s.fecha + '.' : 'No tienes vencimientos próximos.'))]); }
     const aside = p.filas.length > 5 ? h('button', { type: 'button', className: 'ini-lk', 'aria-expanded': todos ? 'true' : 'false', onClick: () => this.setState({ todos: !todos }) }, todos ? 'Ver menos' : 'Ver todos (' + p.filas.length + ')') : h('span', { style: { fontSize: 14, color: 'var(--text-muted)' } }, p.filas.length === 1 ? '1 pendiente' : p.filas.length + ' pendientes');
     const sub = h('p', { key: 'sub', style: { margin: 0, fontSize: 13, color: 'var(--text-muted)' } }, 'Primero lo vencido, luego lo que está por vencer y después por fecha. ' + (p.filas.length > 5 && !todos ? 'Se muestran 5 de ' + p.filas.length + '.' : ''));
-    const lista = h('ul', { key: 'l', 'aria-label': 'Pendientes para hoy', style: { listStyle: 'none', margin: 0, padding: 0 } }, filas.map(f => h('li', { key: f.id, className: 'ini-row' },
+    const lista = h('ul', { key: 'l', 'aria-label': 'Pendientes para hoy', style: { listStyle: 'none', margin: 0, padding: 0 } }, filas.map(f => f.titulo ? h('li', { key: f.id, className: 'ini-row3', 'data-ini-fila': f.id },
+      h('span', { className: 'ini-ins' }, f.urg ? this.badge(f.urg.label, f.urg.tono, f.urg.title) : null),
+      h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { 'data-ini-titulo': '1', style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', overflowWrap: 'anywhere' } }, f.titulo), f.detalle ? h('span', { 'data-ini-detalle': '1', style: { fontSize: 13.5, lineHeight: 1.4, color: 'var(--text-muted)', overflowWrap: 'anywhere' } }, f.detalle) : null),
+      h('span', { className: 'ini-act' }, this.boton(f.accion.label, () => this.ir(f.accion.ir), 'secondary', 'b', { 'aria-label': f.accion.label + ' · ' + f.titulo }))) : h('li', { key: f.id, className: 'ini-row' },
       h('span', { className: 'ini-nw', style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, f.caso),
       h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', overflowWrap: 'anywhere' } }, f.asegurado), h('span', { style: { fontSize: 14, lineHeight: 1.4, color: 'var(--text-body)', overflowWrap: 'anywhere' } }, f.motivo)),
       h('span', { style: { justifySelf: 'end' } }, f.urg ? this.badge(f.urg.label, f.urg.tono, f.urg.title) : null),
