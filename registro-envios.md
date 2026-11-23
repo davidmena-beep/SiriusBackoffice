@@ -4,6 +4,183 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa H-2
+
+Publiqué la versión 396 de SIRIUS. Los archivos subieron en la 395 y esta versión cierra el registro con el tiempo de la etapa.
+
+Liquidaciones › Tarifarios es ahora el panel de conceptos y tarifas de la maqueta, una sola pantalla con y sin la conexión. Con la conexión lee `honorariosConfig()` y todo cálculo (probar un caso, impacto y publicar) sale de la base; ya no usa datos de ejemplo ni publica SIRIUS_HONORARIOS a la manera anterior. Con la v5 de David, la matriz es igual a la maqueta celda por celda (44 de 44, con el mismo estilo).
+
+### Mapa de impacto
+
+- **`sirius-tarifarios.js` (nuevo, v1.0):**
+  - Modelo `SiriusTarifas`: herencia solo para mostrar, formatos de celda, cambios del borrador frente a lo publicado e identificadores de concepto y contrato.
+  - Panel `SiriusTarifariosPanel` con las seis pantallas: matriz, panel del concepto, agregar concepto, agregar contrato, probar con un caso y publicar; además, el editor de celda según la fórmula.
+  - Borrador único de la sesión y modo de solo lectura.
+- **`datos-tarifas-base.js` (nuevo):** la v5 publicada de David, tal cual, y la base simulada `SIRIUS_TARIFAS_SIM`. Esa base aplica la regla de la base (un contrato reemplaza solo lo que define; null o ausente en el general = «Por definir») sobre 11 honorarios abiertos simulados. Se usa en la demostración y en las escenas.
+- **`datos-cx-tarifas.js` (nuevo):** las 7 escenas con la conexión simulada (David Alejandro Mena, Administrador) y `honorariosConfig/Probar/Impacto/Publicar` de `SIRIUS_CX_COORD`.
+- **`Liquidaciones.dc.html`:**
+  - La pestaña Tarifarios monta el panel. Sin la conexión, debajo queda la tabla de tipos de vehículo (DEC-249). El editor del mapa fijo queda solo como respaldo sin la conexión, si el panel no carga; con la conexión, sin el panel se muestra un aviso.
+  - Salir de Tarifarios con cambios sin publicar pide confirmación (y también cerrar la página).
+  - Punto 10: el cálculo de un completado no muestra «Ciudad y movilización».
+- **Back-office:**
+  - Scripts nuevos.
+  - La conexión simulada (`cxSimBoot`) pasa las cuatro funciones de honorarios.
+  - Escenas en KNOWN_ESC, su ruta (rol Administrador) y `liqEscena`.
+- **`datos-escenas.js`:** 840 escenas.
+- **Sin cambios:** Por liquidar, Mesa de trabajo, Por facturar y Seguimiento. Tampoco cambian `sirius-conexion.js` (70 bytes), `datos-documentos-pdf.js` ni los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Matriz:**
+  - Filas: los conceptos activos, por servicio («Inspección · al completar el informe», «Completado · al completar un informe asignado») y en su orden.
+  - Columnas: General y un contrato por tarifario vigente hoy. La agencia lleva su RUC y el independiente, «Independiente · identificación».
+  - Encabezado «Versión 5 publicada el 23/11/2026», con «+ Agregar concepto», «+ Agregar contrato», «Probar con un caso» y «Publicar cambios (n)».
+  - Filtros Servicio, Grupo y Proveedor, y la leyenda.
+- **Edición:**
+  - Tocar una celda abre su editor según la fórmula:
+    - número;
+    - por modalidad y tipo (hereda, un valor, o por tipo);
+    - por nivel, con las horas de referencia y el nivel máximo;
+    - tramos, con la aplicación (en un contrato: «Hereda los tramos del general» o «Tramos propios»).
+  - «Usar el general» quita el valor propio.
+  - Todo va al borrador. Un aviso ámbar lo recuerda y ofrece «Descartar cambios».
+- **Panel del concepto:**
+  - Condiciones en chips con «+ Agregar condición», con valores de los catálogos: grupo, ramo, modalidad, formulario, tipo de riesgo, clase de vehículo, nivel, sucursal y fuera de la ciudad base.
+  - Fórmula, aprobación y el valor en cada tarifario.
+  - «Así se calcula», armado con los datos, y «En uso» (los honorarios abiertos cuyo `calculo.lineas` tiene el concepto).
+  - «Desactivar concepto» y «Probar con un caso».
+- **Agregar concepto:** solo lo que la base calcula hoy.
+  - Fijo: por inspección o informe, por modalidad, o por modalidad y tipo.
+  - Por hora: de visita o de redacción, por nivel o simple.
+  - Por tramos: equipos del informe.
+  - Por unidad: km fuera de la ciudad base, de ida o de ida y vuelta.
+  - El valor general vacío queda «Por definir».
+- **Agregar contrato:**
+  - El proveedor se elige de `agencias` o `independientes`; los que ya tienen contrato vigente salen deshabilitados.
+  - Nombre, vigencia, quién liquida, nivel máximo y validación de la agencia.
+  - Nace con `valores {}` e id «TAR-<3 letras>-<año>».
+- **Probar:**
+  - Caso, vehículo (si el caso tiene varios), servicio, y la versión publicada o el borrador.
+  - Muestra las líneas de `honorarioProbar` (cantidad × unitario y origen), el total con su aprobación y, si no aplica, el motivo.
+  - Los conceptos del servicio que no dieron línea salen como «No aplica en este caso».
+- **Publicar:**
+  - Los cambios por concepto y por tarifario.
+  - Motivo obligatorio y vigencia «Desde hoy» o «Desde una fecha» (no antes de hoy).
+  - El impacto de `honorariosImpacto`: vehículo, servicio, tipo, estado, actual, nuevo y diferencia, más el total.
+  - Con `enCero` > 0 no se publica y se muestran los honorarios afectados.
+  - «Publicar versión N+1» muestra recalculados y cambiaron, recarga la configuración y vacía el borrador. `{ ok: false }` muestra su mensaje.
+- **Permisos:**
+  - Con `puedePublicar` false: solo lectura (ver y probar), con aviso.
+  - Los proveedores no ven Tarifarios; se comprobó en liqporliquidar.
+
+### Prueba de cobertura (tarifmatriz, v5 de David)
+
+Cada valor de la v5 y la celda donde aparece, propio o heredado. TAR-AND-2026 tiene `valores {}`: en su columna todo es heredado (gris) o «Por definir». Las horas de referencia del nivel no se muestran en la matriz (tampoco en la maqueta); están en el editor de la celda General. El `mapa` heredado de la v5 no lo usa el cálculo por conceptos, así que no se muestra.
+
+| Tarifario | Concepto | Clave | Valor v5 | Se muestra | Celda (propio) | Herencia en los contratos |
+|---|---|---|---|---|---|---|
+| General | Revisión de equipos | tramo 1 (hasta 10) | 15 | «1–10: 15» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Revisión de equipos | tramo 2 (hasta 15) | 12 | «11–15: 12» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Revisión de equipos | tramo 3 (hasta ∞) | 10 | «16+: 10» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Revisión de equipos | aplicación | escalonada | «escalonada» | columna Fórmula: «Por tramos · escalonada» ✓ | — |
+| General | Inspección de Ramos Generales | nivel n1 | 80 | «N1 80» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: reemplazado o limitado por el contrato |
+| General | Inspección de Ramos Generales | nivel n2 | 100 | «N2 100» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: reemplazado o limitado por el contrato |
+| General | Inspección de Ramos Generales | referencia n1 redacción | 3 | «3» | editor de la celda General · 3 h | — |
+| General | Inspección de Ramos Generales | referencia n1 visita | 4 | «4» | editor de la celda General · 4 h | — |
+| General | Inspección de Ramos Generales | referencia n2 redacción | 6 | «6» | editor de la celda General · 6 h | — |
+| General | Inspección de Ramos Generales | referencia n2 visita | 8 | «8» | editor de la celda General · 8 h | — |
+| General | Inspección de Ramos Generales | referencia basico redacción | 1.5 | «1,5» | editor de la celda General · 1,5 h | — |
+| General | Inspección de Ramos Generales | referencia basico visita | 2 | «2» | editor de la celda General · 2 h | — |
+| General | Inspección de Ramos Generales | nivel basico | 50 | «Básico 50» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Inspección vehicular | Presencial | 18 | «Presencial 18,00» | General: propio (negrita) | Eurosurvey: reemplazado o limitado por el contrato · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Inspección vehicular | Virtual guiada | 12 | «Virtual 12,00» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Redacción técnica | valor | 15 | «15,00 /h» | General: propio (negrita) | Eurosurvey: reemplazado o limitado por el contrato · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Movilización | valor | 0.2 | «0,20 /km» | General: propio (negrita) | Eurosurvey: heredado (gris) · Andinas: heredado (gris) · Luis Andrade: heredado (gris) |
+| General | Completado de autoinspección | valor | null | «Por definir» | General: por definir (ámbar) | Eurosurvey: reemplazado o limitado por el contrato · Andinas: por definir (ámbar) · Luis Andrade: reemplazado o limitado por el contrato |
+| Eurosurvey | Inspección vehicular | Presencial · moto | 10 | «moto 10,00» | Eurosurvey: propio (negrita) | — |
+| Eurosurvey | Inspección vehicular | Presencial · pesado | 17 | «pesado 17,00» | Eurosurvey: propio (negrita) | — |
+| Eurosurvey | Inspección vehicular | Presencial · liviano | 12 | «liviano 12,00» | Eurosurvey: propio (negrita) | — |
+| Eurosurvey | Redacción técnica | valor | 14 | «14,00 /h» | Eurosurvey: propio (negrita) | — |
+| Eurosurvey | Completado de autoinspección | valor | 5 | «5,00» | Eurosurvey: propio (negrita) | — |
+| Luis Andrade | Inspección de Ramos Generales | nivel máximo | basico | «Nivel máximo: básico» | Luis Andrade: propio (negrita) | — |
+| Luis Andrade | Completado de autoinspección | valor | 8 | «8,00» | Luis Andrade: propio (negrita) | — |
+
+Resultado: 25 de 25 valores aparecen; ninguno falta.
+
+**Contra la maqueta Main (texto y estilo de cada celda):** 44 de 44 iguales: el encabezado, las dos franjas de servicio y las 6 filas × 7 columnas. El estilo de cada trozo coincide: propio en negrita, heredado en gris, «Por definir» en ámbar y etiquetas. El detalle está en `vsmaqueta.txt`.
+
+### Ida y vuelta (comparación JSON canónica del borrador con la v5)
+
+- Inicio: igual (0 cambios).
+- Andinas · redacción: 20,00 (celda «20,00 /h», 1 cambio) y luego «Usar el general»: igual a la v5.
+- Eurosurvey · redacción: 14 → 20 → 14: igual.
+- Abrir y guardar sin cambios las 24 celdas de la matriz (todas las fórmulas; propio, heredado y por definir): igual.
+- Eurosurvey · presencial: 16,50 para todos los tipos, y otra vez por tipo 12/17/10: igual.
+- General · completado: 3,00 (Andinas pasa a «3,00» heredado), y otra vez vacío: igual (null).
+- Luis Andrade · nivel máximo: nivel 1 y otra vez básico: igual.
+- Panel del concepto · Andinas: 4,00, luego «Usar el general» y Guardar: igual.
+- General · equipos: tramo 1 a 16 (los contratos heredan «1–10: 16») y otra vez 15: igual.
+- **Agregar concepto (tarifnuevo):** `{ id: 'inspeccion_documental', orden: 7, aplica: { grupo: ['Vehículos'], modalidad: ['Documental'] }, nombre: 'Inspección documental', formula: { tipo: 'fijo', unidad: 'inspección' }, servicio: 'inspeccion', aprobacion: 'preacordada', activo: true }`; en el general, `valores.inspeccion_documental = 6`. Son 2 cambios.
+- **Agregar contrato (tarifcontrato):** `{ id: 'TAR-PER-2026', mapa: { 'liq.quien': 'Finanzas de agencia', validacionAgencia: false }, estado: 'Vigente', nombre: 'Contrato Peritajes del Pacífico 2026', aplicaA: { agencia: 'peritajes' }, valores: {}, version: 1, vigencia: ['2026-11-23', null], proveedor: { ruc: '0992671543001', tipo: 'agencia', nombre: 'Peritajes del Pacífico S.A.' } }`.
+  - Su columna hereda todo (gris, y «Por definir» en el completado).
+  - El impacto en la base: 0 honorarios cambian.
+
+### Verificado
+
+- **tarifprobar:**
+  - 50044 con la versión 5: 125,00 + 21,00 + 45,00 = USD 191,00.
+  - Con el borrador (redacción de Eurosurvey 20,00): 125,00 + 30,00 + 45,00 = USD 200,00.
+  - «Requiere liquidación»; Inspección vehicular y Movilización «No aplica en este caso».
+  - 50052 completado: 5,00 del contrato. 50052 inspección: «No aplica: la inspección la hizo el cliente (autoinspección)».
+- **tarifpublicar:**
+  - 7 honorarios cambian:
+    - 20186-V1, 30001-V1, 30004-V1 y 50043-V1: 12,00 → 16,50;
+    - 30006-V1: 17,00 → 16,50;
+    - 50042-V1: 12,00 → 16,50;
+    - 50042-V2: 10,00 → 16,50.
+  - Diferencia total +28,50. Sin motivo, el botón está deshabilitado.
+  - `?fvista=cero` (liviano en 0): bloqueado. «No se puede publicar: 5 honorarios abiertos quedarían en 0 o sin cálculo», con las 5 filas marcadas.
+  - `?fvista=publicada`: «Versión 6 publicada · recalculó 11, cambiaron 7 · USD 293,00 → USD 321,50». La matriz pasa a «Versión 6 publicada», Eurosurvey queda en «Presencial 16,50» y el borrador, vacío (0).
+  - `?cxok=0`: se muestra «La base rechazó la acción (prueba)» y la versión sigue en 5.
+- **tarifsololectura:** sin «Agregar», sin «Publicar» y sin editar celdas. Quedan el aviso de solo lectura y «Probar con un caso».
+- **Salir con cambios** (tarifpublicar → pestaña Liquidaciones): ventana «Tienes 1 cambio sin publicar» con «Descartar cambios y salir», «Salir y conservar el borrador» y «Quedarme». «Quedarme» deja el panel.
+- **Sin la conexión** (escena tarifarios): el mismo panel, «· demostración sin la conexión», y debajo la tabla de tipos de vehículo.
+- **Capturas** de las 7 escenas, más agregado, cero y publicada, a 1440×900 y 1280×720: sin desplazamiento horizontal de la página y sin errores. La matriz se desplaza dentro de su marco cuando no cabe, como en la maqueta.
+- **Regresión** antes y después: liqporliquidar, liqmesa, facturarmasivo, liqfacturarsri, cxliqproceso, liqfinanzas, liqcompletado, liqdesglose, liqpordefinir, pdfliq1416, liqcalculopanel, liquidaciones y liqtarifas. Todas iguales, salvo liqcompletado, que pierde solo la sección «Ciudad y movilización» del completado (punto 10). liqdesglose, una inspección, la conserva.
+
+### No verificado
+
+- La base real: `honorariosConfig`, `honorarioProbar`, `honorariosImpacto` y `honorariosPublicar` con datos reales, sus mensajes de `{ ok: false }` y si `honorarioProbar` devuelve `tramo` y `vehiculos` (si no los devuelve, la línea no dice el tramo y no aparece el selector de vehículo).
+- Si los honorarios de la conexión traen `calculo.lineas` con `concepto` (de eso sale «En uso»).
+- Firefox y Safari.
+
+### Diferencias
+
+- El panel del concepto se abre a la derecha de una lista de conceptos dentro de la pestaña, sin tapar la pestaña.
+- Los valores que no son de un número (por modalidad, por nivel, tramos) se editan desde «Editar» en el panel o en su celda.
+- La tabla de impacto lleva Servicio y Tipo (la definición pide servicio; la maqueta, tipo).
+- En «Probar», cada resultado es una tarjeta con su etiqueta «Versión 5 publicada» o «Borrador sin publicar»: se ven lado a lado.
+- El origen dice «del contrato Eurosurvey», como en la maqueta.
+- «Publicar cambios (n)» cuenta cada cambio. Un concepto nuevo con valor general son 2: el concepto y su valor.
+- Un contrato con «Nivel máximo» lo guarda en `valores` del concepto por nivel (`{ nivelMaximo }`), que es de donde lo lee la base; sin nivel máximo nace con `valores {}`.
+- Las escenas anteriores tarifarios, tarifarioeur, compltarifa, montodecimal y tarifatipos muestran ahora el panel nuevo (el editor del mapa fijo ya no está en la pestaña).
+
+### Escenas
+
+- **`tarifmatriz`:** la matriz con la v5 de David.
+- **`tarifconcepto`:** el panel de «Completado de autoinspección».
+- **`tarifnuevo`:** agregar «Inspección documental»; con `?fvista=agregado` queda agregado.
+- **`tarifcontrato`:** agregar el contrato de Peritajes del Pacífico S.A.; con `?fvista=agregado` queda agregado.
+- **`tarifprobar`:** el 50044 con la versión publicada (191,00) y con el borrador (200,00).
+- **`tarifpublicar`:** Eurosurvey presencial 16,50, +28,50. Variantes: `?fvista=cero` (bloqueada), `?fvista=publicada` y `?cxok=0`.
+- **`tarifsololectura`:** `puedePublicar` false.
+
+Todas están en el área Liquidaciones y usan la conexión simulada.
+
+Tiempo de la etapa: inicio 23/11/2026 06:44 · fin 23/11/2026 07:27 · 43 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-1d + H-3
 
 Publiqué la versión 393 de SIRIUS. Los archivos subieron en la 392 y esta versión cierra el registro con el tiempo de la etapa.
