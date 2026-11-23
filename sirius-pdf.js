@@ -1,5 +1,6 @@
 // SIRIUS · Motor común de la salida en PDF (etapa SV; extraído de CalificacionRG sin cambiar su resultado). Etapa P-6g-1d · DEC-248: liquidacion() dibuja
-// con jsPDF el documento de la liquidación aprobada (descarga).
+// con jsPDF el documento de la liquidación aprobada (descarga). Etapa P-1d · DEC-277: tres ajustes de dibujo (tarjetas en dos renglones sin recortar,
+// la descripción del bien de Ramos Generales bajo el asegurado con «—» en Placa, y «Aprobado por» sin repetir la empresa); el resto de DEC-248 no cambia.
 // Reglas: SIRIUS_SALIDA_RG.composicion (DEC-075, DEC-076). Flujo continuo en páginas A4 de 252 mm de alto útil, medido con el
 // contenido real de la vista previa; el PDF se arma página por página desde esa misma vista previa (html2canvas + jsPDF).
 // Lo usan CalificacionRG (Ramos Generales, 3 fotos por fila) y SalidaVeh (Vehículos, 2 fotos por fila).
@@ -106,7 +107,10 @@
     // Tarjetas.
     const cw = (R - M - 9) / 4, cy = 68, ch = 22, fz = (s) => s.length > 40 ? s.slice(0, 39) + '…' : s;
     const tarjeta = (k, et, val, sub, osc) => { const x = M + k * (cw + 3); if (osc) { col('navy', 'f'); doc.roundedRect(x, cy, cw, ch, 2, 2, 'F'); } else { col('grisClaro', 'd'); doc.setLineWidth(0.25); col('blanco', 'f'); doc.roundedRect(x, cy, cw, ch, 2, 2, 'FD'); }
-      txt(et, x + 3.5, cy + 6, { s: 6.5, c: osc ? [201, 238, 251] : 'gris' }); txt(corta(val, cw - 7, 13, true), x + 3.5, cy + 13.6, { s: 13, b: true, c: osc ? 'blanco' : 'navy' }); txt(corta(sub, cw - 7, 6.5), x + 3.5, cy + 18.6, { s: 6.5, c: osc ? [201, 238, 251] : 'gris' }); };
+      txt(et, x + 3.5, cy + 6, { s: 6.5, c: osc ? [201, 238, 251] : 'gris' }); txt(corta(val, cw - 7, 13, true), x + 3.5, cy + 13.6, { s: 13, b: true, c: osc ? 'blanco' : 'navy' }); const cs = osc ? [201, 238, 251] : 'gris'; doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); /* P-1d: si no cabe, dos renglones (en el « · » o donde corte), sin recortar */
+      if (doc.getTextWidth(String(sub)) <= cw - 7) txt(sub, x + 3.5, cy + 18.6, { s: 6.5, c: cs });
+      else { const pp = String(sub).split(' · '), l1 = pp.length > 1 ? pp[0] : doc.splitTextToSize(String(sub), cw - 7)[0], l2 = pp.length > 1 ? pp.slice(1).join(' · ') : String(sub).slice(l1.length).trim();
+        txt(corta(l1, cw - 7, 6.5), x + 3.5, cy + 16.8, { s: 6.5, c: cs }); txt(corta(l2, cw - 7, 6.5), x + 3.5, cy + 19.8, { s: 6.5, c: cs }); } };
     const R0 = d.resumen;
     tarjeta(0, 'PROVEEDOR', d.proveedor.nombre, d.proveedor.razon + ' · RUC ' + d.proveedor.ruc); tarjeta(1, 'INSPECCIONES', String(R0.n), R0.porClase.map((c) => c.n + ' ' + c.nombre).join(' · '));
     tarjeta(2, 'FUERA DE CIUDAD BASE', String(R0.fuera.n), n2(R0.fuera.km).replace(/,00$/, ',0') + ' km · ' + usd(R0.fuera.valor)); tarjeta(3, 'SUBTOTAL A FACTURAR', usd(d.subtotal), 'sin IVA · lo que debe decir la factura', true);
@@ -121,7 +125,9 @@
     y = encTabla(y + 4); const RH = 4.8, franja = (q) => (q === 'No asegurable' ? 'rojo' : /^Pendiente/.test(q) ? 'oro' : 'verde');
     d.filas.forEach((r, i) => { const rh = r.rg ? 7.4 : RH; if (y + rh > BOT) { doc.addPage('a4', 'portrait'); y = encTabla(cabCompacta()); }
       if (i % 2) { col('fila', 'f'); doc.rect(M, y, R - M, rh, 'F'); } col(franja(r.calificacion), 'f'); doc.rect(M + 0.6, y + 0.6, 1, rh - 1.2, 'F'); const yb = y + 3.25;
-      txt(r.n, T[0][1], yb, { s: 6.6, c: 'gris', a: 'right' }); txt(r.caso, T[1][1], yb, { s: 6.6 }); txt(corta(r.orden, T[2][2], 6.6), T[2][1], yb, { s: 6.6 }); txt(corta(r.asegurado, T[3][2], 6.6), T[3][1], yb, { s: 6.6 }); txt(corta(r.placa, T[4][2], 6.6, true), T[4][1], yb, { s: 6.6, b: true, c: 'navy' });
+      txt(r.n, T[0][1], yb, { s: 6.6, c: 'gris', a: 'right' }); txt(r.caso, T[1][1], yb, { s: 6.6 }); txt(corta(r.orden, T[2][2], 6.6), T[2][1], yb, { s: 6.6 }); txt(corta(r.asegurado, T[3][2], 6.6), T[3][1], yb, { s: 6.6 });
+      if (r.rg) { txt(corta(r.placa, T[3][2], 5.6), T[3][1], yb + 2.8, { s: 5.6, c: 'gris' }); txt('—', T[4][1], yb, { s: 6.6, c: 'gris' }); } /* P-1d: el bien completo bajo el asegurado */
+      else txt(corta(r.placa, T[4][2], 6.6, true), T[4][1], yb, { s: 6.6, b: true, c: 'navy' });
       // Ramos Generales: nivel y horas en la primera línea y equipos en la segunda, en lugar de la clase.
       if (r.rg) { const pz = String(r.clase).split(' · '); txt(corta(pz[0] + ' ' + (pz[1] || ''), T[6][1] - T[5][1] - 0.5, 5.6), T[5][1], yb, { s: 5.6 }); txt(corta(pz.slice(2).join(' · ').replace(' eq', ' equipos'), T[6][1] - T[5][1] - 0.5, 5.6), T[5][1], yb + 2.8, { s: 5.6, c: 'gris' }); } else txt(corta(r.clase, T[5][2], 6.6), T[5][1], yb, { s: 6.6 });
       txt(r.enBase ? 'Base' : 'No base', T[6][1], yb, { s: 6.6, c: r.enBase ? 'gris' : 'oro' });
@@ -138,7 +144,7 @@
     y += 40; const pw = (R - M - 6) / 2, ph = 24;
     const caja = (x, et, nom, l2, l3, ok) => { doc.setLineWidth(ok ? 0.5 : 0.25); col(ok ? 'verde' : 'grisClaro', 'd'); col('blanco', 'f'); doc.roundedRect(x, y, pw, ph, 2, 2, 'FD'); txt(et, x + 4, y + 6, { s: 6.5, c: ok ? 'verde' : 'gris' }); txt(corta(nom, pw - 8, 10, true), x + 4, y + 12, { s: 10, b: true, c: 'navy' }); txt(corta(l2, pw - 8, 6.8), x + 4, y + 16.5, { s: 6.8, c: 'gris' }); txt(corta(l3, pw - 8, 6.8), x + 4, y + 20.5, { s: 6.8, c: 'gris' }); };
     caja(M, 'PRESENTADO POR', d.proveedor.razon, (d.proveedor.tipo === 'agencia' ? 'Proveedor de inspecciones' : 'Inspector independiente') + ' · RUC ' + d.proveedor.ruc, 'Enviada en SIRIUS el ' + fechaTxt(d.presentado.fecha) + ' · ' + horaTxt(d.presentado.fecha) + ' · v' + d.version + (d.presentado.por ? ' · ' + d.presentado.por : ''));
-    caja(M + pw + 6, 'APROBADO POR', d.aprobada.por || '—', d.aprobada.cargo + ' · Aseguradora del Sur C.A.', 'Aprobada en SIRIUS el ' + fechaTxt(d.aprobada.fecha) + ' · ' + horaTxt(d.aprobada.fecha) + ' · v' + d.version, true);
+    caja(M + pw + 6, 'APROBADO POR', d.aprobada.por || '—', [d.aprobada.cargo, 'Aseguradora del Sur C.A.'].filter((t) => t && t !== 'Aseguradora del Sur C.A.').concat('Aseguradora del Sur C.A.').join(' · '), /* P-1d: sin repetir la empresa */ 'Aprobada en SIRIUS el ' + fechaTxt(d.aprobada.fecha) + ' · ' + horaTxt(d.aprobada.fecha) + ' · v' + d.version, true);
     // ---------- Marca de agua y pie en todas las páginas ----------
     const np = doc.getNumberOfPages();
     for (let k = 1; k <= np; k++) { doc.setPage(k);

@@ -4,6 +4,102 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-1d + H-3
+
+Publiqué la versión 393 de SIRIUS. Los archivos subieron en la 392 y esta versión cierra el registro con el tiempo de la etapa.
+
+El PDF de la liquidación #001416 sale ahora igual a la propuesta aprobada: el mismo texto y los mismos píxeles, con el código que registra la base. En Liquidaciones, el completado de informe tiene su nombre y no se ajusta. El cálculo se muestra concepto por concepto. Los honorarios sin tarifa en el contrato aparecen «Por definir» y no se pueden liquidar.
+
+### Mapa de impacto
+
+- **`sirius-liq-proceso.js` (v3.3):**
+  - `LP.documentoPdf`: aprobación de `l.aprobada` (sin ella, el historial como antes); `cargoDe` sin la aseguradora como cargo; fecha del documento = la de la aprobación; período desde las líneas o, sin fechas, desde `l.periodo`; base y movilización de cada fila = las del cálculo de la base.
+  - `LP.pdfListo`: sin líneas no hay PDF; con la conexión, `documentoRegistrar` antes de dibujar.
+  - Completado y «Por definir»: `LP.completado`, `lineasCalc`, `lineaCalcTxt`, `porDefinir`, `porDefinirTxt`, `porDefinirDe`.
+  - El contrato suma `servicio`, `calculo.modelo`, `calculo.lineas`, `periodo` y `aprobada`; estado «Por definir».
+- **`sirius-pdf.js`:** solo los tres ajustes de dibujo de la propuesta (DEC-248 no cambia en nada más).
+- **`Liquidaciones.dc.html`:**
+  - «Descargar PDF» usa `LP.pdfListo`.
+  - El completado se llama «Completado de informe» y no tiene «Ajustar».
+  - «Cálculo» por conceptos, también en Por facturar.
+  - Filas «Por definir» sin casilla, con su nota.
+- **Escenas:**
+  - `datos-cx-liq1416.js` (nuevo): base simulada de las 5 escenas y `documentoRegistrar` de la liquidación.
+  - Back-office: script, KNOWN_ESC y la ruta de las escenas.
+  - `datos-escenas.js`: 833 escenas.
+- **Sin cambios:** `sirius-conexion.js` (70 bytes) y los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Datos del PDF:**
+  - «Quito, 22 de noviembre de 2026».
+  - Sello «APROBADA · 22/11/2026 · 21:06».
+  - «Aprobado por Verónica Lema · Ejecutivo de inspecciones · Aseguradora del Sur C.A.» (sin repetir la empresa).
+  - Envío «22/11/2026 · 21:05 · v1 · Carla Ponce» en hora de Ecuador.
+  - Franja de cada fila según `honorarios[].calificacion`.
+- **Dibujo del PDF:**
+  - Las tarjetas parten la segunda línea en dos renglones sin recortar: «Eurosurvey S.A.» / «RUC 1791456320001» y «sin IVA» / «lo que debe decir la factura».
+  - En las filas de Ramos Generales, el bien va bajo el asegurado y Placa dice «—».
+- **Código del pie:** el que devuelve la base. Con `{ ok: false }` no se genera el PDF y se muestra el mensaje. Sin la conexión, el código local.
+- **Liquidación sin líneas:** «Descargar PDF» sigue activo y responde «La liquidación no tiene líneas: no se genera su PDF».
+- **Liquidaciones:**
+  - «PR900A · caso 50009 · Completado de informe», sin «Ajustar».
+  - El cálculo muestra una fila por concepto: «2,5 h × USD 50,00 = USD 125,00 · del general», «1,5 h × USD 14,00 = USD 21,00 · del contrato Eurosurvey 2026»; una línea sin tarifa dice «Por definir: sin tarifa en el contrato».
+  - En «Por liquidar», insignia «Por definir» y la nota «La aseguradora aún no define la tarifa de completado de autoinspección en tu contrato.», sin casilla.
+
+### Prueba visual (pdfliq1416 contra la propuesta)
+
+El PDF que genera SIRIUS es el mismo documento que la propuesta: 1 página, las mismas 90 líneas de texto y una diferencia de píxeles de 0,000/255 a 110 ppp. El código del pie también coincide (LQ-001416-v1-7C2E19A4), porque la base simulada devuelve el de la propuesta.
+
+### Prueba de cobertura
+
+Comprobé los 42 datos de la #001416 en el texto del PDF y aparecen los 42:
+
+- casos y órdenes;
+- asegurados, el bien y la placa;
+- tipo, ciudad y km;
+- base y movilización;
+- subtotales y la composición 10,00 + 191,00 + 31,02;
+- IVA y total;
+- contrato y tarifas;
+- envío y aprobación;
+- código.
+
+La tabla está en `cobertura.txt`, que se entregó en el chat.
+
+### Verificado
+
+- **pdfliqsinlineas:** sin descarga y con el mensaje.
+- **liqcompletado, liqdesglose y liqpordefinir:** capturas de cada vista. A 1280×720, 1440×900 y 1920×1080 no hay desplazamiento horizontal de la página.
+- **Regresión:** antes y después en 14 escenas de demostración y 4 con `?cx=1`. Las pantallas quedan iguales, salvo el enlace «Cálculo» en los preacordados de Por facturar (facturarmasivo y liqfacturarsri).
+  - PDF liqpdf y liqpdfrg (demostración y conexión): cambian solo los tres ajustes de dibujo.
+  - Con la conexión, el código del pie es el que registra la base.
+
+### No verificado
+
+- La base real: la forma de `calculo.lineas`, el nombre del tarifario, `documentoRegistrar` para la liquidación y el texto de su mensaje con `{ ok: false }`.
+- Firefox y Safari.
+
+### Diferencias
+
+- Agregué «Cálculo» a los honorarios preacordados de «Por facturar», para ver el desglose del completado.
+- El origen del contrato dice «del contrato Eurosurvey 2026», sin repetir «Contrato».
+- Estas vistas no tienen una lista de honorarios para el personal interno. La insignia «Por definir» es la misma en la lista del proveedor que el personal abre desde la ficha de la agencia (sin conexión).
+
+### Escenas
+
+- **`pdfliq1416`:** la #001416 con los datos de la base.
+- **`pdfliqsinlineas`:** liquidación aprobada sin líneas.
+- **`liqcompletado`:** completado de informe en Por facturar.
+- **`liqdesglose`:** cálculo por conceptos, de Ramos Generales y de un vehículo con km.
+- **`liqpordefinir`:** completado «Por definir» de Inspecciones Andinas.
+
+Todas están en el área Liquidaciones y usan la conexión simulada.
+
+Tiempo de la etapa: inicio 22/11/2026 23:11 · fin 22/11/2026 23:32 · 21 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-1f
 
 Publiqué la versión 391 de SIRIUS. Los archivos subieron en la 390 y esta versión cierra el registro con el tiempo de la etapa.
