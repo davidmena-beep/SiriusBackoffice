@@ -1,4 +1,6 @@
-// SIRIUS · Motor vectorial de los PDF de Vehículos (v1.0 · etapa P-1c1 · DEC-272 · 21/11/2026)
+// SIRIUS · Motor vectorial de los PDF de Vehículos (v1.1 · etapa P-1f · DEC-273 · 22/11/2026; v1.0 · etapa P-1c1 · DEC-272 · 21/11/2026)
+// P-1f: paginación sin cortes (el alto de cada fila de fotos sale de la proporción 4:3 y de su respaldo; un subtítulo de grupo va con su primera fila; una sección
+// corta no se parte), firmas de quien actuó (con su cabecera y la firma de quien atiende), las 4 fotos exteriores del resumen en una fila y fotos más livianas.
 // Dibuja con jsPDF (Helvetica, texto que se puede buscar y copiar) el contenido que arma sirius-documentos-pdf.js.
 // No decide contenido: lee los bloques HTML de documento() (las mismas secciones, reglas, números y frases de la vista previa)
 // y los convierte en piezas (capítulo, datos, frases, tabla, hallazgos, diagrama, línea de tiempo, firmas, galería) que pinta
@@ -64,7 +66,7 @@
       const hijos = Array.from(n.children);
       if (/padding-top:\s*calc\(/.test(s)) { const dec = n.querySelector('b');
         if (dec && /^Declaraci/.test(limpio(dec.textContent))) { const caja = dec.parentElement, tmp = caja.cloneNode(true); tmp.removeChild(tmp.querySelector('b')); out.push({ k: 'caja', t: limpio(dec.textContent), runs: runsDe(tmp) }); return; }
-        out.push({ k: 'firmas', L: hijos.map((h) => ({ nombre: limpio((h.querySelector('b') || {}).textContent), rol: limpio((h.querySelector('i') || {}).textContent) })) }); return; }
+        out.push({ k: 'firmas', L: hijos.map((h) => { const im = h.querySelector('img'); return { nombre: limpio((h.querySelector('b') || {}).textContent), rol: limpio((h.querySelector('i') || {}).textContent), cab: h.getAttribute('data-cab') || '', extra: h.getAttribute('data-extra') || '', verde: h.getAttribute('data-verde') === '1', firma: im ? im.getAttribute('src') || '' : '' }; }) }); return; }
       if (hijos[0] && /position:\s*absolute/.test(sty(hijos[0])) && hijos.slice(1).every((h) => h.querySelector('b'))) { out.push({ k: 'tiempo', ev: hijos.slice(1).map((h) => ({ e: limpio(h.querySelector('b').textContent), f: limpio((h.querySelector('span') || {}).textContent) })) }); return; }
       if (hijos.length && hijos.every((h) => /flex-direction:\s*column/.test(sty(h)) && h.querySelectorAll(':scope > span').length === 2)) { out.push({ k: 'datos', campos: hijos.map((h) => { const sp = h.querySelectorAll(':scope > span'); return { l: limpio(sp[0].textContent), v: limpio(sp[1].textContent) }; }) }); return; }
       if (/display:\s*grid/.test(s) && hijos.length && hijos.every((h) => h.lastElementChild && h.lastElementChild.querySelector(':scope > b') && (h.querySelector('img') || h.querySelector('[style*="justify-content:center"]')))) {
@@ -85,10 +87,10 @@
 
   // ---------- Imágenes ----------
   const cargarImg = (src) => new Promise((ok) => { if (!src) return ok(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im.naturalWidth ? im : null); im.onerror = () => ok(null); im.src = src; });
-  // Foto: recorte al formato del recuadro, lado mayor 1400 px, JPEG 0,82.
+  // Foto: recorte al formato del recuadro, lado mayor 1000 px (P-1f: unos 400 ppp en el ancho impreso de una foto), JPEG 0,78.
   async function fotoData(url, aspecto) { const im = await cargarImg(url); if (!im) return null; try { const W0 = im.naturalWidth, H0 = im.naturalHeight; let sw = W0, sh = W0 / aspecto; if (sh > H0) { sh = H0; sw = H0 * aspecto; }
-    const k = Math.min(1, 1400 / Math.max(sw, sh)), cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(sw * k)); cv.height = Math.max(1, Math.round(sh * k)); const g = cv.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, cv.width, cv.height);
-    g.drawImage(im, (W0 - sw) / 2, (H0 - sh) / 2, sw, sh, 0, 0, cv.width, cv.height); return cv.toDataURL('image/jpeg', 0.82); } catch (e) { return null; } }
+    const k = Math.min(1, 1000 / Math.max(sw, sh)), cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(sw * k)); cv.height = Math.max(1, Math.round(sh * k)); const g = cv.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, cv.width, cv.height);
+    g.drawImage(im, (W0 - sw) / 2, (H0 - sh) / 2, sw, sh, 0, 0, cv.width, cv.height); return cv.toDataURL('image/jpeg', 0.78); } catch (e) { return null; } }
   async function logoData(src) { const im = await cargarImg(src); if (!im) return null; try { const k = Math.min(1, 900 / im.naturalWidth), cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
     cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); return { data: cv.toDataURL('image/png'), w: cv.width, h: cv.height }; } catch (e) { return null; } }
   // SVG → PNG (el diagrama al doble de resolución; la capa de daños de una foto al tamaño del recuadro).
@@ -164,6 +166,9 @@
     this.y = y0 + ch + 5.5; };
   // Tarjeta de identificación (placa, VIN, motor…) con las 2 fotos referenciales.
   LP.identificacion = function (I) {
+    if (I.soloFotos) { const n = Math.max(1, (I.fotos || []).length), gap = 3.2, fw = (this.CW - (n - 1) * gap) / n, fh = fw * 0.75, hh = fh + 8.4; this.cabe(hh + 2); const y1 = this.y; /* P-1f · DEC-273: resumen, las 4 fotos exteriores en una fila (4:3) */
+      (I.fotos || []).forEach((f, k) => { const x = this.M + k * (fw + gap); this.foto(f, x, y1, fw, fh); if (f.F) { this.t(f.F, x, y1 + fh + 3.6, { s: 7, b: true, c: K.ink }); let nm = ' · ' + f.nombre; const mx = fw - this.w(f.F, 7, true) - 0.5; if (this.w(nm, 7) > mx) { while (nm.length > 4 && this.w(nm + '…', 7) > mx) nm = nm.slice(0, -1); nm = nm.replace(/\s+$/, '') + '…'; } this.t(nm, x + this.w(f.F, 7, true), y1 + fh + 3.6, { s: 7, c: K.muted }); } /* el nombre largo se corta con «…» dentro de su foto */ else this.t(f.nombre, x, y1 + fh + 3.6, { s: 7, c: K.muted }); this.t(f.at, x, y1 + fh + 6.8, { s: 6, c: K.muted }); this.reg(f.F ? f.F + ' · ' + f.nombre : f.nombre, true); this.reg(f.at, true); });
+      this.y = y1 + hh + 4; return; }
     const d = this.doc, M = this.M, y0 = this.y, h = 42, w1 = 62; this.cabe(h + 2);
     d.setFillColor('#FFFFFF'); d.setDrawColor(K.line); d.setLineWidth(0.3); d.roundedRect(M, y0, w1, h, 2.4, 2.4, 'FD');
     d.setDrawColor(this.cp); d.setLineWidth(0.6); d.roundedRect(M + 4.2, y0 + 4.6, w1 - 8.4, 17, 1.8, 1.8, 'S');
@@ -190,9 +195,19 @@
 
   // ---------- Cuerpo ----------
   LP.altoMin = function (p) { if (!p) return 0; switch (p.k) {
-    case 'tabla': { const m = this.medirTabla(p); return m.altoTot <= 70 ? m.altoTot : 7.2 + m.filas.slice(0, 2).reduce((a, f) => a + f.h, 0); } case 'datos': return 13; case 'frase': return 8; case 'hall': return 7; case 'parr': return 10;
-    case 'diag': return this.altoDiag(p); case 'tiempo': return 18; case 'firmas': return 27; case 'fotos': return 54; case 'sub': return 60; case 'caja': return 14; default: return 8; } };
-  LP.cap = function (p, sig) { const arriba = this.y <= this.top + 0.5; if (!arriba) this.y += 2.6; this.cabe(10 + this.altoMin(sig));
+    case 'tabla': { const m = this.medirTabla(p); return m.altoTot <= 70 ? m.altoTot : 7.2 + m.filas.slice(0, 2).reduce((a, f) => a + f.h, 0); } case 'datos': return this.altoDatos(p, 1); case 'frase': return 8; case 'hall': return 7; case 'parr': return 10;
+    case 'diag': return this.altoDiag(p); case 'tiempo': return 18; case 'firmas': return this.altoFirmas(p, 1); case 'fotos': return this.altoFotos(p, 1); case 'sub': return 7.4 + (p.sigP && p.sigP.k === 'fotos' ? this.altoFotos(p.sigP, 1) : 8); case 'caja': return 14; default: return 8; } };
+  // P-1f · DEC-273: alto de las filas (datos, fotos y firmas) con la misma medida con que se dibujan, y el alto total de una pieza (para no partir una sección corta).
+  LP.altoDatos = function (p, filas) { const n = 3, gap = 6, cw = (this.CW - (n - 1) * gap) / n; let h = 0; for (let i = 0, k = 0; i < p.campos.length && (!filas || k < filas); i += n, k++) { const nl = Math.max.apply(null, p.campos.slice(i, i + n).map((c) => this.lineasTxt(c.v, cw - 1, 8.8).length)); h += 4.6 + nl * 4 + 1.8 + 1.6; } return h ? h - 0.1 : 0; }; /* la última fila no necesita su espacio de abajo (como en datos(): cabe(h + 1,5)) */
+  LP.altoFotos = function (p, filas) { const n = 3, gap = 4, cw = (this.CW - (n - 1) * gap) / n, ih = cw * 0.75; let h = 0; for (let i = 0, k = 0; i < p.items.length && (!filas || k < filas); i += n, k++) { const nm = Math.max(1, ...p.items.slice(i, i + n).map((f) => this.lineas(f.meta, cw - 1, 6.2, K.muted).slice(0, 4).length)); h += ih + 5.2 + nm * 2.85 + 2.4; } return h + (filas ? 0 : 1); };
+  LP.altoFirmas = function (p, filas) { const L = p.L || [], k = Math.min(3, Math.max(1, L.length)); let h = 0; for (let i = 0, j = 0; i < L.length && (!filas || j < filas); i += k, j++) h += 0.6 + (L.slice(i, i + k).some((f) => f.firma && this.img['firma:' + f.firma]) ? 40 : 26) + 4; return h; };
+  LP.alto = function (p) { switch (p.k) {
+    case 'datos': return this.altoDatos(p); case 'fotos': return this.altoFotos(p); case 'firmas': return this.altoFirmas(p); case 'tabla': return this.medirTabla(p).altoTot + 3; case 'diag': return this.altoDiag(p) + 3; case 'tiempo': return 18;
+    case 'frase': { const nl = Math.max(this.lineasTxt(p.l, 37, 8.2, true).length, this.lineas(p.runs, this.CW - 40, 8.4, K.ink).length || 0); return 3 + nl * 4.1 + 2.2; }
+    case 'hall': return p.items.reduce((a, h) => a + Math.max(5.8, this.lineas(h.runs, this.CW - 18, 8.6, K.ink).length * 4.2 + 1.8) + 0.4, 0) + 0.6;
+    case 'parr': { if (p.chico) return this.lineas(p.runs, this.CW, 7.4, p.chico).length * 3.6 + 2; if (p.estado) return this.lineas(p.runs, this.CW, 8.8, p.estado).length * 4.3 + 3.5; return this.lineas(p.runs, this.CW - 10, 8.8, K.ink).length * 4.3 + 8.4; }
+    case 'caja': return 13 + this.lineas(p.runs, this.CW - 10, 8.4, K.ink).length * 4.1; case 'sub': return 7.4; default: return 8; } };
+  LP.cap = function (p, sig) { const arriba = this.y <= this.top + 0.5; if (!arriba) this.y += 2.6; const tot = (p.seg || []).reduce((a, x) => a + this.alto(x), 0); this.cabe(10 + (p.seg && p.seg.length && tot <= 95 ? tot : this.altoMin(sig))); /* P-1f: una sección corta va entera */
     if (this.y > this.top + 0.5 && this.y - 2.6 <= this.top) this.y = this.top; const y = this.y, M = this.M; let x = M;
     if (p.n) { this.t(p.n, x, y + 4.6, { s: 11, b: true, c: this.ca }); x += this.w(p.n, 11, true) + 2.6; this.reg(p.n); }
     this.t(p.t, x, y + 4.6, { s: 11, b: true, c: this.cp }); this.reg(p.t); this.doc.setDrawColor(K.line); this.doc.setLineWidth(0.3); this.doc.line(M, y + 7.4, PAG.W - M, y + 7.4); this.y = y + 10.4; };
@@ -248,15 +263,17 @@
     p.ev.forEach((e, i) => { const cx = M + cw * i + cw / 2; this.doc.setFillColor('#FFFFFF'); this.doc.setDrawColor(this.ca); this.doc.setLineWidth(0.5); this.doc.circle(cx, y, 1.9, 'FD'); this.doc.setFillColor(this.ca); this.doc.circle(cx, y, 0.85, 'F');
       this.t(e.e, cx, y + 6.4, { s: 7.6, b: true, c: K.ink, a: 'center' }); this.t(e.f, cx, y + 10, { s: 7, c: K.muted, a: 'center' }); this.reg(e.e); this.reg(e.f); }); this.y = y + 12.8; };
   // Firmas: recuadros (atendió, inspeccionó y, si hay calificación, calificó con borde verde).
-  LP.firmas = function (p) { const M = this.M, L = p.L, n = L.length, gap = 4.2, cw = (this.CW - (n - 1) * gap) / n, h = 26; this.y += 0.6; this.cabe(h + 0.5);
-    L.forEach((f, i) => { const x = M + i * (cw + gap), verde = !!f.verde; this.doc.setDrawColor(verde ? K.verdeBorde : K.line); this.doc.setLineWidth(verde ? 0.45 : 0.3); this.doc.roundedRect(x, this.y, cw, h, 2.2, 2.2, 'S');
-      this.t(f.cab, x + 4.4, this.y + 5.6, { s: 6.2, c: verde ? K.verdeBorde : K.muted, cs: 0.4 }); this.reg(f.cab, true);
-      this.t(f.nombre, x + 4.4, this.y + 11.8, { s: 10, b: true, c: K.ink }); this.reg(f.nombre, !!f.disenoNombre);
-      this.lineasTxt(f.rol, cw - 8, 7.2).slice(0, 2).forEach((t, k) => this.t(t, x + 4.4, this.y + 16.4 + k * 3.3, { s: 7.2, c: K.muted })); this.reg(f.rol, !!f.disenoNombre);
-      (f.extra ? [f.extra] : []).forEach((t) => { this.t(t, x + 4.4, this.y + 22.4, { s: 6.6, c: K.muted }); this.reg(t, true); }); });
-    this.y += h + 4; };
+  LP.firmas = function (p) { const M = this.M, L = p.L, k = Math.min(3, Math.max(1, L.length)), gap = 4.2, cw = (this.CW - (Math.max(2, k) - 1) * gap) / Math.max(2, k); /* P-1f: hasta 3 por fila */
+    for (let i0 = 0; i0 < L.length; i0 += k) { const fila = L.slice(i0, i0 + k), conF = fila.some((f) => f.firma && this.img['firma:' + f.firma]), h = conF ? 40 : 26, dy = conF ? 14 : 0; this.y += 0.6; this.cabe(h + 0.5);
+      fila.forEach((f, i) => { const x = M + i * (cw + gap), verde = !!f.verde; this.doc.setDrawColor(verde ? K.verdeBorde : K.line); this.doc.setLineWidth(verde ? 0.45 : 0.3); this.doc.roundedRect(x, this.y, cw, h, 2.2, 2.2, 'S');
+        this.t(f.cab, x + 4.4, this.y + 5.6, { s: 6.2, c: verde ? K.verdeBorde : K.muted, cs: 0.4 }); this.reg(f.cab, true);
+        this.t(f.nombre, x + 4.4, this.y + 11.8, { s: 10, b: true, c: K.ink }); this.reg(f.nombre, !!f.disenoNombre);
+        const fi = f.firma ? this.img['firma:' + f.firma] : null; if (fi) { const hh = 11.5, ww = Math.min(cw - 8.8, hh * fi.w / fi.h); this.doc.addImage(fi.data, 'PNG', x + 4.4, this.y + 13.6, ww, ww * fi.h / fi.w > hh ? hh : ww * fi.h / fi.w, undefined, 'FAST'); }
+        this.lineasTxt(f.rol, cw - 8, 7.2).slice(0, 2).forEach((t, k2) => this.t(t, x + 4.4, this.y + 16.4 + dy + k2 * 3.3, { s: 7.2, c: K.muted })); this.reg(f.rol, !!f.disenoNombre);
+        (f.extra ? [f.extra] : []).forEach((t) => { this.t(t, x + 4.4, this.y + 22.4 + dy, { s: 6.6, c: K.muted }); this.reg(t, true); }); });
+      this.y += h + 4; } };
   // Galería: 3 por fila, cada foto con su número y su respaldo (fecha, hora, GPS con precisión y dispositivo).
-  LP.fotos = function (p, porFila) { const M = this.M, n = porFila || 3, gap = 4, cw = (this.CW - (n - 1) * gap) / n, ih = cw * 0.69;
+  LP.fotos = function (p, porFila) { const M = this.M, n = porFila || 3, gap = 4, cw = (this.CW - (n - 1) * gap) / n, ih = cw * 0.75; /* P-1f: proporción real de la foto (4:3) */
     for (let i = 0; i < p.items.length; i += n) { const fila = p.items.slice(i, i + n), metas = fila.map((f) => this.lineas(f.meta, cw - 1, 6.2, K.muted).slice(0, 4)), nm = Math.max(1, ...metas.map((m) => m.length)), h = ih + 5.2 + nm * 2.85 + 2.4;
       this.cabe(h); fila.forEach((f, k) => { const x = M + k * (cw + gap); this.foto(f, x, this.y, cw, ih); const m = /^(F-\d+)(\s·\s)?(.*)$/.exec(f.cap) || [0, '', '', f.cap];
         let xx = x; if (m[1]) { this.t(m[1], xx, this.y + ih + 4, { s: 7.2, b: true, c: K.ink }); xx += this.w(m[1], 7.2, true); this.t(' · ' + m[3], xx, this.y + ih + 4, { s: 7.2, c: K.ink }); } else this.t(f.cap, xx, this.y + ih + 4, { s: 7.2, c: K.ink });
@@ -280,7 +297,8 @@
   // Precarga de imágenes: logos, fotos (recortadas al recuadro), capas de daños y diagramas.
   async function precargar(L, items, extra) { const tareas = [];
     (extra || []).forEach((x) => { if (x && x.url) tareas.push(fotoData(x.url, x.aspecto || 1.45).then((r) => { if (r) L.img[x.url] = r; })); });
-    items.forEach((p) => { if (p.k === 'fotos') p.items.forEach((f) => { if (f.url) tareas.push(fotoData(f.url, 1 / 0.69).then((r) => { if (r) L.img[f.url] = r; }));
+    items.forEach((p) => { if (p.k === 'firmas') (p.L || []).forEach((f) => { if (f.firma) tareas.push(logoData(f.firma).then((r) => { if (r) L.img['firma:' + f.firma] = r; })); }); /* P-1f: firma de quien atiende */
+      if (p.k === 'fotos') p.items.forEach((f) => { if (f.url) tareas.push(fotoData(f.url, 4 / 3).then((r) => { if (r) L.img[f.url] = r; }));
       if (f.ov) tareas.push(svgData(f.ov, 232, 160, 2).then((r) => { if (r) L.img['ov:' + f.ov] = r; })); });
       if (p.k === 'diag') tareas.push(svgData(p.svg, p.vw, p.vh, 2).then((r) => { if (r) L.img['svg:' + p.svg] = r; })); });
     await Promise.all(tareas); }
@@ -289,5 +307,5 @@
   async function listo() { if (window.jspdf && window.jspdf.jsPDF) return true; const P = window.SiriusPdf; if (P && P.cargar) { await P.cargar(JSPDF); return !!(window.jspdf && window.jspdf.jsPDF); } return false; }
   function guardar(doc, nombre) { const u = URL.createObjectURL(doc.output('blob')), a = document.createElement('a'); a.href = u; a.download = nombre; a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
 
-  window.SiriusPdfVector = { version: '1.0', K, san, piezas, resultadoDe, textosHtml, textoRuns, runsDe, lienzo: (o) => new Lienzo(o), precargar, fotoData, logoData, svgData, listo, guardar };
+  window.SiriusPdfVector = { version: '1.1', K, san, piezas, resultadoDe, textosHtml, textoRuns, runsDe, lienzo: (o) => new Lienzo(o), precargar, fotoData, logoData, svgData, listo, guardar };
 })();

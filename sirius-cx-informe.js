@@ -1,4 +1,4 @@
-// SIRIUS · Lectura del informe de la base (v1.0 · etapa P-1c2 · DEC-272 · 22/11/2026)
+// SIRIUS · Lectura del informe de la base (v1.1 · etapa P-1f · DEC-273 · 22/11/2026: la foto de cada extra y la avería sin pieza; v1.0 · etapa P-1c2 · DEC-272)
 // Una sola lectura de informes[caso].respuestas para la pestaña Informe (etapa C2-8) y el PDF de Vehículos: cada campo por su clave de la plantilla
 // (veh_*) y, si no está, por la clave de la app (APP_K). El valor llega como texto o como { valor, org, conf, solicitud, confirmadoPor, documento }.
 // Lo guardado o completado en el back-office llega con la clave de la plantilla y por eso tiene prioridad sobre lo de la app. Antes vivía en el
@@ -44,8 +44,8 @@
   function grillas(L) { const pick = (k) => { for (const inf of L || []) { const r = (inf && inf.respuestas) || {}; if (has(r, k) && r[k] != null) { const x = r[k], v = x && typeof x === 'object' && !Array.isArray(x) ? x.valor : x; if (Array.isArray(v)) return v; } } return null; };
     const out = {}, s = (x) => x == null ? '' : String(x);
     const neu = pick('veh_neumaticos'); if (neu) { out.neu = {}; neu.forEach((n) => { const p = s(n.pos || n.posicion); if (p) out.neu[p] = { marca: s(n.marca), medida: s(n.medida), labrado: s(n.labrado) }; }); }
-    const ext = pick('veh_extras'); if (ext) { out.extManual = ext.map((e) => ({ desc: s(e.desc || e.descripcion), marca: s(e.marca), valor: s(e.valor), src: 'inspector' })).filter((e) => e.desc); }
-    const ave = pick('veh_averias'); if (ave) out.ave = ave.map((a) => ({ pieza: s(a.pieza), tipo: s(a.tipo || a.tipoDano), grav: s(a.grav || a.gravedad), prof: s(a.prof || a.profundidad), sup: s(a.sup || a.superficie), desc: s(a.desc || a.descripcion), estado: a.estado || 'aceptada' })).filter((a) => a.pieza);
+    const ext = pick('veh_extras'); if (ext) { out.extManual = ext.map((e) => ({ desc: s(e.desc || e.descripcion), marca: s(e.marca), valor: s(e.valor), foto: s(e.foto || e.fotoPaso), src: 'inspector' })).filter((e) => e.desc); }
+    const ave = pick('veh_averias'); if (ave) out.ave = ave.map((a) => ({ pieza: s(a.pieza), tipo: s(a.tipo || a.tipoDano), grav: s(a.grav || a.gravedad), prof: s(a.prof || a.profundidad), sup: s(a.sup || a.superficie), desc: s(a.desc || a.descripcion), estado: a.estado || 'aceptada' })).filter((a) => a.pieza || a.tipo || a.desc); /* P-1f: una avería sin pieza va solo en la tabla */
     const vex = pick('veh_verificaciones_externas'); if (vex) { out.vex = {}; vex.forEach((v) => { const c = s(v.consulta || v.fuente || v.c); if (c) out.vex[c] = { res: s(v.res || v.resultado), at: s(v.at || v.consultada), obs: s(v.obs), forma: s(v.forma) }; }); }
     return out; }
   window.SiriusCxInforme = { version: '1.0', APP_K, ORG, claves, ridDe, respuestas, valores, spec, grillas };

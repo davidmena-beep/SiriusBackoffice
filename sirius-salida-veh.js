@@ -1,4 +1,4 @@
-// SIRIUS · Armado de la salida en PDF de Vehículos (etapa SV · DEC-117 y DEC-118, provisionales).
+// SIRIUS · Armado de la salida en PDF de Vehículos (etapa SV · DEC-117 y DEC-118, provisionales; P-1f · DEC-273: decisión completa, extras de la app y trazabilidad).
 // Lee todo de SIRIUS_SALIDA_VEH (documentos, reglas, portada, bloques, derivados, alertas, polaridad, generacion) y de los valores
 // del vehículo: SIRIUS_EJEMPLO.vehiculos (base, informe.campos, informe.grillas, estadoRiesgo) y, solo donde falten,
 // SIRIUS_INFORME_VEH.complementos. No completa nada desde el diseño: un dato vacío se muestra «—».
@@ -81,6 +81,9 @@
   // calificación final del vehículo; trazabilidad de eventos[caso]; fotos de evidencias[caso] del vehículo. Después sigue el camino de contexto().
   const isoTxt = (t) => { const m = /^(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d:\d\d))?/.exec(String(t || '')); return m ? m[3] + '/' + m[2] + '/' + m[1].slice(2) + (m[4] ? ' · ' + m[4] : '') : String(t || ''); };
   const nombreDe = (x) => x == null ? '' : typeof x === 'string' ? x.trim() : String(x.nombre || x.n || '').trim();
+  // P-1f · DEC-273: responsable del completado del informe (texto, o { tipo: 'agencia', agencia, usuario } → «Control de calidad de <agencia>»); vacío si es quien decidió.
+  const respTxt = (x, por) => { if (!x) return ''; if (typeof x === 'string') return x.trim() === String(por || '').trim() ? '' : x.trim(); if (x.usuario && String(x.usuario).trim() === String(por || '').trim()) return '';
+    return /agencia/i.test(String(x.tipo || '')) && x.agencia ? 'Control de calidad de ' + String(x.agencia).trim() : nombreDe(x) || String(x.usuario || '').trim(); };
   const INF_EQ = (e) => { const t = String(e || '').toLowerCase(); return t === 'completo' || t === 'enviado' ? 'Enviado' : t === 'devuelto' ? 'Devuelto' : t ? 'Por completar' : ''; };
   // P-1c3 · DEC-272: vehículos de un caso de la base, igual con uno o con varios. casos[].riesgos[] (varios vehículos, con riesgo_estado completo) o, si no
   // existe, casos[].riesgosBase[] (también con un solo vehículo: id «50047-V1», estado, riesgo_estado y datos). Devuelve [{ id, r, rb }] con r = el riesgo
@@ -104,14 +107,15 @@
     const insN = nombreDe(vis.inspector) || nombreDe(rv0 && rv0.inspector), agencia = String(vis.agencia || (vis.inspector && vis.inspector.agencia) || '').trim();
     // Resultado: estado y veredicto de riesgo_estado (DEC-271); quién calificó y cuándo, de la última calificación final del vehículo (una derivación a suscripción no es resultado).
     const re = r.riesgo_estado && typeof r.riesgo_estado === 'object' ? r.riesgo_estado : rb && rb.riesgo_estado && typeof rb.riesgo_estado === 'object' ? rb.riesgo_estado : { estado: r.estado || (rb && rb.estado) || '' }; /* P-1c3: de riesgos[] o de riesgosBase */
-    const cals = ((X.calificaciones || {})[c.id] || []).filter(q => q && (String(q.riesgo || '') === String(ref) || (RS.length < 2 && !q.riesgo)) && !/deriv/i.test(String(q.resultado || '') + ' ' + String(q.veredicto || ''))), cal = cals[cals.length - 1] || null;
+    const cals = ((X.calificaciones || {})[c.id] || []).filter(q => q && (q.riesgoId != null ? String(q.riesgoId) === String(ref) : (String(q.riesgo || '') === String(ref) || (RS.length < 2 && !q.riesgo))) /* P-1f: la referencia del vehículo primero (como P-1c5b) */ && !/deriv/i.test(String(q.resultado || '') + ' ' + String(q.veredicto || ''))), cal = cals[cals.length - 1] || null;
     const ver = /^(Asegurable|No asegurable)$/.test(String(re.veredicto || '')) ? re.veredicto : (FINAL.includes(re.estado) && cal && /^(Asegurable|No asegurable)$/.test(cal.veredicto) ? cal.veredicto : '');
     // P-1c5: decision del informe = { tipo, criterio, motivo, por, hora, facultad } (o la forma anterior: decision/completadoPor/completadoEn). La determinación al completar
     // dentro de la facultad deja una calificación de nivel 0: es el resultado (quién y cuándo); su motivo sale de la observación o del motivo de la decisión.
     const DEC = inf0 && inf0.decision && typeof inf0.decision === 'object' ? inf0.decision : null, decT = DEC ? String(DEC.tipo || '') : String((inf0 && inf0.decision) || ''), decMot = String((DEC && DEC.motivo) || '');
-    const det = ver && inf0 && decT === 'determinar' && (!cal || Number(cal.nivel) === 0) ? { by: nombreDe((DEC && DEC.por) || (cal && cal.por) || inf0.completadoPor || inf0.responsable) || insN, at: isoTxt((DEC && DEC.hora) || (cal && cal.hora) || inf0.completadoEn || inf0.enviadoEn) } : null;
+    const det = ver && inf0 && decT === 'determinar' && (!cal || Number(cal.nivel) === 0) ? { by: nombreDe((DEC && DEC.por) || (cal && cal.por) || inf0.completadoPor || inf0.responsable) || insN, at: isoTxt((DEC && DEC.hora) || (cal && cal.hora) || inf0.completadoEn || inf0.enviadoEn),
+      /* P-1f · DEC-273: quien completó y determinó, con su rol, el responsable al que reemplazó y la facultad (del dato) */ forma: 'completar', rol: String((DEC && DEC.rol) || (cal && cal.rol) || '').trim(), resp: respTxt(inf0.responsable, (DEC && DEC.por) || ''), fac: DEC && DEC.facultad && typeof DEC.facultad === 'object' ? DEC.facultad : null } : null;
     const motR = ver === 'No asegurable' ? String((cal && (cal.observacion || cal.motivo)) || decMot || '') : '';
-    const ov = Object.assign({ cx: true, estado: re.estado || r.estado || '' }, ver ? { aseg: ver } : {}, ver && cal ? { user: nombreDe(cal.por), fecha: isoTxt(cal.hora), cobertura: cal.cobertura || '' } : {}, motR ? { motivoRech: motR } : {}, det ? { det } : {}, ov0 || {});
+    const ov = Object.assign({ cx: true, estado: re.estado || r.estado || '' }, ver ? { aseg: ver } : {}, ver && cal && !det ? { user: nombreDe(cal.por), fecha: isoTxt(cal.hora), cobertura: cal.cobertura || '', nivel: cal.nivel != null ? Number(cal.nivel) : null } : ver && cal ? { cobertura: cal.cobertura || '' } : {}, motR ? { motivoRech: motR } : {}, det ? { det } : {}, ov0 || {});
     // Valores del informe con su origen (las lecturas de fotos o documentos llevan su confianza).
     const TT = tpl({ formulario: 'Vehículos livianos v1' }) || {}, tipoDe = {}; Object.keys(TT.campos || {}).forEach(sid => (TT.campos[sid] || []).forEach(fd => { tipoDe[fd.k] = fd.t; }));
     const comoNum = (kk, x) => { if (!/^(Número|Moneda)$/.test(tipoDe[kk] || '')) return x; const t = String(x).trim(), n = Number(/,\d{1,2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '')); return t !== '' && isFinite(n) ? n : x; }; /* los números de la base llegan como texto */
@@ -129,8 +133,13 @@
     const ev = ((X.eventos || {})[c.id] || []).slice().reverse(), pl = ctx.placa || '', deVeh = (e) => RS.length < 2 || [pl, String(ref)].some(q => q && String(e.detalle || '').indexOf(q) >= 0);
     const busca = (re0, veh) => { const e = ev.find(x => x && re0.test(String(x.accion || '')) && (!veh || deVeh(x))); return e ? isoTxt(e.hora) : ''; };
     ctx.traza = { 'Solicitud': busca(/^Solicitud recibida/) || isoTxt(c.registrado), 'Enlace enviado': busca(/[Ee]nlace enviado/, true), 'Inspección iniciada': busca(/Visita iniciada|Inspecci[oó]n iniciada|Llegada/, true) || v.informe.inspeccion,
-      'Informe enviado': busca(/^Informe enviado/, true) || v.informe.carga, 'Informe completado': busca(/^Informe completado/, true), 'Calificación': ver ? (busca(/^Calificaci[oó]n/, true) || (cal ? isoTxt(cal.hora) : '')) : '', 'Envío a emisión': busca(/[Ee]nviado a emisi/, true), 'Emisión': busca(/Emitid|BPM de Emisi/, true) };
+      'Informe enviado': busca(/^Informe enviado/, true) || v.informe.carga, 'Informe completado': (det && det.at) || (DEC && DEC.hora ? isoTxt(DEC.hora) : '') || busca(/^Informe completado/, true), /* P-1f · DEC-273: la hora de la decisión */ 'Calificación': ver && !det ? (busca(/^Calificaci[oó]n/, true) || (cal ? isoTxt(cal.hora) : '')) : '', /* P-1f: la determinación al completar no es una calificación */ 'Derivación': busca(/[Dd]erivad|[Dd]erivaci/, true), 'Envío a emisión': busca(/[Ee]nviado a emisi/, true), 'Emisión': busca(/Emitid|BPM de Emisi/, true) };
     ctx.inspCx = insN ? { n: insN, tipo: agencia ? 'Agencia' : String(vis.tipoInspector || (vis.inspector && vis.inspector.tipo) || 'Interno'), ag: agencia } : null;
+    // P-1f · DEC-273: extras que el cliente declaró en la app de autoinspección (respuestas.extras, como texto o { valor }): solo los que tiene.
+    const rx = inf0 && inf0.respuestas ? inf0.respuestas.extras : null, rxv = rx && typeof rx === 'object' && !Array.isArray(rx) ? rx.valor : rx;
+    ctx.extrasApp = (Array.isArray(rxv) ? rxv : []).filter(x => x && typeof x === 'object' && x.tiene === true && String(x.nombre || '').trim()).map(x => ({ nombre: String(x.nombre).trim(), marca: String(x.marca || '').trim(), detalle: String(x.detalle || x.descripcion || '').trim() }));
+    ctx.enviadoCx = inf0 && inf0.enviadoEn ? isoTxt(inf0.enviadoEn) : ''; ctx.autoCx = autoI;
+    ctx.completoCx = DEC && decT && decT !== 'devolver' && (DEC.por || inf0.completadoPor) ? { por: nombreDe(DEC.por || inf0.completadoPor), rol: String(DEC.rol || '').trim(), resp: respTxt(inf0.responsable, DEC.por || inf0.completadoPor), at: isoTxt(DEC.hora || inf0.completadoEn || ''), determino: !!det } : null;
     ctx.cx = true; ctx.cxInforme = !!inf0; ctx.cxEstado = re; ctx.cxIdx = k; ctx.cxTotal = RS.length;
     // P-1c3: registro de la declaración del cliente (autoinspección): solo con fecha y hora en la base (informe, respuestas o eventos).
     const dc = (inf0 && (inf0.declaracion || (inf0.respuestas || {}).declaracion)) || null, dcAt = dc && typeof dc === 'object' ? (dc.at || dc.hora || dc.aceptadaEn || dc.fecha) : '', dcEv = ev.find(x => x && /^Declaraci[oó]n (aceptada|del cliente)/i.test(String(x.accion || '')) && deVeh(x));
@@ -161,6 +170,9 @@
   }
 
   // ---------- Resultado (veredicto, origen, reglas, emisión) ----------
+  // P-1f · DEC-273: facultad de la decisión, del dato { fac, dentro, origen } (o { fac, dentro, agencia }): «Dentro de la facultad <fac> de la agencia <nombre>».
+  function facTxt(f) { if (!f || typeof f !== 'object') return ''; const o = String(f.origen || (f.agencia ? 'Agencia ' + f.agencia : '')).trim(), de = !o ? '' : /^agencia\s+/i.test(o) ? ' de la agencia ' + o.replace(/^agencia\s+/i, '') : ' de ' + o, fac = String(f.fac || '').trim();
+    if (!fac && !o) return ''; return (f.dentro === false ? 'Fuera de la facultad' : 'Dentro de la facultad') + (fac ? ' ' + fac : '') + de; }
   function resultado(ctx) {
     const v = ctx.v, ov = ctx.ov || {}, er = Object.assign({}, ov.cx ? {} : v.estadoRiesgo || {}, ov), cal = ov.cx ? null : v.calificacion || null; /* C2-18: con la conexión (ov.cx) el resultado sale del estado y el veredicto de la base, no del caso de ejemplo */
     const abierto = ov.estado && !FINAL.includes(ov.estado) && !ov.aseg; if (abierto) { er.aseg = ''; er.emi = null; }
@@ -168,14 +180,20 @@
     const cobertura = veredicto === 'Asegurable' ? (er.cobertura || (cal && cal.cobertura) || ctx.val.veh_cobertura || '') : '';
     const motivo = veredicto === 'No asegurable' ? (er.motivoRech || '') : '';
     let origen = '', calificador = null; const el = (f) => f ? ' el ' + f : '';
-    if (veredicto) { if (er.user) { calificador = { nombre: er.user, fecha: er.fecha || '' }; origen = (er.mod ? 'Modificado en calificación por ' : 'Calificado por ') + er.user + el(er.fecha); } else if (er.det) origen = 'Determinado por el inspector ' + er.det.by + el(er.det.at); else if (cal && cal.by) { calificador = { nombre: cal.by, fecha: cal.at || '' }; origen = 'Calificado por ' + cal.by + el(cal.at); } }
+    // P-1f · DEC-273: «Determinado al completar por <quién> (<rol>[, en lugar de <responsable>]) · <fecha> · <facultad>», «Calificado por <quién> · <fecha>» y
+    // «Determinado por el inspector» solo si lo determinó el inspector en sitio. dec: la misma decisión por partes (Asegurabilidad, firmas y tarjeta de la portada).
+    const pt = (f) => f ? ' · ' + f : ''; let dec = null;
+    if (veredicto) { if (er.user) { calificador = { nombre: er.user, fecha: er.fecha || '' }; origen = (er.mod ? 'Modificado en calificación por ' : 'Calificado por ') + er.user + pt(er.fecha); dec = { forma: 'calificacion', por: er.user, at: er.fecha || '', nivel: er.nivel != null ? er.nivel : null }; }
+      else if (er.det && er.det.forma === 'completar') { const x = er.det, ft = facTxt(x.fac); origen = 'Determinado al completar por ' + x.by + (x.rol ? ' (' + x.rol + (x.resp ? ', en lugar de ' + x.resp : '') + ')' : x.resp ? ' (en lugar de ' + x.resp + ')' : '') + pt(x.at) + (ft ? ' · ' + ft.charAt(0).toLowerCase() + ft.slice(1) : ''); dec = { forma: 'completar', por: x.by, rol: x.rol || '', resp: x.resp || '', at: x.at || '', fac: ft }; }
+      else if (er.det) { origen = 'Determinado por el inspector ' + er.det.by + pt(er.det.at); dec = { forma: 'inspector', por: er.det.by, at: er.det.at || '' }; }
+      else if (cal && cal.by) { calificador = { nombre: cal.by, fecha: cal.at || '' }; origen = 'Calificado por ' + cal.by + pt(cal.at); dec = { forma: 'calificacion', por: cal.by, at: cal.at || '', nivel: cal.nivel != null ? cal.nivel : null }; } }
     if (ctx.em && veredicto) { const n2 = er.n2, n1 = er.n1; calificador = n2 ? { nombre: n2.by, fecha: n2.at } : n1 ? { nombre: n1.by, fecha: n1.at } : calificador;
       origen = n2 ? 'Dictamen de suscripción por ' + n2.by + el(n2.at) + (n1 ? ' · nivel 1: ' + n1.resultado + ' (' + n1.by + ')' : '') : n1 ? (n1.aplicadoDesde ? 'Aplicado desde ' + n1.aplicadoDesde + ' por ' : n1.editado ? 'Modificado en calificación por ' : 'Calificado por ') + n1.by + el(n1.at) : origen; }
     const reglas = (er.envio && er.envio.length ? er.envio : v.envio || []).map(r => ({ regla: r.regla, pct: r.pct || '', detalle: r.detalle || '' }));
     const emi = abierto ? null : (er.emi || v.emision || null);
     const kind = veredicto === 'Asegurable' ? 'ok' : veredicto === 'No asegurable' ? 'no' : 'pend';
     const texto = veredicto || (SV().bloques || {}).resultado.sinVeredicto || 'Pendiente de calificación';
-    return { veredicto, cobertura, motivo, origen, calificador, reglas, emi, kind, texto, icon: ICON[kind] };
+    return { veredicto, cobertura, motivo, origen, calificador, reglas, emi, kind, texto, icon: ICON[kind], dec };
   }
 
   // ---------- Disponibilidad (SIRIUS_SALIDA_VEH.generacion.disponibilidad) ----------

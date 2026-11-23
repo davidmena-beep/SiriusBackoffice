@@ -1,4 +1,4 @@
-// SIRIUS · Determinación al completar por vehículo, con la conexión simulada (v1.0 · provisional · etapa P-1c5 · DEC-271 y DEC-272 · 22/11/2026)
+// SIRIUS · Determinación al completar por vehículo, con la conexión simulada (v1.1 · provisional · etapa P-1c5b · DEC-271 y DEC-272 · 22/11/2026)
 // Forma de la base (como la guardó el caso real 50052): por vehículo,
 //  · informes[caso][] con riesgoId y decision = { tipo: 'determinar', criterio, motivo, por, hora, facultad: { fac, dentro } };
 //  · calificaciones[caso][] con una de nivel 0 por vehículo (veredicto y su motivo en observacion);
@@ -56,7 +56,7 @@
     if (det) {
       [['Asegurable', 'Vehículo sin daños; identificación verificada.', '2026-11-22T14:24'], ['No asegurable', MOT2, '2026-11-22T14:31']].forEach((x, k) => { const inf = I[k]; Object.assign(inf, { estado: 'Completo', decision: decision(x[0], x[1], x[2]), completadoPor: 'Patricia Andrade', completadoEn: x[2] });
         inf.respuestas.veh_fecha_hora_inspeccion = R(inf.enviadoEn, 'Sistema');
-        cal.push({ riesgo: c.riesgos[k].id, nivel: 0, veredicto: x[0], cobertura: x[0] === 'Asegurable' ? 'Todo riesgo' : '', observacion: x[1], resultado: 'Inspeccionado', por: 'Patricia Andrade', rol: 'Control de calidad (agencia)', hora: x[2] });
+        cal.push({ riesgoId: c.riesgos[k].id, riesgo: c.riesgos[k].detalle.replace(/, /g, ' ') + ' · ' + c.riesgos[k].label, /* como la base real: la descripción completa («Kia Rio 2024 · PCX5140»), que no es la referencia */ nivel: 0, veredicto: x[0], cobertura: x[0] === 'Asegurable' ? 'Todo riesgo' : '', observacion: x[1], resultado: 'Inspeccionado', por: 'Patricia Andrade', rol: 'Control de calidad (agencia)', hora: x[2] });
         c.riesgos[k].aseg = x[0]; ev.unshift({ hora: x[2], accion: 'Informe completado', detalle: c.riesgos[k].label + ' · determinó ' + x[0] + ' · dentro de la facultad ' + FAC.fac + ' de Eurosurvey · Inspeccionado', actor: 'Patricia Andrade', rol: 'Control de calidad (agencia)' }); });
     }
     const evs0 = evid(id, id + '-V1', '2026-11-21T22'); evs0[0].validacion = 'Aviso: No reconocemos un vehículo en la foto; revisa que se vea el vehículo completo y vuelve a tomarla si hace falta.'; /* P-1c5: el aviso largo de la foto queda dentro de su tarjeta */

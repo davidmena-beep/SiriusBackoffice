@@ -6,6 +6,7 @@
 // Todos los estilos van en línea y el diagrama usa atributos de presentación (sin clases ni <use>) para que la vista previa,
 // html2canvas y el PDF se vean iguales. Etapa DP2: el modelo de la sesión (versiones, borradores, estilo, logos e historial) y la
 // migración de Ramos Generales (rg-informe y rg-resumen como secciones; CalificacionRG los arma con su composición de siempre).
+// Etapa P-1f · DEC-273: el Informe y el Resumen para el APS de Vehículos imprimen todo lo capturado (secciones de migrarVeh273, sin tocar el modelo del archivo).
 (function () {
   const RAYA = '—';
   const DP = () => window.SIRIUS_DOCUMENTOS_PDF || {}, E = () => window.SIRIUS_EJEMPLO || {}, SV = () => window.SIRIUS_SALIDA_VEH || {};
@@ -28,8 +29,10 @@
   function f4(s) { if (vacio(s)) return ''; const t = String(s), m = /^(\d\d)\/(\d\d)\/(\d\d)(?!\d)(.*)$/.exec(t); if (m) return m[1] + '/' + m[2] + '/20' + m[3] + m[4]; const i = /^(\d{4})-(\d\d)-(\d\d)/.exec(t); return i ? i[3] + '/' + i[2] + '/' + i[1] : t; }
   const sinPunto = (s) => String(s || '').replace(' · ', ' ');
   function fecha(s) { const m = /^(\d\d)\/(\d\d)\/(\d{2,4})/.exec(String(s || '')); if (!m) return null; const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]); return new Date(y, Number(m[2]) - 1, Number(m[1])); }
-  function hoy() { const e = E(); return e.hoy ? e.hoy() : new Date(2026, 9, 18); }
-  function ahora() { const e = E(); return e.ahora ? e.ahora() : new Date(2026, 9, 18, 20, 30); }
+  // P-1f: con la conexión, si la base informa su hora (reloj.ahora), «hoy» es esa fecha (vencimientos de la matrícula y de la licencia).
+  function relojCx() { const X = window.SIRIUS_CONEXION, m = X && X.activo === true && X.reloj ? /^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)/.exec(String(X.reloj.ahora || '')) : null; return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0) : null; }
+  function hoy() { const r = relojCx(); if (r) return new Date(r.getFullYear(), r.getMonth(), r.getDate()); const e = E(); return e.hoy ? e.hoy() : new Date(2026, 9, 18); }
+  function ahora() { const r = relojCx(); if (r) return r; const e = E(); return e.ahora ? e.ahora() : new Date(2026, 9, 18, 20, 30); }
   const z2 = (n) => String(n).padStart(2, '0');
   const fmtAhora = () => { const d = ahora(); return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear() + ' · ' + z2(d.getHours()) + ':' + z2(d.getMinutes()); };
   // Primera letra en minúscula, salvo siglas (ABS, VIN, GPS).
@@ -82,9 +85,10 @@
     return d;
   }
   const lab = (d, k) => ((d.def[k] || {}).l) || k;
-  const LBL = { veh_modalidad_realizada: 'Modalidad', veh_fecha_hora_inspeccion: 'Fecha y hora', veh_vigencia_matricula: 'Matrícula vigente hasta', veh_gad_matriculacion: 'Matriculado en', veh_camv_cpn: 'CAMV / CPN', veh_nombre_matricula: 'Propietario en la matrícula', veh_interes_asegurable: 'Interés asegurable', veh_contrato_compraventa: 'Contrato de compraventa', veh_nombre_conductor: 'Nombre', veh_edad_conductor: 'Edad', veh_tipo_licencia: 'Tipo de licencia', veh_caducidad_licencia: 'Licencia vigente hasta', veh_puntos_licencia: 'Puntos de la licencia', veh_numero_motor: 'Motor', veh_vin: 'VIN' };
+  // P-1f · DEC-273: las etiquetas son las del formulario (Nombre en la matrícula, GAD de matriculación, CAMV o CPN, VIN o chasis…); solo se acortan estas.
+  const LBL = { veh_modalidad_realizada: 'Modalidad', veh_vigencia_matricula: 'Matrícula vigente hasta', veh_contrato_compraventa: 'Contrato de compraventa', veh_numero_motor: 'Motor' };
   const NOFMT = /anio|identificacion|cedula|imei|voucher|puntos|edad|pasajeros|airbags|cilindraje/;
-  function txt(d, k) { const x = d.val[k]; if (vacio(x)) return null; if (typeof x === 'boolean') return x ? 'Sí' : 'No';
+  function txt(d, k) { const x = d.val[k]; if (vacio(x)) return null; if (typeof x === 'boolean') return x ? 'Sí' : 'No'; if (k === 'veh_cilindraje' && num(x) != null) return miles(num(x)) + ' cc'; /* P-1f: «2.500 cc» */
     if (typeof x === 'number') { const s = NOFMT.test(k) ? String(x) : miles(x); return k === 'veh_kilometraje' || k === 'veh_kilometraje_anual' ? s + ' km' : /^veh_valor_/.test(k) ? usd(x) : k === 'veh_edad_conductor' ? s + ' años' : s; }
     return /fecha|vigencia|caducidad/.test(k) ? f4(x) : String(x); }
   const mismoNombre = (a, b) => String(a || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '') === String(b || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
@@ -128,10 +132,11 @@
     else if (s === 'broker.nombre') { l = 'Bróker (APS)'; v = d.caso.broker || null; }
     else if (s === 'asegurado.nombre') { l = 'Asegurado'; v = d.caso.asegurado || null; }
     else if (s === 'asegurado.identificacion') { const id = String(d.caso.ident || ''); l = id.length === 13 ? 'RUC' : id.length === 10 ? 'Cédula' : 'Identificación'; v = id || null; }
+    else if (/^uso y ciudad/.test(s)) { l = 'Uso'; const u = [txt(d, 'veh_uso'), txt(d, 'veh_ciudad_circulacion')].filter(Boolean); v = u.length ? u.join(' · ') : null; } /* P-1f: resumen para el APS */
     else { l = s; v = null; }
     if (v == null) return null; /* P-1c3 · DEC-125: un campo vacío no se imprime (tampoco con «siempre»: nada de «—») */
     if (md === 'siempre') return { l, v };
-    if (md === 'excepcion') { if (k === 'veh_puntos_licencia') return Number(val[k]) < 10 ? { l, v } : null; const D = (SV().polaridad || {}).desfavorable || {}, pk = Object.keys(D).find(p => p === k || (p.endsWith('*') && k && k.indexOf(p.slice(0, -1)) === 0)); return pk && D[pk] === val[k] ? { l, v } : null; }
+    if (md === 'excepcion') { if (k === 'veh_puntos_licencia') return Number(val[k]) < 30 ? { l, v } : null; /* P-1f · DEC-273: los puntos, solo si son menos de 30 */ const D = (SV().polaridad || {}).desfavorable || {}, pk = Object.keys(D).find(p => p === k || (p.endsWith('*') && k && k.indexOf(p.slice(0, -1)) === 0)); return pk && D[pk] === val[k] ? { l, v } : null; }
     if (/^condicion/.test(md)) return cumple(d, md) ? { l, v } : null;
     return { l, v };
   }
@@ -286,6 +291,10 @@
     const meta = [];
     if (r.veredicto && s.mostrarOrigen && r.origen) { let o = r.origen.replace(/(\d\d\/\d\d\/\d\d)(?!\d)/g, (x) => f4(x)); if (s.mostrarReglas && r.reglas.length) o += ' · Enviado a calificación por ' + (r.reglas.length === 1 ? 'la regla ' : 'las reglas ') + unir(r.reglas.map(x => '«' + x.regla + '»' + (x.pct ? ' (' + x.pct + ')' : ''))); meta.push(esc(o).replace(/\(([^()]*)\)$/, '<span style="white-space:nowrap">($1)</span>')); }
     else if (s.mostrarReglas && r.reglas.length) meta.push(esc('Enviado a calificación por ' + (r.reglas.length === 1 ? 'la regla ' : 'las reglas ') + unir(r.reglas.map(x => '«' + x.regla + '»' + (x.pct ? ' (' + x.pct + ')' : '')))));
+    // P-1f · DEC-273 (resumen para el APS): condiciones de póliza y «Inspección por <modalidad> del <fecha> · resultado del <fecha>».
+    if (s.mostrarCondiciones && d.val && txt(d, 'veh_condiciones_poliza') && FIN_VEH.includes(estV)) meta.push('Condiciones de póliza: ' + esc(txt(d, 'veh_condiciones_poliza')));
+    if (s.mostrarInspeccion && d.val) { const mod = txt(d, 'veh_modalidad_realizada'), fi = f4(d.val.veh_fecha_hora_inspeccion || ''), fr = FIN_VEH.includes(estV) && r.veredicto && r.dec && r.dec.at ? f4(r.dec.at).slice(0, 10) : '';
+      const t = [mod || fi ? 'Inspección' + (!mod ? '' : /^(presencial|virtual|documental)/i.test(mod) ? ' ' + lc1(mod) : ' por ' + lc1(mod)) + (fi ? ' del ' + fi : '') : '', /* «por autoinspección»; «presencial», «virtual guiada» y «documental» como adjetivo */ fr ? 'resultado del ' + fr : ''].filter(Boolean).join(' · '); if (t) meta.push(esc(t)); }
     if (s.mostrarEmision && r.emi) { const e = r.emi; meta.push('Emisión: <b>' + esc(e.res) + '</b>' + esc((e.poliza ? ' · ' + e.poliza : '') + (e.autorizador ? ' · autorizó ' + e.autorizador : '') + (e.fecha ? ' · ' + f4(e.fecha) : ''))); }
     return '<div role="group" aria-label="' + esc(s.titulo || 'Resultado') + '" style="display:flex;gap:14px;align-items:flex-start;border:1.5px solid ' + col[0] + ';background:' + col[1] + ';border-radius:8px;padding:10px 14px">'
       + '<div aria-hidden="true" style="width:26px;height:26px;border-radius:50%;background:' + col[0] + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;font-size:12pt">' + col[2] + '</div>'
@@ -316,9 +325,11 @@
       const ta = ca != null ? ca + (ea || 0) : null, ts = cs != null && es != null ? cs + es : null, dt = dif(ta, ts), tot = ';font-weight:800;border-top:1.5px solid ' + C.ink;
       rows += '<tr>' + TD('Total', tot) + TD(celda(ta), tot + ';text-align:right;white-space:nowrap') + TD(celda(ts), tot + ';text-align:right;white-space:nowrap') + TD(dt == null ? RAYA : pct(dt, true), tot + ';text-align:right' + (dt != null && Math.abs(dt) > 10 ? ';color:' + C.bad : '')) + '</tr>'; }
     const head = TH('') + (s.mostrarDiferencias ? TH('Asegurado (solicitud)', 'right') + TH('Sugerido (inspección)', 'right') + TH('Diferencia', 'right') : '');
-    return H2(n, s.titulo) + TABLE(head, rows); };
+    // P-1f · DEC-273: debajo, el valor comercial de referencia y su fuente (veh_valor_comercial_referencia, veh_fuente_valor), si están.
+    const ref = s.mostrarReferencia ? [txt(d, 'veh_valor_comercial_referencia') ? 'Valor comercial de referencia: ' + txt(d, 'veh_valor_comercial_referencia') : '', txt(d, 'veh_fuente_valor') ? 'Fuente del valor: ' + txt(d, 'veh_fuente_valor') : ''].filter(Boolean).join(' · ') : '';
+    return H2(n, s.titulo) + TABLE(head, rows) + (ref ? P(esc(ref) + '.', ';font-size:8.5pt;color:' + C.muted + ';margin-top:4px') : ''); };
   R.campos = (d, s, n) => { if (!cumple(d, s.condiciones || s.condicion)) { if (s.resumenSiNo && !vacio(d.val.veh_conductor_habitual) && d.val.veh_conductor_habitual !== 'Otra persona') { /* P-1c4: una frase completa, nunca un fragmento suelto */ const q = String(d.val.veh_conductor_habitual).trim().replace(/^es\s+/i, '').replace(/\.+$/, ''), fr = /^(el\s+)?asegurad[oa]$/i.test(q) ? 'El ' + lc1(s.titulo) + ' es ' + lc1(quitaTitulo(s.resumenSiNo, s.titulo)) : 'El ' + lc1(s.titulo) + ' es ' + lc1(q) + '.'; /* P-1c5: la opción es «Es el asegurado»: una sola frase, sin «es es» */ return RUN(n, s.titulo, esc(fr)); } return ''; }
-    const L = (s.campos || []).map(c => Array.isArray(c) ? campo(d, c[0], c[1]) : campo(d, c, s.modoPorDefecto)).filter(Boolean); if (!L.length || L.every(x => x.v === RAYA)) return '';
+    const L = (s.campos || []).map(c => { const x = Array.isArray(c) ? campo(d, c[0], c[1]) : campo(d, c, s.modoPorDefecto); return x && Array.isArray(c) && c[2] ? { l: c[2], v: x.v } : x; }).filter(Boolean); if (!L.length || L.every(x => x.v === RAYA)) return ''; /* P-1f: [campo, modo, etiqueta] */
     const grid = (cols) => H2(n, s.titulo) + '<div style="display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));gap:4px 16px">' + L.map(x => campoHtml(x.l, x.v)).join('') + '</div>';
     return { html: grid(s.columnas || 2), media: grid(2) }; };
   function quitaTitulo(t, tit) { const s = String(t || ''), p = String(tit || '') + ':'; if (tit && s.toLowerCase().indexOf(p.toLowerCase()) === 0) return uc1(s.slice(p.length).trim()); if (tit && s.toLowerCase().indexOf(String(tit).toLowerCase() + ' ') === 0) return uc1(s.slice(String(tit).length + 1)); return s; }
@@ -344,6 +355,12 @@
     return RUN(n, s.titulo, esc(String(s.frase || 'Tiene: {lista}').replace(/\{lista[^}]*\}/, unir(todo)) + '.')); };
   R.tabla = (d, s, n) => { if (!cumple(d, s.condicion)) return '';
     if (s.grilla === 'ext') { const LX = d.ext.filter(x => [x.desc, x.marca, x.valor].some(y => !vacio(y))); /* P-1c3: la fila sin ningún valor no se imprime */ if (!LX.length) return ''; let tot = 0;
+      // P-1f · DEC-273: la foto de cada extra (F-n de su paso o de su evidencia) y, en el resumen, una frase con lo verificado.
+      const fotoX = (x) => { const k = x.foto || x.fotoPaso || ''; if (!k) return ''; const f = d.fotos.find(y => y.p.id === k || y.f.id === k || y.F === k); return f ? f.F : ''; }, conFoto = (s.columnas || []).includes('Foto') && LX.some(x => fotoX(x));
+      if (s.formato === 'frase') return RUN(n, s.titulo, esc(unir(LX.map(x => { const v = numDec(x.valor); return [x.desc || RAYA, x.marca ? '(' + x.marca + ')' : '', v != null ? usd(v) : ''].filter(Boolean).join(' '); })) + '.'));
+      if (conFoto) { const rowsF = LX.map(x => { const v = numDec(x.valor); if (v != null) tot += v; return '<tr>' + TD(esc(x.desc || RAYA), ';font-weight:700') + TD(esc(x.marca || RAYA)) + TD(v == null ? RAYA : miles(v, 2), ';text-align:right;white-space:nowrap') + TD(esc(fotoX(x) || RAYA), ';white-space:nowrap') + '</tr>'; }).join('')
+          + (s.totales ? '<tr>' + TD('Total', ';font-weight:800;border-top:1.5px solid ' + C.ink) + TD('', ';border-top:1.5px solid ' + C.ink) + TD(usd(tot), ';font-weight:800;text-align:right;white-space:nowrap;border-top:1.5px solid ' + C.ink) + TD('', ';border-top:1.5px solid ' + C.ink) + '</tr>' : '');
+        return H2(n, s.titulo) + TABLE(TH(esc(s.columnas[0])) + TH(esc(s.columnas[1])) + TH(esc(colMon(s.columnas[2])), 'right') + TH('Foto'), rowsF); }
       const rows = LX.map(x => { const v = numDec(x.valor); if (v != null) tot += v; return '<tr>' + TD(esc(x.desc || RAYA), ';font-weight:700') + TD(esc(x.marca || RAYA)) + TD(v == null ? RAYA : miles(v, 2), ';text-align:right;white-space:nowrap') + '</tr>'; }).join('')
         + (s.totales ? '<tr>' + TD('Total', ';font-weight:800;border-top:1.5px solid ' + C.ink) + TD('', ';border-top:1.5px solid ' + C.ink) + TD(usd(tot), ';font-weight:800;text-align:right;white-space:nowrap;border-top:1.5px solid ' + C.ink) + '</tr>' : '');
       return H2(n, s.titulo) + TABLE(TH(esc(s.columnas[0])) + TH(esc(s.columnas[1])) + TH(esc(colMon(s.columnas[2])), 'right'), rows); }
@@ -371,18 +388,53 @@
     return H2(n, s.titulo) + '<div style="border:1px solid ' + C.line + ';border-radius:8px;padding:10px 12px 8px;background:#fff">' + g.svg + leg + '</div>' + tabla; };
   R.verificaciones = (d, s, n) => { if (s.soloEvidencia) return cumple(d, s.condicion) ? '' : ''; const L = d.vex.filter(x => !vacio(x.res) || !vacio(x.at) || !vacio(x.forma)); if (!L.length) return '';
     const res = (x) => x.res === 'Sin novedad' ? ['Sin novedad', ';color:' + C.ok + ';font-weight:700'] : x.res === 'Con novedad' ? ['Con novedad' + (x.obs ? ': ' + x.obs : ''), ';color:' + C.bad + ';font-weight:700'] : x.res === 'Servicio no disponible' ? ['No disponible', ';color:' + C.muted] : [x.res || RAYA, ''];
-    const conForma = L.some(x => !vacio(x.forma)), cols = (s.columnas || ['Fuente', 'Resultado', 'Consultada', 'Forma']).filter(c => c !== 'Forma' || conForma);
-    return H2(n, s.titulo) + TABLE(cols.map(c => TH(esc(c))).join(''), L.map(x => { const r = res(x); return '<tr>' + TD(esc(x.consulta)) + TD(esc(r[0]), r[1]) + TD(esc(f4(x.at) || RAYA), ';white-space:nowrap') + (conForma ? TD(esc(x.forma || RAYA)) : '') + '</tr>'; }).join('')); };
+    const conForma = L.some(x => !vacio(x.forma)), conObs = (s.columnas || []).includes('Observación') && L.some(x => !vacio(x.obs)), cols = (s.columnas || ['Fuente', 'Resultado', 'Consultada', 'Forma']).filter(c => (c !== 'Forma' || conForma) && (c !== 'Observación' || conObs));
+    // P-1f · DEC-273: con la columna Observación, el resultado va solo y la observación en su columna (cada dato una vez).
+    const CEL = { 'Fuente': (x) => TD(esc(x.consulta)), 'Consulta': (x) => TD(esc(x.consulta)), 'Resultado': (x) => { const r = conObs && x.res === 'Con novedad' ? ['Con novedad', ';color:' + C.bad + ';font-weight:700'] : res(x); return TD(esc(r[0]), r[1]); },
+      'Consultada': (x) => TD(esc(f4(x.at) || RAYA), ';white-space:nowrap'), 'Fecha y hora': (x) => TD(esc(f4(x.at) || RAYA), ';white-space:nowrap'), 'Forma': (x) => TD(esc(x.forma || RAYA)), 'Observación': (x) => TD(esc(x.obs || RAYA)) };
+    return H2(n, s.titulo) + TABLE(cols.map(c => TH(esc(c))).join(''), L.map(x => '<tr>' + cols.map(c => (CEL[c] || (() => TD(RAYA)))(x)).join('') + '</tr>').join('')); };
+  // P-1f · DEC-273: extras que el cliente declaró en la app de autoinspección (respuestas.extras con tiene: true), con la foto «Extras» si existe y la nota.
+  // Se muestran tal como se capturaron: si el formulario dice «No» en un accesorio con el mismo nombre, cada dato queda donde está, sin unirlos ni marcarlos.
+  R.extrasCliente = (d, s, n) => { const L = d.extrasApp || []; if (!L.length) return ''; const fx = d.fotos.find(x => x.p.group === 'Extras'), F = fx ? fx.F : '';
+    if (s.formato === 'frase' || s._grupo) return RUN(n, s.titulo, esc(unir(L.map(x => x.nombre + (x.marca ? ' (' + x.marca + ')' : '') + (x.detalle ? ' · ' + x.detalle : ''))) + ', declarados por el cliente.'));
+    const conDet = L.some(x => x.detalle), verif = d.ext.some(x => [x.desc, x.marca, x.valor].some(y => !vacio(y)));
+    const t = TABLE(TH('Descripción') + TH('Marca') + (conDet ? TH('Detalle') : '') + (F ? TH('Foto') : ''), L.map(x => '<tr>' + TD(esc(x.nombre)) + TD(esc(x.marca || RAYA)) + (conDet ? TD(esc(x.detalle || RAYA)) : '') + (F ? TD(esc(F), ';white-space:nowrap') : '') + '</tr>').join(''));
+    const nota = [String(s.nota || '').trim(), verif ? '' : 'No hay extras verificados con valor en el informe.'].filter(Boolean).join(' ');
+    return H2(n, s.titulo) + t + (nota ? P(esc(nota), ';font-size:8.5pt;color:' + C.muted + ';margin-top:4px') : ''); };
+  // P-1f · DEC-273: averías o preexistencias del resumen para el APS, en una línea (solo si la grilla tiene filas).
+  R.averiasFrase = (d, s, n) => { if (!d.ave.length) return ''; return RUN(n, s.titulo, esc(unir(averias(d).map(a => a.pieza ? a.pieza + ' (' + [lc1(a.tipo || ''), lc1(a.grav || '')].filter(Boolean).join(', ') + ')' : uc1(a.tipo || 'Avería') + ' (' + [lc1(a.grav || ''), 'sin pieza'].filter(Boolean).join(', ') + ')')) + '.')); };
+  // P-1f · DEC-273: Asegurabilidad (reemplaza «Observaciones del inspector»): veredicto, forma, quién y cuándo y facultad (de la decisión), y lo capturado en la sección
+  // de asegurabilidad del formulario: cobertura, criterio del inspector en campo, motivos, condiciones de póliza y observación general. Un dato vacío no se imprime.
+  const FORMA = { completar: 'Determinado al completar el informe', inspector: 'Determinado por el inspector en sitio', calificacion: 'Calificado' };
+  R.asegurabilidad = (d, s, n) => { const r = d.res || {}, est = d.em ? '' : estadoVeh(d), fin = FIN_VEH.includes(est) && !!r.veredicto, dec = fin ? r.dec : null, L = [];
+    if (fin) L.push({ l: 'Veredicto', v: r.veredicto });
+    if (dec) { L.push({ l: 'Forma', v: FORMA[dec.forma] + (dec.forma === 'calificacion' && dec.nivel ? ' (nivel ' + dec.nivel + ')' : '') }); if (dec.por) L.push({ l: 'Quién y cuándo', v: dec.por + (dec.at ? ' · ' + f4(dec.at) : '') }); if (dec.fac) L.push({ l: 'Facultad', v: dec.fac }); }
+    [['veh_cobertura', 'Cobertura'], ['veh_decision_inspector', 'Criterio del inspector en campo'], ['veh_motivo_no_asegurable', 'Motivo de no asegurable'], ['veh_motivo_envio_a_calificacion', 'Motivo de envío a calificación'], ['veh_condiciones_poliza', 'Condiciones de póliza'], ['veh_observacion_general', 'Observación general']]
+      .forEach(([k, l]) => { let v = txt(d, k); if (!v && k === 'veh_motivo_no_asegurable' && fin && r.veredicto === 'No asegurable') v = r.motivo || null; if (v) L.push({ l, v }); });
+    if (!L.length) return ''; return H2(n, s.titulo) + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px">' + L.map(x => campoHtml(x.l, x.v)).join('') + '</div>'; };
   R.texto = (d, s, n) => { const t = String(s.contenido || '').replace(/\{(\w+)\}/g, (m, k) => vacio(d.val[k]) ? '' : String(d.val[k])).trim(); if (!t) return '';
     return s.titulo ? H2(n, s.titulo) + P(esc(t)) : P(esc(t), ';font-size:8.5pt;color:' + C.muted); };
   R.lineaTiempo = (d, s, n) => { const v = d.v, inf = v.informe || {}, r = d.res, ev = v.eventos || [], busca = (re) => (ev.find(e => re.test(e[1])) || [])[0] || '';
     const enlace = busca(/[Ee]nlace/), envEmi = busca(/[Ee]nviado a emisi/), emi = (r.emi && r.emi.fecha) || busca(/BPM de Emisi|Emitid/);
-    const F = d.traza ? Object.assign({}, d.traza) /* P-1c2: con la conexión, de eventos[caso] con fecha y hora */ : { 'Solicitud': d.caso.fecha ? f4(d.caso.fecha).slice(0, 5) : '', 'Enlace enviado': enlace, 'Inspección iniciada': inf.inspeccion || '', 'Informe enviado': inf.carga || '', 'Calificación': r.veredicto ? ((r.calificador || {}).fecha || '') : '', 'Envío a emisión': envEmi, 'Emisión': r.emi ? emi : '' };
+    const F = d.traza ? Object.assign({}, d.traza) /* P-1c2: con la conexión, de eventos[caso] con fecha y hora */ : { 'Solicitud': d.caso.fecha ? f4(d.caso.fecha).slice(0, 5) : '', 'Enlace enviado': enlace, 'Inspección iniciada': inf.inspeccion || '', 'Informe enviado': inf.carga || '', 'Calificación': r.veredicto ? ((r.calificador || {}).fecha || '') : '', 'Informe completado': r.dec && r.dec.forma === 'completar' ? r.dec.at || '' : '', 'Derivación': busca(/[Dd]erivad|[Dd]erivaci/), 'Envío a emisión': envEmi, 'Emisión': r.emi ? emi : '' };
     const L = (s.eventos || []).map(e => ({ e, f: F[e] })).filter(x => !vacio(x.f)); if (L.length < 2) return '';
     const corto = (f) => String(f).replace(/^(\d\d\/\d\d)\/(\d{4}|\d\d)(?!\d)/, '$1'); /* P-1c5: «21/11/2026 · 22:55» → «21/11 · 22:55» */
     return H2(n, s.titulo) + '<div style="display:flex;justify-content:space-between;font-size:7.8pt;color:' + C.muted + ';position:relative;margin-top:6px"><div style="position:absolute;left:4%;right:4%;top:6px;border-top:2px solid ' + C.line + '"></div>'
       + L.map(x => '<div style="position:relative;text-align:center;flex:1 1 0;min-width:0"><div style="width:12px;height:12px;border-radius:50%;background:' + C.acc + ';margin:0 auto 4px"></div><b style="display:block;color:' + C.ink + ';font-size:8pt">' + esc(x.e) + '</b><span style="white-space:nowrap">' + esc(corto(x.f)) + '</span></div>').join('') + '</div>'; };
+  // P-1f · DEC-273: firmas solo de quien actuó (realizó la autoinspección, atendió, inspeccionó, completó y determinó o completó, calificó), con la firma de quien atiende.
+  function actuaron(d) { const val = d.val, mod = String(val.veh_modalidad_realizada || ''), r = d.res || {}, est = estadoVeh(d), fin = FIN_VEH.includes(est) && !!r.veredicto, dec = fin ? r.dec : null, L = [];
+    if (/autoinspecci/i.test(mod)) { const f = f4(d.cx ? d.enviadoCx || d.declCx || '' : (d.v.informe || {}).carga || val.veh_fecha_hora_carga || ''); if (f) L.push({ cab: 'REALIZÓ LA AUTOINSPECCIÓN', n: 'El cliente', r: 'Desde su enlace · ' + f, x: 'Registrado en SIRIUS' }); }
+    if (!vacio(val.veh_persona_atiende)) { const fi = val.veh_firma_atiende, u = typeof fi === 'string' && /^(data:image|https?:|assets\/|blob:)/.test(fi) ? fi : fi && typeof fi === 'object' && fi.url ? fi.url : ''; L.push({ cab: 'ATENDIÓ', n: txt(d, 'veh_persona_atiende'), r: 'Quien atendió la inspección' + (val.veh_relacion_asegurado ? ' · ' + lc1(val.veh_relacion_asegurado) : ''), x: 'Registrado en SIRIUS', firma: u }); }
+    if (/presencial|virtual/i.test(mod) && !vacio(val.veh_inspector_ejecuto)) L.push({ cab: 'INSPECCIONÓ', n: txt(d, 'veh_inspector_ejecuto'), r: 'Inspector' + (d.insp && d.insp.tipo === 'Agencia' ? ' · ' + d.insp.ag : d.insp ? ' · ' + lc1(d.insp.tipo) : '') + (/virtual/i.test(mod) ? ' · inspección virtual' : ''), x: 'Registrado en SIRIUS' });
+    const c = d.completoCx || (dec && dec.forma === 'completar' ? { por: dec.por, rol: dec.rol, resp: dec.resp, at: dec.at, determino: true } : null);
+    if (c && c.por) { const rl = [c.rol, c.resp ? 'en lugar de ' + c.resp : ''].filter(Boolean).join(', '); L.push({ cab: c.determino && fin ? 'COMPLETÓ Y DETERMINÓ' : 'COMPLETÓ', n: c.por, r: rl ? uc1(rl) : '', x: 'Registrado en SIRIUS' + (c.at ? ' el ' + f4(c.at) : ''), verde: !!(c.determino && fin) }); }
+    if (dec && dec.forma === 'calificacion' && dec.por) L.push({ cab: 'CALIFICÓ', n: dec.por, r: 'Ejecutivo de inspecciones', x: 'Calificado en SIRIUS' + (dec.at ? ' el ' + f4(dec.at) : ''), verde: true });
+    return L; }
   R.firmas = (d, s) => { const val = d.val, mod = val.veh_modalidad_realizada || '', L = ((s.segunModalidad || {})[mod]) || [], sep = (s.espacio || {}).separacion || '16mm', esp = (s.espacio || {}).firma || '20mm';
+    if (s.quienActuo && !d.em) { const A = actuaron(d); if (!A.length) return '';
+      return '<div style="padding-top:calc(' + sep.replace(' ', '') + ' - 14px);break-inside:avoid;display:grid;grid-template-columns:repeat(' + Math.min(3, Math.max(2, A.length)) + ',minmax(0,1fr));gap:12px;font-size:8.5pt;color:' + C.ink + '">'
+        + A.map(a => '<div data-cab="' + esc(a.cab) + '" data-extra="' + esc(a.x || '') + '" data-verde="' + (a.verde ? '1' : '') + '" style="border:1px solid ' + (a.verde ? '#4C8C1E' : C.line) + ';border-radius:6px;padding:8px 10px"><small style="display:block;font-size:7pt;letter-spacing:.4px;color:' + C.muted + '">' + esc(a.cab) + '</small><b style="display:block;font-size:10pt">' + esc(a.n) + '</b>'
+          + (a.firma ? '<img src="' + esc(a.firma) + '" alt="Firma de ' + esc(a.n) + '" style="display:block;max-height:40px;max-width:100%;margin:4px 0">' : '') + '<i style="font-style:normal;color:' + C.muted + ';font-size:7.5pt">' + esc(a.r) + '</i></div>').join('') + '</div>'; }
     if (!L.length) return ''; const tipo = d.insp ? lc1(d.insp.tipo) : '';
     const quien = (r) => /Quien atiende/.test(r) ? [txt(d, 'veh_persona_atiende') || RAYA, 'Quien atendió la inspección' + (val.veh_relacion_asegurado ? ' · ' + lc1(val.veh_relacion_asegurado) : '')]
       : /^Inspector/.test(r) ? [txt(d, 'veh_inspector_ejecuto') || RAYA, 'Inspector' + (d.insp && d.insp.tipo === 'Agencia' ? ' · ' + d.insp.ag : tipo ? ' · ' + tipo : '')]
@@ -399,7 +451,7 @@
     const item = (x) => { const f = x.f, et = x.f.fila ? x.p.name + ' · ' + x.f.fila.label : x.p.name, gps = f.gps ? gpsTxt(f) + (f.gps.prec != null && f.gps.prec !== '' ? ' · ± ' + f.gps.prec + ' m' : '') : f.cx ? '' : 'Sin GPS'; /* P-1c2: con la conexión, un dato que falta no se imprime */
       // Etapa 12a · DEC-134: la foto con daños aceptados (Confirmados, Ajustados o Agregados) se imprime con sus polígonos.
       const DN = window.SiriusDanos, dan = DN && d.fotos.find(y => y.p.id === x.p.id) === x ? DN.deFoto(d.rid, x.p.id, true) : [], ph = f.url ? fotoImg(f.url, et, h) : fotoPh((f.cx ? 'Sin imagen · ' : 'Foto de ejemplo · ') + x.p.name, h, x.p.group === 'Daños' ? C.badbg : '');
-      return '<div style="border:1px solid ' + C.line + ';border-radius:4px;overflow:hidden;min-width:0">' + (dan.length ? '<div data-danos="' + dan.length + '" style="position:relative">' + ph + DN.svgDanos(dan) + '</div>' : ph) + '<div style="padding:4px 6px;font-size:7.5pt;line-height:1.35;color:' + C.muted + '"><b style="display:block;color:' + C.ink + ';font-size:8pt">' + esc(x.F + ' · ' + et) + '</b>' + esc([sinPunto(f.at), gps, f.disp && f.disp !== '—' ? dispCorto(f.disp) : ''].filter(Boolean).join(' · ')) + (f.marca === 'galeria' ? '<span style="display:block;color:' + C.warn + ';font-weight:700">Cargada desde la galería</span>' : '') + '</div></div>'; };
+      return '<div style="border:1px solid ' + C.line + ';border-radius:4px;overflow:hidden;min-width:0">' + (dan.length ? '<div data-danos="' + dan.length + '" style="position:relative">' + ph + DN.svgDanos(dan) + '</div>' : ph) + '<div style="padding:4px 6px;font-size:7.5pt;line-height:1.35;color:' + C.muted + '"><b style="display:block;color:' + C.ink + ';font-size:8pt">' + esc(x.F + ' · ' + et) + '</b>' + esc([sinPunto(f4(f.at)), gps, f.disp && f.disp !== '—' ? dispCorto(f.disp) : ''].filter(Boolean).join(' · ')) + (f.marca === 'galeria' ? '<span style="display:block;color:' + C.warn + ';font-weight:700">Cargada desde la galería</span>' : '') + '</div></div>'; };
     const fila = (xs) => '<div style="display:grid;grid-template-columns:repeat(' + pf + ',minmax(0,1fr));gap:10px">' + xs.map(item).join('') + '</div>';
     const grupos = []; if (s.pasos) grupos.push({ g: '', xs: L }); else L.forEach(x => { const last = grupos[grupos.length - 1]; if (last && last.g === x.p.group) last.xs.push(x); else grupos.push({ g: x.p.group, xs: [x] }); });
     const sub = !s.pasos && grupos.length > 1;
@@ -553,6 +605,52 @@
     [['rg-resumen', SD.documentos[0]], ['rg-informe', SD.documentos[1]]].forEach(([id, src]) => { const doc = D.documentos.find(x => x.id === id); if (!doc || doc.secciones || !src) return;
       const L = (src.capitulos || []).map(seccionRG); if (id === 'rg-informe') L.splice(1, 0, { tipo: 'indice', titulo: 'Contenido' }); doc.secciones = L; doc.salidaRG = src.id; ok = true; });
     return ok; }
+  // ---------- Etapa P-1f · DEC-273: Informe y Resumen para el APS de Vehículos con todo lo capturado ----------
+  // El modelo del archivo (datos-documentos-pdf.js, vigilado) no cambia: al abrir el modelo de la sesión, el Informe y el Resumen base de «Vehículos livianos v1»
+  // pasan a estas secciones (una vez; el diseñador las ve y las edita como cualquier otra). Se mantienen DEC-125 y DEC-272: primero lo que decide, un campo vacío
+  // no se imprime y nada se redacta ni se inventa.
+  const IDV = [['veh_placa', 'conValor'], ['veh_marca', 'conValor'], ['veh_modelo', 'conValor'], ['veh_anio_modelo', 'conValor'], ['veh_tipo_carroceria', 'conValor'], ['veh_clase', 'conValor'], ['veh_color', 'conValor'], ['veh_cilindraje', 'conValor'], ['veh_pasajeros', 'conValor'], ['veh_combustible', 'conValor'], ['veh_pais_origen', 'conValor'], ['veh_camv_cpn', 'conValor']];
+  const OTRA = 'condicion: veh_conductor_habitual = Otra persona';
+  const SEC273 = {
+    'veh-informe': (A) => { const q = (t, ti) => clone(A.find(x => x.tipo === t && (ti === undefined || x.titulo === ti)) || {}); return [
+      q('encabezado'), q('tarjeta'), q('resultado'), q('hallazgos'), Object.assign(q('valores'), { mostrarReferencia: true }),
+      { tipo: 'campos', titulo: 'Datos de la inspección', columnas: 3, campos: [['veh_modalidad_realizada', 'siempre'], ['veh_fecha_hora_inspeccion', 'siempre'], ['veh_fecha_hora_carga', 'conValor'], ['inspección.lugar (ciudad y coordenadas)', 'conValor'], ['inspector o agencia', 'siempre'], ['veh_persona_atiende + relación', 'conValor'], ['caso.sucursal', 'siempre'], ['comercial.nombre', 'siempre'], ['broker.nombre', 'conValor']] },
+      { tipo: 'salto' },
+      { tipo: 'campos', titulo: 'Identificación del vehículo', columnas: 3, campos: IDV.concat([['veh_vin', 'conValor'], ['veh_numero_motor', 'conValor']]) },
+      { tipo: 'campos', titulo: 'Matrícula y propietario', columnas: 3, campos: [['asegurado.nombre', 'siempre'], ['asegurado.identificacion', 'siempre'], ['veh_nombre_matricula', 'conValor'], ['veh_identificacion_propietario', 'conValor'], ['veh_gad_matriculacion', 'conValor'], ['veh_anio_matricula', 'conValor'], ['veh_vigencia_matricula', 'conValor'], ['veh_interes_asegurable', 'conValor'], ['veh_contrato_compraventa', 'conValor']] },
+      { tipo: 'campos', titulo: 'Uso y conductor', columnas: 3, campos: [['veh_uso', 'conValor'], ['veh_ciudad_circulacion', 'conValor'], ['veh_anio_compra', 'conValor'], ['veh_kilometraje', 'conValor'], ['veh_kilometraje_anual', 'conValor'], ['veh_conductor_habitual', 'conValor'], ['veh_cedula_conductor', OTRA], ['veh_nombre_conductor', OTRA], ['veh_edad_conductor', OTRA], ['veh_tipo_licencia', 'conValor'], ['veh_caducidad_licencia', 'conValor'], ['veh_puntos_licencia', 'excepcion']] },
+      q('lista', 'Identificación'), q('lista', 'Equipamiento'), q('tabla', 'Neumáticos'), q('lista', 'Testigos del tablero'),
+      { tipo: 'extrasCliente', titulo: 'Extras declarados por el cliente', nota: 'Declarados en la autoinspección.' },
+      Object.assign(q('tabla', 'Extras'), { titulo: 'Extras verificados', columnas: ['Descripción', 'Marca', 'Valor (USD)', 'Foto'] }),
+      q('diagrama'), q('tabla', null),
+      Object.assign(q('verificaciones', 'Verificaciones externas'), { columnas: ['Consulta', 'Resultado', 'Fecha y hora', 'Forma', 'Observación'] }),
+      { tipo: 'asegurabilidad', titulo: 'Asegurabilidad' },
+      Object.assign(q('lineaTiempo'), { eventos: ['Solicitud', 'Inspección iniciada', 'Informe enviado', 'Informe completado', 'Calificación', 'Derivación'] }),
+      Object.assign(q('firmas'), { quienActuo: true }),
+      q('fotos', 'Registro fotográfico'), q('fotos', 'Documentos'), q('verificaciones', 'Anexo · evidencia de verificaciones') ]; },
+    'veh-resumen': (A) => { const q = (t, ti) => clone(A.find(x => x.tipo === t && (ti === undefined || x.titulo === ti)) || {}); return [
+      q('encabezado'),
+      Object.assign(q('tarjeta'), { fotosReferencia: ['exteriores_frontal', 'exteriores_posterior', 'exteriores_lateral_izquierdo_de_ade', 'exteriores_lateral_derecho_de_ade'], soloFotos: true }),
+      Object.assign(q('resultado'), { mostrarInspeccion: true, mostrarCondiciones: true }),
+      { tipo: 'campos', titulo: 'Vehículo inspeccionado', columnas: 3, campos: IDV.concat([['veh_kilometraje + km por año', 'conValor']]) },
+      { tipo: 'valores', titulo: 'Valores', mostrarDiferencias: true, mostrarAlertas: true, mostrarReferencia: true },
+      { tipo: 'hallazgos', titulo: 'Puntos a considerar para la emisión', reglas: 'hallazgosVeh', textoSinHallazgos: 'Sin hallazgos relevantes: testigos apagados, identificación verificada, sin averías ni novedades externas.' },
+      { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Identificación', campos: ['veh_verificacion_chasis_relieve', 'veh_verificacion_sticker_vin', 'veh_verificacion_plaqueta_panoramica'], textoTodosNormales: 'Chasis, sticker VIN y plaqueta verificados.' },
+      { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Testigos del tablero', campos: ['veh_testigo_*'], frase: 'Encendidos: {lista}', textoTodosNormales: 'Todos apagados ({n} revisados).' },
+      { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Equipamiento', campos: ['veh_radio (opción)', 'veh_aros (opción)', 'accesorios Sí/No', 'veh_cantidad_airbags', 'veh_satelital + proveedor', 'veh_telemetria + dispositivo', 'veh_blindaje (solo si Sí, con nivel y empresa)'], frase: 'Tiene: {lista de los Sí}' },
+      { tipo: 'averiasFrase', agruparEn: 'Estado del vehículo', titulo: 'Averías o preexistencias' },
+      { tipo: 'extrasCliente', agruparEn: 'Estado del vehículo', titulo: 'Extras declarados', formato: 'frase' },
+      { tipo: 'tabla', agruparEn: 'Estado del vehículo', titulo: 'Extras verificados', grilla: 'ext', columnas: ['Descripción', 'Marca', 'Valor (USD)'], formato: 'frase', condicion: 'hay extras' },
+      { tipo: 'campos', titulo: 'Datos de la inspección', columnas: 3, campos: [['veh_modalidad_realizada', 'siempre'], ['veh_fecha_hora_inspeccion', 'siempre', 'Fecha y hora'], ['caso.sucursal', 'siempre'], ['broker.nombre', 'conValor'], ['asegurado.nombre', 'siempre'], ['uso y ciudad', 'conValor']] },
+      q('texto') ]; } };
+  const TIPOS273 = [{ id: 'extrasCliente', nombre: 'Extras declarados por el cliente', opciones: ['nota', 'formato'], nota: 'P-1f · DEC-273: la lista de la app de autoinspección (respuestas.extras, solo los que tiene), con la foto «Extras» si existe.' },
+    { id: 'asegurabilidad', nombre: 'Asegurabilidad', opciones: [], nota: 'P-1f · DEC-273: veredicto, forma, quién y cuándo, facultad y la sección de asegurabilidad del formulario.' },
+    { id: 'averiasFrase', nombre: 'Averías en una línea', opciones: [], nota: 'P-1f · DEC-273: resumen para el APS, solo si la grilla de averías tiene filas.' }];
+  function migrarVeh273(D) { let ok = false; TIPOS273.forEach(t => { if (D.tiposSeccion && !D.tiposSeccion.some(x => x.id === t.id)) D.tiposSeccion.push(Object.assign({}, t)); });
+    (D.documentos || []).forEach(doc => { const fn = SEC273[doc.id]; if (!fn || !doc.base || doc.dec273 || !Array.isArray(doc.secciones)) return;
+      const viejo = doc.id === 'veh-informe' ? doc.secciones.some(x => x.tipo === 'texto' && /veh_observacion_general/.test(String(x.contenido || ''))) : doc.secciones.some(x => /preexist/i.test(String(x.titulo || ''))); if (!viejo) return;
+      doc.secciones = fn(doc.secciones).filter(x => x && x.tipo); if (doc.id === 'veh-resumen') delete doc.paginas; doc.dec273 = true; if (doc.versiones && doc.versiones.length === 1) doc.versiones[0].secciones = clone(doc.secciones); ok = true; });
+    return ok; }
   function prepararDoc(d) { d.estiloDoc = d.estiloDoc || estiloBase(); if (d.secciones && !d.versiones) d.versiones = [{ n: d.version || 1, secciones: clone(d.secciones), estiloDoc: clone(d.estiloDoc), fecha: '', por: '', motivo: 'Base del modelo (' + (DP().version ? 'v' + DP().version : '') + ')' }];
     d.borrador = d.borrador || null; d.generados = d.generados || {}; d.actualizado = d.actualizado || ''; d.por = d.por || ''; }
   // Logos (DEC-127): cada logo de la biblioteca declara su fondo. Los de assets se clasificaron mirando cada archivo.
@@ -578,6 +676,7 @@
       else { TIPOS_RG.forEach(t => { if (!(D.tiposSeccion || []).some(x => x.id === t.id)) D.tiposSeccion.push(Object.assign({}, t)); }); D.historial = []; D.rev = 0; D.__ses = true;
         window.__SIRIUS_DOCPDF_SES = { version: D.version, documentos: D.documentos, logos: D.logos, historial: D.historial, tiposSeccion: D.tiposSeccion, get rev() { return D.rev; } }; } }
     if (D.documentos.some(x => !x.secciones) && migrarRG(D)) D.rev = (D.rev || 0) + 1;
+    if (migrarVeh273(D)) D.rev = (D.rev || 0) + 1; /* P-1f · DEC-273 */
     D.documentos.forEach(prepararDoc); logosMeta(D); return D; }
   const tocar = () => { const D = DP(); D.rev = (D.rev || 0) + 1; (oyentes || []).forEach(f => { try { f(); } catch (e) {} }); };
   let oyentes = [];
@@ -672,18 +771,18 @@
     const marcaMod = [val.veh_marca, val.veh_modelo].filter(x => !vacio(x)).join(' '), km = num(val.veh_kilometraje), ca = num(val.veh_valor_asegurado_casco), ea = num(val.veh_valor_asegurado_extras);
     const tot = val.veh_valor_asegurado_total != null ? val.veh_valor_asegurado_total : ca;
     const P = { titulo: String(cd.titulo || def.nombre || '').toUpperCase(), placa: d.placa || 'Sin placa', casoTxt: 'Caso ' + d.caso.numero + (d.total > 1 ? ' · vehículo ' + (d.idx + 1) + ' de ' + d.total : ''),
-      vehLinea: [[marcaMod, val.veh_anio_modelo].filter(x => !vacio(x)).join(' '), val.veh_color, vacio(val.veh_uso) ? '' : 'Uso ' + lc1(val.veh_uso)].filter(x => !vacio(x)).join(' · '),
+      vehLinea: [[marcaMod, val.veh_anio_modelo].filter(x => !vacio(x)).join(' '), val.veh_tipo_carroceria, val.veh_color, vacio(val.veh_uso) ? '' : 'Uso ' + lc1(val.veh_uso)].filter(x => !vacio(x)).join(' · '), /* P-1f · DEC-273: con la carrocería */
       logoIzq: imIzq, logoDer: imDer, logoAg: imAg, lema: lIzq && lIzq.tipo === 'Plataforma' ? 'by aseguradora del sur' : '', lemaFin: 0.975 /* el texto «SIRIUS» termina casi al borde del logo */, agTxt: agencia && !imAg ? agencia : '',
       derLineas: derLin(fechaGen),
       sello: null,
-      tarjetas: [{ l: 'Vehículo', v: marcaMod || RAYA, sub: [val.veh_anio_modelo, val.veh_color].filter(x => !vacio(x)).join(' · ') },
+      tarjetas: [{ l: 'Vehículo', v: marcaMod || RAYA, sub: [val.veh_anio_modelo, val.veh_tipo_carroceria, val.veh_color].filter(x => !vacio(x)).join(' · ') },
         { l: 'Kilometraje', v: km != null ? miles(km) + ' km' : RAYA, sub: val.veh_kilometraje_anual != null ? miles(val.veh_kilometraje_anual) + ' km/año' : '' },
         { l: 'Valor asegurado', v: tot != null ? usd(tot) : RAYA, sub: ea ? 'casco ' + usd(ca) + ' · extras ' + usd(ea) : '' },
         null] };
     // Tarjeta de identificación: los campos de la sección «tarjeta» que no van en la portada (VIN, motor…) y sus fotos referenciales.
     const sT = (def.secciones || []).find(s => s.tipo === 'tarjeta' && !s.oculta) || {}, cT = (sT.campos || []).filter(x => !/veh_(marca|modelo|anio_modelo)$/.test(x)).map(x => campo(d, x, 'conValor')).filter(Boolean);
-    const I = { pais: d.placa ? 'ECUADOR' : '', placa: d.placa || 'Sin placa', filas: cT.filter(c => !['Color', 'Uso', 'Kilometraje'].includes(c.l)),
-      fotos: (sT.fotosReferencia || []).map(fid => { const f = d.fotos.find(x => x.p.id === fid), nom = f ? f.p.name : (sT.sinFoto || 'Sin foto'); return f ? { F: f.F, nombre: nom, at: sinPunto(f.f.at), url: f.f.url || '', ph: (f.f.cx ? 'Sin imagen · ' : '') + nom } : { F: '', nombre: nom, at: '', url: '', ph: nom }; }) };
+    const I = { pais: d.placa ? 'ECUADOR' : '', placa: d.placa || 'Sin placa', filas: cT.filter(c => !['Color', 'Uso', 'Kilometraje'].includes(c.l)).map(c => c.l === 'VIN o chasis' ? { l: 'VIN', v: c.v } : c), soloFotos: !!sT.soloFotos /* P-1f: resumen, las 4 fotos exteriores en una fila */,
+      fotos: (sT.fotosReferencia || []).map(fid => { const f = d.fotos.find(x => x.p.id === fid), nom = f ? f.p.name : (sT.sinFoto || 'Sin foto'); return f ? { F: f.F, nombre: nom, at: sinPunto(f4(f.f.at)), url: f.f.url || '', ph: (f.f.cx ? 'Sin imagen · ' : '') + nom } : { F: '', nombre: nom, at: '', url: '', ph: nom }; }).filter(f => !sT.soloFotos || f.F) };
     // Piezas de los bloques, en el orden de documento(); las galerías seguidas de una misma sección se unen (3 por fila).
     const plano = []; cd.blocks.forEach(b => { const sec = (b.sis || []).join(',');
       if (b.tipo === 'tarjeta') plano.push({ k: '_ident', sec }); else if (b.tipo === 'resultado') plano.push({ k: '_res', sec, R: V.resultadoDe(b.html) });
@@ -700,11 +799,14 @@
     plano.forEach(p => { if (p.k === '_res') p.R.titulo = tituloRes(est, insp ? veredicto : '', r); }); /* P-1c3 · DEC-271: el recuadro dice lo mismo que el sello */
     const colV = veredicto === 'Asegurable' ? K.selloOk : veredicto === 'No asegurable' ? K.selloNo : colRes;
     P.sello = { top: 'SIRIUS · v' + ver, estado: insp ? 'INSPECCIONADO' : cortoDe(est).toUpperCase(), ver: insp && veredicto ? veredicto.toUpperCase() : '', color: insp ? colV : K.selloPend };
-    P.tarjetas[3] = { l: 'Resultado', oscura: true, v: insp ? (veredicto || cortoDe(est)) : cortoDe(est), sub: insp ? (veredicto === 'No asegurable' ? r.motivo : veredicto === 'Asegurable' ? r.cobertura : '') || '' : ESPERA[est] || '' };
+    const FORMA_C = { completar: 'Determinado al completar', inspector: 'Determinado por el inspector', calificacion: 'Calificado' }; /* P-1f: sin cobertura ni motivo, la tarjeta dice cómo se decidió */
+    P.tarjetas[3] = { l: 'Resultado', oscura: true, v: insp ? (veredicto || cortoDe(est)) : cortoDe(est), sub: insp ? (veredicto === 'No asegurable' ? r.motivo : veredicto === 'Asegurable' ? r.cobertura : '') || (veredicto && r.dec ? FORMA_C[r.dec.forma] || '' : '') : ESPERA[est] || '' };
     const L = V.lienzo({ margen: parseFloat(cd.margen) || 14, colorP: cd.colorP || K.navy, colorA: es.colorAcento || K.acc, titulo: (cd.nombre || '') + ' · ' + P.placa, asunto: cod });
-    await V.precargar(L, plano, I.fotos.map(f => ({ url: f.url, aspecto: 1.6 })));
+    // P-1f · DEC-273: paginación sin cortes: cada subtítulo de grupo conoce su primera fila de fotos y cada capítulo, su contenido (una sección corta no se parte).
+    plano.forEach((p, i) => { if (p.k === 'sub') p.sigP = plano[i + 1]; if (p.k === 'cap') { const seg = []; for (let j = i + 1; j < plano.length && plano[j].k !== 'cap' && !plano[j].brk && plano[j].k.charAt(0) !== '_'; j++) seg.push(plano[j]); p.seg = seg; } });
+    await V.precargar(L, plano, I.fotos.map(f => ({ url: f.url, aspecto: I.soloFotos ? 4 / 3 : 1.6 })));
     const usr = d.usuario || '', CAB = (rol) => /^Quien atendi/.test(rol) ? 'ATENDIÓ' : /^Inspector/.test(rol) ? 'INSPECCIONÓ' : /Aceptación del cliente/.test(rol) ? 'ACEPTÓ' : /^Ejecutivo/.test(rol) ? 'CALIFICÓ' : 'FIRMA';
-    const firmas = (p) => { const Lf = p.L.map(f => ({ cab: CAB(f.rol), nombre: f.nombre, rol: f.rol, extra: 'Registrado en SIRIUS', verde: CAB(f.rol) === 'CALIFICÓ' }));
+    const firmas = (p) => { const Lf = p.L.map(f => f.cab ? { cab: f.cab, nombre: f.nombre, rol: f.rol, extra: f.extra, verde: !!f.verde, firma: f.firma || '' } /* P-1f · DEC-273: quien actuó, con su cabecera */ : ({ cab: CAB(f.rol), nombre: f.nombre, rol: f.rol, extra: 'Registrado en SIRIUS', verde: CAB(f.rol) === 'CALIFICÓ' }));
       if (r.calificador && r.calificador.nombre && !Lf.some(f => f.cab === 'CALIFICÓ')) Lf.push({ cab: 'CALIFICÓ', nombre: r.calificador.nombre, rol: 'Ejecutivo de inspecciones', extra: 'Calificado en SIRIUS el ' + (r.calificador.fecha || ''), verde: true, disenoNombre: true });
       return { L: Lf }; };
     L.sec = 'portada'; L.portada(P);

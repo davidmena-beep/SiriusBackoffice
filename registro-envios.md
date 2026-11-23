@@ -4,6 +4,159 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — Etapa P-1f
+
+Publiqué la versión 391 de SIRIUS. Los archivos subieron en la 390 y esta versión cierra el registro con el tiempo de la etapa.
+
+El Informe de inspección y el Resumen para el APS de Vehículos imprimen ahora todo lo capturado (DEC-273). Con el caso real de David (50061, GRZ3277), el informe tiene el mismo contenido y el mismo orden que la propuesta aprobada. Hay dos salvedades previstas: las fotos siguen sin salto de página y la facultad lleva su nombre, que sale del dato. El resumen tiene exactamente las mismas palabras.
+
+### Mapa de impacto
+
+- **`sirius-documentos-pdf.js`:**
+  - `migrarVeh273`: el Informe y el Resumen base de «Vehículos livianos v1» pasan a las secciones de DEC-273 al abrir el modelo de la sesión. El archivo vigilado `datos-documentos-pdf.js` no cambia.
+  - Tipos nuevos `extrasCliente`, `asegurabilidad` y `averiasFrase`.
+  - Firmas de quien actuó (`actuaron`).
+  - Etiquetas del formulario; puntos solo si son menos de 30; cilindraje «2.500 cc».
+  - Referencia de valor; recuadro del resumen.
+  - Verificaciones externas con Observación; extras verificados con su foto.
+  - Portada con la carrocería.
+  - «Hoy» con la hora de la base (`reloj.ahora`).
+- **`sirius-pdf-vector.js` (v1.1):**
+  - Alto real de las filas de datos, fotos y firmas: una sección corta no se parte y un subtítulo va con su primera fila.
+  - Fotos 4:3.
+  - Firmas de hasta 3 por fila, con su cabecera y la firma de quien atiende.
+  - Las 4 fotos del resumen en una fila.
+  - Fotos de 1000 px a calidad 0,78.
+- **`sirius-salida-veh.js`:**
+  - Decisión completa: rol, responsable al que reemplazó y facultad.
+  - `extrasApp` y `completoCx`.
+  - Origen «Determinado al completar» o «Calificado por <quién> · <fecha>».
+  - «Informe completado» con la hora de la decisión, y Derivación.
+  - La calificación de cada vehículo por `riesgoId`.
+- **`sirius-cx-informe.js` (v1.1):** la foto de cada extra verificado y la avería sin pieza.
+- **Escenas:**
+  - `SalidaVeh.dc.html` y el Back-office: escenas `pdfvehgrz` y `pdfvehaverias`.
+  - `datos-cx-grz.js` (nuevo).
+  - `datos-escenas.js`, 828 escenas.
+  - `assets/grz3277/` (16 fotos de la propuesta y una firma de prueba).
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-documentos-pdf.js` y los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Informe, en este orden:**
+  1. Portada: «Kia Sportage LX 2018 · Sedán · Amarillo · Uso particular»; la tarjeta Vehículo dice «2018 · Sedán · Amarillo».
+  2. Recuadro del resultado según quién decidió: «Determinado al completar por David Alejandro Mena (Administrador, en lugar de Control de calidad de Eurosurvey) · 22/11/2026 · 16:26 · dentro de la facultad Asegurable y No asegurable de la agencia Eurosurvey»; «Calificado por <quién> · <fecha>»; «Determinado por el inspector» solo si lo determinó el inspector en sitio.
+  3. Hallazgos relevantes.
+  4. Valores, con «Valor comercial de referencia: … · Fuente del valor: …».
+  5. Datos de la inspección, con la fecha y hora de carga.
+  6. Identificación del vehículo (nueva).
+  7. Matrícula y propietario (el nombre en la matrícula siempre).
+  8. Uso y conductor: «Conductor habitual» es un dato; si es otra persona, su cédula, nombre y edad.
+  9. Estado del vehículo.
+  10. Extras declarados por el cliente y Extras verificados.
+  11. Averías: la isometría y la tabla en cualquier modalidad; la avería sin pieza va solo en la tabla.
+  12. Verificaciones externas: consulta, resultado, fecha y hora, forma y observación.
+  13. Asegurabilidad (reemplaza «Observaciones del inspector»).
+  14. Trazabilidad y firmas de quien actuó: realizó la autoinspección, atendió (con su firma), inspeccionó, completó y determinó o completó, y calificó.
+  15. Registro fotográfico y Documentos, sin salto de página.
+- **Resumen para el APS:**
+  - Portada con las 4 fotos exteriores en una fila.
+  - Recuadro con el veredicto, la cobertura, las condiciones de póliza y «Inspección por autoinspección del … · resultado del …».
+  - Secciones: 1 Vehículo inspeccionado, 2 Valores con la referencia, 3 Puntos a considerar para la emisión, 4 Estado del vehículo (con averías o preexistencias y extras declarados y verificados), 5 Datos de la inspección, y la nota final.
+
+### Prueba de cobertura (pdfvehgrz)
+
+Son 64 claves con valor: 62 del formulario y 2 de la app.
+
+- **49 impresas:**
+  - Identificación del vehículo: 14.
+  - Matrícula y propietario: 7.
+  - Uso y conductor: 7.
+  - Datos de la inspección: 4.
+  - Estado › Identificación: 2.
+  - Equipamiento: 3.
+  - Testigos: 7.
+  - Valores: 5.
+- **13 omitidas por regla:** 12 accesorios en «No», porque el equipamiento va por excepción, y los puntos de la licencia en 30.
+- **De la app:** la lista de extras se imprime en «Extras declarados por el cliente» (Neblineros | Ford | F-11). El tipo «sedan» se omite porque repite la carrocería.
+- **Resultado:** sin diferencias. La tabla clave por clave, con su sección y su texto, está en `cobertura.txt`, que se entregó en el chat.
+
+### Prueba visual
+
+- **Informe:** 5 páginas, frente a 6 de la propuesta. Por palabras es el mismo contenido. La única diferencia es «Asegurable y No asegurable», el nombre de la facultad, que sale del dato.
+- **Resumen:** 2 páginas, con exactamente las mismas 299 palabras.
+- **Diferencias de compaginación:** el motor de P-1c4 deja algo más de aire que la maqueta. Por eso «Datos de la inspección» (informe) y «Valores» (resumen) empiezan en la página 2: les faltan 1,7 mm para caber enteras al pie de la página 1, y una sección corta no se parte.
+- **Vista previa:** muestra el mismo PDF, con el mismo texto en las 5 páginas y una diferencia de píxeles de 1,7 a 2,7/255.
+
+### Prueba de paginación (pdfvehgrz y pdfvehaverias)
+
+- Ninguna foto queda separada de su número y su respaldo (18 de 18 y 11 de 11).
+- Ningún subtítulo de grupo queda solo al pie.
+- Ningún contenido pasa de 284 mm (el pie empieza en 286,6).
+- Ningún capítulo queda solo.
+- Revisé una captura de cada cambio de página.
+
+### Verificado
+
+- **Tamaño:** el informe del GRZ3277 pesa 0,88 MB y el resumen 0,26 MB.
+- **Pantalla:** a 1280×720 y 1920×1080 no hay desplazamiento horizontal y se ven las 5 páginas.
+- **Regresión:** el contenido de cada escena cambia solo en lo que define DEC-273.
+  - Comunes a todas:
+    - la carrocería en la portada;
+    - «Calificado por X · fecha» (antes «el fecha»);
+    - las fechas de las fotos con el año completo;
+    - «Fecha y hora de inspección» y «de carga»;
+    - las secciones Identificación del vehículo, Matrícula y propietario, Uso y conductor y Asegurabilidad;
+    - las etiquetas del formulario;
+    - «Extras verificados»;
+    - las verificaciones con Consulta y Fecha y hora;
+    - la trazabilidad con «Informe completado»;
+    - las firmas solo de quien actuó.
+  - pdfvehvector, pdfvehborrador y pdfvehpreview: 9 páginas en lugar de 8. pdfvehasegurable sigue con 7.
+  - pdfvehresumen: además, el nuevo esquema del resumen. Los extras de la solicitud del ejemplo salen en «Extras verificados».
+  - pdfvehcx, pdfvehcxuno y pdfvehcxvacio: lo común.
+  - pdfvehagencia y pdfvehagenciaoff: lo común, y desaparece la firma vacía «Atendió —».
+  - caldeterminado:
+    - la pantalla de Calificación queda igual;
+    - el PDF de cada vehículo pasa de «Determinado por el inspector Patricia Andrade» (incorrecto) a «Determinado al completar por Patricia Andrade (Control de calidad (agencia)) · … · dentro de la facultad …»;
+    - el V1 ahora trae la cobertura de su calificación (P-1c5b).
+
+### No verificado
+
+- La base real: el nombre de la facultad, la forma de `respuestas.extras`, la firma de quien atiende, la foto de cada extra verificado, la avería sin pieza y si la base informa su hora (`reloj.ahora`).
+- Los nombres de los pasos de la app (Frontal, Chasis/VIN grabado…): la escena los toma de un formulario publicado simulado.
+- Firefox y Safari.
+
+### Diferencias y pendientes
+
+- Las dos diferencias previstas con la propuesta: las fotos siguen sin salto de página y la facultad lleva su nombre.
+- «Datos de la inspección» y «Valores» empiezan en la página 2 por la regla de no partir una sección corta.
+- **Defecto anterior, no corregido:** la frase de Identificación imprime «sticker VIN.No verificado» sin espacio cuando hay un «No verificado». Viene de antes; la regresión de la base lo muestra igual.
+- El rol «Control de calidad (agencia)» sale entre paréntesis dentro del paréntesis de la frase, tal como llega en el dato.
+
+### Escenas
+
+- **`pdfvehgrz`:** caso 50061 (GRZ3277) con los datos de la base de David.
+- **`pdfvehaverias`:** caso 50062, presencial, con averías, verificaciones externas, extra verificado, asegurabilidad completa y firma. Las dos están en el área «Salida PDF» y abren el Informe y el Resumen para el APS.
+
+Tiempo de la etapa: inicio 22/11/2026 17:02 · fin 22/11/2026 17:42 · 40 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa P-1c5b
+
+Publiqué la versión 389 de SIRIUS. Los archivos subieron en la 388 y esta versión cierra el registro con el tiempo de la etapa.
+
+Con la base real, las calificaciones traen `riesgoId` (la referencia del vehículo, «50046-V1») y `riesgo` con la descripción completa («Chevrolet Onix 2024 · PGA8978»). `cxCalifMap` y `cxCalifs` usaban primero `riesgo`, que no coincide con `r.id`, `r.label` ni `r.placa`; por eso un vehículo determinado al completar salía como «Calificado por — · —», con «Cambiar veredicto». Apliqué los dos reemplazos exactos de la asesoría: ahora van primero `riesgoId` y después `riesgo`. Sin `riesgoId` (escenas anteriores) todo queda como antes.
+
+La escena caldeterminado ahora trae `riesgoId` y la descripción completa en `riesgo`, como la base real (datos-cx-determinado.js v1.1). Reproduje el fallo con el archivo anterior y estos datos: «Calificado por — · —» y «Cambiar veredicto». Con los reemplazos sale «Determinado al completar por Patricia Andrade · dentro de su facultad · 22/11/26 · 14:24», sin «Cambiar veredicto». Regresión: caldeterminado, caldeterminadoflujo, calveh, calvehapply, calrapida y calcola, iguales que antes (texto y sin errores).
+
+No verificado: la escena con la base real.
+
+Tiempo de la etapa: inicio 22/11/2026 16:18 · fin 22/11/2026 16:22 · 4 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa P-1c5
 
 Publiqué la versión 387 de SIRIUS. Los archivos subieron en la 386 y esta versión cierra el registro con el tiempo de la etapa.
