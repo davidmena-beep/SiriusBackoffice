@@ -104,9 +104,9 @@ const SIN = { placa: [['PLACAACTUAL'], []], vin: [['NUMEROVINCHASIS', 'NUMEROVIN
   anio_modelo: [['ANOMODELO', 'ANOFAB', 'EANOMODELO'], []], color1: [['COLOR1', 'COLOR'], ['COLOR2']], clase: [['CLASEDEVEHICULO', 'CLASE'], ['CLASEDETRANSPORTE', 'CLASESERVICIO', 'CLASETRANSPORTE']],
   tipo: [['TIPODEVEHICULO', 'TIPO'], ['TIPODEPESO', 'TIPODETRANSPORTEMODALIDAD', 'TIPOTONE', 'TIPOTRANSPORTE']], cilindraje: [['CILINDRAJE'], []], pasajeros: [['PASAJEROS', 'PASAJ', 'PAS'], []], combustible: [['COMBUSTIBLE', 'COMBU'], []],
   pais: [['PAISDEORIGEN', 'PAISORIGEN'], []], ramv: [['RAMVCPN', 'RAMV'], []], identificacion: [['CIPASAPORTERUC', 'CCPASAPORTERUC', 'CLPASAPORTERUC', 'PASAPORTERUC', 'PASAPORTEIRUC'], []],
-  propietario: [['NOMBREDELPROPIETARIO', 'APELLIDOSYNOMBRES'], []], provincia: [['PROVINCIA'], []], canton: [['CANTON'], []], fecha_emision: [['FECHAEMISION', 'FECHAMATRICULA', 'FECHAE'], []], fecha_caduca: [['FECHACADUCA', 'CADUCA'], []] };
+  propietario: [['NOMBREDELPROPIETARIO', 'APELLIDOSYNOMBRES'], []], anio_matricula: [['ANO'], ['ANOMODELO', 'ANOFAB', 'ANOS']], uso: [['CLASEDETRANSPORTE', 'CLASESERVICIO', 'CLASETRANSPORTE'], []], provincia: [['PROVINCIA'], []], canton: [['CANTON'], []], fecha_emision: [['FECHAEMISION', 'FECHAMATRICULA', 'FECHAE'], []], fecha_caduca: [['FECHACADUCA', 'CADUCA'], []] };
 const NOMBRES = { placa: 'Placa', vin: 'VIN (chasis)', motor: 'Motor', marca: 'Marca', modelo: 'Modelo', anio_modelo: 'Año modelo', color1: 'Color', clase: 'Clase', tipo: 'Tipo', cilindraje: 'Cilindraje', pasajeros: 'Pasajeros',
-  combustible: 'Combustible', pais: 'País de origen', ramv: 'RAMV / CPN', identificacion: 'Identificación', propietario: 'Propietario', provincia: 'Provincia', canton: 'Cantón', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad' };
+  combustible: 'Combustible', pais: 'País de origen', ramv: 'RAMV / CPN', identificacion: 'Identificación', propietario: 'Propietario', provincia: 'Provincia', canton: 'Cantón', anio_matricula: 'Año de la matrícula', uso: 'Uso (clase de transporte)', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad' };
 const TODAS = new Set(Object.values(SIN).flatMap(([a, b]) => a.concat(b)).concat(['ANO', 'PLACAANTERIOR', 'TONELADAS', 'CARROCERIA', 'CARR', 'TIPODEPESO', 'COLOR2', 'ORTOPEDICO', 'REMARCADO', 'OBSERVACIONES', 'DOMICILIO', 'DIRECCION', 'TELEFONO', 'DISCO', 'AVALUO', 'VALORMATRICULA', 'FECHACOMPRA', 'DIGITADOR', 'LUGAREMISION', 'FIRMARESPONSABLE', 'OPERADORDETRANSPORTE', 'AMBITODEOPERACION', 'TON', 'TO', 'REMCHAIMOT', 'PA', 'OPERADORADETRANSPORTE', 'AMBITO', 'TONELAJE', 'NUMERODEESPECIE', 'COMBU', 'PAISORIGEN', 'OBSERVACION']));
 const esEti = (t) => { const n = N(t); return TODAS.has(n) || [...TODAS].some(e => e.length >= 5 && n.startsWith(e) && n.length <= e.length + 3); };
 const MESES = { ENE: 1, FEB: 2, MAR: 3, ABR: 4, MAY: 5, JUN: 6, JUL: 7, AGO: 8, SEP: 9, OCT: 10, NOV: 11, DIC: 12 };
@@ -115,19 +115,22 @@ function aFecha(n) { const m = n.match(/^(\d{1,2})([A-Z]{3})(\d{4}|\d{2})$/) || 
 function cedulaOk(c) { if (!/^\d{10}$/.test(c)) return false; const p = +c.slice(0, 2); if (!((p >= 1 && p <= 24) || p === 30) || +c[2] > 5) return false; let s = 0;
   for (let i = 0; i < 9; i++) { let v = +c[i] * (i % 2 === 0 ? 2 : 1); if (v > 9) v -= 9; s += v; } return (10 - s % 10) % 10 === +c[9]; }
 const VAL = { placa: v => /^[A-Z]{3}\d{3,4}$|^[A-Z]{2}\d{3}[A-Z]$/.test(v), vin: v => /^[A-HJ-NPR-Z0-9]{17}$/.test(v) || /^[A-Z0-9]{8,20}$/.test(v), motor: v => /^[A-Z0-9]{5,22}$/.test(v) && /\d/.test(v),
-  anio_modelo: v => /^(19[5-9]\d|20[0-3]\d)$/.test(v), cilindraje: v => /^(\d{2,5}|0)(CC)?$/.test(v), pasajeros: v => /^\d{1,2}$/.test(v), ramv: v => /^[A-Z]\d{6,9}$/.test(v), identificacion: v => /^(\d{10}|\d{13})$/.test(v),
+  anio_modelo: v => /^(19[5-9]\d|20[0-3]\d)$/.test(v), anio_matricula: v => /^20[0-3]\d$/.test(v), uso: v => /^[A-Z]{5,40}$/.test(v) && !/^(OPERADOR|TIPODE|AMBITO|DISCO)/.test(v), cilindraje: v => /^(\d{2,5}|0)(CC)?$/.test(v), pasajeros: v => /^\d{1,2}$/.test(v), ramv: v => /^[A-Z]\d{6,9}$/.test(v), identificacion: v => /^(\d{10}|\d{13})$/.test(v),
   fecha_emision: v => !!aFecha(v), fecha_caduca: v => !!aFecha(v) };
 function placaPorFormato(t) { const v = N(t); if (/^[A-Z]{3}\d{3,4}$/.test(v)) return v; if (v.length < 6 || v.length > 7) return null;
   const aL = { 1: 'I', 0: 'O', 5: 'S', 8: 'B', 2: 'Z', 6: 'G' }, aN = { I: '1', O: '0', S: '5', B: '8', Z: '2', G: '6', L: '1', D: '0', Q: '0' };
   const r = v.slice(0, 3).replace(/[0-9]/g, c => aL[c] || c) + v.slice(3).replace(/[A-Z]/g, c => aN[c] || c); return /^[A-Z]{3}\d{3,4}$/.test(r) ? r : null; }
 function leerMatricula(cs) {
-  const lado = cs.some(c => ['PLACAACTUAL', 'MARCA'].includes(N(c.t))) ? 'frente (datos del vehículo)' : 'reverso (propietario y trámite)'; const frente = lado.startsWith('frente'); const sal = {};
+  const todoM = cs.map(c => N(c.t)), pistaF = ['MODELO', 'CILINDRAJE', 'COMBUSTIBLE', 'PASAJEROS', 'TIPODEVEHICULO', 'CLASEDEVEHICULO', 'PAISDEORIGEN', 'CARROCERIA', 'NUMEROMOTOR'].filter(w => todoM.some(t => t.startsWith(w))).length;
+  const pistaR = ['PROPIETARIO', 'APELLIDOSYNOMBRES', 'PROVINCIA', 'CANTON', 'DOMICILIO', 'DIRECCION', 'TELEFONO', 'DIGITADOR'].filter(w => todoM.some(t => t.includes(w))).length;
+  const lado = (cs.some(c => ['PLACAACTUAL', 'MARCA'].includes(N(c.t))) || (pistaF >= 2 && pistaF > pistaR)) ? 'frente (datos del vehículo)' : 'reverso (propietario y trámite)'; const frente = lado.startsWith('frente'); const sal = {};
   const coincide = (t, s) => { const n = N(t); return n === s || (n.startsWith(s) && n.length <= s.length + 4) || (s.length >= 8 && n.includes(s) && n.length <= s.length + 4); };
   for (const [campo, [sin, no]] of Object.entries(SIN)) {
-    const ets = cs.filter(c => sin.some(s => coincide(c.t, s)) && !no.some(x => N(c.t).includes(x))); let mejor = null;
+    const ets = cs.filter(c => (campo === 'anio_matricula' ? N(c.t) === 'ANO' : sin.some(s => coincide(c.t, s))) && !no.some(x => N(c.t).includes(x))); let mejor = null;
     for (const e of ets) { const h = e.y1 - e.y0; const cand = cs.filter(c => c !== e && !esEti(c.t)).filter(c => c.y0 >= e.y0 + 0.5 * h && c.y0 - e.y1 < 3.5 * h && (Math.min(e.x1, c.x1) - Math.max(e.x0, c.x0) > -0.2 * (e.x1 - e.x0) || Math.abs(c.x0 - e.x0) < 2.5 * h))
         .sort((a, b) => (a.y0 - e.y1 + 0.02 * Math.abs((a.x0 + a.x1) / 2 - (e.x0 + e.x1) / 2)) - (b.y0 - e.y1 + 0.02 * Math.abs((b.x0 + b.x1) / 2 - (e.x0 + e.x1) / 2)));
-      for (const c of cand) { const v = N(c.t); if ((VAL[campo] || (v2 => v2.length >= 2))(v)) { mejor = { valor: campo === 'cilindraje' ? v.replace(/CC$/, '') : c.t, conf: c.c, nota: 'por su etiqueta' }; break; }
+      for (const c of cand) { const v = N(c.t); if (campo === 'propietario' && (c.t.trim().split(/\s+/).length < 2 || /ECUADOR|REPUBLICA|MUNICIP|GOBIERNO|AGENCIA|MATRICULA/.test(v))) continue;   // un nombre tiene al menos dos palabras y no es el encabezado
+        if ((VAL[campo] || (v2 => v2.length >= 2))(v)) { mejor = { valor: campo === 'cilindraje' ? v.replace(/CC$/, '') : c.t, conf: c.c, nota: 'por su etiqueta' }; break; }
         if (campo === 'placa' && placaPorFormato(c.t)) { mejor = { valor: placaPorFormato(c.t), conf: c.c, nota: 'corregida por formato (leído «' + c.t + '») · por confirmar', dudoso: true }; break; } } if (mejor) break; }
     if (!mejor && frente && (campo === 'vin' || campo === 'placa')) { const re = campo === 'vin' ? /^[A-HJ-NPR-Z0-9]{17}$/ : /^[A-Z]{3}\d{3,4}$/; const h = cs.find(c => re.test(N(c.t)) && /\d/.test(N(c.t)) && /[A-Z]/.test(N(c.t))); if (h) mejor = { valor: h.t, conf: h.c, nota: 'por su formato' }; }
     if (mejor) sal[campo] = mejor;
@@ -137,6 +140,7 @@ function leerMatricula(cs) {
   if (!sal.identificacion && !frente) { const h = toks.filter(c => cedulaOk(N(c.t))); if (h.length === 1) sal.identificacion = { valor: h[0].t, conf: h[0].c, nota: 'cédula válida (dígito verificador)' }; }
   if (!sal.anio_modelo && frente) { const usados = new Set(Object.values(sal).map(v => N(v.valor))); let anioMat = null; const pc = sal.placa && cs.find(c => N(c.t) === N(sal.placa.valor));
     if (pc) { const fila = toks.filter(c => /^20\d{2}$/.test(N(c.t)) && Math.abs((c.y0 + c.y1) / 2 - (pc.y0 + pc.y1) / 2) < 1.2 * (pc.y1 - pc.y0)); if (fila.length === 1) anioMat = N(fila[0].t); }
+    if (sal.anio_matricula) anioMat = N(sal.anio_matricula.valor);
     const h = toks.filter(c => /^(19[5-9]\d|20[0-3]\d)$/.test(N(c.t)) && N(c.t) !== anioMat && !usados.has(N(c.t))); if (h.length === 1) sal.anio_modelo = { valor: h[0].t, conf: h[0].c, nota: 'año sin etiqueta · por confirmar', dudoso: true }; }
   if (frente) {   // formato ANT: si el sello tapa la etiqueta, el valor se toma por su posición en la fila
     const cajaDe = (campo) => sal[campo] && cs.find(c => c.t === sal[campo].valor || N(c.t) === N(sal[campo].valor));
@@ -150,10 +154,11 @@ function leerMatricula(cs) {
     const aT = cajaDe('tipo') || cajaDe('clase'); if (aT && !sal.pasajeros) { const h = derecha(aT, /^\d{1,2}$/)[0]; if (h) sal.pasajeros = { valor: N(h.t), conf: h.c, nota, dudoso: true }; }
     const aV = cajaDe('motor') || cajaDe('vin'); if (aV && !sal.ramv) { const h = derecha(aV, /^[A-Z]\d{7,9}$/)[0]; if (h) sal.ramv = { valor: N(h.t), conf: h.c, nota, dudoso: true }; }
   }
+  if (frente && !sal.anio_matricula && sal.placa) { const pc2 = cs.find(c => N(c.t) === N(sal.placa.valor)); if (pc2) { const fila = toks.filter(c => /^20[0-3]\d$/.test(N(c.t)) && Math.abs((c.y0 + c.y1) / 2 - (pc2.y0 + pc2.y1) / 2) < 1.2 * (pc2.y1 - pc2.y0)); if (fila.length === 1) sal.anio_matricula = { valor: N(fila[0].t), conf: fila[0].c, nota: 'en la fila de la placa (sello sobre la etiqueta) · por confirmar', dudoso: true }; } }
   const fechas = toks.map(c => ({ f: aFecha(N(c.t)), c })).filter(z => z.f).sort((a, b) => a.f - b.f);
   if (!sal.fecha_caduca && fechas.length >= 2) sal.fecha_caduca = { valor: fechas[fechas.length - 1].c.t, conf: fechas[fechas.length - 1].c.c, nota: 'la fecha más reciente' };
   if (!sal.fecha_emision && fechas.length >= 2) { const a = fechas[fechas.length - 2], b = fechas[fechas.length - 1]; if ((b.f - a.f) / 864e5 > 0 && (b.f - a.f) / 864e5 < 6 * 366) sal.fecha_emision = { valor: a.c.t, conf: a.c.c, nota: 'la fecha anterior a la caducidad' }; }
-  if (!sal.propietario && !frente) { const alto = Math.max(...cs.map(c => c.y1)); const h = toks.filter(c => c.y0 < 0.35 * alto && /^[A-ZÑÁÉÍÓÚ ]{8,}$/.test(c.t.toUpperCase().replace(/\d+$/, '').trim()) && c.t.trim().split(/\s+/).length >= 2); if (h.length) { const c = h.sort((a, b) => (b.y1 - b.y0) - (a.y1 - a.y0))[0]; sal.propietario = { valor: c.t, conf: c.c, nota: 'texto principal' }; } }
+  if (!sal.propietario && !frente && pistaR >= 1) { const alto = Math.max(...cs.map(c => c.y1)); const h = toks.filter(c => !/ECUADOR|REPUBLICA|MUNICIP|GOBIERNO|AGENCIA|MATRICULA/.test(N(c.t)) && c.y0 < 0.35 * alto && /^[A-ZÑÁÉÍÓÚ ]{8,}$/.test(c.t.toUpperCase().replace(/\d+$/, '').trim()) && c.t.trim().split(/\s+/).length >= 2); if (h.length) { const c = h.sort((a, b) => (b.y1 - b.y0) - (a.y1 - a.y0))[0]; sal.propietario = { valor: c.t, conf: c.c, nota: 'texto principal (sin su etiqueta) · por confirmar', dudoso: true }; } }
   if (sal.fecha_emision && sal.fecha_caduca) { const a = aFecha(N(sal.fecha_emision.valor)), b = aFecha(N(sal.fecha_caduca.valor)); if (!a || !b || !((b - a) / 864e5 > 0 && (b - a) / 864e5 < 6 * 366)) { delete sal.fecha_emision; sal._aviso = 'Fecha de emisión descartada: no es plausible'; } }
   if (sal.fecha_emision) { const a = aFecha(N(sal.fecha_emision.valor)); if (!a || a > new Date()) { delete sal.fecha_emision; sal._aviso = 'Fecha de emisión descartada: no es plausible'; } }
   if (sal.fecha_caduca) { const b = aFecha(N(sal.fecha_caduca.valor)); if (b && b < new Date()) sal.fecha_caduca.alerta = 'MATRÍCULA CADUCADA'; }
@@ -226,7 +231,7 @@ const RE_CAT = /^(A1|B|C1|D1|E1|A|C|D|E|F|G)([ ,]+(A1|B|C1|D1|E1|A|C|D|E|F|G))*$
 function aCampo(campo, r) {   // normaliza el valor según el campo; las fechas llevan además su forma ISO
   if (!r || r.valor == null || r.valor === '—') return null; let v = String(r.valor).trim(); const o = { conf: Math.round(+r.conf || 0), nota: r.nota || '' }; if (r.dudoso) o.dudoso = true; if (r.alerta) o.alerta = r.alerta;
   if (['placa', 'vin', 'motor', 'ramv'].includes(campo)) v = N(v);
-  else if (['km', 'cilindraje', 'pasajeros', 'anio_modelo'].includes(campo)) { v = v.replace(/\D/g, ''); if (!v) return null; }
+  else if (['km', 'cilindraje', 'pasajeros', 'anio_modelo', 'anio_matricula'].includes(campo)) { v = v.replace(/\D/g, ''); if (!v) return null; }
   else if (campo === 'identificacion') v = v.replace(/\D/g, '');
   else if (campo === 'categoria') v = v.toUpperCase().replace(/[^A-Z0-9, ]/g, '').trim();
   else if (/fecha|vigencia/.test(campo)) { const f = fechaTxt(v) || aFecha(N(v)); o.iso = ISO(f); if (!o.iso) o.dudoso = true; }

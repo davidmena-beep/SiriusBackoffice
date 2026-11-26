@@ -315,8 +315,15 @@
     try {
       var u = CX.usuario || {}, roles = u.roles || [u.rol]; if (!roles.some(function (r) { return INTERNOS.indexOf(r) >= 0; }) || CX.lecturas || !BASE_JS || /[?&]lecturas=off/.test(location.search)) return;
       CX.rpc = rpc; CX.firmar = firmar; CX.lecturas = { activo: false };
+      // 26/11/2026 · SQL 94: recomendaciones de catálogo (valores leídos que no están en un catálogo). Contrato para la pantalla Catálogos:
+      //   SIRIUS_CONEXION.catalogoSugerencias = [{ id, campo, valor, veces, estado (Pendiente, Agregada, Descartada), primera, ultima, ultimoCaso, resueltoPor }]
+      //   SIRIUS_CONEXION.resolverSugerenciaCatalogo(id, estado) → Promise<{ ok, mensaje? }> (solo Administrador); recarga la lista y avisa a las pantallas.
+      CX.catalogoSugerencias = [];
+      var cargarSug = function () { return rpc('catalogo_sugerencias_lista', {}).then(function (l) { if (Array.isArray(l)) { var h = JSON.stringify(l); if (h !== JSON.stringify(CX.catalogoSugerencias)) { CX.catalogoSugerencias = l; avisar(); } } }).catch(function () {}); };
+      CX.resolverSugerenciaCatalogo = function (id, estado) { return rpc('catalogo_sugerencia_resolver', { p_id: id, p_estado: estado }).then(function (r) { return cargarSug().then(function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: e.message }; }); };
+      cargarSug(); setInterval(cargarSug, 300000);
       (window.ort ? Promise.resolve() : cargarScript('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js'))
-        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=93'); })
+        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=94'); })
         .then(function () { CX.lecturas = window.SiriusLectura.cola(CX); })
         .catch(function (e) { console.warn('[SIRIUS] lecturas automáticas no disponibles:', e.message); });
     } catch (e) { console.warn('[SIRIUS] lecturas automáticas:', e.message); }
@@ -331,7 +338,7 @@
   // la lectura rápida del celular (Tesseract) solo se muestra si todavía no hay lectura automática; la marca «en proceso» no se muestra.
   var NOMBRE_LECTURA = { placa: 'Placa', vin: 'VIN', motor: 'Motor', km: 'Kilometraje', marca: 'Marca', modelo: 'Modelo', anio_modelo: 'Año modelo', color1: 'Color', clase: 'Clase', tipo: 'Tipo',
     cilindraje: 'Cilindraje', pasajeros: 'Pasajeros', combustible: 'Combustible', pais: 'País de origen', ramv: 'RAMV / CPN', identificacion: 'Identificación', propietario: 'Propietario',
-    provincia: 'Provincia', canton: 'Cantón', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad', titular: 'Titular', categoria: 'Categoría', vigencia: 'Vigente hasta' };
+    provincia: 'Provincia', canton: 'Cantón', anio_matricula: 'Año de la matrícula', uso: 'Uso (clase de transporte)', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad', titular: 'Titular', categoria: 'Categoría', vigencia: 'Vigente hasta' };
   function lecturasVista(e) { var L = e.lecturas || {}, o = L.ocr, r = {};
     if (o && typeof o === 'object') {
       if (o.error) r['Lectura automática'] = { valor: 'no se pudo leer (' + o.error + ')' };
