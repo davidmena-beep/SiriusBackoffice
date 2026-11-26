@@ -7,8 +7,10 @@
      la base precarga el informe (solo campos vacíos) y genera los controles.
    Requiere onnxruntime-web 1.30.0 (ort.wasm.min.js). Modelos: AppInspector/ocr/modelos (GitHub Pages).
    ===================================================================================================== */
-window.SiriusLectura = (function () {
+(typeof window !== 'undefined' ? window : self).SiriusLectura = (function () {
 'use strict';
+const EN_WORKER = typeof document === 'undefined';
+const nuevoLienzo = () => EN_WORKER ? new OffscreenCanvas(1, 1) : document.createElement('canvas');   // en el Web Worker no hay «document»
 const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 const DET = { limit: 736, thresh: 0.3, boxThresh: 0.5, unclip: 1.6, maxSide: 2000 };
 const REC = { h: 48, w: 320, batch: 6, minScore: 0.5 };
@@ -25,7 +27,7 @@ function iniciar() {
     detS = await ort.InferenceSession.create(det, op); recS = await ort.InferenceSession.create(rec, op); CLAVES = ['blank'].concat(claves.split('\n')).concat([' ']); return true; })();
   CARGA.catch(() => { CARGA = null; }); return CARGA;
 }
-function aLienzo(img, maxSide) { const k = Math.min(1, maxSide / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c; }
+function aLienzo(img, maxSide) { const k = Math.min(1, maxSide / Math.max(img.width, img.height)); const c = nuevoLienzo(); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c; }
 function tensorBGR(ctx, w, h, mean, std) {   // [1,3,h,w] en BGR, (x/255 - mean)/std
   const d = ctx.getImageData(0, 0, w, h).data, n = w * h, f = new Float32Array(3 * n);
   for (let i = 0, p = 0; p < n; i += 4, p++) { f[p] = (d[i + 2] / 255 - mean) / std; f[n + p] = (d[i + 1] / 255 - mean) / std; f[2 * n + p] = (d[i] / 255 - mean) / std; }
@@ -34,7 +36,7 @@ function tensorBGR(ctx, w, h, mean, std) {   // [1,3,h,w] en BGR, (x/255 - mean)
 async function detectar(src) {
   const h = src.height, w = src.width; let r = 1; if (Math.min(h, w) < DET.limit) r = DET.limit / Math.min(h, w);
   const rh = Math.max(32, Math.round(Math.floor(h * r) / 32) * 32), rw = Math.max(32, Math.round(Math.floor(w * r) / 32) * 32);
-  const c = document.createElement('canvas'); c.width = rw; c.height = rh; const x = c.getContext('2d'); x.drawImage(src, 0, 0, rw, rh);
+  const c = nuevoLienzo(); c.width = rw; c.height = rh; const x = c.getContext('2d'); x.drawImage(src, 0, 0, rw, rh);
   const out = await detS.run({ [detS.inputNames[0]]: new ort.Tensor('float32', tensorBGR(x, rw, rh, 0.5, 0.5), [1, 3, rh, rw]) });
   const prob = out[detS.outputNames[0]].data; const sx = w / rw, sy = h / rh;
   // binarización + dilatación 2×2 + componentes conectados
@@ -66,16 +68,16 @@ async function detectar(src) {
   return cajas;
 }
 async function reconocer(src, cajas) {
-  const recortes = cajas.map(b => { const r = b.rot, c = document.createElement('canvas'), W = Math.max(1, Math.round(r.L)), H = Math.max(1, Math.round(r.A));
+  const recortes = cajas.map(b => { const r = b.rot, c = nuevoLienzo(), W = Math.max(1, Math.round(r.L)), H = Math.max(1, Math.round(r.A));
     c.width = W; c.height = H; const x = c.getContext('2d'); x.translate(W / 2, H / 2); x.rotate(-r.ang); x.drawImage(src, -r.cx, -r.cy);   // enderezar el texto inclinado
-    if (H / W >= 1.5) { const v = document.createElement('canvas'); v.width = H; v.height = W; const y = v.getContext('2d'); y.translate(0, W); y.rotate(-Math.PI / 2); y.drawImage(c, 0, 0); return v; }
+    if (H / W >= 1.5) { const v = nuevoLienzo(); v.width = H; v.height = W; const y = v.getContext('2d'); y.translate(0, W); y.rotate(-Math.PI / 2); y.drawImage(c, 0, 0); return v; }
     return c; });
   const orden = recortes.map((c, i) => i).sort((a, b) => recortes[a].width / recortes[a].height - recortes[b].width / recortes[b].height);
   const res = new Array(recortes.length);
   for (let i = 0; i < orden.length; i += REC.batch) {
     const lote = orden.slice(i, i + REC.batch); let maxR = REC.w / REC.h; lote.forEach(j => { maxR = Math.max(maxR, recortes[j].width / recortes[j].height); });
     const W = Math.round(REC.h * maxR), datos = new Float32Array(lote.length * 3 * REC.h * W);
-    lote.forEach((j, k) => { const c = recortes[j], rw = Math.min(W, Math.ceil(REC.h * c.width / c.height)); const t = document.createElement('canvas'); t.width = W; t.height = REC.h; const x = t.getContext('2d');
+    lote.forEach((j, k) => { const c = recortes[j], rw = Math.min(W, Math.ceil(REC.h * c.width / c.height)); const t = nuevoLienzo(); t.width = W; t.height = REC.h; const x = t.getContext('2d');
       x.fillStyle = 'rgb(128,128,128)'; x.fillRect(0, 0, W, REC.h); x.drawImage(c, 0, 0, rw, REC.h);   // relleno gris = 0 tras normalizar
       datos.set(tensorBGR(x, W, REC.h, 0.5, 0.5), k * 3 * REC.h * W); });
     const out = await recS.run({ [recS.inputNames[0]]: new ort.Tensor('float32', datos, [lote.length, 3, REC.h, W]) });
@@ -207,7 +209,7 @@ function leerLicencia(cs) {
 }
 
 // ===================== Orientación: si la foto está girada, se prueba 90° en cada sentido =====================
-function girar(src, sentido) { const c = document.createElement('canvas'); c.width = src.height; c.height = src.width; const x = c.getContext('2d'); x.translate(c.width / 2, c.height / 2); x.rotate(sentido * Math.PI / 2); x.drawImage(src, -src.width / 2, -src.height / 2); return c; }
+function girar(src, sentido) { const c = nuevoLienzo(); c.width = src.height; c.height = src.width; const x = c.getContext('2d'); x.translate(c.width / 2, c.height / 2); x.rotate(sentido * Math.PI / 2); x.drawImage(src, -src.width / 2, -src.height / 2); return c; }
 const CLAVE_DOC = /LICENCIA|CONDUCIR|APELLIDO|NOMBRE|CATEGOR|PARTICULAR|COMERCIAL|PASAJEROS|ECUADOR|REPUBLICA|NACIMIENTO|VENCIMIENTO|EMISION|PLACA|MARCA|MODELO|PROPIETARIO|CANTON|PROVINCIA|AGENCIA|TRANSITO/;
 const puntaje = (cs) => cs.reduce((s, c) => s + (CLAVE_DOC.test(N(c.t)) ? 3 : 0) + (fechaTxt(c.t) ? 2 : 0) + c.c / 100, 0);
 async function leerTodo(src) {
@@ -217,7 +219,7 @@ async function leerTodo(src) {
     if (cajas.length >= 8) { const x0 = Math.min(...cajas.map(b => b.x0)), y0 = Math.min(...cajas.map(b => b.y0)), x1 = Math.max(...cajas.map(b => b.x1)), y1 = Math.max(...cajas.map(b => b.y1));
       if ((x1 - x0) * (y1 - y0) < 0.4 * src.width * src.height) {   // el documento ocupa poco de la foto: se recorta y se relee ampliado
         const mx = 0.06 * (x1 - x0), my = 0.08 * (y1 - y0), rx = Math.max(0, x0 - mx), ry = Math.max(0, y0 - my), rw = Math.min(src.width, x1 + mx) - rx, rh = Math.min(src.height, y1 + my) - ry, k = Math.min(2.5, 1800 / Math.max(rw, rh));
-        const z = document.createElement('canvas'); z.width = Math.round(rw * k); z.height = Math.round(rh * k); const zx = z.getContext('2d'); zx.imageSmoothingQuality = 'high'; zx.drawImage(src, rx, ry, rw, rh, 0, 0, z.width, z.height);
+        const z = nuevoLienzo(); z.width = Math.round(rw * k); z.height = Math.round(rh * k); const zx = z.getContext('2d'); zx.imageSmoothingQuality = 'high'; zx.drawImage(src, rx, ry, rw, rh, 0, 0, z.width, z.height);
         return { src: z, cs: await armar(z, await detectar(z)), giro: 0, zoom: true }; } }
     return { src, cs: await armar(src, cajas), giro: 0 }; }
   let mejor = null; for (const s of [1, -1]) { const g = girar(src, s), cj = await detectar(g), muestra = cj.slice().sort((a, b) => b.rot.L - a.rot.L).slice(0, 14), p = puntaje(await armar(g, muestra)); if (!mejor || p > mejor.p) mejor = { src: g, cj, giro: s * 90, p }; }
@@ -238,7 +240,8 @@ function aCampo(campo, r) {   // normaliza el valor según el campo; las fechas 
   o.valor = v; return o;
 }
 async function fuenteALienzo(f) {
-  if (f instanceof HTMLCanvasElement) return f;
+  if (!EN_WORKER && f instanceof HTMLCanvasElement) return f;
+  if (EN_WORKER) { const b = typeof f === 'string' ? await (await fetch(f)).blob() : f; return aLienzo(await createImageBitmap(b), DET.maxSide); }   // en el Web Worker: la imagen se descarga y se decodifica sin «Image»
   let img = f;
   if (typeof f === 'string' || f instanceof Blob) { img = new Image(); img.crossOrigin = 'anonymous'; const url = typeof f === 'string' ? f : URL.createObjectURL(f); await new Promise((ok, no) => { img.onload = ok; img.onerror = () => no(new Error('No se pudo cargar la imagen')); img.src = url; }); }
   return aLienzo(img, DET.maxSide);
@@ -256,33 +259,47 @@ async function leer(fuente, tipo) {
     Object.keys(m.sal).filter(k => !k.startsWith('_')).forEach(k => { const c = aCampo(k, m.sal[k]); if (c) campos[k] = c; }); }
   else { let r = t === 'placa' ? leerPlaca(cs) : t === 'km' ? leerKm(cs) : leerVin(cs);
     if (t === 'km' && r && r.caja && (r.caja.y1 - r.caja.y0) < 0.06 * src.height) { const b = r.caja, mw = 0.45 * (b.x1 - b.x0), mh = 0.6 * (b.y1 - b.y0), rx = Math.max(0, b.x0 - mw), ry = Math.max(0, b.y0 - mh), rw = Math.min(src.width, b.x1 + mw) - rx, rh = Math.min(src.height, b.y1 + mh) - ry, k = Math.min(4, 900 / rw);
-      const z = document.createElement('canvas'); z.width = Math.round(rw * k); z.height = Math.round(rh * k); const zx = z.getContext('2d'); zx.imageSmoothingQuality = 'high'; zx.drawImage(src, rx, ry, rw, rh, 0, 0, z.width, z.height);
+      const z = nuevoLienzo(); z.width = Math.round(rw * k); z.height = Math.round(rh * k); const zx = z.getContext('2d'); zx.imageSmoothingQuality = 'high'; zx.drawImage(src, rx, ry, rw, rh, 0, 0, z.width, z.height);
       const cz = await detectar(z), tz = await reconocer(z, cz), r2 = leerKm(cz.map((q, i) => Object.assign({}, q, tz[i])).filter(q => q.c >= 50 && q.t)); if (r2 && r2.valor.length >= r.valor.length && r2.conf >= r.conf - 10) r = Object.assign(r2, { nota: r2.nota + ' · releído ampliado' }); }
     const c = aCampo(t === 'km' ? 'km' : t, r); if (c) campos[t === 'km' ? 'km' : t] = c; }
   return { tipo: t, lado, motor: 'PP-OCRv4', campos, textos: cs.length, giro: LT.giro || 0, ampliada: !!LT.zoom, ms: Math.round(ahora() - t0) };
 }
 
-// ===================== Cola en segundo plano (Back-office, usuarios internos · SQL 93) =====================
-// Lee de a una foto, solo con la pestaña visible y el usuario inactivo 20 s (cada lectura ocupa el navegador unos segundos).
-let ultimaActividad = Date.now(); ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true }));
+// ===================== Cola en segundo plano (Back-office, usuarios internos · SQL 93 y 96) =====================
+// La lectura corre en un Web Worker (sirius-lectura-worker.js): no ocupa la pantalla, así que lee de forma continua, sin esperar a que el
+// usuario esté inactivo. Reserva UNA foto a la vez (primero las del caso abierto, luego las más recientes), la lee y registra el resultado.
+// Si el navegador no admite el Worker, lee en la página, solo con el usuario inactivo. Muestra un indicador discreto mientras trabaja.
+let ultimaActividad = Date.now(); if (!EN_WORKER) ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true }));
 function cola(CX, op) {
-  op = Object.assign({ cadaMs: 30000, inactivoMs: 20000, porVuelta: 2 }, op || {}); let ocupado = false, aplicado = 0; const estado = { leidas: 0, errores: 0, ultima: null, activo: true };
+  op = Object.assign({ cadaMs: 15000, inactivoMs: 8000, carpeta: '', indicador: true }, op || {}); let ocupado = false, aplicado = 0, w = null, sec = 0; const espera = {};
+  const estado = { leidas: 0, errores: 0, pendientes: null, ultima: null, activo: true, modo: 'página' };
+  try { if (op.carpeta && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') { w = new Worker(op.carpeta + 'sirius-lectura-worker.js?v=96'); estado.modo = 'segundo plano';
+      w.onmessage = (e) => { const d = e.data || {}, f = espera[d.id]; if (!f) return; delete espera[d.id]; d.error ? f.no(new Error(d.error)) : f.ok(d.lectura); };
+      w.onerror = (e) => { console.warn('[SIRIUS lectura] sin Web Worker:', e.message || e); Object.values(espera).forEach(f => f.no(new Error('Worker no disponible'))); w = null; estado.modo = 'página'; };
+      w.postMessage({ base: BASE }); } } catch (e) { w = null; }
+  const leerUna = (url, tipo) => w ? new Promise((ok, no) => { const id = ++sec; espera[id] = { ok, no }; w.postMessage({ id, url, tipo }); setTimeout(() => { if (espera[id]) { delete espera[id]; no(new Error('La lectura tardó demasiado')); } }, 120000); }) : leer(url, tipo);
+  let chip = null; const avisar = (t) => { if (!op.indicador || EN_WORKER) return; if (!t) { if (chip) chip.style.display = 'none'; return; }
+    if (!chip) { chip = document.createElement('div'); chip.setAttribute('role', 'status'); chip.style.cssText = 'position:fixed;left:14px;bottom:14px;z-index:9999;background:#0b1f3a;color:#fff;font:500 12.5px/1.3 system-ui,sans-serif;padding:7px 12px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none;opacity:.94'; document.body.appendChild(chip); }
+    chip.textContent = t; chip.style.display = 'block'; };
+  const casoAbierto = () => { const m = /[?&#]caso=([^&#]+)/.exec(location.search + location.hash); return m ? decodeURIComponent(m[1]) : null; };
   async function vuelta() {
-    if (ocupado || document.visibilityState !== 'visible' || Date.now() - ultimaActividad < op.inactivoMs) return; ocupado = true;
-    try {
-      const pend = await CX.rpc('lectura_pendientes', { p_limite: op.porVuelta }); if (!Array.isArray(pend) || !pend.length) { if (Date.now() - aplicado > 600000) { aplicado = Date.now(); await CX.rpc('lectura_aplicar_recientes', {}); } return; }
-      const urls = await CX.firmar(pend.map(p => p.ruta));
-      for (const p of pend) { let lectura;
-        try { if (!urls[p.ruta]) throw new Error('Sin URL firmada'); lectura = await leer(urls[p.ruta], p.tipo); }
+    if (ocupado || document.visibilityState !== 'visible') return; if (!w && Date.now() - ultimaActividad < op.inactivoMs) return; ocupado = true;
+    try { let hechas = 0;
+      for (let i = 0; i < 40; i++) {   // hasta agotar la cola, de a una foto
+        const r = await CX.rpc('lectura_pendientes', { p_limite: 1, p_caso: casoAbierto() }); const pend = Array.isArray(r) ? r : (r && r.fotos) || []; estado.pendientes = r && r.pendientes != null ? r.pendientes : pend.length;
+        if (!pend.length) break; const p = pend[0]; avisar('Leyendo documentos · ' + (hechas + 1) + ' de ' + (hechas + Math.max(1, estado.pendientes)));
+        let lectura; try { const urls = await CX.firmar([p.ruta]); if (!urls[p.ruta]) throw new Error('Sin URL firmada'); lectura = await leerUna(urls[p.ruta], p.tipo); }
         catch (e) { lectura = { tipo: p.tipo, motor: 'PP-OCRv4', campos: {}, error: String(e && e.message || e).slice(0, 200) }; estado.errores++; }
-        await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); estado.leidas++; estado.ultima = new Date().toISOString();
-        if (Date.now() - ultimaActividad < op.inactivoMs) break;   // el usuario volvió: se deja para la próxima vuelta
+        await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); hechas++; estado.leidas++; estado.ultima = new Date().toISOString();
+        if (document.visibilityState !== 'visible' || (!w && Date.now() - ultimaActividad < op.inactivoMs)) break;
       }
-    } catch (e) { console.warn('[SIRIUS lectura]', e && e.message || e); }
+      if (hechas) { avisar('Lectura lista · ' + hechas + (hechas === 1 ? ' documento' : ' documentos')); setTimeout(() => avisar(null), 5000); if (CX.recargar) try { CX.recargar(); } catch (e) {} }
+      else if (Date.now() - aplicado > 600000) { aplicado = Date.now(); await CX.rpc('lectura_aplicar_recientes', {}); }
+    } catch (e) { console.warn('[SIRIUS lectura]', e && e.message || e); avisar(null); }
     finally { ocupado = false; }
   }
-  setTimeout(vuelta, 4000); setInterval(vuelta, op.cadaMs); return estado;
+  setTimeout(vuelta, 2500); setInterval(vuelta, op.cadaMs); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') vuelta(); }); estado.ahora = vuelta; return estado;
 }
-return { leer, iniciar, cola, base: (u) => { if (u) BASE = u; return BASE; }, listo: () => !!detS, _interno: { leerMatricula, leerLicencia, leerPlaca, leerKm, leerVin } };
+return { leer, iniciar, cola: EN_WORKER ? null : cola, base: (u) => { if (u) BASE = u; return BASE; }, listo: () => !!detS, _interno: { leerMatricula, leerLicencia, leerPlaca, leerKm, leerVin } };
 
 })();
