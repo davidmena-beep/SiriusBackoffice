@@ -57,8 +57,10 @@
   // ---------- Etapa 12d-2 · Recorrido vigente (SIRIUS_AUTOINSPECCION v2.0 + plantilla + SIRIUS_SILUETAS) ----------
   // ¿Eres tú? → Consentimientos → Elegir el tipo → Mapa (Interior, Extras y Documentos como tarjetas) → Video de 360° → Revisión → Declaración → Gracias.
   const AV = () => window.SIRIUS_AUTOINSPECCION || {}, AU = () => window.SiriusAuto || {}, PC = () => window.SiriusPortalCfg || null;
-  const CARRS = [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta'], ['moto', 'Moto']];
-  const nomTipo = (t) => (CARRS.find(c => c[0] === t) || [0, t])[1];
+  const CARRS0 = [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta'], ['moto', 'Moto']];
+  // L-4: los tipos salen de la biblioteca de siluetas (vehículos y moto, sin maquinaria); los nombres conocidos se conservan.
+  const carrs = () => { const B = window.SIRIUS_SILUETAS, L = ((B && B.carrocerias) || []).filter(c => c.grupo !== 'Maquinaria' && B.geometria && B.geometria[c.id]).map(c => [c.id, (CARRS0.find(x => x[0] === c.id) || [0, c.nombre])[1]]); return L.length ? L.filter(x => x[0] !== 'moto').concat(L.filter(x => x[0] === 'moto')) : CARRS0; };
+  const nomTipo = (t) => (carrs().find(c => c[0] === t) || [0, t])[1];
   const clone = (o) => JSON.parse(JSON.stringify(o == null ? null : o));
   function tipoSolicitud(ctx) { const S = SIL(); return S && S.carroceriaDe ? S.carroceriaDe(ctx.carroceria) : 'sedan'; }
   // Pasos vigentes de la plantilla con la configuración de autoinspección aplicada (los mismos que usa el simulador).
@@ -196,9 +198,9 @@
     // ----- Elegir el tipo -----
     if (st.paso === 'tipo') { const sol = tipoSolicitud(ctx), n = Object.keys(st.fotos).length + (st.video ? 1 : 0), S = SIL();
       const elegir = (t) => { if (t === st.tipo) return; if (n) { setConfTipo(t); return; } accion('Eligió el tipo: ' + nomTipo(t)); upd({ tipo: t }); };
-      const icono = (t) => { let sv = ''; try { sv = S ? S.svg(t, 'superior', 'icono', { etiqueta: nomTipo(t) }) : ''; } catch (e) { sv = ''; } return h('span', { 'aria-hidden': 'true', style: { width: 110, height: 44, lineHeight: 0, display: 'block' }, dangerouslySetInnerHTML: { __html: sv.replace('<svg ', '<svg width="110" height="44" ') } }); };
+      const icono = (t) => { let sv = ''; try { sv = S ? (window.SiriusSiluetaSvg || ((t, v, e, o) => S.svg(t, v, e, o)))(t, 'superior', 'icono', { etiqueta: nomTipo(t) }) : ''; } catch (e) { sv = ''; } return h('span', { 'aria-hidden': 'true', style: { width: 110, height: 44, lineHeight: 0, display: 'block' }, dangerouslySetInnerHTML: { __html: sv.replace('<svg ', '<svg width="110" height="44" ') } }); };
       return marco(TX('tipo', 'titulo', '¿Qué tipo de vehículo es?'), h('div', { style: { display: 'flex', flexDirection: 'column', gap: 14 } }, P_(TX('tipo', 'texto', '')),
-          h('div', { role: 'radiogroup', 'aria-label': 'Tipo de vehículo', style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 } }, CARRS.map(([k, l]) => h('button', { key: k, type: 'button', role: 'radio', 'aria-checked': st.tipo === k ? 'true' : 'false', 'data-tipo': k, onClick: () => elegir(k), style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minHeight: 110, padding: 10, border: '2px solid ' + (st.tipo === k ? '#0B5CAD' : '#d5dde6'), borderRadius: 12, background: st.tipo === k ? '#eef5fc' : '#FFFFFF', fontFamily: 'var(--font-brand)', cursor: 'pointer' } },
+          h('div', { role: 'radiogroup', 'aria-label': 'Tipo de vehículo', style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 } }, carrs().map(([k, l]) => h('button', { key: k, type: 'button', role: 'radio', 'aria-checked': st.tipo === k ? 'true' : 'false', 'data-tipo': k, onClick: () => elegir(k), style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minHeight: 110, padding: 10, border: '2px solid ' + (st.tipo === k ? '#0B5CAD' : '#d5dde6'), borderRadius: 12, background: st.tipo === k ? '#eef5fc' : '#FFFFFF', fontFamily: 'var(--font-brand)', cursor: 'pointer' } },
             icono(k), h('b', { style: { fontSize: 14, color: T.strong } }, l), k === sol ? h('span', { style: { fontSize: 11, fontWeight: 700, color: '#0B5CAD' } }, 'De tu solicitud') : null))),
           confTipo ? h('div', { role: 'alertdialog', 'aria-labelledby': 'pt-ct-t', style: { display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 12, background: '#FFF4DC' } }, h('b', { id: 'pt-ct-t', style: { color: '#7A4F0E' } }, '¿Cambiar a ' + nomTipo(confTipo) + '?'), h('span', { style: { fontSize: 14, color: '#7A4F0E' } }, TX('tipo', 'aviso', '', { 'avance.hechas': String(n) })),
             h(Btn, { id: 'pt-ct-si', onClick: () => { accion('Cambió el tipo de ' + nomTipo(st.tipo) + ' a ' + nomTipo(confTipo) + ': se borraron ' + n + ' fotos'); upd({ tipo: confTipo, fotos: {}, video: null, extras: {}, rech: {} }); setConfTipo(null); } }, 'Sí, cambiar y borrar'), h(Btn, { variant: 'secondary', onClick: () => setConfTipo(null) }, 'Cancelar')) : null),
@@ -305,7 +307,7 @@
 
     // ----- Video de 360° (DEC-151) -----
     const V = (C0 ? C0.cfg().flujo.conf.video360 : AV().video360) || {}, MB = (b) => String(Math.round(b / 104857.6) / 10).replace('.', ',');
-    if (st.paso === 'video') { const v = st.video, S = SIL(); let ic = ''; try { ic = S ? S.svg(tipo, 'superior', 'icono', { etiqueta: '' }) : ''; } catch (e) { ic = ''; }
+    if (st.paso === 'video') { const v = st.video, S = SIL(); let ic = ''; try { ic = S ? (window.SiriusSiluetaSvg || ((t, v, e, o) => S.svg(t, v, e, o)))(tipo, 'superior', 'icono', { etiqueta: '' }) : ''; } catch (e) { ic = ''; }
       return marco(TX('video', 'titulo', 'Un video corto de 360°'), h('div', { style: { display: 'flex', flexDirection: 'column', gap: 14 } }, P_(TX('video', 'texto', V.texto || ''), { fontSize: 15 }),
           h('div', { 'aria-hidden': 'true', className: 'pt-anim', style: { position: 'relative', alignSelf: 'center', width: 220, height: 220, borderRadius: '50%', border: '2px dashed #0B5CAD' } }, h('style', null, '@keyframes ptorb{from{transform:rotate(0)}to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.pt-orb{animation:none!important}}'),
             h('div', { style: { position: 'absolute', left: '50%', top: '50%', width: 130, transform: 'translate(-50%,-50%)', lineHeight: 0 }, dangerouslySetInnerHTML: { __html: ic.replace('<svg ', '<svg width="130" ') } }),

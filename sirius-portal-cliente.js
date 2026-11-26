@@ -318,7 +318,11 @@
   const R = () => window.React, h = (...a) => R().createElement(...a), C = window.SiriusPortalCfg, S = window.__SiriusPortalPiezas;
   const { sel, btn, badge, clone } = S;
   const AU = () => window.SiriusAuto || {}, AI = () => window.SIRIUS_AUTOINSPECCION || {}, SIL = () => window.SIRIUS_SILUETAS || null, UI = () => window.SiriusSiluetasUI || null;
-  const CARRS = { veh: [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta']], moto: [['moto', 'Moto']], em: [['cargadora', 'Cargadora'], ['excavadora', 'Excavadora'], ['montacargas', 'Montacargas'], ['generico', 'Otro equipo']] };
+  // L-4: las carrocerías salen de la biblioteca de siluetas (las nuevas aparecen solas); los nombres conocidos se conservan.
+  const carrDe = (f, C0) => { const B = window.SIRIUS_SILUETAS, nom = {}; Object.keys(C0).forEach((k) => C0[k].forEach(([id, n]) => { nom[id] = n; }));
+    const L = ((B && B.carrocerias) || []).filter((c) => B.geometria && B.geometria[c.id] && (f === 'em' ? c.grupo === 'Maquinaria' : f === 'moto' ? c.id === 'moto' : c.grupo !== 'Maquinaria' && c.id !== 'moto')).map((c) => [c.id, nom[c.id] || c.nombre]); return L.length ? L : C0[f]; };
+  const CARRS0 = { veh: [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta']], moto: [['moto', 'Moto']], em: [['cargadora', 'Cargadora'], ['excavadora', 'Excavadora'], ['montacargas', 'Montacargas'], ['generico', 'Otro equipo']] };
+  const CARRS = { get veh() { return carrDe('veh', CARRS0); }, get moto() { return carrDe('moto', CARRS0); }, get em() { return carrDe('em', CARRS0); } };
   const CAMPOS = ['nombre', 'agencia', 'logo', 'logoOrigen', 'logoNombre', 'logoFondo', 'colorPrincipal', 'colorOscuro', 'contacto', 'contenido'];
   const ULTIMA = {};
   // Pantallas vigentes del recorrido, agrupadas (Entrada, Fotos, Interior, Extras, Documentos, Video, Cierre, Casos especiales).

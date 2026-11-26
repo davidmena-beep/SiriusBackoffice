@@ -22,7 +22,11 @@
   const SECC = { veh: ['Mapa', 'Interior'], moto: ['Mapa'], em: ['Mapa'] };
   const GUIAS = [['silueta:frente', 'Silueta · frente'], ['silueta:lateral_izq', 'Silueta · lateral izquierdo'], ['silueta:lateral_der', 'Silueta · lateral derecho'], ['silueta:posterior', 'Silueta · posterior'],
     ['marco:libre', 'Marco libre'], ['marco:circulo', 'Círculo'], ['marco:franja', 'Franja'], ['marco:tablero', 'Tablero'], ['marco:placa', 'Placa']];
-  const CARR = { veh: [['sedan', 'Sedán'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta']], moto: [['moto', 'Moto']], em: [['cargadora', 'Cargadora'], ['excavadora', 'Excavadora'], ['montacargas', 'Montacargas'], ['generico', 'Equipo genérico']] };
+  // L-4: las carrocerías salen de la biblioteca de siluetas (las nuevas aparecen solas); los nombres conocidos se conservan.
+  const carrDe = (f, C0) => { const B = window.SIRIUS_SILUETAS, nom = {}; Object.keys(C0).forEach((k) => C0[k].forEach(([id, n]) => { nom[id] = n; }));
+    const L = ((B && B.carrocerias) || []).filter((c) => B.geometria && B.geometria[c.id] && (f === 'em' ? c.grupo === 'Maquinaria' : f === 'moto' ? c.id === 'moto' : c.grupo !== 'Maquinaria' && c.id !== 'moto')).map((c) => [c.id, nom[c.id] || c.nombre]); return L.length ? L : C0[f]; };
+  const CARR0 = { veh: [['sedan', 'Sedán'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta']], moto: [['moto', 'Moto']], em: [['cargadora', 'Cargadora'], ['excavadora', 'Excavadora'], ['montacargas', 'Montacargas'], ['generico', 'Equipo genérico']] };
+  const CARR = { get veh() { return carrDe('veh', CARR0); }, get moto() { return carrDe('moto', CARR0); }, get em() { return carrDe('em', CARR0); } };
   const NOMBRES = { exteriores_frontal: 'Frente', exteriores_posterior: 'Posterior', exteriores_lateral_izquierdo: 'Lateral izquierdo', exteriores_lateral_derecho: 'Lateral derecho', llantas_delantera_derecha: 'Neumático delantero derecho', motor_habitaculo_del_motor: 'Motor', identificacion_vin: 'VIN grabado', interiores_kilometraje: 'Kilometraje',
     eq_lateral_izquierdo: 'Lateral izquierdo', eq_lateral_derecho: 'Lateral derecho' };
   // Moto: posiciones sobre la vista superior (fracción del contorno), sacadas de su mapa de captura anterior.
@@ -233,7 +237,7 @@
     return base; }
   function ayudaSvg(tipo, carr, L) { const B = S(); if (!B || !B.geometria[carr]) return ''; const F = 'font-family="Mulish, Arial, sans-serif"';
     const extra = L.map((l, i) => { const q = px(carr, l.pos); return '<g><circle cx="' + q[0] + '" cy="' + q[1] + '" r="9" fill="#0B5CAD" stroke="#FFFFFF" stroke-width="2"/><text ' + F + ' x="' + q[0] + '" y="' + (q[1] + 3.5) + '" font-size="10" font-weight="800" text-anchor="middle" fill="#FFFFFF">' + (i + 1) + '</text></g>'; }).join('');
-    return B.svg(carr, 'superior', 'pdf', { extra, etiqueta: 'Vista superior con ' + L.length + ' lugares numerados' }); }
+    return (window.SiriusSiluetaSvg || ((t, v, e, o) => B.svg(t, v, e, o)))(carr, 'superior', 'pdf', { extra, etiqueta: 'Vista superior con ' + L.length + ' lugares numerados' }); }
   function SiriusAyudaVin(p) { const tipo = p.tipo === 'serie' ? 'serie' : 'vin', ay = p.ayuda || {}, ro = !!p.ro, why = ro ? (p.roWhy || 'Solo lectura') : '', pre = 'ay-' + tipo, form = p.form || (tipo === 'serie' ? 'em' : 'veh');
     const opts = tipo === 'serie' ? CARR.em : form === 'moto' ? CARR.moto : CARR.veh, s0 = R().useState(p.carroceria && opts.some(o => o[0] === p.carroceria) ? p.carroceria : opts[0][0]), carr = s0[0], setCarr = s0[1];
     const md = R().useState(null), pend = md[0], setPend = md[1];

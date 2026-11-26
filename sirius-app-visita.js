@@ -23,7 +23,9 @@
   const APP = () => W.SIRIUS_APP_INSPECTOR || {}, EJ = () => W.SIRIUS_EJEMPLO || {}, SIL = () => W.SIRIUS_SILUETAS || null, AP = () => W.SiriusAppInspectorLogic || null, FL = () => W.SIRIUS_FLUJO || null;
   const z2 = (n) => String(n).padStart(2, '0'), iso = (d) => d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate()) + 'T' + z2(d.getHours()) + ':' + z2(d.getMinutes());
   const now = () => (AP() ? AP().now() : new Date());
-  const TIPOS = [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta'], ['moto', 'Moto']];
+  const TIPOS0 = [['sedan', 'Sedán o hatchback'], ['suv', 'SUV o Jeep'], ['camioneta', 'Camioneta'], ['moto', 'Moto']];
+  // L-4: los tipos salen de la biblioteca de siluetas (vehículos y moto, sin maquinaria); los nombres conocidos se conservan.
+  const tiposVeh = () => { const B = window.SIRIUS_SILUETAS, L = ((B && B.carrocerias) || []).filter((c) => c.grupo !== 'Maquinaria' && B.geometria && B.geometria[c.id]).map((c) => [c.id, (TIPOS0.find((x) => x[0] === c.id) || [0, c.nombre])[1]]); return L.length ? L.filter((x) => x[0] !== 'moto').concat(L.filter((x) => x[0] === 'moto')) : TIPOS0; };
   const GRUPO = { Exteriores: 'Exterior', Documentos: 'Documentos' };
   const POS = { exteriores_frontal: [1, .5], exteriores_posterior: [0, .5], exteriores_parabrisas: [.72, .5], exteriores_lateral_derecho_de_ade: [.74, 1], exteriores_lateral_derecho_de_atr: [.3, 1], exteriores_lateral_izquierdo_de_ade: [.74, 0], exteriores_lateral_izquierdo_de_atr: [.3, 0], exteriores_lateral_izquierdo: [.5, 0], exteriores_lateral_derecho: [.5, 1] };
 
@@ -62,7 +64,7 @@
     const A = AP(); if (A && A.quitarDeCola) A.quitarDeCola((q) => q.tipo === 'foto' && q.caso === caso); // las fotos borradas tampoco se envían
     const txt = (por || 'El inspector') + ' cambió el tipo de vehículo en la app: ' + nombreTipo(antes) + ' → ' + nombreTipo(tipo) + (n ? ' · se borraron ' + n + (n === 1 ? ' foto tomada' : ' fotos tomadas') : '') + ' · plantilla ' + nombrePlantilla(tipo);
     salir({ tipo: 'tipo', caso, desc: 'Cambio de tipo · ' + nombreTipo(antes) + ' → ' + nombreTipo(tipo), aplicar: () => evento(caso, txt) }); cambio(); }
-  const nombreTipo = (k) => (TIPOS.find((x) => x[0] === k) || [k, k])[1];
+  const nombreTipo = (k) => (tiposVeh().find((x) => x[0] === k) || [k, k])[1];
   // Lecturas simuladas de la visita (SIRIUS_EJEMPLO.appInspector.lecturas): campo → [valor, confianza, paso que lo lee].
   function lecturasDe(caso, pasoId) { const L = (((EJ().appInspector || {}).lecturas || {})[caso]) || {}, ov = (S.ui.lecturas || {})[caso] || {}, all = Object.assign({}, L, ov); return Object.keys(all).filter((k) => all[k][2] === pasoId).map((k) => ({ campo: k, valor: all[k][0], conf: all[k][1] })); }
   function etiqueta(k) { const t = plantilla('sedan') || {}; for (const s of Object.keys(t.campos || {})) { const f = t.campos[s].find((x) => x.k === k); if (f) return f.l; } return k; }
@@ -160,7 +162,7 @@
   function fijarGiro(o) { Object.assign(S.giro, o || {}); cambio(); }
   function abrirCam(caso, pasoId, o) { if (S.cam && S.cam.abriendo) return; S.cam = Object.assign({ caso, paso: pasoId, abriendo: true, t0: Date.now() }, o || {}); cambio(); setTimeout(() => { if (S.cam) { S.cam.abriendo = false; cambio(); } }, 350); }
   function cerrarCam() { S.cam = null; cambio(); }
-  const Logic = { ctx, on, S, est, pasos, siguiente, avance, cambiarTipo, registrar, secciones, faltantes, reglas, facultad, decision, enviar, terminar, reenviar, prepararDevuelto, completarInforme, guardarBorrador, resultadoApp, resumenFaltan, specInforme, completarEjemplo, reset, fijarGiro, abrirCam, cerrarCam, plantilla, nombrePlantilla, claveDe, claveVigente, nombreTipo, tipoSolicitud, TIPOS, reqP , irPendiente, cuantosFaltan };
+  const Logic = { ctx, on, S, est, pasos, siguiente, avance, cambiarTipo, registrar, secciones, faltantes, reglas, facultad, decision, enviar, terminar, reenviar, prepararDevuelto, completarInforme, guardarBorrador, resultadoApp, resumenFaltan, specInforme, completarEjemplo, reset, fijarGiro, abrirCam, cerrarCam, plantilla, nombrePlantilla, claveDe, claveVigente, nombreTipo, tipoSolicitud, get TIPOS() { return tiposVeh(); }, reqP , irPendiente, cuantosFaltan };
   W.SiriusAppVisitaLogic = Logic;
 
   // ---------- Piezas visuales ----------
@@ -169,7 +171,7 @@
   const ico = (k, s, st) => h('svg', { width: s || 20, height: s || 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: Object.assign({ flex: '0 0 auto' }, st || {}) }, String(IC[k]).split(' M').map((d, i) => h('path', { key: i, d: (i ? 'M' : '') + d })));
   // C2-4: las claves «data-…» del tercer argumento van como atributos de la tarjeta; el resto, como estilo.
   const card = (kids, k, st) => { const at = { key: k }, es = {}; Object.keys(st || {}).forEach(x => { if (/^(data-|aria-|role$|id$)/.test(x)) at[x] = st[x]; else es[x] = st[x]; }); at.style = Object.assign({ background: '#FFFFFF', border: '1px solid ' + C.line, borderRadius: 18, padding: '13px 14px', boxShadow: C.sh, display: 'flex', flexDirection: 'column', gap: 8 }, es); return h('div', at, kids); };
-  const svgDe = (tipo, vista, estilo) => { const S0 = SIL(); try { return S0 ? S0.svg(tipo, vista, estilo, {}) : ''; } catch (e) { return ''; } };
+  const svgDe = (tipo, vista, estilo) => { const S0 = SIL(); try { return S0 ? (window.SiriusSiluetaSvg || ((t, v, e, o) => S0.svg(t, v, e, o)))(tipo, vista, estilo, {}) : ''; } /* L-4: vista superior con ilustración */ catch (e) { return ''; } };
   function useTick(ms) { const s = R().useState(0), set = s[1]; R().useEffect(() => { const off = on(() => set((x) => x + 1)); const t = ms ? setInterval(() => set((x) => x + 1), ms) : null; return () => { off(); if (t) clearInterval(t); }; }, []); }
   function Anillo(p) { const r = 24, c = 2 * Math.PI * r, k = p.total ? p.hechas / p.total : 0; return h('svg', { width: 58, height: 58, viewBox: '0 0 58 58', role: 'img', 'aria-label': p.hechas + ' de ' + p.total + ' fotos' }, h('circle', { cx: 29, cy: 29, r, fill: 'none', stroke: '#e3e9f0', strokeWidth: 6 }), h('circle', { cx: 29, cy: 29, r, fill: 'none', stroke: C.ok, strokeWidth: 6, strokeLinecap: 'round', strokeDasharray: c, strokeDashoffset: c * (1 - k), transform: 'rotate(-90 29 29)' }), h('text', { x: 29, y: 33, textAnchor: 'middle', fontSize: 13, fontWeight: 900, fill: C.ink, fontFamily: 'Arial' }, p.hechas + '/' + p.total)); }
   function fotoSim(tipo, p) { const PH = W.SiriusPortal; if (p.guia.tipo === 'silueta' && PH && PH.fotoEjemplo) { try { return PH.fotoEjemplo(tipo, { guia: { tipo: 'silueta', vista: p.guia.vista, orientacion: 'horizontal' }, nombre: p.nombre }, 'correcta'); } catch (e) {} }
@@ -273,7 +275,7 @@
     if (s.terminada && !props.devuelto) return tarjetaTerminada(caso, props.por); // etapa C2-4: después de terminar la visita
     if (props.devuelto && s.reenviado) return card([h('b', { key: 'b', 'data-reenviado': '1', style: { color: C.okd, display: 'flex', gap: 6, alignItems: 'center' } }, ico('check', 18), 'Reenviado'), h('p', { key: 'p', style: { margin: 0, fontSize: 14 } }, 'Vuelve a «Informe por completar»; el plazo de 24 h hábiles se reinicia. Estado en SIRIUS: ' + ((ctx.caso(caso) || {}).estado || '—'))], 'rv', { borderColor: '#bfe6cc', background: '#f3fbf6' });
     if (props.devuelto) prepararDevuelto(caso, props.devuelto);
-    const tipos = h('div', { key: 'tipos', role: 'radiogroup', 'aria-label': 'Tipo de vehículo', 'data-tipos': '1', style: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 } }, TIPOS.map(([k, t]) => { const on = s.tipo === k, sv = svgDe(k, 'lateral_der', 'icono');
+    const tipos = h('div', { key: 'tipos', role: 'radiogroup', 'aria-label': 'Tipo de vehículo', 'data-tipos': '1', style: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 } }, tiposVeh().map(([k, t]) => { const on = s.tipo === k, sv = svgDe(k, 'lateral_der', 'icono');
       return h('button', { key: k, type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', 'data-tipo-veh': k, onClick: () => { if (on) return; if (Object.keys(s.fotos).length) set({ confirmTipo: k }); else cambiarTipo(caso, k, props.por); }, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 4px', borderRadius: 14, border: '1.5px solid ' + (on ? C.p : C.line), background: on ? '#eef5fd' : '#FFFFFF', color: on ? C.p : C.ink, fontFamily: 'var(--font-brand)', fontSize: 11, fontWeight: 800, cursor: 'pointer', lineHeight: 1.15 } },
         h('span', { 'aria-hidden': 'true', style: { width: '100%', height: 28, display: 'block', opacity: on ? 1 : .7 }, dangerouslySetInnerHTML: { __html: sv.replace('<svg ', '<svg width="100%" height="28" preserveAspectRatio="xMidYMid meet" ') } }), t, k === tipoSolicitud(caso) ? h('small', { style: { fontSize: 10, color: C.muted, fontWeight: 700 } }, 'solicitud') : null); }));
     const sup = svgDe(s.tipo, 'superior', 'icono'), ext = L.filter((p) => p.pos);

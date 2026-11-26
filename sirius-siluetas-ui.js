@@ -27,10 +27,26 @@
   const nombreCarr = (id) => (carrocerias().find(c => c.id === id) || {}).nombre || id;
   const esMaq = (id) => (carrocerias().find(c => c.id === id) || {}).grupo === 'Maquinaria';
 
+  // ---------- L-4 · DEC-298 y DEC-299: ilustración de la vista superior (SIRIUS_SILUETAS 1.7 · SQL 100) ----------
+  // geometria.<carrocería>.superior.imagen = { src, x, y, w, h } en las unidades del vb de la vista. En pantalla, la vista superior con imagen se dibuja
+  // con <image> dentro del mismo <svg> (mismo viewBox) en lugar de las capas vectoriales; puntos, zonas y anillos («extra») siguen encima.
+  // Las capas quedan ocultas en el mismo <svg>: si la imagen no carga, vuelven (escucha de «error» en captura). La guía de cámara y el PDF no usan la imagen.
+  const imgSup = (tipo, vista, estilo, o) => { if (vista !== 'superior' || estilo === 'guia' || (o && o.vectorial)) return null; const B = S(), g = B && B.geometria && B.geometria[tipo], im = g && g.superior && g.superior.imagen;
+    if (!im || typeof im.src !== 'string' || !im.src.trim()) return null; const n = [im.x, im.y, im.w, im.h].map(Number); return n.every(isFinite) && n[2] > 0 && n[3] > 0 ? { src: im.src.trim(), x: n[0], y: n[1], w: n[2], h: n[3] } : null; };
+  const escAt = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  function svgPantalla(tipo, vista, estilo, opts) { const B = S(); if (!B) return ''; const txt = B.svg(tipo, vista, estilo, opts), im = imgSup(tipo, vista, estilo, opts); if (!im) return txt;
+    const i = txt.indexOf('>') + 1, j = txt.lastIndexOf('</svg>'), extra = (opts && opts.extra) || ''; if (i <= 0 || j < i) return txt; let body = txt.slice(i, j); if (extra && body.slice(-extra.length) === extra) body = body.slice(0, body.length - extra.length);
+    return txt.slice(0, i) + '<g data-sil-vec="1" style="display:none">' + body + '</g><image data-sil-img="1" href="' + escAt(im.src) + '" x="' + im.x + '" y="' + im.y + '" width="' + im.w + '" height="' + im.h + '" preserveAspectRatio="none"/>' + extra + '</svg>'; }
+  if (typeof document !== 'undefined' && !window.__siriusSilImgErr) { window.__siriusSilImgErr = true;
+    document.addEventListener('error', (e) => { const t = e.target; if (!t || !t.getAttribute || t.getAttribute('data-sil-img') !== '1') return; t.setAttribute('data-sil-img', 'error'); t.style.display = 'none';
+      const g = t.parentNode && t.parentNode.querySelector ? t.parentNode.querySelector('[data-sil-vec]') : null; if (g) g.style.display = ''; }, true); }
+  // Carrocerías por formulario desde la biblioteca (las nuevas aparecen solas): veh (no maquinaria ni moto), moto, em (maquinaria).
+  const carrForm = (f) => carrocerias().filter(c => (S().geometria || {})[c.id] && (f === 'em' ? c.grupo === 'Maquinaria' : f === 'moto' ? c.id === 'moto' : c.grupo !== 'Maquinaria' && c.id !== 'moto'));
+
   // ---------- Mapa de captura (dibujo) ----------
   // Puntos sobre la vista superior en estilo «icono»; el lienzo se amplía 26 px por lado para los puntos que quedan en el borde.
   function mapaSvg(tipo, puntos, o) { const B = S(); if (!B) return ''; const vb = B.geometria[tipo].superior.vb, M = 26, W = vb[2] + 2 * M, H = vb[3] + 2 * M;
-    const base = B.svg(tipo, 'superior', 'icono', { etiqueta: 'Vista superior' }).replace(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" /, '<svg x="' + M + '" y="' + M + '" width="' + vb[2] + '" height="' + vb[3] + '" ');
+    const base = svgPantalla(tipo, 'superior', 'icono', { etiqueta: 'Vista superior' }).replace(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" /, '<svg x="' + M + '" y="' + M + '" width="' + vb[2] + '" height="' + vb[3] + '" ');
     const F = 'font-family="Mulish, Arial, sans-serif"';
     const pts = puntos.map(p => { const x = M + p.pos[0], y = M + p.pos[1], st = p.estado || 'pendiente';
       const fill = st === 'actual' ? '#0B5CAD' : st === 'hecho' ? '#1b7a43' : st === 'repetir' ? '#b7791f' : '#FFFFFF', stroke = st === 'pendiente' || st === 'opcional' ? '#0B5CAD' : '#FFFFFF', txt = st === 'pendiente' || st === 'opcional' ? '#0B2E59' : '#FFFFFF';
@@ -287,7 +303,7 @@
     const onKey = (e, x) => { const k = e.key, dd = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[k]; if (!dd || ro) return; e.preventDefault(); const p0 = (tmp && tmp.id === x.id ? tmp.pos : x.pos) || [vb[2] / 2, vb[3] / 2]; setTmp({ id: x.id, pos: [p0[0] + dd[0], p0[1] + dd[1]] }); };
     const onKeyUp = (e, x) => { if (!/^Arrow/.test(e.key) || ro || !tmp || tmp.id !== x.id) return; const q = tmp.pos; setTmp(null); ponPos(x.id, q, x.name + ' movido a ' + q[0] + ', ' + q[1]); };
     // Dibujo: la vista superior (estilo ícono), el recorrido punteado en orden y los puntos numerados.
-    const base = B.svg(tipo, 'superior', 'icono', { etiqueta: 'Vista superior' }).replace(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" /, '<svg x="' + MG + '" y="' + MG + '" width="' + vb[2] + '" height="' + vb[3] + '" ');
+    const base = svgPantalla(tipo, 'superior', 'icono', { etiqueta: 'Vista superior' }).replace(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" /, '<svg x="' + MG + '" y="' + MG + '" width="' + vb[2] + '" height="' + vb[3] + '" ');
     const ruta = enDib.map(x => (x.pos[0] + MG) + ',' + (x.pos[1] + MG)).join(' ');
     const dibujo = h('svg', { ref: svgRef, viewBox: '0 0 ' + W + ' ' + H, role: 'group', 'aria-label': 'Mapa de captura de ' + nombreCarr(tipo) + ' en ' + MODTXT + ': ' + enDib.length + ' puntos' + (armado ? ' · haz clic donde va ' + byId[armado].name : ''), 'data-mapa-dibujo': tipo,
         onPointerMove: onMove, onPointerUp: onUp, style: { width: '100%', height: 'auto', display: 'block', cursor: armado ? 'crosshair' : 'default', touchAction: 'none', userSelect: 'none' } },
@@ -378,7 +394,7 @@
   function ahoraTxt() { const E = window.SIRIUS_EJEMPLO || {}, d = E.ahora ? E.ahora() : new Date(2026, 9, 18, 20, 30), z = (n) => String(n).padStart(2, '0'); return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' · ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
   function zonasSvg(t, vista, sel) { const B = S(), Z = (B.zonas || {})[t] || [], F = 'font-family="Mulish, Arial, sans-serif"';
     const extra = Z.map((z, k) => { const q = B.posicion(t, z.id, vista); if (!q) return ''; const on = sel === z.id; return '<g data-zona="' + z.id + '"><circle cx="' + q[0] + '" cy="' + q[1] + '" r="' + (on ? 11 : 9) + '" fill="' + (on ? '#0B5CAD' : '#FFFFFF') + '" stroke="#0B5CAD" stroke-width="2"/><text ' + F + ' x="' + q[0] + '" y="' + (q[1] + 3.5) + '" font-size="9.5" font-weight="800" text-anchor="middle" fill="' + (on ? '#FFFFFF' : '#0B2E59') + '">' + (k + 1) + '</text></g>'; }).join('');
-    return B.svg(t, vista, 'pdf', { extra, etiqueta: nombreCarr(t) + ' · ' + vista + ' con ' + Z.length + ' zonas' }); }
+    return svgPantalla(t, vista, 'pdf', { extra, etiqueta: nombreCarr(t) + ' · ' + vista + ' con ' + Z.length + ' zonas' }); }
   function SiriusSiluetasCatalogo(p) { const B = S(), e = p.escena || '';
     const s0 = R().useState(e === 'siluetaszonas' ? 'zonas' : 'galeria'), tab = s0[0], setTab = s0[1], s1 = R().useState(e === 'siluetaszonas' ? 'cargadora' : 'sedan'), tz = s1[0], setTz = s1[1];
     const s2 = R().useState(null), ed = s2[0], setEd = s2[1], s3 = R().useState(0), ver = s3[0], setVer = s3[1], s4 = R().useState('sedan'), tm = s4[0], setTm = s4[1], s5 = R().useState(null), zSel = s5[0], setZSel = s5[1];
@@ -397,7 +413,7 @@
           h('div', { key: 'g', role: 'table', 'aria-label': 'Vistas de ' + c.nombre + ' por estilo', style: { display: 'grid', gridTemplateColumns: '92px repeat(4,minmax(0,1fr))', gap: 8, alignItems: 'center' } },
             h('span', { role: 'columnheader' }), VISTAS4.map(([v, l]) => h('span', { key: v, role: 'columnheader', style: { fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center' } }, l)),
             ESTILOS.map(([es, el]) => [h('span', { key: es + 'h', role: 'rowheader', style: { fontSize: 12, fontWeight: 700, color: 'var(--text-strong)' } }, el)].concat(VISTAS4.map(([v, l]) => h('div', { key: es + v, role: 'cell', title: c.nombre + ' · ' + l + ' · ' + el, style: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: 92, padding: 6, borderRadius: 6, background: es === 'guia' ? '#1b232d' : es === 'icono' ? '#FFFFFF' : '#F4F7FA', border: '1px solid var(--border-subtle)' } },
-              svgHtml(B.svg(c.id, v, es, { etiqueta: c.nombre + ' ' + l + ' ' + el }).replace('<svg ', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block" '), { width: '100%', height: '100%' })))))) ], { key: c.id }))); }
+              svgHtml(svgPantalla(c.id, v, es, { vectorial: es === 'pdf' /* L-4: la columna PDF muestra lo que dibuja el PDF */, etiqueta: c.nombre + ' ' + l + ' ' + el }).replace('<svg ', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block" '), { width: '100%', height: '100%' })))))) ], { key: c.id }))); }
     else if (tab === 'zonas') { const Z = (B.zonas || {})[tz] || [], err = ed && String(ed.motivo || '').trim().length < 10 && ed.intento ? 'Escribe el motivo (mínimo 10 caracteres).' : '', errN = ed && !String(ed.nombre || '').trim() && ed.intento ? 'Escribe el nombre de la zona.' : '';
       const guardar = () => { const z = Z[ed.k], nv = String(ed.nombre || '').trim(), mo = String(ed.motivo || '').trim(); if (!nv || mo.length < 10) { setEd(Object.assign({}, ed, { intento: true })); return; }
         if (nv === z.nombre) { setEd(null); return; } const what = 'Renombró la zona «' + z.nombre + '» de ' + nombreCarr(tz) + ' a «' + nv + '»'; z.nombre = nv; ZHIST.unshift({ when: ahoraTxt(), by: p.usuario || '—', what, motivo: mo }); if (p.onHist) p.onHist({ what, motivo: mo }); setEd(null); setVer(ver + 1);
@@ -429,6 +445,7 @@
     return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 } }, tabs, h('div', { id: 'sil-panel', role: 'tabpanel', 'aria-labelledby': 'sil-tab-' + tab, style: { minWidth: 0 } }, cuerpo)); }
 
   Object.assign(window, { SiriusSiluetasCatalogo, SiriusMapaCaptura, SiriusGuiaPaso });
-  window.SiriusSiluetasUI = { mapaSvg, pasosMapa, completar, claveTexto, marcoSvg, VistaPrevia, guiaDeTexto, normGuia, textoDeGuia, ordenModo, posDe, copiarPos, validarSvg, agregarSilueta, esDoc }; // C2-15: utilidades del mapa editable y la guía
+  window.SiriusSiluetaSvg = svgPantalla; // L-4: vista superior con ilustración en pantalla (no en el PDF)
+  window.SiriusSiluetasUI = { svgPantalla, imgSup, carrForm, mapaSvg, pasosMapa, completar, claveTexto, marcoSvg, VistaPrevia, guiaDeTexto, normGuia, textoDeGuia, ordenModo, posDe, copiarPos, validarSvg, agregarSilueta, esDoc }; // C2-15: utilidades del mapa editable y la guía
   window.SiriusSiluetaNueva = SiriusSiluetaNueva;   // etapa 12d-1c: VistaPrevia para el panel del espacio de trabajo
 })();
