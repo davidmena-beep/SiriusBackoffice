@@ -278,6 +278,18 @@
 </sc-if>
 </div>
 </x-import>
+<x-import component-from-global-scope="SiriusModal" from="./sirius-modal.js" open="{{ plOpen }}" on-close="{{ plClose }}" size="md" align="left" title="La placa ya está en otro caso" description="{{ plDesc }}" footer="{{ plFooter }}" hint-size="0px,0px">
+<div data-ns-placa-aviso="" style="display:flex;flex-direction:column;gap:16px"><!-- L-2 · DEC-295: advertencia, no error -->
+<div role="alert" style="display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-radius:var(--radius-sm);background:var(--color-warning-bg);border:1px solid var(--color-warning, #C28A00)">
+<sc-for list="{{ plRows }}" as="pr" hint-placeholder-count="1"><div style="display:flex;flex-direction:column;gap:0"><span style="font-size:15px;font-weight:700;color:var(--text-strong)">{{ pr.txt }}</span><span style="font-size:13px;color:var(--text-muted)">{{ pr.veh }}</span></div></sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="ns-motivoPlaca" style="font-size:14px;font-weight:700;color:var(--text-strong)">Motivo <span aria-hidden="true" style="color:var(--color-danger)">*</span></label>
+<textarea id="ns-motivoPlaca" rows="3" value="{{ plMotivo }}" onChange="{{ onPlMotivo }}" onBlur="{{ onPlBlur }}" aria-invalid="{{ plInv }}" aria-describedby="ns-motivoPlaca-help" placeholder="Ej. Es una renovación: el caso anterior ya se inspeccionó." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid {{ plBorde }};border-radius:var(--radius-sm);font-family:var(--font-brand);font-size:15px;resize:vertical"></textarea>
+<span id="ns-motivoPlaca-help" style="font-size:13px;color:{{ plAyudaColor }}">{{ plAyuda }}</span>
+</div>
+</div>
+</x-import>
 </section>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;cases&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Array&lt;object&gt;&quot;},&quot;preset&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;formKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;role&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onRegister&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(data:object)=&gt;void&quot;},&quot;onOpenCase&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(id:string)=&gt;void&quot;},&quot;onDirtyChange&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(dirty:boolean)=&gt;void&quot;},&quot;onDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
@@ -354,6 +366,12 @@ class Component extends DCLogic {
     return Object.assign({ grupoRamo: veh ? 'Vehículos' : 'Ramos Generales', ramo: veh ? 'Vehículos' : d.ramosSel[0] || '', sucursal: d.sucursal, asegurado: this.cxPersona(ase) /* S-1b: la persona completa */ },
       d.mismo ? {} : { solicitante: this.cxPersona(d.sol) /* S-1b: solo si no es el asegurado */ }, { poliza: this.cxPoliza(d),
       solicitud: mov ? this.cxSin(L0) : L0, riesgos, modalidadSugerida: d.cxModalidad || 'Presencial', observaciones: [dup, obs, otros].filter(Boolean).join(' · '), origen: 'Back-office' }); }
+  // L-2 · DEC-295: placas de los vehículos de la solicitud (las que se envían a la base), sin repetir el formato.
+  cxPlacas(d) { return d.tipoRiesgo === 'Vehículos' ? (d.vehs || []).filter(v => !v.sinPlaca && String(v.placa || '').trim()).map(v => this.pl(v.placa)) : []; }
+  // crearCaso; con motivo ('' si no hubo advertencia) viaja como datos.motivoPlaca. Con { ok: false } el formulario conserva lo escrito y muestra el mensaje.
+  cxRegistrar(motivo) { const s = this.state, d = s.d, M = this.modo(), pay = this.cxPayload(); if (motivo) pay.motivoPlaca = motivo;
+    const r = this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', cxCrear: pay, duplicadoDe: M && M.tipo === 'duplicar' ? M.caso : '' }));
+    if (r && typeof r.then === 'function') { this.setState({ cxEnv: true, cxErr: '' }); r.then(x => { x = x || {}; if (x.ok === false) { this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no pudo crear el caso.' }); setTimeout(() => { const el = document.querySelector('[data-ns-cx-error]'); if (el) el.scrollIntoView({ block: 'center' }); }, 60); } else this.setState({ cxEnv: false }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' })); } }
   // ---------- Marca y modelo desde el catálogo (etapa 10c-c · DEC-079): SIRIUS_CATALOGOS_MAESTROS.marcas ----------
   mmNorm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
   mmMarcas() { return ((window.SIRIUS_CATALOGOS_MAESTROS || {}).marcas || []); }
@@ -414,7 +432,8 @@ class Component extends DCLogic {
         return s; }
       if (pr === 'cxnuevaflota') { d.vehs = [V('f1', 'PCK2210', 'Hyundai', 'Tucson', '2021', 24500, 'SUV o Jeep'), V('f2', 'GBA7781', 'Nissan', 'Frontier', '2023', 31800, 'Camioneta'), V('f3', 'PDF3350', 'Mazda', 'CX-30', '2022', 26200, 'SUV o Jeep'), V('f4', 'TBC9087', 'Renault', 'Duster', '2024', 21400)];
         d.vehForm = Object.assign(this.vehBlank(), { placa: 'GBA7781', marca: 'Toyota', modelo: 'Hilux', anio: '2020', cobertura: 'Todo riesgo', casco: 29900, tipoVeh: 'Camioneta', cp: { uso_comercial: 'No' } }); s.touched = { 'vehForm.placa': true }; s.step = 3; s.maxStep = 3; return s; }
-      d.vehs = pr === 'cxnuevaerror' ? [V('e1', 'PRB1212', 'Kia', 'Rio', '2022', 18900, 'Sedán')] : [V('a1', 'PCK2210', 'Hyundai', 'Tucson', '2021', 24500, 'SUV o Jeep'), V('a2', 'IB456K', 'Suzuki', 'GN125', '2023', 2400, 'Sin tipo')];
+      if (pr === 'cxnuevaplaca') { d.vehs = [V('p1', 'GRZ3276', 'Kia', 'Sportage GT', '2018', 17500, 'SUV o Jeep')]; s.step = 4; s.maxStep = 4; /* L-2 · DEC-295: GRZ3276 está en el caso 50068; ?fvista=advertencia deja la advertencia abierta */ if (vr === 'advertencia') s.plAv = { lista: [{ placa: 'GRZ3276', caso: '50068', estado: 'Informe por completar', vehiculo: 'Kia Sportage GT 2018' }], motivo: '', tocado: false }; return s; }
+      d.vehs = pr === 'cxnuevaerror' ? [V('e1', 'PRB1212', 'Kia', 'Rio', '2022', 18900, 'Sedán'), V('e2', 'PRB1212', 'Kia', 'Rio', '2022', 18900, 'Sedán')] : [V('a1', 'PCK2210', 'Hyundai', 'Tucson', '2021', 24500, 'SUV o Jeep'), V('a2', 'IB456K', 'Suzuki', 'GN125', '2023', 2400, 'Sin tipo')];
       s.step = 4; s.maxStep = 4; return s; }
     if (pr === 'nuevageo') { /* Etapa P-6f-c: Provincia y Cantón del catálogo del INEC (24 provincias; el cantón depende de la provincia) */
       Object.assign(d, { tipoRiesgo: 'Vehículos', lineaVeh: 'Automotriz', orden: 'OE-2026-09020' });
@@ -1043,6 +1062,18 @@ class Component extends DCLogic {
       caseTotal: this.usd(veh ? vehTotalAll : rgTotal),
       canBack: step > 1, onBack: () => this.setState({ step: step - 1 }),
       pendingHint: hint, nextDisabled: !valid, nextLabel: step < 4 ? 'Siguiente' : s.cxEnv ? (ED ? 'Guardando…' : 'Registrando…') : ED ? 'Guardar cambios' : 'Registrar solicitud',
+      plOpen: !!s.plAv && step === 4, plClose: () => this.setState({ plAv: null }),
+      plDesc: s.plAv && s.plAv.lista.length > 1 ? 'Estas placas ya están en otros casos abiertos. Puedes registrar la solicitud de todas formas; el motivo queda en el caso nuevo.' : 'Esta placa ya está en otro caso abierto. Puedes registrar la solicitud de todas formas; el motivo queda en el caso nuevo.',
+      plRows: s.plAv ? s.plAv.lista.map(x => ({ txt: x.placa + ' · caso ' + x.caso + ' · ' + (x.estado || 'sin estado'), veh: x.vehiculo || '' })) : [],
+      plMotivo: s.plAv ? s.plAv.motivo : '', onPlMotivo: (e) => { const v = e.target.value; this.setState(st => ({ plAv: st.plAv ? Object.assign({}, st.plAv, { motivo: v }) : st.plAv })); },
+      onPlBlur: () => this.setState(st => ({ plAv: st.plAv ? Object.assign({}, st.plAv, { tocado: true }) : st.plAv })),
+      plInv: s.plAv && s.plAv.tocado && s.plAv.motivo.trim().length < 5 ? 'true' : undefined,
+      plBorde: s.plAv && s.plAv.tocado && s.plAv.motivo.trim().length < 5 ? 'var(--color-danger)' : 'var(--input-outlined-border)',
+      plAyuda: s.plAv && s.plAv.tocado && s.plAv.motivo.trim().length < 5 ? 'Escribe el motivo: mínimo 5 caracteres.' : 'Obligatorio · mínimo 5 caracteres.',
+      plAyudaColor: s.plAv && s.plAv.tocado && s.plAv.motivo.trim().length < 5 ? 'var(--color-danger)' : 'var(--text-muted)',
+      plFooter: React.createElement(React.Fragment, null,
+        ((NS) => NS.Button ? React.createElement(NS.Button, { key: 'v', variant: 'ghost', onClick: () => this.setState({ plAv: null }) }, 'Volver') : null)(window.AseguradoraDelSurDesignSystem_4fbf29 || {}),
+        ((NS) => NS.Button ? React.createElement(NS.Button, { key: 'r', variant: 'primary', onClick: () => { const a = this.state.plAv; if (!a) return; if (a.motivo.trim().length < 5) { this.setState({ plAv: Object.assign({}, a, { tocado: true }) }); return; } this.setState({ plAv: null }); this.cxRegistrar(a.motivo.trim()); } }, 'Registrar de todas formas') : null)(window.AseguradoraDelSurDesignSystem_4fbf29 || {})),
       cxErrShow: (step === 4 || ED) && !!s.cxErr, cxErr: s.cxErr || '', cxEnviando: !!s.cxEnv,
       onNext: () => {
         if (!valid) { const t = Object.assign({}, s.touched); keys.forEach(k => { t[k] = true; }); this.setState({ touched: t, edTocado: true }); this.jumpErr(keys.find(k => errs[k][0] !== '!')); if (step === 4) { const back = keys.some(k => k.startsWith('cp.')) ? 1 : keys.some(k => k.startsWith('vehs.')) ? 3 : 0; if (back) { this.setState({ step: back }); this.jumpErr(keys.find(k => k.startsWith(back === 1 ? 'cp.' : 'vehs.'))); } } return; }
@@ -1056,9 +1087,16 @@ class Component extends DCLogic {
           const r = this.props.onEditar && this.props.onEditar({ caso: M.caso, cambios: ch, motivo: edM.trim() }, JSON.parse(JSON.stringify(d)));
           this.setState({ cxEnv: true, cxErr: '' }); Promise.resolve(r).then(x => { x = x || {}; if (x.ok === false) this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no guardó los cambios.' }); else this.setState({ cxEnv: false, edOk: x.mensaje || 'Cambios guardados.', d0: JSON.parse(JSON.stringify(this.state.d)) }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' }));
           return; }
-        if (this.cx()) { if (s.cxEnv) return; /* P-6f: crearCaso; con { ok: false } el formulario conserva lo escrito y muestra el mensaje */
-          const r = this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', cxCrear: this.cxPayload(), duplicadoDe: M && M.tipo === 'duplicar' ? M.caso : '' }));
-          if (r && typeof r.then === 'function') { this.setState({ cxEnv: true, cxErr: '' }); r.then(x => { x = x || {}; if (x.ok === false) { this.setState({ cxEnv: false, cxErr: x.mensaje || 'La base no pudo crear el caso.' }); setTimeout(() => { const el = document.querySelector('[data-ns-cx-error]'); if (el) el.scrollIntoView({ block: 'center' }); }, 60); } else this.setState({ cxEnv: false }); }, () => this.setState({ cxEnv: false, cxErr: 'No hubo respuesta de la base. Intenta de nuevo.' })); }
+        if (this.cx()) { if (s.cxEnv) return;
+          /* L-2 · DEC-295: antes de registrar se consultan las placas (placasEnUso). Sin coincidencias se registra como siempre; con coincidencias sale la advertencia con el motivo.
+             Si la misma placa va dos veces en la solicitud no se consulta: la base la rechaza y ese mensaje se mantiene. */
+          const pls = this.cxPlacas(d), X = window.SIRIUS_CONEXION;
+          if (pls.length && pls.length === new Set(pls).size && X && typeof X.placasEnUso === 'function') {
+            this.setState({ cxEnv: true, cxErr: '' });
+            let q; try { q = Promise.resolve(X.placasEnUso(pls)); } catch (e) { q = Promise.reject(e); }
+            q.then(lista => { lista = Array.isArray(lista) ? lista.filter(x => x && x.placa) : []; if (lista.length) this.setState({ cxEnv: false, plAv: { lista, motivo: '', tocado: false } }); else this.cxRegistrar(''); }, () => this.cxRegistrar(''));
+            return; }
+          this.cxRegistrar('');
           return; }
         this.props.onRegister && this.props.onRegister(Object.assign(JSON.parse(JSON.stringify(d)), { bpmFound: s.bpmSt === 'found', duplicadoDe: M && M.tipo === 'duplicar' ? M.caso : '' }));
       },

@@ -85,7 +85,7 @@
     return d;
   }
   const lab = (d, k) => ((d.def[k] || {}).l) || k;
-  // P-1f · DEC-273: las etiquetas son las del formulario (Nombre en la matrícula, GAD de matriculación, CAMV o CPN, VIN o chasis…); solo se acortan estas.
+  // P-1f · DEC-273: las etiquetas son las del formulario (Nombre en la matrícula, Cantón matriculación, CAMV o CPN, VIN o chasis…); solo se acortan estas.
   const LBL = { veh_modalidad_realizada: 'Modalidad', veh_vigencia_matricula: 'Matrícula vigente hasta', veh_contrato_compraventa: 'Contrato de compraventa', veh_numero_motor: 'Motor' };
   const NOFMT = /anio|identificacion|cedula|imei|voucher|puntos|edad|pasajeros|airbags|cilindraje/;
   function txt(d, k) { const x = d.val[k]; if (vacio(x)) return null; if (typeof x === 'boolean') return x ? 'Sí' : 'No'; if (k === 'veh_cilindraje' && num(x) != null) return miles(num(x)) + ' cc'; /* P-1f: «2.500 cc» */
