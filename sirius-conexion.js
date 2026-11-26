@@ -95,6 +95,7 @@
 // window.SIRIUS_FACULTADES toma la versión vigente de la base (SQL 35); al publicar desde Niveles se aplica en la sesión.
 // 12/11/2026 · SIRIUS_CONEXION.calificaciones[caso] = [{ riesgo, nivel, veredicto, cobertura, resultado, observacion, por, rol, hora }] (de la más antigua a la más reciente).
 (function () {
+  var BASE_JS = ((document.currentScript && document.currentScript.src) || '').replace(/[^\/]*$/, '');   // 25/11/2026 · carpeta de este archivo (para cargar sirius-lectura.js)
   var URLB = 'https://qdciqoxselwmudlycprq.supabase.co', KEY = 'sb_publishable_pUrNhusonmxflSItZlU0fQ_ohRpCrYW';
   var CLAVE = 'sb-qdciqoxselwmudlycprq-auth-token', INGRESO = 'index.html', SONDEO_MS = 20000;
   var sesion = null; try { sesion = JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch (e) {}
@@ -303,6 +304,23 @@
   }
   function aEvento(e) { var actor = (e.actor && e.actor.nombre) || (e.actor_tipo === 'Cliente' ? 'Cliente' : e.actor_tipo === 'Sistema' ? 'SIRIUS' : e.actor_tipo || '');
     return { hora: reloj(e.hora), accion: e.accion, detalle: e.detalle || '', actor: actor, rol: e.rol || (e.actor_tipo === 'Cliente' ? 'Portal del cliente' : '') }; }
+
+  // ---------- 25/11/2026 · Lecturas automáticas (SQL 93 · DEC-285 a DEC-289) ----------
+  // Para los usuarios internos, carga el motor de lectura (onnxruntime-web + sirius-lectura.js) y arranca su cola en segundo plano: lee las fotos
+  // pendientes de matrícula, licencia, placa, kilometraje y VIN; la base precarga el informe (solo campos vacíos) y genera los controles.
+  // Lee solo con la pestaña visible y el usuario inactivo. Si algo falla (por ejemplo, sin acceso a los modelos), el Back-office sigue igual.
+  var INTERNOS = ['Administrador', 'Coordinador de inspecciones', 'Ejecutivo de inspecciones', 'Suscriptor', 'Ejecutivo comercial', 'Finanzas'];
+  function cargarScript(src) { return new Promise(function (ok, no) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { no(new Error('No se pudo cargar ' + src)); }; document.head.appendChild(s); }); }
+  function iniciarLecturas() {
+    try {
+      var u = CX.usuario || {}, roles = u.roles || [u.rol]; if (!roles.some(function (r) { return INTERNOS.indexOf(r) >= 0; }) || CX.lecturas || !BASE_JS || /[?&]lecturas=off/.test(location.search)) return;
+      CX.rpc = rpc; CX.firmar = firmar; CX.lecturas = { activo: false };
+      (window.ort ? Promise.resolve() : cargarScript('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js'))
+        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=93'); })
+        .then(function () { CX.lecturas = window.SiriusLectura.cola(CX); })
+        .catch(function (e) { console.warn('[SIRIUS] lecturas automáticas no disponibles:', e.message); });
+    } catch (e) { console.warn('[SIRIUS] lecturas automáticas:', e.message); }
+  }
 
   // ---------- Contrato SIRIUS_CONEXION ----------
   // ---------- P-6b · evidencias (fotos reales con URL firmada), controles e informes ----------
@@ -585,6 +603,6 @@
       return Promise.all([Promise.all([rpc('configuracion_vigente', {}), origenes]).then(function (r) { CONFIG = r[0] || {}; Object.keys(ARCH).forEach(aplicar); aplicarEspeciales(); evento('*'); })
         .catch(function (e) { console.warn('[SIRIUS] configuración de la base no disponible:', e.message); }), cargarCasos()]);
     })
-    .then(function () { avisar(); setInterval(function () { cargarCasos().then(function (c) { if (c) avisar(); }).catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); }); }, SONDEO_MS); })
+    .then(function () { avisar(); iniciarLecturas(); setInterval(function () { cargarCasos().then(function (c) { if (c) avisar(); }).catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); }); }, SONDEO_MS); })
     .catch(function (e) { if (e.message === 'sesion') salir('Tu sesión venció. Ingresa de nuevo.'); else { console.error('[SIRIUS] conexión:', e); aviso('no se pudieron leer los casos (' + String(e.message || e).slice(0, 220) + ')'); } });
 })();
