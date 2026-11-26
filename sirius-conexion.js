@@ -416,6 +416,9 @@
       .catch(function (e) { var m = String(e.message || e); return { ok: false, mensaje: /red_lugar|PGRST202/.test(m) ? 'La base todavía no tiene la Red por lugar (falta el SQL 75)' : m.slice(0, 200) }; }); },
     redAccion: function (tipo, datos) { return rpc('red_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };   // R-2 · DEC-262
       return cargarCasos().then(function () { avisar(); return r; }, function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: String(e.message || e).slice(0, 200) }; }); },
+    // 26/11/2026 · SQL 97 · DEC-295: placas que ya están en un caso abierto → [{ placa, caso, estado, vehiculo }] (para advertir antes de registrar; ya no bloquea).
+    // Al registrar, datos.motivoPlaca (texto, opcional) queda en el control y en el historial de ambos casos; la respuesta trae además «aviso».
+    placasEnUso: function (placas) { return rpc('bo_placas_en_uso', { p_placas: placas || [] }).then(function (r) { return Array.isArray(r) ? r : []; }).catch(function () { return []; }); },
     accion: function (tipo, datos) { return rpc('bo_accion', { p_tipo: tipo, p_datos: datos || {} }).then(function (r) { r = r || { ok: false, mensaje: 'Sin respuesta de la base' };
   // N-2c: la versión vigente de cada configuración, para publicar «vigente + 1» y mostrarla en los editores: { clave: { version, fecha, por, datos } }
   try { Object.defineProperty(CX, 'configuracion', { configurable: true, enumerable: true, get: function () { var o = {};
