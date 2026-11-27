@@ -273,7 +273,7 @@ let ultimaActividad = Date.now(); if (!EN_WORKER) ['mousemove', 'keydown', 'poin
 function cola(CX, op) {
   op = Object.assign({ cadaMs: 15000, inactivoMs: 8000, carpeta: '', indicador: true }, op || {}); let ocupado = false, aplicado = 0, w = null, sec = 0; const espera = {};
   const estado = { leidas: 0, errores: 0, pendientes: null, ultima: null, activo: true, modo: 'página' };
-  try { if (op.carpeta && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') { w = new Worker(op.carpeta + 'sirius-lectura-worker.js?v=96'); estado.modo = 'segundo plano';
+  try { if (op.carpeta && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') { w = new Worker(op.carpeta + 'sirius-lectura-worker.js?v=101'); estado.modo = 'segundo plano';
       w.onmessage = (e) => { const d = e.data || {}, f = espera[d.id]; if (!f) return; delete espera[d.id]; d.error ? f.no(new Error(d.error)) : f.ok(d.lectura); };
       w.onerror = (e) => { console.warn('[SIRIUS lectura] sin Web Worker:', e.message || e); Object.values(espera).forEach(f => f.no(new Error('Worker no disponible'))); w = null; estado.modo = 'página'; };
       w.postMessage({ base: BASE }); } } catch (e) { w = null; }
@@ -288,7 +288,9 @@ function cola(CX, op) {
       for (let i = 0; i < 40; i++) {   // hasta agotar la cola, de a una foto
         const r = await CX.rpc('lectura_pendientes', { p_limite: 1, p_caso: casoAbierto() }); const pend = Array.isArray(r) ? r : (r && r.fotos) || []; estado.pendientes = r && r.pendientes != null ? r.pendientes : pend.length;
         if (!pend.length) break; const p = pend[0]; avisar('Leyendo documentos · ' + (hechas + 1) + ' de ' + (hechas + Math.max(1, estado.pendientes)));
-        let lectura; try { const urls = await CX.firmar([p.ruta]); if (!urls[p.ruta]) throw new Error('Sin URL firmada'); lectura = await leerUna(urls[p.ruta], p.tipo); }
+        let lectura; try { const urls = await CX.firmar([p.ruta]); if (!urls[p.ruta]) throw new Error('Sin URL firmada');
+          // SQL 101 · DEC-300: el tablero lo lee la IA (función de Supabase lectura-tablero); lo demás, el OCR del navegador
+          lectura = p.tipo === 'tablero' ? await (CX.funcion ? CX.funcion('lectura-tablero', { url: urls[p.ruta] }) : Promise.reject(new Error('La conexión no admite funciones'))) : await leerUna(urls[p.ruta], p.tipo); }
         catch (e) { lectura = { tipo: p.tipo, motor: 'PP-OCRv4', campos: {}, error: String(e && e.message || e).slice(0, 200) }; estado.errores++; }
         await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); hechas++; estado.leidas++; estado.ultima = new Date().toISOString();
         if (document.visibilityState !== 'visible' || (!w && Date.now() - ultimaActividad < op.inactivoMs)) break;

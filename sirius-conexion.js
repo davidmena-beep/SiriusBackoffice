@@ -315,6 +315,9 @@
     try {
       var u = CX.usuario || {}, roles = u.roles || [u.rol]; if (!roles.some(function (r) { return INTERNOS.indexOf(r) >= 0; }) || CX.lecturas || !BASE_JS || /[?&]lecturas=off/.test(location.search)) return;
       CX.rpc = rpc; CX.firmar = firmar; CX.lecturas = { activo: false };
+      // 26/11/2026 · SQL 101 · DEC-300: funciones de Supabase con la sesión del usuario (lectura de testigos con IA: lectura-tablero)
+      CX.funcion = function (nombre, cuerpo) { return renovar().then(function () { return fetch(URLB + '/functions/v1/' + nombre, { method: 'POST', headers: cab(), body: JSON.stringify(cuerpo || {}) }); })
+        .then(function (r) { return r.json().catch(function () { return { error: 'Respuesta no válida (' + r.status + ')' }; }).then(function (d) { if (!r.ok || (d && d.error)) throw new Error((d && (d.error || d.message)) || ('La función respondió ' + r.status)); return d; }); }); };
       // 26/11/2026 · SQL 94: recomendaciones de catálogo (valores leídos que no están en un catálogo). Contrato para la pantalla Catálogos:
       //   SIRIUS_CONEXION.catalogoSugerencias = [{ id, campo, valor, veces, estado (Pendiente, Agregada, Descartada), primera, ultima, ultimoCaso, resueltoPor }]
       //   SIRIUS_CONEXION.resolverSugerenciaCatalogo(id, estado) → Promise<{ ok, mensaje? }> (solo Administrador); recarga la lista y avisa a las pantallas.
@@ -323,7 +326,7 @@
       CX.resolverSugerenciaCatalogo = function (id, estado) { return rpc('catalogo_sugerencia_resolver', { p_id: id, p_estado: estado }).then(function (r) { return cargarSug().then(function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: e.message }; }); };
       cargarSug(); setInterval(cargarSug, 300000);
       (window.ort ? Promise.resolve() : cargarScript('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js'))
-        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=96'); })
+        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=101'); })
         .then(function () { CX.recargar = function () { return cargarCasos().then(function (c) { if (c) avisar(); }).catch(function () {}); };   // 26/11/2026 · al terminar una lectura, el informe y los controles se refrescan
           CX.lecturas = window.SiriusLectura.cola(CX, { carpeta: BASE_JS }); })   // SQL 96: la lectura corre en un Web Worker (sirius-lectura-worker.js)
         .catch(function (e) { console.warn('[SIRIUS] lecturas automáticas no disponibles:', e.message); });
@@ -339,11 +342,12 @@
   // la lectura rápida del celular (Tesseract) solo se muestra si todavía no hay lectura automática; la marca «en proceso» no se muestra.
   var NOMBRE_LECTURA = { placa: 'Placa', vin: 'VIN', motor: 'Motor', km: 'Kilometraje', marca: 'Marca', modelo: 'Modelo', anio_modelo: 'Año modelo', color1: 'Color', clase: 'Clase', tipo: 'Tipo',
     cilindraje: 'Cilindraje', pasajeros: 'Pasajeros', combustible: 'Combustible', pais: 'País de origen', ramv: 'RAMV / CPN', identificacion: 'Identificación', propietario: 'Propietario',
-    provincia: 'Provincia', canton: 'Cantón', anio_matricula: 'Año de la matrícula', uso: 'Uso (clase de transporte)', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad', titular: 'Titular', categoria: 'Categoría', vigencia: 'Vigente hasta' };
+    provincia: 'Provincia', canton: 'Cantón', anio_matricula: 'Año de la matrícula', uso: 'Uso (clase de transporte)', fecha_emision: 'Fecha de emisión', fecha_caduca: 'Fecha de caducidad', titular: 'Titular', categoria: 'Categoría', vigencia: 'Vigente hasta',
+    tablero_encendido: 'Tablero encendido', check_engine: 'Check engine', abs: 'ABS', airbag: 'Airbag', presion_aceite: 'Presión de aceite', bateria: 'Batería', temperatura: 'Temperatura', frenos: 'Frenos', otros: 'Otros testigos encendidos' };
   function lecturasVista(e) { var L = e.lecturas || {}, o = L.ocr, r = {};
     if (o && typeof o === 'object') {
       if (o.error) r['Lectura automática'] = { valor: 'no se pudo leer (' + o.error + ')' };
-      else { var cs = o.campos || {}; Object.keys(cs).forEach(function (k) { var c = cs[k] || {}; r[NOMBRE_LECTURA[k] || k] = { valor: String(c.valor == null ? '' : c.valor) + (c.dudoso ? ' (por confirmar)' : '') + (c.alerta ? ' · ' + c.alerta : ''), conf: c.conf }; });
+      else { var cs = o.campos || {}; Object.keys(cs).forEach(function (k) { var c = cs[k] || {}; r[NOMBRE_LECTURA[k] || k] = { valor: (Array.isArray(c.valor) ? c.valor.join(', ') : String(c.valor == null ? '' : c.valor)) + (c.dudoso ? ' (por confirmar)' : '') + (c.alerta ? ' · ' + c.alerta : ''), conf: c.conf }; });
         if (!Object.keys(cs).length && o.tipo && o.tipo !== 'otro') r['Lectura automática'] = { valor: 'sin datos legibles' }; }
     } else if (L.ocr_en_proceso) r['Lectura automática'] = { valor: (Date.now() - new Date(L.ocr_en_proceso).getTime() < 120000) ? 'leyendo…' : 'en cola' };   // la reserva dura 2 minutos (SQL 96)
     Object.keys(L).forEach(function (k) { if (k === 'ocr' || k === 'ocr_en_proceso') return; var x = L[k] || {}; if (o && typeof o === 'object') return; if (x.valor == null || x.valor === '' || (x.conf === 0 && String(x.valor).length < 4)) return; r[k] = x; });
