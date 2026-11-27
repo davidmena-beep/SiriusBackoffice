@@ -291,7 +291,11 @@ function cola(CX, op) {
         let lectura; try { const urls = await CX.firmar([p.ruta]); if (!urls[p.ruta]) throw new Error('Sin URL firmada');
           // SQL 101 · DEC-300: el tablero lo lee la IA (función de Supabase lectura-tablero); lo demás, el OCR del navegador
           lectura = p.tipo === 'tablero' ? await (CX.funcion ? CX.funcion('lectura-tablero', { url: urls[p.ruta] }) : Promise.reject(new Error('La conexión no admite funciones'))) : await leerUna(urls[p.ruta], p.tipo); }
-        catch (e) { lectura = { tipo: p.tipo, motor: 'PP-OCRv4', campos: {}, error: String(e && e.message || e).slice(0, 200) }; estado.errores++; }
+        catch (e) { const msg = String(e && e.message || e).slice(0, 200);
+          // 26/11/2026 · error temporal del servicio de IA (alta demanda, límite, caída): no se registra; la reserva vence en 2 minutos y se
+          // vuelve a intentar (la base corta a los 3 intentos). Los demás errores sí se registran.
+          if (p.tipo === 'tablero' && /(temporal|\b50[03]\b|\b429\b|demand|tardó|Failed to fetch|NetworkError)/i.test(msg)) { estado.reintentos = (estado.reintentos || 0) + 1; continue; }
+          lectura = { tipo: p.tipo, motor: p.tipo === 'tablero' ? 'IA (Gemini)' : 'PP-OCRv4', campos: {}, error: msg }; estado.errores++; }
         await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); hechas++; estado.leidas++; estado.ultima = new Date().toISOString();
         if (document.visibilityState !== 'visible' || (!w && Date.now() - ultimaActividad < op.inactivoMs)) break;
       }
