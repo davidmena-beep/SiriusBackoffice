@@ -726,13 +726,14 @@
           {k: 'veh_neumaticos', l: 'Estado de neumáticos', t: 'Grilla', req: 'PV', src: ['Extracción automática'], cols: ['Posición', 'Marca', 'Medida', 'Labrado (mm)', 'Foto'], rows: ['Delantera izquierda', 'Delantera derecha', 'Trasera izquierda', 'Trasera derecha', 'Repuesto'], preex: true, help: 'Medida con el formato 205/55 R16. Labrado desde la foto con calibrador.', alertas: [{col: 'labrado', op: 'menor', a: 1.6, txt: 'Labrado bajo el mínimo'}]}
         ],
         tes: [
-          {k: 'veh_testigo_check_engine', l: 'Check engine', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_abs', l: 'ABS', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_airbag', l: 'Airbag', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_presion_aceite', l: 'Presión de aceite', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_bateria', l: 'Batería', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_temperatura', l: 'Temperatura', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true},
-          {k: 'veh_testigo_frenos', l: 'Frenos', t: 'Opción única', req: 'PV', src: ['Extracción automática'], opts: ['Encendido', 'Apagado', 'No aplica'], preex: true}
+          {k: 'veh_testigo_check_engine', l: 'Check engine', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_abs', l: 'ABS', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_airbag', l: 'Airbag', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_presion_aceite', l: 'Presión de aceite', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_bateria', l: 'Batería', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_temperatura', l: 'Temperatura', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigo_frenos', l: 'Frenos', t: 'Opción única', req: 'PV', src: ['Extracción automática'], ui: 'switch', opts: ['Encendido', 'Apagado'], preex: true},
+          {k: 'veh_testigos_otros', l: 'Otros testigos encendidos', t: 'Opción múltiple', src: ['Extracción automática'], opts: ['Presión de neumáticos', 'Control de estabilidad', 'Control de tracción', 'Cinturón de seguridad', 'Combustible bajo', 'Bujías de precalentamiento', 'Filtro de partículas', 'Líquido limpiaparabrisas'], help: 'Otros testigos del tablero que la lectura vio encendidos; no son los siete de arriba.', preex: true}
         ],
         ext: [
           {k: 'veh_extras', l: 'Extras', t: 'Grilla', cols: ['Descripción', 'Marca', 'Valor (USD)', 'Foto'], help: 'Descripción desde el catálogo de extras.'}

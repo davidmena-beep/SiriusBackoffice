@@ -6,6 +6,7 @@
 //   derecho plegable: evidencias de campo o insumos de campo de Ramos Generales, con «Cargar insumos») y SiriusCompletarBarra (barra de acción fija).
 // - Etapa C2-14 (DEC-192 a DEC-194): SiriusCompletarCabecera (fila del caso, menú ⋮ y pasos), SiriusCompletarPasoDecision, SiriusCompletarFotosSeccion,
 //   SiriusCompletarValores (Solicitud | Sugerido) y SiriusCompletarSiNo (interruptor Sí/No).
+// - Etapa L-5 (DEC-300): SiriusCompletarTestigo (interruptor de tres estados de los testigos del tablero), SiriusCompletarChips (opción múltiple) y SiriusCompletarFotoTablero.
 // - Etapa P-6e-2 · DEC-207: con la autoinspección no hay inspector en sitio; quién completa lo da SiriusCompletado.responsable(caso) (interno, agencia o independiente);
 //   el modo de la decisión pasa a 'interno' (Criterio y calificación: completa y califica en un paso) o 'tercero' (Ya los vi y a calificación). Presencial no cambia.
 // - SiriusCompletarOperacion: tarjeta «Operación» de la ficha de la agencia (opción «Sus inspectores completan su propio informe»).
@@ -357,10 +358,40 @@
       h('span', { 'aria-hidden': 'true', style: { position: 'relative', width: 44, height: 24, borderRadius: 999, boxSizing: 'border-box', border: sin ? '2px dashed var(--neutral-400, #98a6b6)' : '2px solid ' + (on ? 'var(--color-brand)' : 'var(--neutral-400, #98a6b6)'), background: sin ? 'var(--neutral-100, #eef2f6)' : on ? 'var(--color-brand)' : 'var(--neutral-300, #c6d0db)', opacity: dis ? .6 : 1, flex: '0 0 auto' } },
         h('span', { style: { position: 'absolute', top: 2, left: sin ? 11 : on ? 22 : 2, width: 16, height: 16, borderRadius: '50%', background: sin ? 'var(--neutral-300, #c6d0db)' : '#FFFFFF', boxShadow: '0 1px 2px rgba(0,0,0,.2)' } })),
       h('span', { style: { fontSize: 14, fontWeight: 700, color: sin ? 'var(--text-muted)' : 'var(--text-strong)', whiteSpace: 'nowrap' } }, sin ? 'Sin responder' : v)); }
+  // Etapa L-5 · DEC-300: testigos del tablero (campos con ui: 'switch'). Tres estados: «Sin revisar» (sin valor: gris claro, borde punteado, punto al centro),
+  // «Encendido» (rojo: indica una falla) y «Apagado» (gris). Tocar el interruptor alterna Encendido y Apagado (desde «Sin revisar», el primer toque lo deja
+  // «Encendido»); «Dejar sin revisar» borra el valor. Un valor que no es Encendido ni Apagado (p. ej. «No aplica») se muestra «Sin revisar» y se avisa cuál fue.
+  function Testigo(p) { const ON = p.valorOn || 'Encendido', OFF = p.valorOff || 'Apagado', v = p.valor === ON ? ON : p.valor === OFF ? OFF : '', sin = !v, enc = v === ON, dis = !!p.motivo, otro = sin && p.valor ? String(p.valor) : '', rojo = ON === 'Encendido'; // «Encendido» indica falla (rojo); con otras dos opciones (Presentación «Switch» de Formularios) el estado activo va en el color de la marca
+    const cambiar = () => { if (dis) return; p.onCambio && p.onCambio(enc ? OFF : ON); };
+    const cAct = rojo ? 'var(--color-danger, #C8102E)' : 'var(--color-brand)', track = sin ? { border: '2px dashed var(--neutral-400, #98a6b6)', background: 'var(--neutral-100, #eef2f6)' } : enc ? { border: '2px solid ' + cAct, background: cAct } : { border: '2px solid var(--neutral-500, #7b8a9b)', background: 'var(--neutral-400, #98a6b6)' };
+    return h('div', { 'data-cp-testigo-fila': '', style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 14px' } },
+      h('button', { type: 'button', role: 'switch', id: p.id, 'aria-checked': enc ? 'true' : 'false', 'aria-label': (p.etiqueta || '') + ': ' + (sin ? 'Sin revisar' : v), 'aria-disabled': dis ? 'true' : undefined, title: dis ? p.motivo : undefined, 'data-cp-testigo': sin ? 'sin' : enc ? 'encendido' : 'apagado', onClick: cambiar,
+        style: { display: 'inline-flex', alignItems: 'center', gap: 10, padding: '4px 6px 4px 2px', border: 'none', background: 'transparent', cursor: dis ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-brand)' } },
+        h('span', { 'aria-hidden': 'true', style: Object.assign({ position: 'relative', width: 48, height: 26, borderRadius: 999, boxSizing: 'border-box', opacity: dis ? .6 : 1, flex: '0 0 auto' }, track) },
+          h('span', { style: { position: 'absolute', top: 2, left: sin ? 12 : enc ? 24 : 2, width: 18, height: 18, borderRadius: '50%', background: sin ? 'var(--neutral-300, #c6d0db)' : '#FFFFFF', boxShadow: '0 1px 2px rgba(0,0,0,.25)' } })),
+        h('span', { style: { fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', color: sin ? 'var(--text-muted)' : enc ? cAct : 'var(--text-strong)' } }, sin ? 'Sin revisar' : v)),
+      otro ? h('span', { 'data-cp-testigo-otro': '', style: { fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' } }, 'Se leyó «' + otro + '»') : null,
+      !sin && !dis ? h('button', { type: 'button', 'data-cp-testigo-limpiar': '', onClick: () => p.onCambio && p.onCambio(''), style: { padding: 0, border: 'none', background: 'transparent', fontFamily: 'var(--font-brand)', fontSize: 12, fontWeight: 700, color: 'var(--text-link, var(--color-brand))', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer', whiteSpace: 'nowrap' } }, 'Dejar sin revisar') : null); }
+  // Opción múltiple (p. ej. veh_testigos_otros): una ficha seleccionable por opción; el valor se guarda como las opciones elegidas separadas por «, » en el orden de la lista.
+  function Chips(p) { const ops = p.opciones || [], sel = String(p.valor == null ? '' : p.valor).split(',').map((x) => x.trim()).filter(Boolean), fuera = sel.filter((x) => ops.indexOf(x) < 0), lista = ops.concat(fuera), dis = !!p.motivo;
+    const alt = (o) => { if (dis) return; const on = sel.indexOf(o) >= 0; p.onCambio && p.onCambio(lista.filter((x) => (x === o ? !on : sel.indexOf(x) >= 0)).join(', ')); };
+    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+      h('div', { role: 'group', id: p.id, 'aria-label': p.etiqueta, 'data-cp-chips': '', style: { display: 'flex', flexWrap: 'wrap', gap: 8 } }, lista.map((o) => { const on = sel.indexOf(o) >= 0;
+        return h('button', { key: o, type: 'button', role: 'checkbox', 'aria-checked': on ? 'true' : 'false', 'aria-disabled': dis ? 'true' : undefined, title: dis ? p.motivo : undefined, 'data-cp-chip': o, 'data-on': on ? '1' : '0', onClick: () => alt(o),
+          style: { display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 34, padding: '0 12px', borderRadius: 999, border: '1.5px solid ' + (on ? 'var(--color-brand)' : 'var(--border-default)'), background: on ? 'var(--color-brand-wash)' : '#FFFFFF', color: 'var(--text-strong)', fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: on ? 700 : 500, whiteSpace: 'nowrap', cursor: dis ? 'not-allowed' : 'pointer', opacity: dis ? .7 : 1 } },
+          on ? h('span', { 'aria-hidden': 'true', style: { fontSize: 12, lineHeight: 1 } }, '✓') : null, o); })),
+      sel.length ? null : h('span', { style: { fontSize: 12, color: 'var(--text-muted)' } }, 'Ninguno seleccionado')); }
+  // Foto del tablero (DEC-300): miniatura real de la evidencia del paso interiores_tablero_de_instrumento (280 px de ancho, esquinas redondeadas); al tocarla abre el visor único.
+  const PASO_TABLERO = 'interiores_tablero_de_instrumento';
+  function FotoTablero(p) { const SE = window.SiriusEvidencias, st = R().useState(0), set = st[1]; R().useEffect(() => SE && SE.on ? SE.on(() => set((x) => x + 1)) : undefined, []);
+    const paso = p.paso || PASO_TABLERO, L = SE ? SE.lista(p.caso) : [], F = L.filter((e) => e.tipo !== 'video' && (e.paso === paso || (!e.paso && /^tablero( de instrumentos?| completo)?$/i.test(e.pasoNombre || ''))) && (!p.riesgo || !e.riesgo || String(e.riesgo) === String(p.riesgo))), e = F.find((x) => x.estado !== 'Excluida') || F[0];
+    if (!e) return h('span', { 'data-cp-tablero': 'sin', style: { fontSize: 13, color: 'var(--text-muted)' } }, 'Sin foto del tablero');
+    return h('button', { type: 'button', 'data-cp-tablero': e.id, 'data-cp-foto': e.id, onClick: () => SE.abrir(p.caso, e.id, F.map((x) => x.id)), 'aria-label': 'Foto del tablero · abrir en el visor', title: 'Foto del tablero · abrir en el visor', style: { display: 'block', width: 280, maxWidth: '100%', padding: 0, border: 'none', background: 'transparent', cursor: 'zoom-in', textAlign: 'left' } },
+      h('span', { style: { position: 'relative', display: 'block', width: '100%', aspectRatio: '4 / 3', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border-subtle)', background: '#dfe7ef', opacity: e.estado === 'Excluida' ? .55 : 1 } }, SE.imagen(e, false))); }
   window.SiriusCompletarBandeja = Bandeja;
   window.SiriusCompletarDecision = Decision;
   window.SiriusCompletarEvidencias = Evidencias;
   window.SiriusCompletarBarra = Barra;
-  window.SiriusCompletarCabecera = Cabecera; window.SiriusCompletarPasoDecision = PasoDecision; window.SiriusCompletarFotosSeccion = FotosSeccion; window.SiriusCompletarValores = Valores; window.SiriusCompletarSiNo = SiNo; // etapa C2-14
+  window.SiriusCompletarCabecera = Cabecera; window.SiriusCompletarPasoDecision = PasoDecision; window.SiriusCompletarFotosSeccion = FotosSeccion; window.SiriusCompletarValores = Valores; window.SiriusCompletarSiNo = SiNo; window.SiriusCompletarTestigo = Testigo; window.SiriusCompletarChips = Chips; window.SiriusCompletarFotoTablero = FotoTablero; // etapa C2-14; L-5 · DEC-300
   window.SiriusCompletarOperacion = Operacion;
 })();

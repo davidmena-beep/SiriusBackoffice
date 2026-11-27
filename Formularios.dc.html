@@ -336,6 +336,7 @@
 <sc-for list="{{ fp.opts }}" as="o" hint-placeholder-count="3"><li style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;padding:0 4px 0 12px;border-top:1px solid var(--border-subtle);margin-top:-1px;font-size:14px;color:var(--text-body)"><span>{{ o.l }}</span><sc-if value="{{ dragOn }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="{{ o.aria }}" onClick="{{ o.onRemove }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--neutral-600);cursor:pointer" style-hover="background:var(--color-danger-bg);color:var(--color-danger)" style-focus="outline:2px solid var(--color-brand);outline-offset:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18 M6 6l12 12"></path></svg></button></sc-if></li></sc-for>
 </ul>
 <sc-if value="{{ dragOn }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:8px"><input aria-label="Nueva opción" value="{{ fp.newOpt }}" onChange="{{ fp.onNewOpt }}" placeholder="Nueva opción" style="flex:1;min-width:0;height:36px;padding:0 10px;border:1.5px solid var(--input-outlined-border);border-radius:var(--radius-sm);background:#FFFFFF;font-family:var(--font-brand);font-size:14px;color:var(--text-strong)" style-focus="border-color:var(--color-brand);outline:none;box-shadow:0 0 0 3px var(--cyan-100)"><x-import component-from-global-scope="AseguradoraDelSurDesignSystem_4fbf29.Button" variant="secondary" size="sm" on-click="{{ fp.addOpt }}" hint-size="90px,36px">Agregar</x-import></div></sc-if>
+<sc-if value="{{ fp.uiShow }}" hint-placeholder-val="{{ false }}"><div data-fm-ui style="display:flex;flex-direction:column;gap:6px;margin-top:6px"><span id="fp-ui-l" style="font-size:13px;font-weight:700;color:var(--text-strong)">Presentación</span><div role="radiogroup" aria-labelledby="fp-ui-l" style="display:inline-flex;align-self:flex-start;padding:3px;gap:3px;border-radius:10px;background:var(--surface-subtle)"><sc-for list="{{ fp.uiOpts }}" as="u" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{ u.on }}" aria-label="{{ u.aria }}" aria-disabled="{{ fp.ro }}" data-fm-ui-op="{{ u.l }}" onClick="{{ u.pick }}" style="min-width:84px;height:32px;padding:0 14px;border:none;border-radius:8px;background:{{ u.bgv }};font-family:var(--font-brand);font-size:14px;font-weight:700;color:var(--text-strong);cursor:pointer" style-focus="outline:2px solid var(--color-brand);outline-offset:2px">{{ u.l }}</button></sc-for></div><span style="font-size:12px;line-height:1.4;color:var(--text-muted)">{{ fp.uiHelp }}</span></div></sc-if>
 </section>
 </sc-if>
 <sc-if value="{{ fp.isGrid }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusGrillaEditor" from="./sirius-grilla.js" campo="{{ fp.grCampo }}" prefijo="{{ fp.grPre }}" ro="{{ fp.ro }}" ro-why="{{ fp.roWhy }}" on-change="{{ fp.grOn }}" hint-size="100%,640px"></x-import></sc-if>
@@ -698,7 +699,7 @@ class Component extends DCLogic {
       req: { P: r.includes('P'), V: r.includes('V'), A: r.includes('A'), D: r.includes('D') },
       by: Object.assign({ P: 'Inspector', V: 'Inspector', A: 'Cliente', D: 'Back-office' }, o.by || {}),
       src: o.src || [], def: '', min: o.min ?? '', max: o.max ?? '', fmt: o.fmt || 'Ninguno', lmax: o.lmax ?? '',
-      vis: o.vis || null, alertas: (o.alertas || []).map(x => Object.assign({}, x)), formula: o.f || '', locked: !!o.locked, rules: !!o.rules, opts: o.opts || [], cols: o.cols || [], rows: o.rows || [], foot: o.foot || '' };
+      vis: o.vis || null, alertas: (o.alertas || []).map(x => Object.assign({}, x)), formula: o.f || '', locked: !!o.locked, rules: !!o.rules, opts: o.opts || [], cols: o.cols || [], rows: o.rows || [], foot: o.foot || '', ui: o.ui || '' /* L-5 · DEC-300: Presentación del campo (Lista o Switch) */ };
   }
   seedSecs() {
     const T = this.tpl(); if (!T) return [];
@@ -1619,6 +1620,7 @@ class Component extends DCLogic {
     const notes = [];
     if (x.vis) notes.push('Visible si ' + (visF ? visF.f.label : x.vis.k) + ' = ' + x.vis.v);
     if (x.locked) notes.push('Bloqueado para el inspector');
+    if (x.ui === 'switch') notes.push('Presentación: switch de tres estados');
     if (x.src.length && !x.vis) notes.push('Precarga: ' + x.src.join(' › '));
     if (x.nuevo && !x.src.length) notes.push('Sin precarga');
     const opts = x.type === 'Sí/No' ? ['Sí', 'No'] : (x.opts || []); // P-6f-0b: un campo publicado sin opciones no rompe el editor
@@ -1767,11 +1769,12 @@ class Component extends DCLogic {
       label: x.label || 'Sin etiqueta', key: x.key, code: x.code, core: x.core, isInfo: !x.core, preex: x.preex, ro, roWhy: ro ? this.roWhyOf(v) : undefined,
       lbl: x.label, onLabel: (e) => set({ label: e.target.value }), help: x.help, onHelp: (e) => set({ help: e.target.value }),
       type: x.type, types: this.TYPES, typeDis: ro || x.core,
-      onType: (e) => { const t = e.target.value; if (t === x.type) return; if (this.hasUses(u)) warn({ kind: 'type', key: x.key, to: t }); else set({ type: t, opts: optT.includes(t) && !x.opts.length ? ['Opción 1', 'Opción 2'] : t === 'Sí/No' ? ['Sí', 'No'] : x.opts, cols: t === 'Grilla' && !x.cols.length ? ['Columna 1', 'Columna 2'] : x.cols }); },
+      onType: (e) => { const t = e.target.value; if (t === x.type) return; if (this.hasUses(u)) warn({ kind: 'type', key: x.key, to: t }); else set({ type: t, ui: '', opts: optT.includes(t) && !x.opts.length ? ['Opción 1', 'Opción 2'] : t === 'Sí/No' ? ['Sí', 'No'] : x.opts, cols: t === 'Grilla' && !x.cols.length ? ['Columna 1', 'Columna 2'] : x.cols }); },
       hasOpts: optT.includes(x.type),
-      opts: x.opts.map((o, i) => ({ l: o, aria: 'Quitar la opción ' + o, onRemove: () => { if (this.hasUses(u)) warn({ kind: 'opts', key: x.key, idx: i }); else set(ff => ({ opts: ff.opts.filter((_, j) => j !== i) })); } })),
+      uiShow: x.type === 'Opción única' && (x.opts || []).length === 2, uiOpts: [['', 'Lista'], ['switch', 'Switch']].map(([v, l]) => ({ l, on: (x.ui || '') === v, bgv: (x.ui || '') === v ? '#FFFFFF' : 'transparent', aria: l === 'Lista' ? 'Presentación: lista desplegable' : 'Presentación: switch de tres estados', pick: () => { if (!ro && (x.ui || '') !== v) set({ ui: v }); } })), uiHelp: (x.ui || '') === 'switch' ? 'El informe lo muestra como interruptor de tres estados: Sin revisar, ' + (x.opts[0] || '') + ' y ' + (x.opts[1] || '') + '. Tocarlo alterna entre las dos opciones.' : 'El informe lo muestra como lista desplegable.',
+      opts: x.opts.map((o, i) => ({ l: o, aria: 'Quitar la opción ' + o, onRemove: () => { if (this.hasUses(u)) warn({ kind: 'opts', key: x.key, idx: i }); else set(ff => { const no = ff.opts.filter((_, j) => j !== i); return { opts: no, ui: no.length === 2 ? ff.ui || '' : '' }; }); } })),
       newOpt: st.newOpt || '', onNewOpt: (e) => this.setState({ newOpt: e.target.value }),
-      addOpt: () => { const t = (st.newOpt || '').trim(); if (!t) return; if (this.hasUses(u)) warn({ kind: 'opts', key: x.key, add: t }); else { set(ff => ({ opts: ff.opts.concat(t) })); this.setState({ newOpt: '' }); } },
+      addOpt: () => { const t = (st.newOpt || '').trim(); if (!t) return; if (this.hasUses(u)) warn({ kind: 'opts', key: x.key, add: t }); else { set(ff => { const no = ff.opts.concat(t); return { opts: no, ui: no.length === 2 ? ff.ui || '' : '' }; }); this.setState({ newOpt: '' }); } },
       grCampo: { key: x.key, label: x.label, cols: x.cols || [], rows: x.rows || [], colsT: x.colsT || null, filas: x.filas || null }, grPre: this.prefijoForm(), grOn: (p) => set(p),
       isGrid: x.type === 'Grilla', cols: x.cols.map(c => ({ l: c })), gridRows: x.rows.length ? x.rows.length + ' filas fijas: ' + x.rows.join(', ') : 'Filas libres: el inspector las agrega',
       isCalc: x.type === 'Cálculo', formula: x.formula, onFormula: (e) => set({ formula: e.target.value }),
@@ -2060,7 +2063,7 @@ class Component extends DCLogic {
           if (!reason) { this.setState({ reasonErr: true }); setTimeout(() => { const t = document.getElementById('wm-reason'); t && t.focus(); }, 20); return; }
           if (m.kind === 'del') { this.removeField(x.key, reason); return; }
           const what = m.kind === 'type' ? 'Cambió el tipo de «' + x.label + '» de ' + x.type + ' a ' + m.to : m.add ? 'Agregó la opción «' + m.add + '» a «' + x.label + '»' : 'Quitó la opción «' + x.opts[m.idx] + '» de «' + x.label + '»';
-          this.upd(vv => { const ff = this.findF(vv, x.key).f; if (m.kind === 'type') { ff.type = m.to; if (m.to === 'Sí/No') ff.opts = ['Sí', 'No']; } else if (m.add) ff.opts.push(m.add); else ff.opts.splice(m.idx, 1); vv.log.push({ what, reason, by: this.user(), at: this.todayISO() }); }, { modal: null, reason: '', reasonErr: false, newOpt: '' });
+          this.upd(vv => { const ff = this.findF(vv, x.key).f; if (m.kind === 'type') { ff.type = m.to; ff.ui = ''; if (m.to === 'Sí/No') ff.opts = ['Sí', 'No']; } else if (m.add) ff.opts.push(m.add); else ff.opts.splice(m.idx, 1); if (ff.type !== 'Opción única' || (ff.opts || []).length !== 2) ff.ui = ''; vv.log.push({ what, reason, by: this.user(), at: this.todayISO() }); }, { modal: null, reason: '', reasonErr: false, newOpt: '' });
           this.toast(what);
         };
         out.wm = { open: true,

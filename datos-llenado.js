@@ -116,6 +116,7 @@ window.SIRIUS_LLENADO = {
     'veh_testigo_bateria': {como:  'lectura', donde:  'Campo', obligatorio:  'terminar', pasos:  ['Tablero'], umbral:  90},
     'veh_testigo_temperatura': {como:  'lectura', donde:  'Campo', obligatorio:  'terminar', pasos:  ['Tablero'], umbral:  90},
     'veh_testigo_frenos': {como:  'lectura', donde:  'Campo', obligatorio:  'terminar', pasos:  ['Tablero'], umbral:  90},
+    'veh_testigos_otros': {como:  'lectura', donde:  'Campo', obligatorio:  'no', pasos:  ['Tablero'], umbral:  90},
     'veh_extras': {como:  'captura', donde:  'Campo', obligatorio:  'terminar', captura:  'Grilla'},
     'veh_averias': {como:  'captura', donde:  'Campo', obligatorio:  'no', captura:  'Grilla'},
     'veh_verificaciones_externas': {como:  'captura', donde:  'Oficina', obligatorio:  'completar', captura:  'Grilla'},

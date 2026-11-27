@@ -340,9 +340,11 @@
       if (ver.length === s.campos.length) return RUN(n, s.titulo, span(s.textoTodosNormales, ok));
       const partes = []; if (ver.length) partes.push('Verificado: ' + esc(unir(ver)) + '.'); if (no.length) partes.push(span('No verificado: ' + unir(no) + '.', bad)); if (na.length) partes.push(span('No aplica: ' + unir(na) + '.', ';color:' + C.muted));
       return RUN(n, s.titulo, partes.join(' ')); }
-    if ((s.campos || []).some(c => /^veh_testigo_/.test(c))) { const ks = Object.keys(def).filter(k => /^veh_testigo_/.test(k) && !vacio(val[k])); if (!ks.length) return '';
-      const enc = ks.filter(k => val[k] === 'Encendido').map(k => lab(d, k));
-      return RUN(n, s.titulo, enc.length ? span(String(s.frase || 'Encendidos: {lista}').replace('{lista}', unir(enc)) + '.', bad) + (ks.length - enc.length ? ' Apagados: ' + (ks.length - enc.length) + ' de ' + ks.length + '.' : '') : span(String(s.textoTodosNormales || 'Todos apagados ({n} revisados).').replace('{n}', ks.length), ok)); }
+    if ((s.campos || []).some(c => /^veh_testigo_/.test(c))) { const ks = Object.keys(def).filter(k => /^veh_testigo_/.test(k) && !vacio(val[k])), ov = val.veh_testigos_otros, ot = (Array.isArray(ov) ? ov : String(ov == null ? '' : ov).split(',')).map(x => String(x).trim()).filter(Boolean); // L-5 · DEC-300: «Otros testigos encendidos» (opción múltiple) en la misma sección
+      if (!ks.length && !ot.length) return '';
+      const enc = ks.filter(k => val[k] === 'Encendido').map(k => lab(d, k)), otros = ot.length ? span('Otros testigos encendidos: ' + unir(ot) + '.', bad) : '';
+      if (!ks.length) return RUN(n, s.titulo, otros);
+      return RUN(n, s.titulo, (enc.length ? span(String(s.frase || 'Encendidos: {lista}').replace('{lista}', unir(enc)) + '.', bad) + (ks.length - enc.length ? ' Apagados: ' + (ks.length - enc.length) + ' de ' + ks.length + '.' : '') : span(String(s.textoTodosNormales || 'Todos apagados ({n} revisados).').replace('{n}', ks.length), ok)) + (otros ? ' ' + otros : '')); }
     // Equipamiento: solo lo que tiene (nunca los «No»). Una opción cuenta como presente si no es «No», «No tiene» ni «Ninguno» (v1.3).
     const AUS = ['no', 'no tiene', 'ninguno', 'ninguna'], CON = { veh_aros: ' de ' }, op = (s.campos || []).map(c => (/^(veh_\w+) \(opción\)/.exec(c) || [])[1]).filter(Boolean);
     const opc = op.filter(k => !vacio(val[k]) && !AUS.includes(String(val[k]).trim().toLowerCase())).map(k => lc1(lab(d, k)) + (CON[k] || ' ') + lc1(String(val[k])));
@@ -636,7 +638,7 @@
       { tipo: 'valores', titulo: 'Valores', mostrarDiferencias: true, mostrarAlertas: true, mostrarReferencia: true },
       { tipo: 'hallazgos', titulo: 'Puntos a considerar para la emisión', reglas: 'hallazgosVeh', textoSinHallazgos: 'Sin hallazgos relevantes: testigos apagados, identificación verificada, sin averías ni novedades externas.' },
       { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Identificación', campos: ['veh_verificacion_chasis_relieve', 'veh_verificacion_sticker_vin', 'veh_verificacion_plaqueta_panoramica'], textoTodosNormales: 'Chasis, sticker VIN y plaqueta verificados.' },
-      { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Testigos del tablero', campos: ['veh_testigo_*'], frase: 'Encendidos: {lista}', textoTodosNormales: 'Todos apagados ({n} revisados).' },
+      { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Testigos del tablero', campos: ['veh_testigo_*', 'veh_testigos_otros'], frase: 'Encendidos: {lista}', textoTodosNormales: 'Todos apagados ({n} revisados).' },
       { tipo: 'lista', agruparEn: 'Estado del vehículo', titulo: 'Equipamiento', campos: ['veh_radio (opción)', 'veh_aros (opción)', 'accesorios Sí/No', 'veh_cantidad_airbags', 'veh_satelital + proveedor', 'veh_telemetria + dispositivo', 'veh_blindaje (solo si Sí, con nivel y empresa)'], frase: 'Tiene: {lista de los Sí}' },
       { tipo: 'averiasFrase', agruparEn: 'Estado del vehículo', titulo: 'Averías o preexistencias' },
       { tipo: 'extrasCliente', agruparEn: 'Estado del vehículo', titulo: 'Extras declarados', formato: 'frase' },
