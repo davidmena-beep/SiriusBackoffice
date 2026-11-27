@@ -281,7 +281,7 @@ async function fotoReducida(url, max) {
 function cola(CX, op) {
   op = Object.assign({ cadaMs: 15000, inactivoMs: 8000, carpeta: '', indicador: true }, op || {}); let ocupado = false, aplicado = 0, w = null, sec = 0; const espera = {};
   const estado = { leidas: 0, errores: 0, pendientes: null, ultima: null, activo: true, modo: 'página' };
-  try { if (op.carpeta && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') { w = new Worker(op.carpeta + 'sirius-lectura-worker.js?v=101'); estado.modo = 'segundo plano';
+  try { if (op.carpeta && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') { w = new Worker(op.carpeta + 'sirius-lectura-worker.js?v=102'); estado.modo = 'segundo plano';
       w.onmessage = (e) => { const d = e.data || {}, f = espera[d.id]; if (!f) return; delete espera[d.id]; d.error ? f.no(new Error(d.error)) : f.ok(d.lectura); };
       w.onerror = (e) => { console.warn('[SIRIUS lectura] sin Web Worker:', e.message || e); Object.values(espera).forEach(f => f.no(new Error('Worker no disponible'))); w = null; estado.modo = 'página'; };
       w.postMessage({ base: BASE }); } } catch (e) { w = null; }
@@ -292,6 +292,7 @@ function cola(CX, op) {
   const casoAbierto = () => { const m = /[?&#]caso=([^&#]+)/.exec(location.search + location.hash); return m ? decodeURIComponent(m[1]) : null; };
   async function vuelta() {
     if (ocupado || document.visibilityState !== 'visible') return; if (!w && Date.now() - ultimaActividad < op.inactivoMs) return; ocupado = true;
+    let enEspera = false;
     try { let hechas = 0;
       for (let i = 0; i < 40; i++) {   // hasta agotar la cola, de a una foto
         const r = await CX.rpc('lectura_pendientes', { p_limite: 1, p_caso: casoAbierto() }); const pend = Array.isArray(r) ? r : (r && r.fotos) || []; estado.pendientes = r && r.pendientes != null ? r.pendientes : pend.length;
@@ -302,12 +303,16 @@ function cola(CX, op) {
         catch (e) { const msg = String(e && e.message || e).slice(0, 200);
           // 26/11/2026 · error temporal del servicio de IA (alta demanda, límite, caída): no se registra; la reserva vence en 2 minutos y se
           // vuelve a intentar (la base corta a los 3 intentos). Los demás errores sí se registran.
-          if (p.tipo === 'tablero' && /(temporal|\b50[03]\b|\b429\b|\b546\b|demand|compute resources|WORKER_LIMIT|tardó|Failed to fetch|NetworkError)/i.test(msg)) { estado.reintentos = (estado.reintentos || 0) + 1; continue; }
+          if (p.tipo === 'tablero' && /(temporal|\b50[03]\b|\b429\b|\b546\b|demand|compute resources|WORKER_LIMIT|tardó|Failed to fetch|NetworkError)/i.test(msg)) {
+            // 27/11/2026 · el motivo queda visible (indicador, consola y SIRIUS_CONEXION.lecturas.ultimoError); la foto se reintenta en 2 minutos
+            estado.reintentos = (estado.reintentos || 0) + 1; estado.ultimoError = { foto: p.paso, motivo: msg, hora: new Date().toISOString() };
+            console.warn('[SIRIUS lectura] la lectura del tablero se reintentará en 2 minutos:', msg); avisar('Tablero en espera: ' + msg.slice(0, 80)); enEspera = true; continue; }
           lectura = { tipo: p.tipo, motor: p.tipo === 'tablero' ? 'IA (Gemini)' : 'PP-OCRv4', campos: {}, error: msg }; estado.errores++; }
         await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); hechas++; estado.leidas++; estado.ultima = new Date().toISOString();
         if (document.visibilityState !== 'visible' || (!w && Date.now() - ultimaActividad < op.inactivoMs)) break;
       }
-      if (hechas) { avisar('Lectura lista · ' + hechas + (hechas === 1 ? ' documento' : ' documentos')); setTimeout(() => avisar(null), 5000); if (CX.recargar) try { CX.recargar(); } catch (e) {} }
+      if (hechas) { avisar('Lectura lista · ' + hechas + (hechas === 1 ? ' documento' : ' documentos') + (enEspera ? ' · el tablero se reintentará' : '')); setTimeout(() => avisar(null), enEspera ? 15000 : 5000); if (CX.recargar) try { CX.recargar(); } catch (e) {} }
+      else if (enEspera) setTimeout(() => avisar(null), 15000);   // el aviso de espera no queda fijo
       else if (Date.now() - aplicado > 600000) { aplicado = Date.now(); await CX.rpc('lectura_aplicar_recientes', {}); }
     } catch (e) { console.warn('[SIRIUS lectura]', e && e.message || e); avisar(null); }
     finally { ocupado = false; }

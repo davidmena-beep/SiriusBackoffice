@@ -326,7 +326,7 @@
       CX.resolverSugerenciaCatalogo = function (id, estado) { return rpc('catalogo_sugerencia_resolver', { p_id: id, p_estado: estado }).then(function (r) { return cargarSug().then(function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: e.message }; }); };
       cargarSug(); setInterval(cargarSug, 300000);
       (window.ort ? Promise.resolve() : cargarScript('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js'))
-        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=101'); })
+        .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=102'); })
         .then(function () { CX.recargar = function () { return cargarCasos().then(function (c) { if (c) avisar(); }).catch(function () {}); };   // 26/11/2026 · al terminar una lectura, el informe y los controles se refrescan
           CX.lecturas = window.SiriusLectura.cola(CX, { carpeta: BASE_JS }); })   // SQL 96: la lectura corre en un Web Worker (sirius-lectura-worker.js)
         .catch(function (e) { console.warn('[SIRIUS] lecturas automáticas no disponibles:', e.message); });
