@@ -270,6 +270,14 @@ async function leer(fuente, tipo) {
 // usuario esté inactivo. Reserva UNA foto a la vez (primero las del caso abierto, luego las más recientes), la lee y registra el resultado.
 // Si el navegador no admite el Worker, lee en la página, solo con el usuario inactivo. Muestra un indicador discreto mientras trabaja.
 let ultimaActividad = Date.now(); if (!EN_WORKER) ['mousemove', 'keydown', 'pointerdown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true }));
+// 27/11/2026 · la foto del tablero se reduce aquí (1280 px, JPEG) y viaja en base64: la función de Supabase solo la reenvía a la IA
+async function fotoReducida(url, max) {
+  const r = await fetch(url); if (!r.ok) throw new Error('No se pudo descargar la foto (' + r.status + ')'); const bm = await createImageBitmap(await r.blob());
+  const k = Math.min(1, max / Math.max(bm.width, bm.height)), w = Math.round(bm.width * k), h = Math.round(bm.height * k), c = nuevoLienzo(); c.width = w; c.height = h; c.getContext('2d').drawImage(bm, 0, 0, w, h);
+  const blob = c.convertToBlob ? await c.convertToBlob({ type: 'image/jpeg', quality: 0.85 }) : await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.85));
+  const datos = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1] || ''); fr.onerror = () => no(new Error('No se pudo preparar la foto')); fr.readAsDataURL(blob); });
+  return { imagen: datos, mime: 'image/jpeg', ancho: w, alto: h };
+}
 function cola(CX, op) {
   op = Object.assign({ cadaMs: 15000, inactivoMs: 8000, carpeta: '', indicador: true }, op || {}); let ocupado = false, aplicado = 0, w = null, sec = 0; const espera = {};
   const estado = { leidas: 0, errores: 0, pendientes: null, ultima: null, activo: true, modo: 'página' };
@@ -290,11 +298,11 @@ function cola(CX, op) {
         if (!pend.length) break; const p = pend[0]; avisar('Leyendo documentos · ' + (hechas + 1) + ' de ' + (hechas + Math.max(1, estado.pendientes)));
         let lectura; try { const urls = await CX.firmar([p.ruta]); if (!urls[p.ruta]) throw new Error('Sin URL firmada');
           // SQL 101 · DEC-300: el tablero lo lee la IA (función de Supabase lectura-tablero); lo demás, el OCR del navegador
-          lectura = p.tipo === 'tablero' ? await (CX.funcion ? CX.funcion('lectura-tablero', { url: urls[p.ruta] }) : Promise.reject(new Error('La conexión no admite funciones'))) : await leerUna(urls[p.ruta], p.tipo); }
+          lectura = p.tipo === 'tablero' ? await (CX.funcion ? CX.funcion('lectura-tablero', await fotoReducida(urls[p.ruta], 1280)) : Promise.reject(new Error('La conexión no admite funciones'))) : await leerUna(urls[p.ruta], p.tipo); }
         catch (e) { const msg = String(e && e.message || e).slice(0, 200);
           // 26/11/2026 · error temporal del servicio de IA (alta demanda, límite, caída): no se registra; la reserva vence en 2 minutos y se
           // vuelve a intentar (la base corta a los 3 intentos). Los demás errores sí se registran.
-          if (p.tipo === 'tablero' && /(temporal|\b50[03]\b|\b429\b|demand|tardó|Failed to fetch|NetworkError)/i.test(msg)) { estado.reintentos = (estado.reintentos || 0) + 1; continue; }
+          if (p.tipo === 'tablero' && /(temporal|\b50[03]\b|\b429\b|\b546\b|demand|compute resources|WORKER_LIMIT|tardó|Failed to fetch|NetworkError)/i.test(msg)) { estado.reintentos = (estado.reintentos || 0) + 1; continue; }
           lectura = { tipo: p.tipo, motor: p.tipo === 'tablero' ? 'IA (Gemini)' : 'PP-OCRv4', campos: {}, error: msg }; estado.errores++; }
         await CX.rpc('lectura_registrar', { p_evidencia: p.id, p_lectura: lectura }); hechas++; estado.leidas++; estado.ultima = new Date().toISOString();
         if (document.visibilityState !== 'visible' || (!w && Date.now() - ultimaActividad < op.inactivoMs)) break;

@@ -245,6 +245,10 @@
         h(Btn, { id: 'pt-extras-ok', motivo: faltan ? 'Responde cada extra: «Lo tengo» con su foto o «No lo tengo» (' + faltan + (faltan === 1 ? ' falta' : ' faltan') + ')' : '', onClick: () => ir('mapa') }, 'Listo'), { etapa: 'Extras' }); }
 
     // ----- Ayuda del VIN (antes de abrir la cámara) -----
+    // Etapa L-3 · DEC-297: la ayuda del VIN es la del tipo de vehículo (ayudas.vinTipos de la versión vigente, SiriusAyudaVinTipos), con el diseño aprobado de 390 px.
+    if (st.paso === 'ayuda' && window.SiriusAyudaVinVista && window.SiriusAyudaVinTipos && ((R0.todos.find(x => x.id === st.actual) || {}).ayuda === 'vin')) { const p = R0.todos.find(x => x.id === st.actual) || {}, SAV = window.SiriusAyudaVinTipos, k = SAV.clave(tipo), ix = R0.todos.findIndex(x => x.id === p.id);
+      return marco(null, h(window.SiriusAyudaVinVista, { datos: SAV.datos(k), tipo: k, etiqueta: SAV.TIPOS[k].etiqueta, kicker: 'Paso ' + (ix + 1) + ' de ' + R0.todos.length + ' · Antes de la foto', embebido: true, idCamara: 'pt-ayuda-ok',
+        onCamara: () => { upd({ ayudaVista: true }); setTimeout(() => abrirCamara(p.id), 0); }, pie: h(Btn, { variant: 'secondary', onClick: () => ir('mapa') }, 'Volver al mapa') }), null, { etapa: p.nombre }); }
     if (st.paso === 'ayuda') { const p = R0.todos.find(x => x.id === st.actual) || {}, A = (AV().ayudas || {})[p.ayuda] || {}, L = (A.lugares || []).concat(tipo === 'camioneta' ? (A.camioneta || []) : tipo === 'moto' ? [] : []), U = UI();
       const pts = L.map((l, i) => ({ paso: 'l' + i, nombre: l.texto, pos: AU().px ? AU().px(tipo, l.pos) : [0, 0], n: i + 1, estado: 'actual' }));
       return marco(A.titulo || 'Ayuda', h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12 } }, P_(A.texto, { fontSize: 15 }), h('div', { style: { lineHeight: 0 }, dangerouslySetInnerHTML: { __html: U ? U.mapaSvg(tipo, pts, { aria: 'Dónde buscar el VIN' }).replace('<svg ', '<svg width="100%" style="display:block;height:auto" ') : '' } }),
@@ -351,6 +355,7 @@
     const decl = extrasDeclarados(ctx, s.tipo);
     if (esc === 'portalconsent' || esc === 'portalidentidad' || esc === 'portalsincedula') { s.paso = 'consent'; if (esc !== 'portalconsent') s.consent = { datos: true, whatsapp: true, sms: false }; }
     if (esc === 'portaltipo' || esc === 'portalvehiculo') { listo(); s.paso = 'tipo'; }
+    if (esc === 'portalvinsuv') { listo(); s.tipo = 'suv'; s.ayudaVista = false; const R1 = recorrido('suv'), vin = R1.todos.find(x => x.ayuda === 'vin'); R1.mapa.slice(0, 3).forEach((p, k) => { s.fotos[p.id] = fotoSim(ctx, p, k, R1); }); s.paso = vin ? 'ayuda' : 'mapa'; if (vin) s.actual = vin.id; } // L-3: ayuda del VIN de un SUV
     if (esc === 'portalautoinsplugar') { listo(); s.paso = 'lugar'; s.lugar = null; } // G-2d · DEC-222: la autoinspección pide el lugar antes de empezar
     if (['portalmapa', 'portalmapa2', 'portalcamara', 'portalcamaraok', 'portalcamaralat', 'portalrotacion', 'portalrechazo', 'portallectura', 'portalavisoocr', 'portalpausa', 'portalsalir', 'portalretomar', 'portalcerca', 'portalextras'].includes(esc)) { listo(); done(R0.mapa.slice(0, 3)); s.paso = 'mapa'; }
     if (['portalcamara', 'portalcamaraok', 'portalcamaralat', 'portalrotacion'].includes(esc)) { s.paso = 'camara'; s.actual = 'exteriores_lateral_izquierdo'; delete s.fotos.exteriores_lateral_izquierdo; }

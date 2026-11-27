@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/styles.css">
 <script src="_ds/aseguradora-del-sur-design-system-4fbf29c7-c6fa-4b75-8e0c-06d62c8a6887/_ds_bundle.js"></script><script src="sirius-motivo.js"></script>
 <script src="sirius-fecha.js"></script><script src="datos-compania.js"></script><script src="sirius-monto.js"></script><script src="sirius-grilla.js"></script>
-<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script><script src="datos-presencial.js"></script><script src="datos-equipo-maquinaria.js"></script><script src="sirius-equipos.js"></script><script src="datos-autoinspeccion.js"></script><script src="sirius-autoinspeccion.js"></script><script src="sirius-portal-cliente.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-red.js"></script><script src="sirius-red-fuente.js"></script><script src="sirius-agenda.js"></script><script src="datos-portal-cliente.js"></script><script src="sirius-portal-caso.js"></script>
+<script src="datos-catalogos-maestros.js"></script><script src="datos-ejemplo.js"></script><script src="datos-presencial.js"></script><script src="datos-equipo-maquinaria.js"></script><script src="sirius-equipos.js"></script><script src="datos-autoinspeccion.js"></script><script src="sirius-autoinspeccion.js"></script><script src="sirius-ayuda-vin.js"></script><script src="sirius-portal-cliente.js"></script><script src="datos-flujo.js"></script><script src="datos-agenda-liquidaciones.js"></script><script src="datos-red.js"></script><script src="sirius-red-fuente.js"></script><script src="sirius-agenda.js"></script><script src="datos-portal-cliente.js"></script><script src="sirius-portal-caso.js"></script>
 <style>html,body{margin:0}*{box-sizing:border-box}a{color:var(--color-brand);text-decoration:none}a:hover{opacity:.8}</style>
 </helmet>
 <div style="font-family:var(--font-brand);color:var(--text-body);min-width:0;display:flex;flex-direction:column;gap:14px">
@@ -526,6 +526,7 @@
 <sc-if value="{{ csoShow }}" hint-placeholder-val="{{ false }}"><div style="margin:0 0 16px;min-width:0"><x-import component-from-global-scope="SiriusCuandoSeOfrece" from="./sirius-modalidades.js" criterios="{{ cso.criterios }}" a-activa="{{ cso.aActiva }}" ro="{{ cso.ro }}" ro-why="{{ cso.roWhy }}" on-cambio="{{ cso.onCambio }}" hint-size="100%,140px"></x-import></div></sc-if>
 <sc-if value="{{ tallerShow }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusAutoTaller" from="./sirius-autoinspeccion.js" form="{{ at.form }}" pasos="{{ at.pasos }}" plantilla="{{ at.plantilla }}" version="{{ at.version }}" estado="{{ at.estado }}" ro="{{ ro }}" ro-why="{{ roWhy }}" usuario="{{ at.usuario }}" editar-txt="{{ at.editarTxt }}" on-editar="{{ at.onEditar }}" on-publicar="{{ at.onPublicar }}" on-cambio="{{ at.onCambio }}" exmap="{{ at.exmap }}" ayudas="{{ at.ayudas }}" on-ayuda="{{ at.onAyuda }}" extras-mensaje="{{ at.extrasMensaje }}" on-extras-mensaje="{{ at.onExtrasMensaje }}" conf="{{ at.conf }}" conf-tab="{{ aconfTab }}" apariencia="{{ aconfApar }}" on-conf="{{ at.onConf }}" doc-uso="{{ at.docUso }}" sub="{{ at.sub }}" sel="{{ at.sel }}" panel="{{ at.panel }}" carroceria="{{ at.carroceria }}" on-portal="{{ at.onPortal }}" on-ir-catalogo="{{ at.onIrCatalogo }}" hint-size="100%,640px"></x-import></sc-if>
 </sc-if>
+<sc-if value="{{ tabAyuda }}" hint-placeholder-val="{{ false }}"><div data-fm-ayuda style="display:flex;flex-direction:column;gap:24px;min-width:0"><sc-if value="{{ ayVin }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusAyudaVinEditor" from="./sirius-ayuda-vin.js" form="{{ ay.form }}" tipos="{{ ay.tipos }}" vin-tipos="{{ ay.vinTipos }}" ro="{{ ay.ro }}" ro-why="{{ ay.roWhy }}" editar-txt="{{ ay.editarTxt }}" on-editar="{{ ay.onEditar }}" tipo-ini="{{ ay.tipoIni }}" subir="{{ ay.subir }}" on-cambio="{{ ay.onCambio }}" hint-size="100%,1100px"></x-import></sc-if><sc-if value="{{ aySerie }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="SiriusAyudaVin" from="./sirius-autoinspeccion.js" tipo="serie" form="em" ayuda="{{ ays.ayuda }}" ro="{{ ays.ro }}" ro-why="{{ ays.roWhy }}" on-cambio="{{ ays.onCambio }}" hint-size="100%,600px"></x-import></sc-if></div></sc-if>
 <sc-if value="{{ tabPrev }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;flex-direction:column;gap:16px;min-width:0;max-width:1080px">
 <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px">
@@ -918,6 +919,13 @@ class Component extends DCLogic {
     if (SIM) Object.assign(s, { view: 'editor', fid: 'f1', vn: 1, sec: null, tab: 2, aiSub: 'recorrido', simInicial: { plantilla: 'f1', pantalla: SIM[0], preset: SIM[1] || '', vacio: !!SIM[2] } });
     // Etapa C2-15 · DEC-190: el mapa de captura se edita en el borrador; la vigente y las retiradas son de solo lectura.
     if (e === 'mapacaptura') Object.assign(s, { view: 'editor', fid: 'f1', vn: 4, sec: null, tab: 1, irA: 'fm-mapa' });
+    // Etapa L-3 · DEC-297 y DEC-298: pestaña Ayuda (VIN por tipo) en el borrador v5 de Vehículos livianos con SUV, en la vigente v4 (solo lectura), en Motos y la serie de Equipo y maquinaria.
+    { const vgN = (fid) => { const f0 = (s.forms || []).find(x => x.id === fid), v0 = f0 && (f0.versions.find(x => x.estado === 'Vigente') || f0.versions[f0.versions.length - 1]); return v0 ? v0.n : 1; };
+      if (e === 'ayudavin') Object.assign(s, { view: 'editor', fid: 'f1', vn: 5, sec: null, tab: 5, ayTipo: 'suv' });
+      if (e === 'ayudavinvigente') Object.assign(s, { view: 'editor', fid: 'f1', vn: vgN('f1'), sec: null, tab: 5, ayTipo: 'sedan' });
+      if (e === 'ayudavinmoto') Object.assign(s, { view: 'editor', fid: 'f2', vn: vgN('f2'), sec: null, tab: 5 });
+      if (e === 'ayudavinpesados') Object.assign(s, { view: 'editor', fid: 'f3', vn: vgN('f3'), sec: null, tab: 5 });
+      if (e === 'ayudaserie') Object.assign(s, { view: 'editor', fid: 'f5', vn: vgN('f5'), sec: null, tab: 5 }); }
     if (e === 'mapacapturaem') Object.assign(s, { view: 'editor', fid: 'f5', vn: 1, sec: null, tab: 1, irA: 'fm-mapa' });
     const MPE = { mapaeditar: { mod: 'P', tipo: 'sedan', sel: 'exteriores_frontal' }, mapasinubicar: { mod: 'P', tipo: 'sedan', sel: 'identificacion_numero_motor', armar: true }, mapacelular: { mod: 'P', tipo: 'sedan', celular: true }, siluetanueva: { mod: 'P', tipo: 'sedan' } }[e];
     if (MPE) Object.assign(s, { view: 'editor', fid: 'f1', vn: 5, sec: null, tab: 1, irA: 'fm-mapa', mapaEsc: MPE, silDlg: e === 'siluetanueva', silEjemplo: e === 'siluetanueva' });
@@ -978,7 +986,7 @@ class Component extends DCLogic {
   user() { return this.props.userName || 'Andrea Salazar'; }
   // Etapa 12d-1d · plantillas para el simulador: el borrador si existe, si no la vigente.
   simPlantillas() { return [['f1', 'veh'], ['f2', 'moto'], ['f5', 'em']].map(([fid, form]) => { const f = this.state.forms.find(x => x.id === fid); if (!f) return null; const v = f.versions.find(x => x.estado === 'Borrador') || f.versions.find(x => x.estado === 'Vigente') || f.versions[f.versions.length - 1];
-      return { id: fid, form, nombre: f.name, version: v.n, estado: v.estado, pasos: v.steps }; }).filter(Boolean); }
+      return { id: fid, form, nombre: f.name, version: v.n, estado: v.estado, pasos: v.steps, ayudas: v.ayudas || null }; }).filter(Boolean); }
   // «Editar» del simulador: abre la pestaña exacta (se vuelve a montar para que tome la subpestaña y el paso).
   simIr(d) { if (!d) return; if (d.dest === 'catalogo') { if (this.props.onIr) this.props.onIr({ cat: 'extras', carr: d.carr }); return; }
     if (d.dest === 'portal') { this.setState({ view: 'list' }, () => setTimeout(() => this.setState({ view: 'portal', pcTab: d.tab || 'Apariencias', pcPreset: '', pcEditar: d.editar || null }), 0)); return; }
@@ -1104,6 +1112,16 @@ class Component extends DCLogic {
     const PB = {}; b.steps.forEach(s => { PB[s.id] = s; });
     b.steps.forEach(s => { const o = PA[s.id]; if (!o) out.add.push({ kind: 'Paso de foto', name: s.name, where: s.group, detail: '' }); else { const ch = []; if (o.name !== s.name) ch.push('Nombre: «' + o.name + '» → «' + s.name + '»'); if (o.min !== s.min || o.max !== s.max) ch.push('Fotos: ' + o.min + '–' + o.max + ' → ' + s.min + '–' + s.max); if (JSON.stringify(o.req) !== JSON.stringify(s.req)) ch.push('Obligatorio por modalidad'); if (o.ex.join('|') !== s.ex.join('|')) ch.push('Extracción automática'); if (o.feeds.join('|') !== s.feeds.join('|')) ch.push('Campos que alimenta'); if (ch.length) out.mod.push({ kind: 'Paso de foto', name: s.name, where: s.group, detail: ch.join(' · ') }); } });
     a.steps.forEach(s => { if (!PB[s.id]) out.del.push({ kind: 'Paso de foto', name: s.name, where: s.group, detail: '' }); });
+    // L-3 · DEC-297: la ayuda del VIN por tipo también entra en el resumen de la publicación.
+    { const SAV = window.SiriusAyudaVinTipos, VA = (a.ayudas || {}).vinTipos || {}, VB = (b.ayudas || {}).vinTipos || {}, nom = (k) => (SAV && SAV.TIPOS[k] ? SAV.TIPOS[k].etiqueta : k), nn = (q) => String(q == null ? '' : q).replace('.', ',');
+      Object.keys(VB).forEach(k => { const x = VA[k], y = VB[k] || {}, LY = y.lugares || []; if (!x) { out.add.push({ kind: 'Ayuda del VIN', name: nom(k), where: 'Ayuda', detail: LY.length + ' lugares' }); return; }
+        const ch = [], LX = x.lugares || []; [['titulo', 'Título'], ['intro', 'Introducción'], ['imagen', 'Imagen'], ['fondo', 'Color de fondo']].forEach(([c, l]) => { if ((x[c] || '') !== (y[c] || '')) ch.push(l); });
+        LY.forEach((l, i) => { const o = LX[i]; if (!o) { ch.push('Lugar ' + (i + 1) + ' agregado («' + (l.nombre || '') + '»)'); return; } const c2 = [];
+          if ((o.nombre || '') !== (l.nombre || '')) c2.push('nombre'); if ((o.zona || '') !== (l.zona || '')) c2.push('zona'); if ((o.icono || '') !== (l.icono || '')) c2.push('ícono'); if ((o.consejo || '') !== (l.consejo || '')) c2.push('consejo'); if ((o.origen || []).join('|') !== (l.origen || []).join('|')) c2.push('origen');
+          const p0 = o.pos || [], p1 = l.pos || []; if (p0[0] !== p1[0] || p0[1] !== p1[1]) c2.push('posición (' + nn(p0[0]) + '; ' + nn(p0[1]) + ' → ' + nn(p1[0]) + '; ' + nn(p1[1]) + ')');
+          if (c2.length) ch.push('Lugar ' + (i + 1) + (l.nombre ? ' «' + l.nombre + '»' : '') + ': ' + c2.join(', ')); });
+        if (LX.length > LY.length) ch.push((LX.length - LY.length) + (LX.length - LY.length === 1 ? ' lugar quitado' : ' lugares quitados'));
+        if (ch.length) out.mod.push({ kind: 'Ayuda del VIN', name: nom(k), where: 'Ayuda', detail: ch.join(' · ') }); }); }
     if (JSON.stringify(a.auto) !== JSON.stringify(b.auto)) out.mod.push({ kind: 'Autoinspección', name: 'Flujo y parámetros', where: '', detail: '' });
     if (JSON.stringify(a.ext) !== JSON.stringify(b.ext)) out.mod.push({ kind: 'Extracción', name: 'Proveedor, umbrales o prioridad de fuentes', where: '', detail: '' });
     return out;
@@ -1113,6 +1131,19 @@ class Component extends DCLogic {
   footer(...b) { return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-end', width: '100%' } }, ...b); }
   svg(d, size = 18) { return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, React.createElement('path', { d })); }
   vigente(f) { return f.versions.find(v => v.estado === 'Vigente'); }
+  // Etapa L-3 · DEC-297 y DEC-298: ayuda «¿Dónde está el VIN?» por tipo (ayudas.vinTipos en cada versión de Vehículos livianos, Motos y Pesados).
+  // Si una versión aún no la trae, toma el contenido del diseño aprobado (SiriusAyudaVinTipos.SEMILLA); ayudas.vin (la ayuda anterior) no se toca.
+  ayTipos(f) { const SAV = window.SiriusAyudaVinTipos; return SAV && f && !f.modular ? SAV.tiposDe(f.alcance || f.name) : []; }
+  ayEsSerie(f) { return !!f && !f.modular && (f.id === 'f5' || f.alcance === 'Equipo y maquinaria'); }
+  ayNorm(f) { const SAV = window.SiriusAyudaVinTipos, T = this.ayTipos(f); if (!T.length) return; f.versions.forEach(v => { v.ayudas = v.ayudas || {}; const vt = v.ayudas.vinTipos = v.ayudas.vinTipos || {}; T.forEach(k => { if (!vt[k]) vt[k] = JSON.parse(JSON.stringify(SAV.SEMILLA[k])); }); }); }
+  ayRegistrar() { const SAV = window.SiriusAyudaVinTipos; if (!SAV) return; (this.state.forms || []).forEach(f => { if (!this.ayTipos(f).length) return; const vg = this.vigente(f); if (vg && vg.ayudas && vg.ayudas.vinTipos) SAV.registrar(f.name, vg.ayudas.vinTipos); }); } // la autoinspección lee lo publicado (versión vigente)
+  ayudaVals(v, ro, f) { const SAV = window.SiriusAyudaVinTipos, NC = window.SiriusNotifCola, tipos = this.ayTipos(f), puedeBorr = !!ro && v.estado === 'Vigente', why = ro ? this.roWhyOf(v) : '';
+    const anotar = (vv, what) => { const L = vv.log || (vv.log = []), u = L[L.length - 1]; if (u && u.what === what && u.by === this.user()) u.at = this.todayISO(); else L.push({ what, reason: '', by: this.user(), at: this.todayISO() }); }; // al escribir, un solo registro por campo
+    return { ayVin: tipos.length > 0, aySerie: this.ayEsSerie(f),
+      ay: { form: f.name, tipos, vinTipos: (v.ayudas && v.ayudas.vinTipos) || (SAV ? SAV.semillaDe(f.alcance || f.name) : {}), ro: !!ro, roWhy: why, editarTxt: puedeBorr ? this.textoEditar(f) : '', onEditar: puedeBorr ? () => this.editarEnBorrador(f.id) : null, tipoIni: this.state.ayTipo || '',
+        subir: NC && NC.puedeSubirImagen && NC.puedeSubirImagen() ? (file) => NC.subirImagen(file) : null, onCambio: (nv, what) => this.upd(vv => { vv.ayudas = Object.assign({}, vv.ayudas || {}, { vinTipos: nv }); anotar(vv, what); }) },
+      ays: { ayuda: (v.ayudas || {}).serie || ((((window.SIRIUS_AUTOINSPECCION || {}).ayudas) || {}).serie) || null, ro: !!ro, roWhy: why,
+        onCambio: (nv, hh) => { this.upd(vv => { vv.ayudas = Object.assign({}, vv.ayudas || {}, { serie: nv }); if (hh) vv.log.push({ what: hh.what, reason: hh.motivo, by: this.user(), at: this.todayISO() }); }, {}); if (hh) this.toast(hh.what); } } }; }
   openVersion(fid, vn) { const f = this.state.forms.find(x => x.id === fid), v = f.versions.find(x => x.n === vn); this.setState({ view: 'editor', fid, vn, tab: 0, sec: v.secs[0] ? v.secs[0].id : null, fld: null, step: null, open: v.secs[0] ? { [v.secs[0].id]: true } : {}, dirty: false, saved: '', cmpA: String(Math.max(1, vn - 1)), cmpB: String(vn) }); }
   // Etapa 12a-b: «Editar» desde una versión Vigente abre su borrador (o lo crea) y vuelve a la misma pestaña y al mismo paso.
   editarEnBorrador(fid) { const tab = this.state.tab, step = this.state.step; this.newVersion(fid); setTimeout(() => this.setState({ tab, step }), 60); }
@@ -1133,7 +1164,7 @@ class Component extends DCLogic {
   verNorm(forms) { const E = window.SIRIUS_EJEMPLO || {}, usos = (E.vehiculos || []).concat(E.equipos || []);
     forms.forEach(f => { const vgs = f.versions.filter(v => v.estado === 'Vigente').sort((a, b) => b.n - a.n); vgs.slice(1).forEach(v => { v.estado = 'Retirada'; });
       f.versions.forEach(v => { if (v.estado === 'Dada de baja') v.estado = 'Retirada'; v.vigenteDesde = v.estado === 'Borrador' ? '' : (v.vigenteDesde || v.desde || '');
-        if (v.motivo == null) { const l = (v.log || []).filter(x => x.reason).pop(); v.motivo = l ? l.reason : ''; } v.enCurso = usos.filter(x => x.formulario === f.name + ' v' + v.n).length; }); });
+        if (v.motivo == null) { const l = (v.log || []).filter(x => x.reason).pop(); v.motivo = l ? l.reason : ''; } v.enCurso = usos.filter(x => x.formulario === f.name + ' v' + v.n).length; }); this.ayNorm(f); });
     return forms; }
   pubDatos(forms, cambio, hist) { return { publicadoEn: this.nowStr(), publicadoPor: this.user(), historial: this.clone((hist || this.state.hist || []).slice(0, 200)), formularios: forms.map(f => Object.assign({}, f, { versions: f.versions.map(v => Object.assign({}, v, { estado: v.estado, vigenteDesde: v.vigenteDesde || '', motivo: v.motivo || '' }, this.cfgV(f, v))) })), /* P-6e-1: cada versión con modalidades, criteriosA y documentos */
     vigentes: forms.reduce((o, f) => { const vg = this.vigente(f); o[f.id] = vg ? vg.n : null; return o; }, {}), eliminados: ((this.state && this.state.eliminados) || []).slice(), contrato: 'La app y los portales usan solo la versión «Vigente» de cada plantilla; un borrador nunca se usa fuera de Formularios.', cambio }; }
@@ -1266,6 +1297,7 @@ class Component extends DCLogic {
     this.setState({ forms, modal: null, nf: { name: '', tipo: 'Vehículos', alcance: '', base: 'nucleo', from: 'f1', err: {} } }, () => { this.openVersion(id, 1); this.toast('Formulario «' + nf.name.trim() + '» creado como borrador'); });
   }
   renderVals() {
+    this.ayRegistrar(); // L-3
     const NS = window.AseguradoraDelSurDesignSystem_4fbf29 || {};
     if (!this.plusIcon && NS.FeedbackIcon) this.plusIcon = React.createElement(NS.FeedbackIcon, { name: 'plus', size: 20 });
     if (!this.backIcon) this.backIcon = this.svg('M19 12H5 M12 19l-7-7 7-7');
@@ -1698,11 +1730,13 @@ class Component extends DCLogic {
     if (f.modular) { ed.alcance = f.tipoObjeto + ' · ' + f.alcance + ' · Captura de evidencias: ' + f.modoCaptura; ed.onPublish = () => this.setState({ modal: { kind: 'pubm', target: 'tpl' }, reason: '', reasonErr: false }); ed.onPreview = () => this.toast('La vista previa estará disponible cuando los módulos tengan campos'); const tm = docPl && tab === 1 ? 1 : 0; return Object.assign({ ed, ro, roWhy: ro ? this.roWhyOf(v) : undefined, dragOn: !ro, tabs: docPl ? ['Módulos', 'Documento PDF'] : ['Módulos'], tab: tm, onTab: (i) => this.setState({ tab: i }), tabMod: tm === 0, tabDoc: tm === 1, tabCampos: false, tabPasos: false, tabAuto: false, tabPrev: false, live: st.live }, dp, tm === 0 ? this.modVals(v) : {}); }
     if (f.noAuto) { const nA = v.steps.filter(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Mapa').length, nD = v.steps.filter(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Documentos').length; ed.alcance = f.tipoObjeto + ' · ' + f.alcance + ' · ' + (nA ? 'Autoinspección: ' + nA + ' pasos y ' + nD + ' documentos (pestaña Autoinspección)' : 'Sin autoinspección') + ' · Extracción: ' + (f.extraccion || []).join(' · '); }
     const sinAuto = f.noAuto && !f.autoTaller; // etapa 12d-1c: Equipo y maquinaria también tiene la pestaña Autoinspección (espacio de trabajo)
-    const out = Object.assign({ ed, ro, roWhy: ro ? this.roWhyOf(v) : undefined, dragOn: !ro, tabMod: false, tabs: (sinAuto ? ['Campos', 'Pasos de foto', 'Vista previa'] : ['Campos', 'Pasos de foto', 'Autoinspección', 'Vista previa']).concat(docPl ? ['Documento PDF'] : []), tab: sinAuto && tab >= 3 ? tab - 1 : tab, onTab: (i) => this.setState({ tab: sinAuto && i >= 2 ? i + 1 : i }), tabCampos: tab === 0, tabPasos: tab === 1, tabAuto: tab === 2 && !sinAuto, tabPrev: tab === 3, tabDoc: !!docPl && tab === 4, live: st.live }, dp);
+    const conAy = this.ayTipos(f).length > 0 || this.ayEsSerie(f), tIds = (sinAuto ? [0, 1, 3] : [0, 1, 2, 3]).concat(docPl ? [4] : []).concat(conAy ? [5] : []), tLab = { 0: 'Campos', 1: 'Pasos de foto', 2: 'Autoinspección', 3: 'Vista previa', 4: 'Documento PDF', 5: 'Ayuda' }; // L-3: pestaña «Ayuda» (VIN por tipo; serie de maquinaria)
+    const out = Object.assign({ ed, ro, roWhy: ro ? this.roWhyOf(v) : undefined, dragOn: !ro, tabMod: false, tabs: tIds.map(i => tLab[i]), tab: Math.max(0, tIds.indexOf(tab)), onTab: (i) => this.setState({ tab: tIds[i] }), tabCampos: tab === 0, tabPasos: tab === 1, tabAuto: tab === 2 && !sinAuto, tabPrev: tab === 3, tabDoc: !!docPl && tab === 4, tabAyuda: conAy && tab === 5, live: st.live }, dp);
     if (tab === 0) Object.assign(out, this.camposVals(v, ro, all, sel, cur));
     if (tab === 1) Object.assign(out, this.pasosVals(v, ro, all));
     if (tab === 2 && !sinAuto) Object.assign(out, this.aconfVals(v, ro, f), this.tallerVals(v, ro, f, ed)); // etapa 12d-1c: espacio de trabajo (SiriusAutoTaller); su subpestaña Portal lleva Flujo, Controles, Video y Apariencia
     if (tab === 3) Object.assign(out, this.prevVals(v));
+    if (tab === 5 && conAy) Object.assign(out, this.ayudaVals(v, ro, f));
     return out;
   }
   camposVals(v, ro, all, sel, cur) {
