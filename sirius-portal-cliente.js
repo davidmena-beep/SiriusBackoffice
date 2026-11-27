@@ -326,7 +326,7 @@
   const CAMPOS = ['nombre', 'agencia', 'logo', 'logoOrigen', 'logoNombre', 'logoFondo', 'colorPrincipal', 'colorOscuro', 'contacto', 'contenido'];
   const ULTIMA = {};
   // Pantallas vigentes del recorrido, agrupadas (Entrada, Fotos, Interior, Extras, Documentos, Video, Cierre, Casos especiales).
-  function pantallas(pl, carr) { const pasos = pl.pasos || [], M = AU().modelo ? AU().modelo(pasos, pl.form, carr) : { mapa: [], interior: [], docs: [], conExtras: false }, out = [], add = (grupo, id, nombre, o) => out.push(Object.assign({ grupo, id, nombre }, o || {}));
+  function pantallas(pl, carr) { const pasos = pl.pasos || [], M = AU().modelo ? AU().modelo(pasos, pl.form, carr, pl.mapaPos || pl.ordenA ? { mapaPos: pl.mapaPos || {}, ordenA: pl.ordenA || null } : null) /* L-7: posiciones y orden de la versión */ : { mapa: [], interior: [], docs: [], conExtras: false }, out = [], add = (grupo, id, nombre, o) => out.push(Object.assign({ grupo, id, nombre }, o || {}));
     const act = (id) => S.activoFlujo(id), st = (id) => pasos.find(s => s.id === id) || {}, vdef = (s) => Object.assign(AU().validaDe ? AU().validaDe({}, s.guia, pl.form) : {}, (s.auto || {}).valida || {});
     add('Entrada', 'eresTu', '¿Eres tú?', { cont: 'eresTu' }); add('Entrada', 'consentimientos', 'Consentimientos', { cont: 'consentimientos' }); add('Entrada', 'tipo', 'Elegir el tipo', { cont: 'tipo' });
     add('Fotos', 'mapa', 'Mapa de captura', { cont: 'mapa' }); M.mapa.forEach(x => add('Fotos', 'cam:' + x.paso, 'Cámara · ' + x.nombre, { cont: 'camara', paso: x.paso }));
