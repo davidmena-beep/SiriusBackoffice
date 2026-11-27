@@ -309,7 +309,7 @@ class Component extends DCLogic {
     const r0 = this.rById(ids[0] || (rs[0] || {}).id), prev = o.vis.filter(v => v.estado !== 'Cancelada' && v.estado !== 'Reagendada' && v.id !== p.visitId && v.mod === 'Presencial' && (v.lugar || v.dir)).slice(-1)[0];
     const ofV = p.ofertaId ? o.vis.find(v => v.id === p.ofertaId && v.oferta && v.estado === 'Oferta enviada') : null;
     const r = this.reloj(), nowM = r ? (r.min != null ? r.min : (window.SiriusFecha ? window.SiriusFecha.aMin(r.hora) : 0)) : (() => { const m = /T(\d\d):(\d\d)/.exec(this.nowIso); return m ? +m[1] * 60 + +m[2] : 0; })();
-    const cpL = this.cpPide(p) ? this.cpCampos().map(x => ({ k: 'cp_' + x.clave, label: x.etiqueta, ph: x.ayuda, value: this.cpVal(p, x) })) : [];
+    const cpL = this.cpPide(p) ? this.cpCampos(p).map(x => ({ k: 'cp_' + x.clave, label: x.etiqueta, ph: x.ayuda, value: this.cpVal(p, x) })) : [];
     const ints = (P.intentos || []).slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1).map(x => ({ when: this.fmtDT(x.fecha), medio: x.medio, resultado: x.resultado, obs: x.obs || '', by: x.by || '', destino: this.destinoTxt(x.destino), dur: this.durTxt(x.duracionSeg) }));
     const fz = this.fueraDe(p);
     return {
@@ -563,7 +563,8 @@ class Component extends DCLogic {
     return this.slots(p.inspector, p.fecha, p.visitId).find(s => s.a < b && a < s.b) || null;
   }
   // ---------- Campos personalizados (etapa 10c-consumo): los obligatorios en «Coordinación» se piden al grabar la visita ----------
-  cpCampos() { const C = window.SIRIUS_CAMPOS; if (!C) return []; const g = this.props.tipo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'; return C.campos.filter(x => x.estado === 'Activo' && x.entidad === 'caso' && x.momento === 'Coordinación' && x.aplicaA.includes(g)).sort((a, b) => a.orden - b.orden); }
+  // L-6: solo los campos cuya lista de modalidades incluye la elegida (p.mod); sin lista = todas. Lo escrito (p['cp_…']) no se pierde al cambiar de modalidad.
+  cpCampos(p) { const C = window.SIRIUS_CAMPOS; if (!C) return []; const g = this.props.tipo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'; return C.campos.filter(x => x.estado === 'Activo' && x.entidad === 'caso' && x.momento === 'Coordinación' && x.aplicaA.includes(g) && C.pideEn(x, p ? p.mod : undefined)).sort((a, b) => a.orden - b.orden); }
   cpVal(p, x) { const k = 'cp_' + x.clave; if (p && p[k] !== undefined) return p[k]; const v = window.SIRIUS_CAMPOS.valor(this.props.caseId, x.clave); return v === null ? '' : String(v); }
   cpPide(p) { return !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección'; }
   errors(p) {
@@ -592,7 +593,7 @@ class Component extends DCLogic {
     if (p.cMail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.cMail.trim())) e.cMail = 'Revisa el formato del correo.';
     if (String(p.sCel || '').trim() && !/^0\d{9}$/.test(String(p.sCel).replace(/\s/g, ''))) e.sCel = 'El celular del contacto en sitio debe tener 10 dígitos y empezar con 0.'; // G-2c3
     if (p.mod === 'Autoinspección' && !e.cCel && !e.cMail) { const L = this.canalesDe(p).opciones || []; if (L.length && !L.some(x => x.ok)) e.cMail = this.SIN_CANAL() + ': sin consentimiento para WhatsApp ni SMS; escribe el correo.'; } // etapa C2-5
-    if (this.cpPide(p)) this.cpCampos().forEach(x => { const raw = String(this.cpVal(p, x)).trim(); const m = !raw ? 'Ingresa ' + x.etiqueta.toLowerCase() + ': se pide al coordinar la visita.' : window.SIRIUS_CAMPOS.validar(x, raw); if (m) e['cp_' + x.clave] = m; });
+    if (this.cpPide(p)) this.cpCampos(p).forEach(x => { const raw = String(this.cpVal(p, x)).trim(); const m = !raw ? 'Ingresa ' + x.etiqueta.toLowerCase() + ': se pide al coordinar la visita.' : window.SIRIUS_CAMPOS.validar(x, raw); if (m) e['cp_' + x.clave] = m; });
     return e;
   }
   VIG = ['48 horas', '72 horas', '5 días', '10 días', '15 días'];
@@ -676,7 +677,7 @@ class Component extends DCLogic {
       const mode = p.mode, onA = P.onAction || (() => {});
       const fz = this.fueraDe(p), fueraC = fz ? { motivo: String(p.fueraMot || '').trim(), inspector: p.inspector, alerta: SLg ? SLg.fueraTxt(p.inspector) : p.inspector + ' no cubre este lugar.' } : null; // G-2c · DEC-225
       if (mode === 'inspector') { onA('inspector', { id: p.visitId, inspector: p.inspector, motivo: String(p.motivoCx || '').trim(), fueraCobertura: fueraC }); this.setState({ pnl: null }); return; } // DEC-231: el motivo va a la base
-      if (this.cpPide(p)) { const C = window.SIRIUS_CAMPOS, cambios = []; this.cpCampos().forEach(x => { const nv = String(this.cpVal(p, x)).trim(), old = C.valor(P.caseId, x.clave); if (nv !== (old === null ? '' : String(old))) { if (!C.valores[P.caseId]) C.valores[P.caseId] = {}; C.valores[P.caseId][x.clave] = nv; cambios.push({ etiqueta: x.etiqueta, de: C.mostrar(x, old), a: nv }); } }); if (cambios.length) onA('campos', { cambios }); }
+      if (this.cpPide(p)) { const C = window.SIRIUS_CAMPOS, cambios = []; this.cpCampos(p).forEach(x => { const nv = String(this.cpVal(p, x)).trim(), old = C.valor(P.caseId, x.clave); if (nv !== (old === null ? '' : String(old))) { if (!C.valores[P.caseId]) C.valores[P.caseId] = {}; C.valores[P.caseId][x.clave] = nv; cambios.push({ etiqueta: x.etiqueta, de: C.mostrar(x, old), a: nv }); } }); if (cambios.length) onA('campos', { cambios }); }
       if (mode === 'enlace') { const nv = Object.assign({}, src, { validez: p.validez, cName: p.cName, cCel: p.cCel, cMail: p.cMail, vence: this.addHours(p.validez), enlace: src.enlace.replace(/-n\d*$/, '') + '-n' + Date.now().toString().slice(-3) }); const rN = onA('nuevoEnlace', { id: nv.id, vence: nv.vence, enlace: nv.enlace, validez: nv.validez }); this.trasEnvio(rN, (x) => { const nx = this.conCx(nv, x); this.setState({ pnl: null, touched: {}, wa: { title: 'Nuevo enlace de ' + nv.id + ' enviado', to: nv.cName + ' · ' + nv.cCel, text: this.waMessage(nx), ins: '', enlace: this.enlaceCopia(nx) } }); /* etapa C2-5: «Copiar enlace» también en demostración */ }); return; }
       const base = { mod: p.mod, inspector: this.needsIns(p) ? p.inspector : '', fecha: p.fecha, hIni: p.hIni, hFin: p.mod === 'Presencial' ? p.hFin : '', dir: p.dir, inter: p.inter, ref: p.ref, validez: p.mod === 'Autoinspección' ? p.validez : '', motivo: p.motivo, nrObs: p.mod === 'No requiere inspección' ? String(p.nrObs || '').trim() : '', obs: p.obs, cName: p.cName, cCel: p.cCel, cMail: p.cMail };
       if (this.usaLugar(p) && p.lugar) Object.assign(base, { lugar: Object.assign({}, p.lugar), dir: p.lugar.direccion, ref: p.lugar.referencia, inter: '' }); // G-2c · DEC-222
@@ -868,7 +869,7 @@ class Component extends DCLogic {
       hasModNote: !!p && p.mode !== 'inspector' && ['Virtual guiada', 'Autoinspección', 'No requiere inspección'].includes(p.mod),
       modNote: !p ? '' : p.mod === 'Virtual guiada' ? 'El enlace de la videollamada se genera al agendar y se envía al contacto por WhatsApp.' : p.mod === 'Autoinspección' ? 'Se enviará un enlace por WhatsApp a ' + (p.cName || 'el contacto') + ' (' + (p.cCel || 'sin celular') + '), válido por ' + p.validez + '. Recordatorio ' + this.recTxt(p.validez) + ' antes del vencimiento.' : 'Los riesgos pasan directamente a calificación, sin informe de inspección.',
       showContact: !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección',
-      cFields: p ? this.cpCampos().filter(() => this.cpPide(p)).map(x => Object.assign(cF('cp_' + x.clave, x.etiqueta, { req: true, ph: x.ayuda }), { value: this.cpVal(p, x) })).reduce((a, f) => a.concat([f]), [cF('cName', 'Nombre', { req: true }), cF('cCel', 'Celular (WhatsApp)', { req: true, type: 'tel', inputMode: 'numeric', ph: '09XXXXXXXX' }), cF('cMail', 'Correo electrónico', { type: 'email', inputMode: 'email' })]) : [],
+      cFields: p ? this.cpCampos(p).filter(() => this.cpPide(p)).map(x => Object.assign(cF('cp_' + x.clave, x.etiqueta, { req: true, ph: x.ayuda }), { value: this.cpVal(p, x) })).reduce((a, f) => a.concat([f]), [cF('cName', 'Nombre', { req: true }), cF('cCel', 'Celular (WhatsApp)', { req: true, type: 'tel', inputMode: 'numeric', ph: '09XXXXXXXX' }), cF('cMail', 'Correo electrónico', { type: 'email', inputMode: 'email' })]) : [],
       showObs: !!p && p.mode !== 'inspector' && p.mod !== 'No requiere inspección', obsLabel: p && p.mod === 'Autoinspección' ? 'Indicaciones para el contacto' : 'Observaciones para el inspector', obs: p ? p.obs : '', onObs: (e) => this.setP('obs', e.target.value),
       invalid: eKeys.length > 0, hint: !eKeys.length ? '' : fieldN ? (fieldN === 1 ? 'Falta 1 campo obligatorio' : 'Faltan ' + fieldN + ' campos obligatorios') : 'Incluye al menos un riesgo',
       submitLabel: !p ? '' : p.mode === 'inspector' ? 'Cambiar inspector' : p.mode === 'enlace' ? 'Enviar nuevo enlace' : p.mode === 'reagendar' ? 'Guardar cambios' : p.mod === 'No requiere inspección' ? 'Enviar a calificación' : p.mod === 'Autoinspección' ? 'Enviar enlace de autoinspección' : 'Agendar visita',

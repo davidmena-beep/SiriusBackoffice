@@ -22,6 +22,8 @@
     ],
     // Momento en que el campo se pide; «Opcional» = nunca obligatorio.
     momentos: ['Nueva solicitud', 'Coordinación', 'Opcional'],
+    // L-6: modalidades de la visita en que se pide un campo con momento «Coordinación». Sin la lista (campos de antes) = todas.
+    modalidades: ['Presencial', 'Virtual guiada', 'Autoinspección', 'Documental'],
     origenes: ['Manual', 'BPM de Emisión', 'Sur One'],
     reglas: [
       'La clave usa minúsculas, números y guion bajo, es única en la compañía y no cambia después de crear el campo.',
@@ -50,7 +52,7 @@
         ayuda: 'Solo si el vehículo está prendado; el beneficiario acreedor se registra en la solicitud.', aplicaA: ['Vehículos'], momento: 'Opcional', origen: 'Manual',
         ver: ['Ejecutivo comercial', 'Ejecutivo de inspecciones', 'Suscriptor', 'Administrador'], editar: ['Ejecutivo comercial', 'Administrador'], filtroBandeja: false, estado: 'Activo', orden: 4, creado: ['Andrea Salazar', '2026-10-02T15:12'] },
       { clave: 'contacto_seguridad', etiqueta: 'Contacto de seguridad en sitio', entidad: 'caso', tipo: 'texto', validacion: { largoMax: 80 },
-        ayuda: 'Persona que abre el acceso al inspector (guardia, administrador del local).', aplicaA: ['Ramos Generales'], momento: 'Coordinación', origen: 'Manual',
+        ayuda: 'Persona que abre el acceso al inspector (guardia, administrador del local).', aplicaA: ['Ramos Generales'], momento: 'Coordinación', modalidades: ['Presencial'], origen: 'Manual',
         ver: 'Todos los roles', editar: ['Coordinador de inspecciones', 'Administrador'], filtroBandeja: false, estado: 'Activo', orden: 5, creado: ['Andrea Salazar', '2026-10-06T09:40'] },
       { clave: 'codigo_campana', etiqueta: 'Código de campaña', entidad: 'caso', tipo: 'texto', validacion: { largoMax: 12 },
         ayuda: 'Campaña comercial asociada.', aplicaA: ['Vehículos'], momento: 'Opcional', origen: 'Manual',
@@ -89,6 +91,9 @@
     ],
   };
   const grupo = (caso) => { const E = window.SIRIUS_EJEMPLO, r = E && E.ramos && E.ramos.find(x => x.nombre === caso.ramo); return r ? r.grupo : (caso.ramo === 'Vehículos' ? 'Vehículos' : 'Ramos Generales'); };
+  // L-6: ¿el campo se pide en esta modalidad? Sin lista de modalidades = todas (como antes).
+  C.pideEn = (campo, mod) => !Array.isArray(campo.modalidades) || campo.modalidades.includes(mod);
+  C.modsTxt = (campo) => Array.isArray(campo.modalidades) && campo.modalidades.length && campo.modalidades.length < C.modalidades.length ? C.modalidades.filter(m => campo.modalidades.includes(m)).join(' · ') : 'Todas las modalidades';
   C.campo = (clave) => C.campos.find(c => c.clave === clave) || null;
   // Campos activos que aplican a un caso (entidad 'caso' o 'riesgo'), en orden.
   C.camposDe = (caso, entidad, incluirInactivos) => C.campos.filter(c => c.entidad === entidad && c.aplicaA.includes(grupo(caso)) && (incluirInactivos || c.estado === 'Activo')).sort((a, b) => a.orden - b.orden);
