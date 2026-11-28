@@ -9,7 +9,7 @@
   if (window.SiriusGrillaEditor) return;
   var TIPOS = ['Texto', 'Número', 'Moneda', 'Fecha', 'Sí/No', 'Lista propia', 'Catálogo maestro', 'Foto'];
   var CATS = [['piezas', 'Piezas'], ['danos', 'Tipos de daño'], ['gravedad', 'Gravedad de avería'], ['extras', 'Extras'], ['coberturas', 'Coberturas'], ['verif', 'Resultados de verificación externa'], ['sucursales', 'Sucursales'], ['eqtipos', 'Tipos de equipo'], ['eqmarcas', 'Marcas de equipo']];
-  var FMT_TEXTO = ['Ninguno', 'Mayúsculas', 'Placa', 'Número de serie (PIN)', 'Medida de neumático (205/55 R16)', 'Correo'];
+  var FMT_TEXTO = ['Ninguno', 'Mayúsculas', 'Placa', 'Número de serie o chasis', 'Medida de neumático (205/55 R16)', 'Correo'];
   var FMT_FECHA = ['Fecha', 'Fecha y hora'];
   function slug(s) { return String(s || '').toLowerCase().replace(/ñ/g, 'ni').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 28).replace(/_+$/, '') || 'columna'; }
   function catVals(id) { var E = window.SIRIUS_EJEMPLO || {}, K = E.catalogos || {}, Q = window.SIRIUS_EQUIPOS || {};
@@ -162,7 +162,7 @@
   var miles = function (n) { var C = window.SIRIUS_COMPANIA; return C && C.formatoMonto ? C.formatoMonto(Number(n)) : String(n); };
   var fechaOk = function (s, conHora) { var m = (conHora ? /^(\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d)$/ : /^(\d\d)\/(\d\d)\/(\d{4})$/).exec(String(s).trim()); if (!m) return false; var d = new Date(+m[3], +m[2] - 1, +m[1]); if (d.getDate() !== +m[1] || d.getMonth() !== +m[2] - 1) return false; return !conHora || (+m[4] < 24 && +m[5] < 60); };
   var FMT = { 'Mayúsculas': [function (s) { return s === s.toUpperCase(); }, 'Escribe en mayúsculas'], 'Placa': [function (s) { return /^[A-Z]{3}-?\d{3,4}$/.test(s); }, 'Placa inválida (ABC-1234)'],
-    'Número de serie (PIN)': [function (s) { var P = (((window.SIRIUS_EQUIPOS || {}).identificacion || {}).pin || {}).patron || '^[A-Z0-9]{17}$'; return new RegExp(P).test(s); }, 'El número de serie debe tener 17 caracteres (PIN)'],
+    'Número de serie o chasis': [function (s) { var P = (((window.SIRIUS_EQUIPOS || {}).identificacion || {}).pin || {}).patron || '^[A-Z0-9-]{4,30}$'; return new RegExp(P).test(s); }, 'Solo mayúsculas, letras, números y guion (4 a 30 caracteres)'],
     'Medida de neumático (205/55 R16)': [function (s) { return /^\d{3}\/\d{2} ?R\d{2}$/i.test(s); }, 'Medida inválida (205/55 R16)'], 'Correo': [function (s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }, 'Correo inválido'] };
   // Error de una celda ('' si está bien). obligatorios: también marca las obligatorias vacías.
   SG.errorCelda = function (c, v, obligatorios) {

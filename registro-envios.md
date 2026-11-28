@@ -4,6 +4,497 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — ENVÍO LP-0 · Número de serie o chasis en Equipo y maquinaria (DEC-305)
+
+Publiqué la versión 424 de SIRIUS. Los archivos subieron en la 423 y esta versión cierra el registro con el tiempo de la etapa.
+
+En Equipo y maquinaria, el campo del informe, la Nueva solicitud, la grilla, el PDF y la autoinspección ya hablan de «Número de serie o chasis» y no piden el formato PIN de 17 caracteres ni muestran «Serie sin formato PIN». La comparación con la serie de la solicitud queda en la base.
+
+### Mapa de impacto
+
+- **`sirius-equipos.js`:** `em_serie_pin` pasa a `em_serie_chasis` («Número de serie o chasis», Texto, con la ayuda de DEC-305 y sin `valida: 'pin'`); las respuestas arman `em_serie_chasis: q.pin`. `SE.pinValido` se retiró: solo lo usaban Nueva solicitud y las dos reglas del Back-office.
+- **`SIRIUS Back-office.dc.html`:** se quitaron las dos reglas que mostraban «Serie sin formato PIN» (la nota del campo y la alerta); no se reemplazan.
+- **`sirius-solicitud-equipos.js`:** «Número de serie o chasis» en el formulario, el mensaje de falta y el encabezado de la carga por Excel (alias nuevos «chasis» y «serie o chasis»); sin aviso en el formulario, la tarjeta ni la vista previa de la carga.
+- **`sirius-grilla.js`:** el formato «Número de serie o chasis»: mayúsculas, letras, números y guion, de 4 a 30 caracteres.
+- **`datos-equipo-maquinaria.js` (1.2):** `identificacion.pin` con el nombre, la norma, el patrón `^[A-Z0-9-]{4,30}$`, la falla y la nota de DEC-305; textos «serie o chasis».
+- **`datos-documentos-pdf.js` (1.5) y `sirius-documentos-pdf.js`:** `em_serie_chasis` en las dos tarjetas de Equipo; la etiqueta corta sigue siendo «Serie».
+- **`datos-autoinspeccion.js` (2.5), `sirius-autoinspeccion.js` y `Formularios.dc.html`:** «Serie o chasis» en el dato de extracción, la lista OCR y el EXMAP de «Placa del fabricante».
+- **`datos-cx-equipo.js`, `datos-ejemplo.js` y `datos-escenas.js`:** `em_serie_chasis` en las respuestas del 50075; la foto de demostración «Placa del fabricante (serie o chasis)»; descripciones de formem y emsolicitud.
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-motores-ia.js`, `sirius-lectura.js`, `sirius-lectura-worker.js`, el «PIN de 6 dígitos» del celular de confianza y el diseño del PDF.
+
+### Qué cambió
+
+- **Informe de Equipo (20204-E3 y 50075):** el campo se llama «Número de serie o chasis» con la ayuda nueva. Antes decía «Número de serie (PIN)», la norma ISO 10261 y el aviso «Serie sin formato PIN» (el Toyota 8FGU25 de 12 caracteres lo mostraba en la nota y en la alerta).
+- **Nueva solicitud de Equipo:** «Número de serie o chasis» con la pista «Como figura en la placa del fabricante, el bastidor o la matrícula. Sin formato fijo.». El Toyota 8FD30 ya no lleva «Serie sin formato PIN · se acepta con aviso» y la carga por Excel (embulk) dice «Lista para agregar» en las dos filas que antes llevaban el aviso.
+- **PDF de Equipo (empdf):** la tarjeta de la portada sigue con «Serie CAT0966MXP7A04521» (misma etiqueta corta); ahora sale de `em_serie_chasis`.
+- **Formularios:** «Número de serie o chasis» en Equipo y maquinaria y como formato de texto en el editor de grilla; «Serie o chasis» en la lista OCR y en la extracción de la placa del fabricante.
+
+### Prueba
+
+- **Informe (20204-E1 y E3 forzando la construcción del caso, y 50075):** etiqueta y ayuda nuevas, sin «PIN» ni «17 caracteres» en el texto de la pantalla.
+- **Nueva solicitud:** al editar el Toyota 8FD30 y escribir «ABC-12» y «8FGU25-61884» no aparece ningún aviso.
+- **Formato de la grilla:** «8FGCU25-41872», «AB12» y 30 caracteres pasan; «AB1», 31 caracteres, minúsculas y espacios fallan con «Solo mayúsculas, letras, números y guion (4 a 30 caracteres)».
+- **Búsqueda en todo el proyecto:** «em_serie_pin», «(PIN)», «formato PIN», `pinValido` e «ISO 10261» ya no existen en el código. Queda el «PIN de 6 dígitos» del celular de confianza y los 17 caracteres del VIN.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola en 16 escenas.
+
+### Regresión (línea base contra la nueva, 1440×900 y 1280×720)
+
+- emflota, emcalif, resumenequipo, empdfaps e infequipobandeja: mismo texto.
+- autopasosem, embulk, emotro, emsolicitud, formautomapa, formayudaserie, formem, grillaeditor, grillafijas, infequipo y mapacapturaem: la única diferencia es el texto de la serie (etiqueta, ayuda, aviso quitado y «Serie o chasis» en OCR y extracción).
+
+### No verificado
+
+- **Base real:** SQL 105 y que el formulario publicado traiga `em_serie_chasis`; en esta maqueta el 50075 usa la plantilla del prototipo, no la de la base.
+- **Control «Lectura: serie o chasis distinto al declarado»:** lo hace la base; el prototipo no lo evalúa.
+- **Informe de 20204 al abrir la escena:** en mi arnés de pruebas el caso 20204 de Equipo abre con «Secciones 0 de 0» hasta forzar `SiriusEquipos.construir()`; igual en la copia anterior a LP-0, así que no es de esta etapa.
+- **PDF descargado:** vi la vista previa (tarjeta de portada); no abrí el archivo descargado. Firefox y Safari.
+
+### Diferencias
+
+- **`datos-equipo-maquinaria.js` partía de la versión 1** y datos-documentos-pdf de la 1.3 y datos-autoinspeccion de la 2.3 en el prototipo; las subí a 1.2, 1.5 y 2.5 como pediste, saltando las versiones que ya publicó la base.
+- **Nueva solicitud sigue con su regla de 5 a 25 caracteres** (letras, números y guion) para aceptar la serie; la grilla y SIRIUS_EQUIPOS usan 4 a 30. No la cambié porque pediste no tocar otras reglas.
+- **Texto «Número de serie» sin «o chasis»:** sigue en la ficha del caso, el Resumen y las filas de equipos del Back-office, porque no decían PIN.
+- **Ayuda «¿Dónde está la serie?»** (autoinspección): sigue diciendo «17 caracteres en la mayoría de equipos»; no era parte de la lista.
+- **Formatos de grilla guardados como «Número de serie (PIN)»:** el nombre antiguo ya no existe; si algún formulario real lo guardó, la base lo migró con la SQL 105 (no lo vi).
+
+### Escenas
+
+- Ninguna escena nueva (871); formem y emsolicitud con la descripción actualizada.
+
+Tiempo de la etapa: inicio 27/11/2026 22:19 · fin 27/11/2026 22:58 · 39 min
+---
+
+## 18/10/2026 · 20:30 — Etapa L-7
+
+Publiqué la versión 422 de SIRIUS. Los archivos subieron en la 421 y esta versión cierra el registro con el tiempo de la etapa.
+
+Un caso de Equipo y maquinaria con informe real en la base ya usa la misma pantalla conectada que Vehículos, con su formulario publicado: secciones, procedencia, fotos por sección y un avance que cuenta lo que falta. Formularios › Autoinspección dibuja el recorrido con las posiciones y el orden guardados en la versión. No toqué la conexión (`sirius-conexion.js` sigue en 70 bytes).
+
+### Mapa de impacto
+
+- **`SIRIUS Back-office.dc.html`:** `cxInfForm(c)` reconoce, con la conexión, un caso de un riesgo cuyo informe trae un formulario con secciones distinto de Vehículos y de «Ubicación – Ramos Generales». `cxTplForm(c)` convierte la versión publicada (`SIRIUS_FORMULARIOS`) a la forma de las plantillas del Informe: secciones, campos y pasos; un paso sin «sec» va a las secciones de los campos que alimenta. Lo usan `infVals` (plantilla y armado del informe), `cxTplCaso` (fotos) y `cxResp` (las claves del formulario). La rama de InformeRG se excluye para esos casos.
+- **`sirius-conexion-vistas.js`:** el nombre de un paso de otro formulario publicado («Placa del fabricante (serie y año)» en vez de `eq_placa_fabricante`).
+- **`sirius-autoinspeccion.js`:** `modelo(steps, form, carr, { mapaPos, ordenA })` toma el punto con `posDe` (guardado por carrocería o sugerido, igual que el editor de Pasos de foto) y el orden con `ordenModo(…, 'A')`. SiriusAutoTaller los recibe y, al reordenar, también actualiza `ordenA`.
+- **`Formularios.dc.html` y `sirius-portal-cliente.js`:** pasan `mapaPos` y `ordenA` a la pestaña Autoinspección y al simulador; escenas `automapa` y `automapapasos`.
+- **`datos-cx-equipo.js` (nuevo) y `datos-escenas.js`:** el 50075 simulado y 4 escenas (871 en total).
+- **Sin cambios:** la conexión, InformeRG (sigue para «Ubicación – Ramos Generales»), los informes de Vehículos y Motos, y el portal del cliente del prototipo.
+
+### Qué cambió
+
+- **Informe del 50075:** plantilla «Equipo y maquinaria · Autoinspección · v3 (vigente)», 11 secciones, «6 de 11 completas», «9 obligatorios pendientes · 14 de 50 campos aplicables». Las etiquetas de origen son Lectura · 96 % (placa del fabricante), Campo y Por confirmar. Hay fotos de cada sección (3 en Identificación, 4 en Documentación), la vista Fotos por sección y «Solo campos por revisar».
+- **Navegación:** Informes por completar › «Completar» abre el paso 1 «Informe · 9 pendientes»; antes iba a «Criterio y calificación». La fila de la bandeja cuenta «14 de 50 campos aplicables · 9 obligatorios pendientes»; antes mostraba «—».
+- **Formularios › Equipo y maquinaria › Autoinspección › Montacargas:** los puntos usan `mapaPos` y `ordenA`. Los laterales que el editor tiene «Sin ubicar» ya no se dibujan.
+
+### Prueba
+
+Con la conexión simulada (`datos-cx-equipo.js`; datos de demostración, no los de la base real).
+
+- **Antes (código anterior con los mismos datos):** «Secciones 0 de 0 completas», «Informe · sin pendientes» y «Completar» iba a «Criterio y calificación».
+- **infequipo:** al llenar «Matrícula o registro» los pendientes bajan de 9 a 8 y los aplicables suben de 14 a 15. «Solo campos por revisar» deja 8 de 13 controles. «Guardar borrador» envía `guardarInforme` del 50075 con las 67 claves del formulario («Amarillo y negro» como Back-office, Toyota con su lectura) y avisa «Borrador guardado · el informe sigue «Por completar»».
+- **formautomapa y formautomapapasos:** los 7 puntos tienen las mismas coordenadas y el mismo número en las dos pantallas (por ejemplo, Neumáticos u orugas 88,17 n.º 1 y Frente 354,75 n.º 9). Con el código anterior, la pestaña Autoinspección ponía Frente en 313,65 como n.º 1 y dibujaba los laterales.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola.
+
+### Regresión (línea base contra la nueva, 1280×720)
+
+- autoporseccion, valorestotal, autonoaplica, autodecision, leccaso, testigoscaso, infcompletarrg, infrgev, eminforme y resumenubicacion: mismo texto.
+- autotaller, autopasos, autopasosmoto, autopasosem, mapacapturaem, simulador y simuladorcamara: mismo texto. En la pestaña Autoinspección los puntos ahora están donde los pone el editor de Pasos de foto (sin posiciones guardadas, las sugeridas del mapa de captura).
+
+### No verificado
+
+- **Base real:** el 50075 con sus 11 secciones y 67 campos reales, y que `SIRIUS_FORMULARIOS` traiga Equipo y maquinaria v3 con `feeds` en los pasos. Sin `feeds`, esas fotos irían a «Otras fotos».
+- **Mapa real:** Equipo y maquinaria v3 con su `mapaPos`; lo probé con posiciones de la escena.
+- **Completar y calificar con la base real**, Firefox y Safari.
+
+### Diferencias
+
+- **Varios equipos:** un caso de Equipo y maquinaria con más de un equipo sigue como antes (InformeRG o la demostración del 20204).
+- **Portal del cliente del prototipo:** sigue con su propio recorrido; el cambio de puntos y orden es de Formularios (pestaña Autoinspección y simulador).
+- **Vehículos y Motos en la pestaña Autoinspección:** sin posiciones guardadas, los puntos ahora son los sugeridos del mapa de captura, como en Pasos de foto, no los de antes.
+- **Reordenar en la pestaña Autoinspección** también cambia `ordenA` (el orden de Pasos de foto en Autoinspección).
+
+### Escenas
+
+- **infequipo**, **infequipobandeja**, **formautomapa** y **formautomapapasos**; 871 escenas.
+
+Tiempo de la etapa: inicio 27/11/2026 16:05 · fin 27/11/2026 16:34 · 29 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-6
+
+Publiqué la versión 420 de SIRIUS. Los archivos subieron en la 419 y esta versión cierra el registro con el tiempo de la etapa.
+
+Los campos personalizados con momento «Coordinación» ahora dicen en qué modalidades se piden. «Contacto de seguridad en sitio» parte solo en Presencial: en una autoinspección ya no se pide y «Enviar enlace de autoinspección» no queda bloqueado por él. No toqué la conexión (`sirius-conexion.js` sigue en 70 bytes).
+
+### Mapa de impacto
+
+- **`datos-campos.js`:** `C.modalidades` (las cuatro), `C.pideEn(campo, mod)` y `C.modsTxt(campo)`; «Contacto de seguridad en sitio» con `modalidades: ['Presencial']`. Sin la lista (campos de antes) equivale a todas.
+- **`Campos.dc.html`:** «Se pide en (modalidad)» con casillas, solo si el momento es Coordinación; se guarda como `modalidades`; validación (al menos una), resumen de cambios («Se pide en: Presencial → Presencial · Autoinspección»), impacto y la columna «Obligatorio en» con «Se pide en: …». Un campo nuevo con las cuatro marcadas queda sin lista.
+- **`Coordinacion.dc.html`:** `cpCampos(p)` devuelve solo los campos cuya lista incluye `p.mod`; los cuatro usos (contacto, errores, grabar visita y vista antigua) la reciben. `cpPide` no cambia.
+- **`SIRIUS Back-office.dc.html`, `datos-cx-cpmod.js` (nuevo) y `datos-escenas.js`:** escenas cpersmodalidades, coordcpauto y coordcppres (867 en total).
+- **Sin cambios:** la conexión, la ficha del caso y el Resumen (leen `camposDe`), Nueva solicitud, la configuración de modalidades y DEC-182.
+
+### Qué cambió
+
+- **Editor:** en Administración › Campos personalizados, un campo con momento Coordinación muestra «Se pide en (modalidad)» con Presencial, Virtual guiada, Autoinspección y Documental. Sin ninguna marcada no deja guardar («Elige al menos una modalidad en que se pide.»).
+- **Coordinación:** el campo aparece o desaparece de la fase Contacto según la modalidad elegida; lo escrito se conserva al cambiar y volver.
+- **Ficha y Resumen:** el campo se sigue mostrando si tiene valor.
+
+### Prueba
+
+Con la conexión simulada, caso 50012 de Ramos Generales (datos de demostración). La autoinspección de Ramos Generales se habilita solo en estas escenas.
+
+- **coordcpauto:** Coordinar visita › Autoinspección: la fase Contacto no pide el contacto de seguridad (ni en «Editar contacto»), «Siguiente: Enlace de autoinspección →» avanza y «Enviar enlace de autoinspección» queda habilitado; al enviarlo, «Enlace de autoinspección enviado · caso pasa a Agendado».
+- **coordcppres:** en Presencial sí lo pide («Revisa el contacto (fase Contacto): Ingresa contacto de seguridad en sitio…»). Escribí «Marcos Vera, guardia», pasé a Autoinspección (desaparece) y volví a Presencial: el valor seguía escrito.
+- **Campo de antes:** sin `modalidades` se pide también en Autoinspección (como hoy); con `['Presencial', 'Autoinspección']` también; con `['Presencial']` no.
+- **cpersmodalidades:** quitar todas muestra el error; agregar Autoinspección y guardar con motivo dejó `modalidades: ['Presencial', 'Autoinspección']` y el historial «Editó el campo (Se pide en: Presencial → Presencial · Autoinspección)».
+- **Resumen del caso 20195:** sigue mostrando «Contacto de seguridad en sitio · Wilson Zambrano, jefe de bodega».
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola.
+
+### Regresión (línea base contra la nueva)
+
+- cpers, cpersnuevo, cpersinact y cpershist: mismo texto salvo «Se pide en: Presencial» en la tabla; cpersedit suma además «Se pide en: Presencial → No aplica» (esa escena cambia el momento).
+- coordriesgorg, coordrg y coordautoinsp (1440×900 y 1280×720): mismo texto.
+
+### No verificado
+
+- **Base real:** el campo `contacto_seguridad` y su lista `modalidades` en la base, y que la base guarde la propiedad nueva.
+- **Configuración real de Ramos Generales:** aquí Ramos Generales ofrece solo Presencial (DEC-182); la autoinspección la habilité solo en las escenas de prueba.
+- **Navegadores:** Firefox y Safari.
+
+### Diferencias
+
+- **Ramos Generales y autoinspección:** en este prototipo hoy no se ofrece; el cambio rige cuando la plantilla «Ubicación – Ramos Generales» la active.
+- **Al grabar la visita** solo se guarda en el caso el contacto de seguridad si la modalidad guardada lo pide; lo escrito en otra modalidad no se graba.
+- **Editar desde la ficha:** quitar el valor sigue pidiéndose si el momento del campo no es Opcional, sin mirar la modalidad.
+- **Cambiar el momento** de un campo a otro distinto de Coordinación quita su lista de modalidades.
+
+### Escenas
+
+- **cpersmodalidades**, **coordcpauto** y **coordcppres**; 867 escenas.
+
+Tiempo de la etapa: inicio 27/11/2026 10:52 · fin 27/11/2026 11:11 · 19 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-3
+
+Publiqué la versión 418 de SIRIUS. Los archivos subieron en la 417 y esta versión cierra el registro con el tiempo de la etapa.
+
+Formularios tiene la pestaña «Ayuda» con el editor de la ayuda «¿Dónde está el VIN?» por tipo de vehículo (`ayudas.vinTipos`). La autoinspección del prototipo (portal y simulador) la muestra con el diseño aprobado de 390 px, tomada de la versión vigente. No toqué la conexión (`sirius-conexion.js`, 70 bytes) ni `ayudas.vin`.
+
+### Mapa de impacto
+
+- **`sirius-ayuda-vin.js` (nuevo):** `SiriusAyudaVinVista` (la pantalla del diseño aprobado), `SiriusAyudaVinEditor` (el editor) y `SiriusAyudaVinTipos` (tipos, 10 íconos, contenido del diseño aprobado, `resolver`, `clave`, `registrar` y `datos`).
+- **`Formularios.dc.html`:** pestaña «Ayuda» (interna 5) en Vehículos livianos, Motos, Pesados y Equipo y maquinaria; `ayNorm` siembra `ayudas.vinTipos` en las versiones que no la traen; `ayudaVals` edita el borrador con `upd` y anota cada cambio en el registro de la versión; `ayRegistrar` deja la vigente para la autoinspección; `diff` suma «Ayuda del VIN» al resumen de la publicación; `simPlantillas` pasa `ayudas` al simulador.
+- **`sirius-portal.js` y `sirius-portal-cliente.js`:** el paso de ayuda del VIN usa la vista nueva con los datos del tipo (portal: la vigente; simulador: el borrador o la vigente).
+- **`sirius-autoinspeccion.js`:** el paso «VIN grabado» ya no edita la ayuda del VIN (nota hacia la pestaña «Ayuda»); la de la serie no cambia.
+- **`SIRIUS Back-office.dc.html` y `Portal.dc.html`:** cargan el módulo; escena portalvinsuv.
+- **Sin cambios:** la conexión, `ayudas.vin`, la publicación (mismo flujo y mismo modal) y el resto de las pestañas.
+
+### Qué cambió
+
+- **Pestañas por tipo** según el formulario: Sedán o hatchback, SUV y Camioneta (pick-up) en Vehículos livianos; Motocicleta en Motos; Camión o pesado en Pesados.
+- **Por tipo:** título, texto de introducción, imagen (dirección, o «Subir imagen» al almacén público de la conexión) y color de fondo.
+- **Imagen con puntos:** arrastrar un punto cambia su `pos` (3 decimales); también con las flechas (Mayús: pasos de 0,05). Tocar un punto abre su lugar en la lista.
+- **Lugares:** lista reordenable con Subir y Bajar (nombre, zona, ícono con los 10 íconos, consejo y origen como etiquetas); agregar y quitar, máximo 9.
+- **Reglas:** sin frecuencia ni porcentaje. Si un consejo menciona «sticker» o «etiqueta adhesiva», avisa en el campo, en el resumen del tipo y con un punto en su pestaña.
+- **Vista previa** de 390 px al lado, igual al diseño aprobado y sincronizada con el lugar elegido.
+- **Publicación:** con el flujo normal de Formularios (versión nueva y motivo). El resumen lista, por ejemplo, «Ayuda del VIN · SUV: Lugar 4 «Torre del amortiguador»: consejo, posición (0,406; 0,553 → 0,506; 0,481)», y queda en el historial.
+
+### Prueba
+
+Con una imagen de prueba: aquí no se puede abrir GitHub Pages.
+
+- **Prueba pedida (formayudavin):** en Vehículos livianos v5 › Ayuda › SUV arrastré el punto 4 de 0,406; 0,553 a 0,506; 0,481 y cambié su consejo. Publiqué la v5 con motivo: quedó Vigente y en el historial («Publicó la versión 5, vigente desde hoy · Motivo: …»). En la misma sesión, la autoinspección de un SUV (portalvinsuv, el portal) y el simulador del portal (SUV o Jeep) muestran el punto 4 en la posición nueva y el consejo nuevo.
+- **Editor:** Subir lleva Torre del amortiguador al lugar 3 y la selección lo sigue; el ícono cambia; el máximo de 9 bloquea «Agregar lugar» con su motivo; las flechas mueven el punto; el aviso de sticker aparece en el campo y arriba.
+- **Otras escenas:** formayudavinvigente (solo lectura con «Editar: abre el borrador v5»), formayudavinmoto (Motocicleta, 3 lugares), formayudavinpesados (Camión o pesado, 3 lugares) y formayudaserie (la serie con el editor anterior). Sin la imagen, el lienzo y la vista previa avisan «Imagen no disponible» y los puntos siguen donde van.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]` ni `undefined` y sin errores de consola.
+
+### Regresión (línea base contra la nueva, 1280×720)
+
+- form, portalmapa, portalcamara y portalcliente: mismo texto.
+- versionesplantilla, mapacaptura, pasoguia, autotaller, autotallerpaso, simulador y formem: solo suma la pestaña «Ayuda».
+- autoayudavin: en lugar del editor anterior del VIN, la nota que lleva a la pestaña «Ayuda».
+
+### No verificado
+
+- **Imágenes reales:** las ilustraciones 3D en GitHub Pages; aquí el proxy no deja abrir ese sitio. Supuse los nombres `ayudas/vin3d-<tipo>.jpg` para los cinco tipos; solo el de sedán venía en el pedido.
+- **Datos de la base:** `ayudas.vinTipos` real (SQL 99 y 99b) y la publicación en la base; la probé sin la conexión.
+- **«Subir imagen»:** necesita la conexión (`subirImagenCorreo`); sin ella el botón queda no disponible con su motivo.
+- **App real:** la de autoinspección V14 leyendo lo publicado.
+- **Navegadores:** el arrastre con el dedo en una tableta, Firefox y Safari.
+
+### Diferencias
+
+- **Sticker:** el aviso no impide publicar.
+- **Contenido inicial:** si una versión no trae `ayudas.vinTipos`, el editor y la autoinspección usan el contenido del diseño aprobado y la versión siguiente lo publica.
+- **Simulador del portal:** su enlace «Editar» de la pantalla de ayuda lleva a la guía del paso «VIN grabado», no a la pestaña «Ayuda».
+- **Lo publicado en el prototipo** llega a la autoinspección en la misma sesión (sin recargar); `Portal.dc.html` abierto aparte usa la vigente que trae la base o el contenido inicial.
+
+### Escenas
+
+- **formayudavin**, **formayudavinvigente**, **formayudavinmoto**, **formayudavinpesados**, **formayudaserie** y **portalvinsuv**; 864 escenas.
+
+Tiempo de la etapa: inicio 26/11/2026 23:03 · fin 26/11/2026 23:27 · 24 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-5
+
+Publiqué la versión 416 de SIRIUS. Los archivos subieron en la 415 y esta versión cierra el registro con el tiempo de la etapa.
+
+Los 7 testigos del tablero ya se ven como interruptor de tres estados (Sin revisar, Encendido en rojo y Apagado), con «Otros testigos encendidos» en fichas y la miniatura real de la foto del tablero en lugar del botón. Formularios conserva `ui` y ofrece «Presentación: Lista | Switch»; el PDF suma los otros testigos a su sección. No toqué `sirius-conexion.js` (70 bytes), la lectura del tablero ni la función `lectura-tablero`.
+
+### Mapa de impacto
+
+- **`SIRIUS Back-office.dc.html`:** en `field()` del Informe, `uiSw` (la `ui` publicada manda sobre la de la plantilla; Opción única de dos opciones) e `isChips` (Opción múltiple); la lista desplegable se oculta para los switches; el origen de la sección de testigos dice «Lectura (IA)»; la miniatura (`tabFoto`, `tabCaso`, `tabRiesgo`) reemplaza el botón «Foto del tablero» (disposición antigua) y las fotos en fila (disposición de completar); carga `datos-cx-testigos.js` y reconoce las tres escenas nuevas.
+- **`sirius-completar.js`:** `SiriusCompletarTestigo`, `SiriusCompletarChips` y `SiriusCompletarFotoTablero` (junto a `SiriusCompletarSiNo`, que no cambia).
+- **`datos-ejemplo.js` y `datos-llenado.js`:** los 7 testigos con `ui: 'switch'` y opciones Encendido y Apagado (antes también «No aplica»); campo nuevo `veh_testigos_otros` en la misma sección y su regla de llenado (lectura, paso Tablero, no obligatorio). Lo traen Vehículos livianos v1 y v4; Motos y Equipo y maquinaria no tienen sección de testigos.
+- **`Formularios.dc.html`:** `fld()` conserva `ui`; panel del campo «Presentación»; `ui` se limpia al cambiar de tipo o de número de opciones (también en el aviso de confirmación); la vista previa lo anota.
+- **`sirius-documentos-pdf.js` y `datos-documentos-pdf.js`:** la sección «Testigos del tablero» suma «Otros testigos encendidos: …»; la configuración declara también `veh_testigos_otros`.
+- **Sin cambios:** la conexión, los pasos de fotos, las reglas, las claves de los campos, `SiriusCompletarSiNo`, el motor de IA y su configuración, la app del inspector, la autoinspección, el portal y `sirius-salida-veh.js`.
+
+### Qué cambió
+
+- **Switch de tres estados:** Sin revisar (gris claro, borde punteado, punto al centro; cuenta como pendiente donde el campo es obligatorio), Encendido (rojo) y Apagado (gris). Un toque alterna Encendido y Apagado (desde Sin revisar, el primer toque deja «Encendido»); «Dejar sin revisar» borra el valor. Se opera con teclado (Espacio) y al tocar la etiqueta.
+- **Procedencia:** «Lectura (IA) · N %», «Por confirmar» (con Confirmar) y «Editado» se mantienen; al cambiar un valor leído pasa a «Editado».
+- **Otros testigos encendidos:** fichas seleccionables con 8 opciones de prueba; el valor se guarda como las opciones elegidas separadas por «, ».
+- **Foto del tablero:** miniatura de 280 px (esquinas de 12 px) de la evidencia del paso `interiores_tablero_de_instrumento`; al tocarla abre el visor. Sin ella: «Sin foto del tablero».
+- **Formularios:** «Presentación: Lista | Switch» solo para Opción única de dos opciones; el campo conserva `ui` al guardar y publicar.
+- **PDF:** «Encendidos: Frenos. Apagados: 5 de 6. Otros testigos encendidos: Presión de neumáticos y Cinturón de seguridad.»
+
+### Prueba
+
+Con los datos simulados del caso 50068 (GRZ3276) de `datos-cx-testigos.js`, que no son los de la base real.
+
+- **testigoscaso:** miniatura de 280×210 con la imagen cargada; Check engine, Airbag y Presión de aceite «Lectura (IA)» con su porcentaje; ABS «Editado» (la lectura vio Encendido); Batería «Sin revisar»; Temperatura «Por confirmar» (72 %); Frenos «Encendido» en rojo; fichas con Presión de neumáticos y Cinturón de seguridad.
+- **Interacción:** un toque en Batería la deja Encendido, otro Apagado, Espacio otra vez Encendido y «Dejar sin revisar» la vuelve a «Sin revisar» (origen «Por completar»); Frenos pasa a Apagado y queda «Editado»; tocar la etiqueta de Airbag alterna; las fichas se marcan y desmarcan y el origen pasa a «Editado»; la miniatura abre el visor.
+- **testigossinfoto:** «Sin foto del tablero» y los switches igual. **testigoscontroles:** el paso Controles con «Lectura: testigos encendidos en el tablero» (severidad media, foto del tablero de respaldo).
+- **inftestigos (caso 30004, disposición anterior):** 7 switches con «Lectura (IA) · 94 %», la miniatura de 280×210 y «Otros testigos encendidos» por completar.
+- **Formularios (versionesplantilla, versión 5 borrador › Luces de advertencia):** Check engine y Frenos muestran «Presentación» con Switch marcado; Lista lo pasa a lista; Otros testigos no muestra el control; al agregar una tercera opción (con el motivo del aviso) el control desaparece.
+- **PDF:** descargué el del 50068 y el texto de «Testigos del tablero» trae la frase de arriba.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola.
+
+### Regresión (línea base contra la nueva, 1280×720)
+
+- leccaso, lecconductor, infpasoinforme, infvalores, infsino, infextras, informecompleto, inspbo, autoporseccion, pdfvehgrz y pdfvehaverias: mismo texto salvo «campos aplicables» +1 (el campo nuevo; p. ej. 66 → 67 y 69 → 70).
+- form, formmodulos, mapacaptura, formem, dpdocs y presencial19: mismo texto.
+
+### No verificado
+
+- La lectura real del tablero (SQL 101 y `lectura-tablero`): los valores, las confianzas y el formato en que llega «Opción múltiple» (aquí, texto separado por «, »; si llega como arreglo, el Informe y el PDF lo aceptan en la lectura, pero el Informe lo guardaría como texto).
+- Una `ui` publicada por la base en `SIRIUS_FORMULARIOS`: probé la `ui` de la plantilla local y la edición en Formularios; la publicación solo conserva el objeto del campo.
+- La foto real del tablero en GitHub Pages (aquí, una foto de ejemplo).
+- Firefox y Safari.
+
+### Diferencias
+
+- **Primer toque desde «Sin revisar»:** deja «Encendido» (el pedido solo dice que alterna). Se puede cambiar a «Apagado».
+- **«No aplica»:** salió de las opciones de los 7 testigos. Un valor así que llegue de la lectura se ve «Sin revisar» con el aviso «Se leyó «No aplica»». El texto del motor de IA (Tablero: «Encendido, Apagado o No aplica») no se tocó.
+- **Otros testigos en el PDF:** solo aparecen en la sección de testigos; no son hallazgo ni preexistencia. La tabla «Testigos encendidos» de `sirius-salida-veh.js` tampoco los lista.
+- **Panel «Fotos de esta sección»** del Informe sigue mostrando la foto como antes, a la derecha.
+- **Campos aplicables:** +1 en todos los informes de vehículos por el campo nuevo.
+- **App del inspector, autoinspección y portal:** siguen con sus listas; el pedido era de las pantallas del Informe.
+
+### Escenas
+
+- **testigoscaso**, **testigossinfoto** y **testigoscontroles** (`datos-cx-testigos.js`, caso 50068); 858 escenas.
+
+Tiempo de la etapa: inicio 26/11/2026 19:20 · fin 26/11/2026 19:49 · 29 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-4
+
+Publiqué la versión 414 de SIRIUS. Los archivos subieron en la 413 y esta versión cierra el registro con el tiempo de la etapa.
+
+La vista superior ya usa la ilustración de `SIRIUS_SILUETAS` 1.7 cuando la carrocería la trae: se dibuja con `<image>` dentro del mismo `<svg>` y los puntos, zonas y anillos siguen encima. Si la imagen no carga, vuelve el dibujo vectorial. El PDF no cambia. No toqué `sirius-conexion.js` (70 bytes), `datos-siluetas.js`, `datos-documentos-pdf.js`, `sirius-documentos-pdf.js`, las posiciones ni los archivos de configuración vigilados.
+
+### Mapa de impacto
+
+- **`sirius-siluetas-ui.js`:** `svgPantalla(tipo, vista, estilo, opts)` (también `window.SiriusSiluetaSvg`): con `vista === 'superior'` y `geometria.<carrocería>.superior.imagen` válida pone `<image href x y width height preserveAspectRatio="none">` en lugar de las capas, que quedan ocultas en el mismo `<svg>`; una escucha de `error` en captura las vuelve a mostrar. La usan el mapa de captura (`mapaSvg`, compartido con el portal, el portal del cliente y la autoinspección), el editor del mapa, las zonas y la galería de Catálogos. `carrForm` deja disponible la lista por formulario.
+- **`sirius-portal.js`, `sirius-app-visita.js` y `sirius-autoinspeccion.js`:** el ícono superior de los tipos, el mapa de la app del inspector y la ayuda «¿Dónde está el VIN?» usan `SiriusSiluetaSvg` (si no está cargado, el dibujo de siempre).
+- **Listas de carrocerías:** `sirius-portal.js` (tipos del portal), `sirius-app-visita.js` (tipos de la app del inspector), `sirius-autoinspeccion.js` y `sirius-portal-cliente.js` (carrocería de los simuladores) ya las toman de `SIRIUS_SILUETAS.carrocerias`; los nombres conocidos («Sedán o hatchback», «Otro equipo»…) se conservan.
+- **Sin cambios:** la conexión, la biblioteca local, el PDF, las zonas, el mapa de captura y las posiciones de Formularios.
+
+### Qué cambió
+
+- **Vista superior con imagen:** Catálogos › Siluetas y zonas (galería, zonas y vista previa del mapa), Formularios › Mapa de captura (editor y vista previa en la app), simulador de autoinspección, app del inspector y portal.
+- **Sin imagen** (cargadora, excavadora, genérico, o cuando la base aún no la trae): todo queda igual que antes.
+- **Si la imagen no carga:** se oculta y vuelven las capas vectoriales en el mismo lugar.
+- **Fuera del cambio:** el PDF, la guía de cámara (estilo «guía», solo contorno) y las vistas frente, lateral y posterior.
+- **Galería de Catálogos:** la fila «Ícono» de la vista superior muestra la ilustración; la fila «PDF» sigue con el dibujo vectorial porque muestra lo que sale en el PDF.
+
+### Prueba
+
+No tengo los datos de la versión 1.7 ni las imágenes: probé con una copia simulada solo para la prueba (no publicada), que agrega una imagen de prueba a sedán, camioneta, camión y tractor, una imagen rota a SUV, y las carrocerías camión (copia de camioneta, Vehículos) y tractor (copia de cargadora, Maquinaria).
+
+- **Catálogos › Siluetas y zonas:** galería con «10 carrocerías (5 de Vehículos y 5 de Maquinaria)»; sedán, camión y tractor con la ilustración en la vista superior; SUV con la imagen rota vuelve al dibujo. Zonas de sedán, camión y tractor: la ilustración debajo de los puntos numerados. Camión y Tractor aparecen solos en las listas.
+- **Formularios › Mapa de captura (mapaeditar):** «Camión» en la lista; al elegirlo, la ilustración con los puntos y el recorrido encima.
+- **App del inspector (inspmapa), portal (portalmapa), autoinspección (autopasos) y ayuda del VIN (autoayudavin):** la vista superior con la ilustración. «Camión» aparece en los tipos de la app del inspector y en la carrocería del simulador de autoinspección; la pantalla de tipos del portal no la revisé con clic.
+- **PDF (dp1diag, empdfdiag):** sin imagen, con el dibujo vectorial.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal y sin errores nuevos de consola.
+
+### Regresión (sin la imagen, línea base contra la nueva)
+
+- siluetas, siluetaszonas, mapacaptura, mapaeditar, mapacapturaem, mapaguia, inspmapa, portalmapa, autopasos, autopasosmoto, autoayudavin, dp1diag y empdfdiag: mismo texto y mismo SVG.
+- inspmapa ya tenía el aviso de consola «attribute height: Expected length, "auto"» en la línea base.
+
+### No verificado
+
+- `SIRIUS_SILUETAS` 1.7 real (SQL 100): sus imágenes, sus zonas, el mapa del camión con sus 32 puntos y el grupo de las carrocerías nuevas. El camión de la prueba usa el mapa de la camioneta.
+- Cómo se ve la ilustración real en GitHub Pages: la vista del artifact no carga imágenes externas y ahí se verá el dibujo.
+- Firefox y Safari.
+
+### Diferencias
+
+- **Selector de tipo de la app del inspector:** el camión entra en la lista de Vehículos (junto a sedán, SUV y camioneta) si la biblioteca lo trae en ese grupo; la cuadrícula de 4 columnas pasa a dos filas.
+- **Siguen escritas en el código** (no son listas de siluetas o no se pidió cambiarlas): `NuevaSolicitud.dc.html` (tipos de vehículo de la solicitud), `B.carroceriaDe` de la biblioteca (un «Camión» se dibuja con la silueta de sedán hasta que la biblioteca lo mapee), los extras por carrocería de Catálogos y `datos-autoinspeccion.js` (`aplicaA`).
+- **Pesados en Formularios:** el editor del mapa abre con Sedán; el camión se elige en la lista.
+
+### Escenas
+
+- Sin escenas nuevas: la ilustración depende de la imagen que trae la base.
+
+Tiempo de la etapa: inicio 26/11/2026 16:28 · fin 26/11/2026 16:48 · 20 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-2
+
+Publiqué la versión 411 de SIRIUS. Los archivos subieron en la 409; la 410 cerró el registro con una hora final equivocada y esta versión la corrige.
+
+Nueva solicitud ya no trata la placa de otro caso como un error: antes de registrar consulta `placasEnUso`, advierte con un motivo obligatorio y, después de crear el caso, muestra el aviso de la base en tono de advertencia. No toqué `sirius-conexion.js` (sigue en 70 bytes), `datos-documentos-pdf.js` ni los archivos de configuración vigilados.
+
+### Mapa de impacto
+
+- **`NuevaSolicitud.dc.html`:** el paso final consulta `SIRIUS_CONEXION.placasEnUso(placas)`; con coincidencias abre el modal de advertencia (cada «placa · caso N · estado», «Motivo» de mínimo 5 caracteres, «Registrar de todas formas» y «Volver») y envía `datos.motivoPlaca`. El registro se movió a `cxRegistrar(motivo)`. La preparación de la escena `cxnuevaplaca` y el ajuste de `cxnuevaerror`.
+- **`SIRIUS Back-office.dc.html`:** `cxCrearCaso` guarda el `aviso` de la respuesta y lo muestra en un recuadro de advertencia con «Entendido»; `placasEnUso` en la conexión simulada; escena `cxnuevaplaca` (con `?fvista=advertencia`).
+- **`datos-cx-fases.js` (base simulada):** `CC.placasEnUso`; `crearCaso` ya no rechaza la placa de otro caso abierto: crea el caso y responde `{ ok, caso, mensaje: 'Caso N registrado · Aviso: …', aviso }`; deja el evento «Placa en otro caso» con el motivo; el caso 50068 de la escena.
+- **`datos-escenas.js`:** 855 escenas (nueva `cxnuevaplaca`, `cxnuevaerror` reescrita).
+- **Sin cambios:** `sirius-conexion.js`, `datos-documentos-pdf.js`, las demás pantallas y los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Antes de registrar:** con la conexión, se consultan las placas de los vehículos de la solicitud (sin placa no se consulta). Lista vacía: se registra como siempre.
+- **Con coincidencias:** modal de advertencia (no de error) «La placa ya está en otro caso» con una línea por coincidencia («GRZ3276 · caso 50068 · Informe por completar», con el vehículo en gris), el campo «Motivo» (obligatorio, mínimo 5 caracteres; con menos se marca en rojo y no registra), «Registrar de todas formas» y «Volver» (cierra y deja la solicitud como estaba).
+- **Al confirmar:** el motivo viaja en `datos.motivoPlaca` (el texto sin espacios de más).
+- **Después de registrar:** si la respuesta trae `aviso`, aparece «Caso N registrado · Aviso» con el texto de la base, en color de advertencia, hasta pulsar «Entendido»; el mensaje corto «Solicitud registrada · caso N» sigue saliendo abajo y el caso se abre como antes.
+- **Recuadro rojo:** «No se creó el caso … ya está en el caso …» ya no sale por la placa de otro caso. La placa repetida dentro de la misma solicitud sigue rechazándose y su mensaje se mantiene («No se creó el caso · PRB1212 está repetida en la solicitud»).
+
+### Prueba (caso 50068 · GRZ3276; 1440×900 y 1280×720)
+
+- **GRZ3276 (está en el 50068):** «Registrar solicitud» consulta `placasEnUso(['GRZ3276'])`, abre la advertencia con «GRZ3276 · caso 50068 · Informe por completar» y el vehículo «Kia Sportage GT 2018». Sin desplazamiento horizontal en ninguna de las dos medidas.
+- **Motivo corto:** «Registrar de todas formas» sin motivo no registra y marca «Escribe el motivo: mínimo 5 caracteres.».
+- **Con motivo «Renovación»:** `crearCaso` recibe `motivoPlaca = "Renovación"`, se crea el caso 50069 y salen el aviso «La placa GRZ3276 ya está en el caso 50068 (Informe por completar) · Motivo: Renovación» y el evento en la actividad del caso. No sale el recuadro rojo.
+- **Sin coincidencias** (cxnuevaveh, PCK2210): no se abre la advertencia y el caso se registra como hoy.
+- **Volver:** cierra la advertencia y el formulario queda en «Revisión y envío» con «Registrar solicitud».
+- **La consulta falla:** se registra igual y el aviso de la base se muestra.
+- **Placa repetida en la solicitud (cxnuevaerror):** no se consulta; sale el recuadro rojo con «PRB1212 está repetida en la solicitud».
+
+### Regresión (línea base antes de este envío contra la nueva)
+
+- **Iguales:** ns1g, ns2, ns3v, ns4, nsbpm, cxnuevaveh, cxnuevaflota, cxnuevarg, cxnuevaramos, nuevasindir y emsolicitud. Sin errores de consola.
+- **Cambia solo lo pedido:** cxnuevaerror (ahora con la placa repetida).
+- **Anterior a este envío:** cxnuevaflota a 1280×720 tiene desplazamiento horizontal también en la línea base.
+
+### No verificado
+
+- La base real (SQL 97) ni `placasEnUso` real: la respuesta y el texto del aviso son los simulados. El texto que muestro es el `aviso` que devuelva la base.
+- Equipos y Ramos Generales: la consulta solo se hace con vehículos (`placa`).
+- Firefox y Safari.
+
+### Diferencias
+
+- **El aviso usa un recuadro propio** (con «Entendido») porque la notificación de abajo no tiene tono de advertencia. La notificación corta queda con «Solicitud registrada · caso N».
+- **Si `placasEnUso` falla** o no existe en la conexión, se registra sin advertencia y la base decide.
+- **La escena `cxnuevaerror` cambió de motivo:** antes mostraba la placa en otro caso; ahora muestra la placa repetida en la solicitud.
+
+### Escenas
+
+- **`cxnuevaplaca`:** Nueva solicitud con GRZ3276 (caso 50068) en «Revisión y envío»; `?fvista=advertencia` abre la advertencia.
+- **`cxnuevaerror`:** la placa repetida dentro de la solicitud (error que se mantiene).
+
+Tiempo de la etapa: inicio 26/11/2026 09:06 · fin 26/11/2026 09:17 · 11 min
+
+---
+
+## 18/10/2026 · 20:30 — Etapa L-1
+
+Publiqué la versión 408 de SIRIUS. Los archivos subieron en la 407 y esta versión cierra el registro con el tiempo de la etapa.
+
+Las pantallas ya usan la lectura automática y los catálogos: Catálogos tiene la sección «Recomendaciones», el Informe muestra de dónde vino cada dato leído y el conductor se pide siempre. No toqué `sirius-conexion.js` (sigue en 70 bytes) ni los archivos de la asesoría (`sirius-lectura*.js` no están en el proyecto).
+
+### Mapa de impacto
+
+- **`Catalogos.dc.html`:** pestaña «Recomendaciones» (agrupada por campo, con el nombre visible), modal «Agregar al catálogo» y «Descartar», contador de pendientes, conversión a MAYÚSCULAS SIN TILDES en Marca, Modelo, Color, Clase de Vehículo, Tipo de Vehículo, País de origen, Combustible, Cantón matriculación y Uso, y seis catálogos nuevos de vehículos.
+- **`SIRIUS Back-office.dc.html`:** contador del menú de Catálogos, props de Catalogos, procedencia «Lectura / Por confirmar / Editado» del Informe, `resolverSugerenciaCatalogo` en la conexión simulada, escenas y `KNOWN_ESC`.
+- **`sirius-cx-informe.js` (v1.2):** `lecturas()` lee `__lecturas`; `spec()` marca cada campo como lectura o editado.
+- **`sirius-conexion-vistas.js`:** la tabla del informe no cuenta ni muestra `__lecturas`.
+- **`datos-ejemplo.js`:** sin la condición `vis` de Cédula, Nombre y Edad del conductor; etiquetas nuevas.
+- **`Niveles.dc.html`:** «Clase de Vehículo» y «Tipo de Vehículo». **`sirius-documentos-pdf.js`:** solo un comentario.
+- **Nuevos y de escenas:** `datos-cx-lectura.js` (datos de demostración del 50068) y `datos-escenas.js` (854 escenas).
+- **Sin cambios:** `sirius-conexion.js`, `datos-documentos-pdf.js`, pasos de fotos, reglas, claves de los campos y los archivos de configuración vigilados.
+
+### Qué cambió
+
+- **Catálogos › Recomendaciones** (`SIRIUS_CONEXION.catalogoSugerencias`): filas agrupadas por campo con su nombre visible y ordenadas por veces; estado Pendiente, Agregada o Descartada, con primera y última vez, último caso y quién resolvió.
+  - **Solo el Administrador** ve «Agregar al catálogo» y «Descartar». Agregar abre el modal con el motivo, publica con el flujo normal y después llama a `resolverSugerenciaCatalogo(id, 'Agregada')`; Descartar llama a `resolverSugerenciaCatalogo(id, 'Descartada')`.
+  - El menú de Catálogos muestra el contador de pendientes.
+  - Modelo se agrega dentro de su marca (si no hay, el modal pide elegirla).
+- **MAYÚSCULAS y sin tildes:** se convierte antes de guardar y el panel avisa «Se guarda en MAYÚSCULAS y sin tildes.». La Ñ se conserva.
+- **Informe › procedencia:** «Lectura · N %» cuando el valor sigue igual a `__lecturas`; «Por confirmar» en advertencia si la lectura lo marcó (con el botón Confirmar); «Editado» si la persona lo cambió (vuelve a «Lectura» si lo deja igual). `__lecturas` no se cuenta ni se muestra.
+- **Informe › conductor:** Cédula, Nombre y Edad del conductor se muestran y validan siempre. «Conductor habitual» sigue obligatorio y solo informativo.
+- **Nombres:** «Tipo de Vehículo», «Clase de Vehículo» y «Cantón matriculación» en pantallas y en el PDF.
+
+### Prueba visual (caso 50068 · GRZ3276; 1440×900 y 1280×720)
+
+- **catrecom, catrecomsolover y catrecomagregar:** sin desplazamiento horizontal y sin errores de consola. Recomendaciones: 17 pendientes, 1 Agregada, 1 Descartada.
+- **leccaso (Identificación del vehículo):** Placa, Marca, Año, VIN, Motor, Tipo de Vehículo, Clase de Vehículo, País, Pasajeros y Combustible con «Lectura · N %»; Modelo (84 %) y Color (86 %) con «Por confirmar»; Cilindraje «Editado»; CAMV «Por completar».
+- **lecconductor (Uso y conductor):** Cédula y Nombre del conductor, obligatorios y pendientes; Edad, licencia, caducidad y puntos visibles con «Es el asegurado».
+
+### Pruebas con clic
+
+- **Agregar a catálogo:** marca, modelo y color (la recomendación pasa a Agregada con el usuario, el historial anota el cambio y el contador baja).
+- **Descartar:** la fila pasa a Descartada; sin permiso no hay botones: la columna dice «—» y el aviso «Solo el Administrador agrega o descarta recomendaciones.».
+- **Normalización:** «Chévrolet  Ñu» → CHEVROLET ÑU; «Híbrido ligero» en Combustibles → HIBRIDO LIGERO; «Turquesa verdosa ñandú el» → TURQUESA VERDOSA ÑANDU EL.
+- **Confirmar** en Modelo: pasa a «Lectura · 84 %», dice «Confirmado por David Alejandro Mena» y el menú baja de 2 a 1 por confirmar.
+- **Editar Pasajeros** a 7 → «Editado»; volver a 5 → «Lectura · 90 %».
+
+### Regresión (base antes de L-1 contra la nueva)
+
+- **Iguales:** catalogoveh, catalogoelim, catalogoimp, catalogoramos, pdfvehcx, pdfvehresumen e infrgev.
+- **Cambia solo lo pedido:** catalogos (pestaña y seis catálogos), catalogoedit y catalogovehmod (la ayuda de MAYÚSCULAS) y, en pdfvehgrz y pdfvehpreview, el conteo del informe (ver Diferencias).
+- Sin errores de consola en ninguna escena.
+
+### No verificado
+
+- La base real (SQL 93 a 96) y la lectura automática de verdad: los datos del 50068 son de demostración.
+- El indicador `SIRIUS_CONEXION.lecturas`: no lo integré; la etiqueta provisional de la conexión sigue.
+- Firefox y Safari.
+
+### Diferencias
+
+- **Cédula y Nombre del conductor ahora son obligatorios siempre**, así que los informes de ejemplo con «Es el asegurado» y sin esos datos pasan a tener pendientes (pdfvehgrz: de 1 a 3 obligatorios; pdfvehpreview: de 0 a 2).
+- **El PDF** (`datos-documentos-pdf.js`, línea 98) sigue mostrando el conductor solo con «Otra persona»; no lo cambié.
+- **Los seis catálogos nuevos** (Clase de Vehículo, Tipo de Vehículo, País de origen, Combustible, Cantón matriculación y Uso) no están enlazados a las opciones de los formularios: las listas del informe siguen con sus textos.
+- **La comparación de la lectura es exacta:** «KIA» leído contra «Kia» guardado en el informe cuenta como editado si la persona lo cambia de forma.
+- **La confirmación** de «Por confirmar» queda en la respuesta del informe, no en `__lecturas`.
+- **La importación** de catálogos no convierte a MAYÚSCULAS; solo agregar y editar.
+
+### Escenas
+
+- **`catrecom`:** Catálogos › Recomendaciones como Administrador.
+- **`catrecomsolover`:** lo mismo, sin permiso para actuar.
+- **`catrecomagregar`:** el modal «Agregar al catálogo» de una marca.
+- **`leccaso`:** Informe del 50068 con Lectura, Por confirmar y Editado.
+- **`lecconductor`:** el conductor siempre visible.
+
+Tiempo de la etapa: inicio 26/11/2026 08:22 · fin 26/11/2026 09:05 · 43 min
+
+---
+
 ## 18/10/2026 · 20:30 — Etapa F-1c
 
 Publiqué la versión 403 de SIRIUS. Los archivos subieron en la 402 y esta versión cierra el registro con el tiempo de la etapa.

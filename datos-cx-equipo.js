@@ -37,7 +37,7 @@
     Object.assign(inf, { riesgo: RID, riesgoId: RID, plantilla: CLAVE, plantillaClave: CLAVE, plantillaVersion: VER, enviadoEn: '2026-11-25T16:20', enviadoPor: 'Marcelo Ortiz', canal: 'Autoinspección' });
     // Lo que dejó el cliente y la lectura de la placa del fabricante; el resto queda por completar (el avance cuenta lo que falta).
     inf.respuestas = { em_categoria: R('Manipulación de carga', 'Cliente'), em_tipo: R('Montacargas', 'Cliente'), em_marca: R('Toyota', 'foto:eq_placa_fabricante', 0.96), em_modelo: R('8FGCU25', 'foto:eq_placa_fabricante', 0.91),
-      em_anio_fabricacion: R('2021', 'foto:eq_placa_fabricante', 0.88), em_serie_pin: R('8FGCU25-41872', 'foto:eq_placa_fabricante', 0.83), em_horometro: R('3480', 'foto:eq_tablero', 0.9), em_color: R('Amarillo', 'Cliente'),
+      em_anio_fabricacion: R('2021', 'foto:eq_placa_fabricante', 0.88), em_serie_chasis: R('8FGCU25-41872', 'foto:eq_placa_fabricante', 0.83), em_horometro: R('3480', 'foto:eq_tablero', 0.9), em_color: R('Amarillo', 'Cliente'),
       em_uso: R('Propio', 'Cliente'), em_actividad: R('Industrial', 'Cliente'), em_pernocta: R('Patio cerrado', 'Cliente'), em_extintor: R('Sí', 'Cliente'), em_gps: R('No', 'Cliente'), em_suma_asegurada: R('42000', 'solicitud') };
     const ev = (T.pasos || []).filter((s) => s.id !== 'eq_danos').map((s, i) => ({ id: 'eq-' + (i + 1), paso: s.id, pasoNombre: s.name, url: svg(s.name, ['#3E6FA8', '#2B7A5F', '#8A5A1F', '#5B3F8C', '#356B72'][i % 5]), hora: '25/11/26 · 16:' + String(2 + i).padStart(2, '0'),
       canal: 'Autoinspección', tipoArchivo: /^eq_doc/.test(s.id) ? 'documento' : 'foto', validacion: { vertical: true, encuadre: true, luz: true, nitidez: true, reflejo: true }, gps: [-0.2153, -78.5008], precision: 12 }));

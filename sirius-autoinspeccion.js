@@ -18,7 +18,7 @@
   const AI = () => window.SIRIUS_AUTOINSPECCION || null, S = () => window.SIRIUS_SILUETAS || null;
   const R = () => window.React, h = (...a) => R().createElement(...a), NS = () => window.AseguradoraDelSurDesignSystem_4fbf29 || {};
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const OCR = [['', 'Ninguno'], ['placa', 'Placa'], ['vin', 'VIN'], ['kilometraje', 'Kilometraje'], ['serie', 'Serie (PIN)']];
+  const OCR = [['', 'Ninguno'], ['placa', 'Placa'], ['vin', 'VIN'], ['kilometraje', 'Kilometraje'], ['serie', 'Serie o chasis']];
   const OCR_EX = { placa: ['Placa'], vin: ['VIN'], kilometraje: ['Kilometraje'], serie: ['Placa del fabricante'] };
   const SECC = { veh: ['Mapa', 'Interior'], moto: ['Mapa'], em: ['Mapa'] };
   const GUIAS = [['silueta:frente', 'Silueta · frente'], ['silueta:lateral_izq', 'Silueta · lateral izquierdo'], ['silueta:lateral_der', 'Silueta · lateral derecho'], ['silueta:posterior', 'Silueta · posterior'],

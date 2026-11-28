@@ -4,7 +4,7 @@
 // Referencia: caso real 51574 de SIAERP e informe de Eurosurvey (datos del ejemplo FICTICIOS por LOPDP).
 // Decisiones: DEC-141 (grupos y composiciones), DEC-142 (VRN), DEC-143 (formulario, hallazgos y niveles).
 window.SIRIUS_EQUIPOS = {
-  version: '1', vigencia: 'Provisional',
+  version: '1.2', vigencia: 'Provisional',
 
   // ---------- Grupos de ramo y composiciones (DEC-141) ----------
   // Van a Catálogos maestros › Grupos de ramo (editable: agregar, editar, inactivar). Un ramo tiene grupo + tipo de objeto
@@ -42,7 +42,7 @@ window.SIRIUS_EQUIPOS = {
     { marca: 'JCB', modelos: ['3CX', '540-170'] },
   ],
   identificacion: {
-    pin: { nombre: 'Número de serie (PIN)', norma: 'ISO 10261 (maquinaria de movimiento de tierras): 17 caracteres, empieza con el código del fabricante', patron: '^[A-Z0-9]{17}$', falla: 'Por confirmar: el número de serie no tiene 17 caracteres', nota: 'Para equipos sin PIN de 17 caracteres se acepta la serie del fabricante y se marca «Serie sin formato PIN»' },
+    pin: { nombre: 'Número de serie o chasis', norma: 'Serie o chasis de la máquina (placa del fabricante, bastidor o matrícula); sin formato fijo', patron: '^[A-Z0-9-]{4,30}$', falla: 'Por confirmar: el número de serie o chasis tiene caracteres no válidos', nota: 'El número de serie o chasis no tiene formato fijo: se compara con la serie de la solicitud y con la matrícula' },
     anios: 'Se registran el año de fabricación y el de puesta en servicio (placa del fabricante); la depreciación cuenta desde la puesta en servicio.',
     horometro: 'Lectura con foto del tablero; horas por año = horómetro ÷ años desde la puesta en servicio.',
   },
@@ -52,7 +52,7 @@ window.SIRIUS_EQUIPOS = {
   formulario: {
     nombre: 'Equipo y maquinaria v1', ramo: 'Equipo y maquinaria', composicion: 'Equipo móvil', version: 1, estado: 'Vigente',
     secciones: [
-      { id: 'eqi', titulo: 'Identificación del equipo', campos: ['Categoría (lista)', 'Tipo (lista según categoría)', 'Descripción del equipo (solo si el tipo es «Otro (describir)»; mínimo 5 caracteres)', 'Marca (catálogo)', 'Modelo (catálogo según marca)', 'Color', 'Año de fabricación', 'Año de puesta en servicio', 'País de origen', 'Número de serie (PIN, validado)', 'Número de motor', 'Capacidad (valor y unidad: t, kg, kW, m³)', 'Peso operativo (kg)', 'Horómetro (h)', 'Horas por año (calculado)'] },
+      { id: 'eqi', titulo: 'Identificación del equipo', campos: ['Categoría (lista)', 'Tipo (lista según categoría)', 'Descripción del equipo (solo si el tipo es «Otro (describir)»; mínimo 5 caracteres)', 'Marca (catálogo)', 'Modelo (catálogo según marca)', 'Color', 'Año de fabricación', 'Año de puesta en servicio', 'País de origen', 'Número de serie o chasis', 'Número de motor', 'Capacidad (valor y unidad: t, kg, kW, m³)', 'Peso operativo (kg)', 'Horómetro (h)', 'Horas por año (calculado)'] },
       { id: 'eqd', titulo: 'Documentación', campos: ['Matrícula o registro (Sí · No · En trámite)', 'Número de matrícula (si Sí)', 'Fecha del trámite (si En trámite)', 'Documento de propiedad (factura, contrato)', 'Licencia del operador (Sí/No)', 'Tipo de licencia', 'Vigencia de la licencia', 'Permiso de operación (Sí/No/No aplica)', 'Ficha técnica o catálogo (Sí/No)', 'Contrato de arrendamiento (si uso es Alquiler)'] },
       { id: 'equ', titulo: 'Uso y operación', campos: ['Uso (Propio · Alquiler a terceros · Contratista)', 'Actividad (Construcción · Minería · Petrolera · Agrícola · Portuaria · Industrial · Otra)', 'Horas promedio por día', 'Turnos por día', 'Operador (Propio · Tercero)', 'Experiencia del operador (años)', 'Lugar de trabajo actual', 'Lugar donde pasa la noche (Patio cerrado · Obra · Vía pública)', 'Traslados entre obras (Cama baja · Por sus medios · No se traslada)'] },
       { id: 'eqm', titulo: 'Mantenimiento', campos: ['Bitácora (Sí/No)', 'Mantenimiento preventivo (Sí/No)', 'Frecuencia (cada N horas)', 'Mantenimiento correctivo (Sí/No)', 'Último mantenimiento (fecha)', 'Horómetro en el último mantenimiento', 'Quién lo realiza (Personal propio · Concesionario · Taller externo)', 'Chequeo antes del uso por el operador (Sí/No)'] },
@@ -79,7 +79,7 @@ window.SIRIUS_EQUIPOS = {
     ['eq_doc_matricula', 'Matrícula o constancia del trámite', 'Documentos', true, true], ['eq_doc_licencia_f', 'Licencia del operador (frente)', 'Documentos', true, true],
     ['eq_doc_licencia_p', 'Licencia del operador (reverso)', 'Documentos', true, true], ['eq_doc_ficha', 'Ficha técnica o catálogo', 'Documentos', false, false],
   ],
-  extraccion: ['Placa del fabricante: serie (PIN), modelo, año y peso', 'Tablero: horómetro', 'Licencia del operador: tipo y vigencia', 'Matrícula: número y fecha'],
+  extraccion: ['Placa del fabricante: serie o chasis, modelo, año y peso', 'Tablero: horómetro', 'Licencia del operador: tipo y vigencia', 'Matrícula: número y fecha'],
 
   // ---------- Valor de reposición a nuevo (DEC-142) ----------
   valores: {
@@ -167,7 +167,7 @@ window.SIRIUS_EQUIPOS = {
         componentes: { 'Motor': 'Bueno', 'Sistema hidráulico': 'Regular', 'Neumáticos u orugas': 'Bueno', 'Cabina y vidrios': 'No aplica', 'Implemento': 'Bueno', 'Estructura y chasis': 'Bueno', 'Sistema eléctrico': 'Bueno' },
         // Etapa 12a-b · averías registradas por la inspectora (preexistencias): coherente con el sistema hidráulico «Regular».
         averias: [{ pieza: 'mastil', descripcion: 'Fuga leve en el cilindro del mástil', tipo: 'Desprendimiento', gravedad: 'Media', superficie: 0.8, profundidad: 'Media', foto: 'eq_rodaje' }],
-        esperado: 'Serie sin formato PIN (aceptada con aviso); sin matrícula; extintor vencido (31/05/2026); −9,7 % del VRN (sin alerta)' },
+        esperado: 'Serie o chasis del fabricante (sin formato fijo, sin aviso); sin matrícula; extintor vencido (31/05/2026); −9,7 % del VRN (sin alerta)' },
     ],
   },
 };

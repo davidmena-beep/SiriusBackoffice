@@ -3,7 +3,7 @@
 //   · el caso de ejemplo 20204 (fila del caso con un riesgo por equipo, visita, detalle e historial) y SIRIUS_EJEMPLO.equipos (un informe por equipo),
 //   · las fotos de cada equipo en SIRIUS_EJEMPLO.evidencias (pasos exigidos en Presencial).
 // Cálculos (window.SiriusEquipos): valor real con la depreciación de valores.depreciacion, relación suma asegurada / VRN con sus alertas,
-// validación del número de serie (identificacion.pin), sugerencias de VRN (catálogo de referencias y motor de contexto externo simulado),
+// número de serie o chasis (identificacion.pin, sin formato fijo), sugerencias de VRN (catálogo de referencias y motor de contexto externo simulado),
 // hallazgos y reglas de envío. Nada se guarda aquí: los cambios de la sesión los guarda cada pantalla.
 (function () {
   if (window.SiriusEquipos) return;
@@ -15,7 +15,6 @@
 
   // ---------- Cálculos ----------
   SE.anioActual = function () { var e = E(); return e.ahora ? e.ahora().getFullYear() : 2026; };
-  SE.pinValido = function (s) { var I = (D().identificacion || {}).pin || {}; return new RegExp(I.patron || '^[A-Z0-9]{17}$').test(String(s || '')); };
   // Depreciación por antigüedad (años desde la puesta en servicio) + ajuste por horas sobre lo esperado; nunca menos del piso.
   SE.depreciacion = function (anios, horometro) {
     var V = (D().valores || {}).depreciacion || {}, T = V.porAntiguedad || [], base = 0;
@@ -84,7 +83,7 @@
         F('em_modelo', 'Modelo', 'Catálogo', { req: 'PV', opts: modelos, src: ['Extracción automática'], help: 'Catálogo según la marca elegida.' }),
         F('em_color', 'Color', 'Texto'), F('em_anio_fabricacion', 'Año de fabricación', 'Número', { req: 'PV', src: ['Extracción automática'], help: 'Placa del fabricante.' }),
         F('em_anio_servicio', 'Año de puesta en servicio', 'Número', { req: 'PV', help: (Q.identificacion || {}).anios || '' }), F('em_pais', 'País de origen', 'Texto'),
-        F('em_serie_pin', 'Número de serie (PIN)', 'Texto', { req: 'PV', src: ['Extracción automática'], help: (((Q.identificacion || {}).pin || {}).norma || '') + '. Si no tiene 17 caracteres: aviso «Serie sin formato PIN» (no bloquea).', valida: 'pin' }),
+        F('em_serie_chasis', 'Número de serie o chasis', 'Texto', { req: 'PV', src: ['Extracción automática'], help: 'Número de serie o de chasis de la máquina, tal como figura en la placa del fabricante, grabado en el bastidor o en la matrícula. Sin formato fijo: se escribe en mayúsculas, sin espacios.' }),
         F('em_numero_motor', 'Número de motor', 'Texto'), F('em_capacidad', 'Capacidad', 'Texto', { help: 'Valor y unidad: t, kg, kW o m³.' }), F('em_peso_operativo', 'Peso operativo (kg)', 'Número', { src: ['Extracción automática'] }),
         F('em_horometro', 'Horómetro (h)', 'Número', { req: 'PV', src: ['Extracción automática'], help: (Q.identificacion || {}).horometro || '' }),
         F('em_horas_anio', 'Horas por año', 'Cálculo', { f: '{em_horometro} ÷ años desde la puesta en servicio' })],
@@ -139,7 +138,7 @@
     var riesgos = X.equipos.map(function (q, i) {
       var val = SE.valores(q), envio = SE.reglas(q, val), doc = q.documentacion || {}, uso = q.uso || {}, man = q.mantenimiento || {}, seg = q.seguridad || {};
       var cm = {
-        em_categoria: q.categoria, em_tipo: q.tipo, em_tipo_descripcion: q.descripcion, em_marca: q.marca, em_modelo: q.modelo, em_color: q.color, em_anio_fabricacion: q.anioFab, em_anio_servicio: q.anioServicio, em_pais: q.pais, em_serie_pin: q.pin, em_numero_motor: q.motor, em_capacidad: q.capacidad, em_horometro: q.horometro,
+        em_categoria: q.categoria, em_tipo: q.tipo, em_tipo_descripcion: q.descripcion, em_marca: q.marca, em_modelo: q.modelo, em_color: q.color, em_anio_fabricacion: q.anioFab, em_anio_servicio: q.anioServicio, em_pais: q.pais, em_serie_chasis: q.pin, em_numero_motor: q.motor, em_capacidad: q.capacidad, em_horometro: q.horometro,
         em_matricula: doc.matricula, em_numero_matricula: doc.numero || '', em_fecha_tramite: doc.tramite ? fecha(doc.tramite) : '', em_licencia: doc.licencia, em_tipo_licencia: doc.tipoLicencia || '', em_vigencia_licencia: doc.vigenciaLicencia ? fecha(doc.vigenciaLicencia) : '',
         em_uso: uso.uso, em_actividad: uso.actividad, em_horas_dia: uso.horasDia, em_operador: uso.operador, em_pernocta: uso.pernocta,
         em_bitacora: man.bitacora, em_preventivo: man.preventivo, em_frecuencia: man.frecuencia, em_ultimo_mantenimiento: man.ultimo ? fecha(man.ultimo) : '', em_mantenimiento_quien: man.quien, em_chequeo_previo: man.chequeo,

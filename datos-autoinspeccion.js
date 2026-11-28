@@ -27,7 +27,7 @@
 // Fuente única de la configuración de la autoinspección del portal del cliente (todas las carrocerías y maquinaria).
 // Se edita en Formularios › Autoinspección (pestañas Flujo, Controles, Video y Apariencia). Decisiones: DEC-146 a DEC-154.
 window.SIRIUS_AUTOINSPECCION = {
-  version: '2.3', vigencia: 'Provisional',
+  version: '2.5', vigencia: 'Provisional',
   // ---------- Enlace (DEC-146) ----------
   enlace: {
     regla: 'Un enlace único por riesgo con token aleatorio de al menos 128 bits; generar uno nuevo invalida el anterior.',
@@ -131,7 +131,7 @@ window.SIRIUS_AUTOINSPECCION = {
     { paso: 'exteriores_posterior', dato: 'Placa', zona: 'Franja inferior central del contorno', patron: 'ABC1234 o AB123C', comparaCon: 'Placa de la solicitud y placa leída en la foto del frente' },
     { paso: 'identificacion_vin', dato: 'VIN', patron: '17 caracteres sin I, O ni Q', comparaCon: 'VIN de la solicitud o de la matrícula' },
     { paso: 'interiores_kilometraje', dato: 'Kilometraje', patron: 'Número de 3 a 7 dígitos', comparaCon: 'Kilometraje de la solicitud o del informe anterior (alerta si baja)' },
-    { paso: 'eq_placa_fabricante', dato: 'Serie (PIN)', patron: '17 caracteres (ISO 10261) o serie del fabricante', comparaCon: 'Serie de la solicitud' },
+    { paso: 'eq_placa_fabricante', dato: 'Serie o chasis', patron: 'Serie o chasis del fabricante (sin formato fijo)', comparaCon: 'Serie de la solicitud' },
   ],
   // ---------- Pasos de la autoinspección (DEC-155) ----------
   // Configuración de la columna «Autoinspección» de cada plantilla en Formularios › pasos de foto. Los pasos desactivados no se

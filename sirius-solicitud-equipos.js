@@ -1,6 +1,6 @@
 // SIRIUS · Equipos de la Nueva solicitud (etapa 8b · ramo Equipo y maquinaria, composición Equipo móvil).
 // Como la sección de vehículos: empieza vacía, «Agregar equipo» y «Cargar desde Excel». Por equipo: categoría, tipo, marca y modelo
-// (catálogo SIRIUS_EQUIPOS), año de fabricación, número de serie (aviso si no tiene formato PIN), número de motor, suma asegurada
+// (catálogo SIRIUS_EQUIPOS), año de fabricación, número de serie o chasis (sin formato fijo), número de motor, suma asegurada
 // (SiriusMonto) e implementos con valor. Sin texto libre, salvo el tipo «Otro (describir)» (etapa 8c): pide una descripción obligatoria (mínimo 5 caracteres).
 // Carga masiva: lee el archivo real (.xlsx con SheetJS, o .csv) y mapea las columnas por su encabezado; la plantilla (.xlsx con ExcelJS)
 // trae listas de categoría, tipo, marca y modelo desde la hoja «Catálogos».
@@ -21,8 +21,6 @@
   var tipoTxt = function (x) { return esOtro(x) ? (String(x.descripcion || '').trim() || OTRO) : (x && x.tipo) || ''; };
   function marcas() { return Q().marcasModelos || []; }
   function leerNum(t) { if (typeof t === 'number') return t; var C = window.SIRIUS_COMPANIA; var s = String(t == null ? '' : t).trim(); if (!s) return null; if (C && C.leerMonto) { var n = C.leerMonto(s); if (n != null) return n; } var x = Number(s.replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isFinite(x) ? x : null; }
-  var pinValido = function (s) { return window.SiriusEquipos ? window.SiriusEquipos.pinValido(s) : /^[A-Z0-9]{17}$/.test(String(s || '')); };
-  var notaPin = function () { return (((Q().identificacion || {}).pin) || {}).nota || 'Serie sin formato PIN: se acepta con aviso.'; };
 
   // Errores de un equipo (los mismos en el formulario y en la carga masiva).
   function errores(x, lista, propio) { var e = {}, C = cats(), cat = C.find(function (c) { return c.nombre === x.categoria; }), mk = marcas().find(function (m) { return m.marca === x.marca; });
@@ -32,7 +30,7 @@
     if (!x.marca) e.marca = 'Elige la marca'; else if (!mk) e.marca = 'Marca fuera del catálogo';
     if (!x.modelo) e.modelo = 'Elige el modelo'; else if (mk && mk.modelos.indexOf(x.modelo) < 0) e.modelo = 'Modelo fuera del catálogo para esa marca';
     var a = Number(x.anio); if (!String(x.anio || '').trim()) e.anio = 'Ingresa el año de fabricación'; else if (!/^\d{4}$/.test(String(x.anio).trim()) || a < 1970 || a > anioMax()) e.anio = 'Año entre 1970 y ' + anioMax();
-    var sr = String(x.serie || '').trim().toUpperCase(); if (!sr) e.serie = 'Ingresa el número de serie'; else if (!/^[A-Z0-9-]{5,25}$/.test(sr)) e.serie = 'Serie inválida: letras, números y guion (5 a 25)';
+    var sr = String(x.serie || '').trim().toUpperCase(); if (!sr) e.serie = 'Ingresa el número de serie o chasis'; else if (!/^[A-Z0-9-]{5,25}$/.test(sr)) e.serie = 'Serie inválida: letras, números y guion (5 a 25)';
     else if ((lista || []).some(function (y) { return y !== propio && String(y.serie || '').toUpperCase() === sr; })) e.serie = 'Serie repetida en este caso';
     if (!(Number(x.suma) > 0)) e.suma = 'Ingresa la suma asegurada';
     (x.implementos || []).forEach(function (im, i) { if (!String(im.desc || '').trim()) e['imp' + i + 'd'] = 'Describe el implemento'; if (!(Number(im.valor) > 0)) e['imp' + i + 'v'] = 'Ingresa el valor'; });
@@ -45,7 +43,7 @@
     { k: 'descripcion', l: 'Descripción del equipo (solo si el tipo es «Otro (describir)»)', req: false, alias: ['descripcion del equipo', 'descripcion', 'descripcion del equipo solo si el tipo es otro describir', 'descripcion otro', 'describir'] },
     { k: 'marca', l: 'Marca', req: true, alias: ['marca'] }, { k: 'modelo', l: 'Modelo', req: true, alias: ['modelo'] },
     { k: 'anio', l: 'Año de fabricación', req: true, alias: ['ano de fabricacion', 'anio de fabricacion', 'ano', 'anio', 'year'] },
-    { k: 'serie', l: 'Número de serie', req: true, alias: ['numero de serie', 'serie', 'pin', 'numero de serie pin', 'n de serie'] },
+    { k: 'serie', l: 'Número de serie o chasis', req: true, alias: ['numero de serie o chasis', 'numero de serie', 'serie', 'chasis', 'serie o chasis', 'n de serie'] },
     { k: 'motor', l: 'Número de motor', req: false, alias: ['numero de motor', 'motor', 'n de motor'] },
     { k: 'suma', l: 'Suma asegurada', req: true, alias: ['suma asegurada', 'valor asegurado', 'suma asegurada usd'] },
     { k: 'implementos', l: 'Implementos (descripción: valor; …)', req: false, alias: ['implementos', 'implementos descripcion valor', 'implementos y accesorios'] }];
@@ -69,7 +67,7 @@
     return rows.map(function (r) { var cat = C.find(function (c) { return norm(c.nombre) === norm(r.categoria); }), tipo = cat ? cat.tipos.find(function (t) { return norm(t) === norm(r.tipo); }) : null, mk = MK.find(function (m) { return norm(m.marca) === norm(r.marca); }), mo = mk ? mk.modelos.find(function (m) { return norm(m) === norm(r.modelo); }) : null, im = leerImpl(r.implementos);
       var x = { categoria: cat ? cat.nombre : r.categoria, tipo: tipo || r.tipo, descripcion: (tipo || r.tipo) === OTRO ? String(r.descripcion || '').trim() : '', marca: mk ? mk.marca : r.marca, modelo: mo || r.modelo, anio: String(r.anio || '').replace(/\.0+$/, ''), serie: String(r.serie || '').trim().toUpperCase(), motor: String(r.motor || '').trim().toUpperCase(), suma: leerNum(r.suma), implementos: im.L };
       var e = errores(x, existentes.concat(vistos), null), m = Object.keys(e).map(function (k) { return e[k].charAt(0).toLowerCase() + e[k].slice(1); }); if (im.err) m.push(im.err); if (String(r.suma || '').trim() && x.suma == null) m = m.filter(function (t) { return t !== 'ingresa la suma asegurada'; }).concat('suma asegurada inválida');
-      vistos.push(x); return { r: r, x: x, msg: m.join('; '), aviso: !m.length && x.serie && !pinValido(x.serie) ? 'Serie sin formato PIN (se acepta con aviso)' : '' }; }); }
+      vistos.push(x); return { r: r, x: x, msg: m.join('; ')  }; }); }
   // Vista previa de la escena embulk: la misma ruta de lectura con una matriz de ejemplo (como si viniera del archivo).
   function gridDemo() { var X = (Q().ejemplo || {}).equipos || [], H = COLS.map(function (c) { return c.l; });
     return [H].concat(X.map(function (q) { return [q.categoria, q.tipo, '', q.marca, q.modelo, q.anioFab, q.pin, q.motor, q.sumaAsegurada, (q.implementos || []).map(function (i) { return i[0] + ': ' + i[3]; }).join('; ')]; }),
@@ -101,7 +99,7 @@
     ['Plantilla de carga masiva de equipos · SIRIUS', '', '1. Completa una fila por equipo en la hoja «Equipos». Máximo 200 equipos por archivo. Borra la fila de ejemplo antes de subir el archivo.',
       '2. Categoría, Tipo, Marca y Modelo se eligen de las listas (hoja «Catálogos»); el tipo depende de la categoría y el modelo de la marca. Si no está, pídele al Administrador que lo agregue en Catálogos maestros.',
       '2b. Si el tipo es «Otro (describir)» (categoría Equipo especial), escribe qué equipo es en «Descripción del equipo» (mínimo ' + DESC_MIN + ' caracteres). Queda como valor fuera de catálogo hasta que el Administrador lo agregue en Catálogos maestros; para los demás tipos deja esa columna vacía.',
-      '3. Año de fabricación: entero entre 1970 y ' + anioMax() + '. Número de serie: el de la placa del fabricante; si no tiene 17 caracteres (PIN) se acepta con aviso.',
+      '3. Año de fabricación: entero entre 1970 y ' + anioMax() + '. Número de serie o chasis: el de la placa del fabricante, el bastidor o la matrícula; no tiene formato fijo.',
       '4. Suma asegurada en ' + ((window.SIRIUS_COMPANIA || {}).moneda || {}).codigo + '. Implementos (opcional): «descripción: valor» separados por punto y coma, p. ej. «Horquillas para pallets: 6500; Martillo hidráulico: 12000».',
       '', 'Los encabezados en azul oscuro son obligatorios; los de azul claro son opcionales. Las columnas se leen por su encabezado, en cualquier orden.'].forEach(function (t, i) { var c = ins.getCell(i + 1, 1); c.value = t; c.alignment = { wrapText: true, vertical: 'top' }; if (!i) c.font = { bold: true, size: 14 }; });
     var buf = await wb.xlsx.writeBuffer(), name = 'plantilla-carga-equipos.xlsx', url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -141,8 +139,8 @@
           campo('marca', 'Marca', sel('marca', x.marca, marcas().map(function (m) { return m.marca; }), function (v) { upd({ marca: v, modelo: '' }); })),
           campo('modelo', 'Modelo', sel('modelo', x.modelo, mk ? mk.modelos : [], function (v) { upd({ modelo: v }); }, !mk, mk ? 'Selecciona' : 'Elige primero la marca')),
           campo('anio', 'Año de fabricación', h('input', { id: 'nse-anio', type: 'text', inputMode: 'numeric', maxLength: 4, value: x.anio, 'aria-invalid': errT('anio'), 'aria-describedby': errT('anio') ? 'nse-anio-e' : undefined, onChange: function (ev) { upd({ anio: ev.target.value.replace(/\D/g, '') }); }, style: inp })),
-          campo('serie', 'Número de serie', h('input', { id: 'nse-serie', type: 'text', value: x.serie, autoComplete: 'off', 'aria-invalid': errT('serie'), 'aria-describedby': [errT('serie') ? 'nse-serie-e' : '', 'nse-serie-h'].filter(Boolean).join(' '), onChange: function (ev) { upd({ serie: ev.target.value.toUpperCase() }); }, style: inp }),
-            sr && !E.serie && !pinValido(sr) ? { warn: true, t: 'Serie sin formato PIN: ' + notaPin().replace(/^Para equipos sin PIN de 17 caracteres se acepta/, 'se acepta') } : { t: 'PIN de 17 caracteres (ISO 10261) o la serie del fabricante.' }),
+          campo('serie', 'Número de serie o chasis', h('input', { id: 'nse-serie', type: 'text', value: x.serie, autoComplete: 'off', 'aria-invalid': errT('serie'), 'aria-describedby': [errT('serie') ? 'nse-serie-e' : '', 'nse-serie-h'].filter(Boolean).join(' '), onChange: function (ev) { upd({ serie: ev.target.value.toUpperCase() }); }, style: inp }),
+            { t: 'Como figura en la placa del fabricante, el bastidor o la matrícula. Sin formato fijo.' }),
           campo('motor', 'Número de motor', h('input', { id: 'nse-motor', type: 'text', value: x.motor, autoComplete: 'off', onChange: function (ev) { upd({ motor: ev.target.value.toUpperCase() }); }, style: inp })),
           campo('suma', 'Suma asegurada', window.SiriusMonto ? h(window.SiriusMonto, { id: 'nse-suma', value: x.suma, invalid: !!(intento && E.suma), ariaDescribedby: intento && E.suma ? 'nse-suma-e' : undefined, alto: 44, onChange: function (n) { upd({ suma: n }); } }) : null, { t: 'Valor del equipo nuevo (VRN); los implementos van aparte.' })),
         h('div', { role: 'group', 'aria-labelledby': 'nse-imp-h', style: { display: 'flex', flexDirection: 'column', gap: 10 } },
@@ -191,10 +189,10 @@
     // ---------- lista ----------
     var editTip = form ? 'Guarda o cancela primero' : '';
     var tot = lista.reduce(function (s, x) { return s + total(x); }, 0);
-    var tarjetas = lista.map(function (x, i) { var on = form && form.editId === x.id, aviso = x.serie && !pinValido(x.serie);
+    var tarjetas = lista.map(function (x, i) { var on = form && form.editId === x.id;
       return h('li', { key: x.id, style: { display: 'grid', gridTemplateColumns: '32px minmax(0,1.4fr) minmax(0,1fr) auto auto', alignItems: 'center', gap: 16, padding: '12px 16px', border: on ? '2px solid var(--color-brand)' : '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', background: on ? 'var(--color-brand-wash)' : '#FFFFFF' } },
         h('span', { 'aria-hidden': 'true', style: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'var(--surface-subtle)', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)' } }, String(i + 1)),
-        h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, x.marca + ' ' + x.modelo), h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, tipoTxt(x) + ' · ' + x.anio + ' · Serie ' + x.serie + (x.motor ? ' · Motor ' + x.motor : '')), aviso ? h('span', { style: { fontSize: 13, fontWeight: 700, color: 'var(--color-warning-strong, #8a5a00)' } }, 'Serie sin formato PIN · se acepta con aviso') : null),
+        h('span', { style: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 } }, h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)' } }, x.marca + ' ' + x.modelo), h('span', { style: { fontSize: 13, color: 'var(--text-muted)' } }, tipoTxt(x) + ' · ' + x.anio + ' · Serie ' + x.serie + (x.motor ? ' · Motor ' + x.motor : ''))),
         h('span', { style: { fontSize: 14, color: 'var(--text-body)' } }, x.implementos.length ? x.implementos.length + (x.implementos.length === 1 ? ' implemento' : ' implementos') + ' · ' + usd(x.implementos.reduce(function (s, im) { return s + (Number(im.valor) || 0); }, 0)) : 'Sin implementos'),
         h('span', { style: { fontSize: 15, fontWeight: 700, color: 'var(--text-strong)', whiteSpace: 'nowrap', textAlign: 'right' } }, usd(total(x))),
         h('span', { style: { display: 'flex', gap: 12 } }, on ? h('span', { style: { fontSize: 13, fontWeight: 700, color: 'var(--cyan-700)' } }, 'En edición') : [

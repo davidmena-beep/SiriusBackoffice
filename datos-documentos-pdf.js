@@ -10,7 +10,7 @@
 // Bases: Vehículos (diseño nuevo de SIRIUS a partir de SIAERP, Eurosurvey y el formulario físico antiguo) y Ramos Generales
 // (el diseño vigente del bloque S, expresado en este modelo sin cambiar su resultado).
 window.SIRIUS_DOCUMENTOS_PDF = {
-  version: '1.3', vigencia: 'Provisional',
+  version: '1.5', vigencia: 'Provisional',
 
   // ---------- Principios del diseño de SIRIUS (DEC-125) ----------
   principios: [
@@ -129,7 +129,7 @@ window.SIRIUS_DOCUMENTOS_PDF = {
     { id: 'em-informe', plantilla: 'Equipo y maquinaria v1', nombre: 'Informe de inspección de equipo', destino: 'Uso interno y emisión', estado: 'Vigente', version: 1, base: true,
       secciones: [
         { tipo: 'encabezado', logos: ['compania', 'proveedor'], titulo: 'Informe de inspección de equipo', datosCabecera: ['Caso {caso.numero}', 'Inspección {em_fecha_hora_inspeccion}', 'Código {documento.codigo}'] },
-        { tipo: 'tarjeta', titulo: null, destacado: 'em_tipo', campos: ['em_anio_fabricacion', 'em_serie_pin', 'em_horometro'], fotosReferencia: ['eq_frontal', 'eq_posterior'], sinFoto: 'Sin foto' },
+        { tipo: 'tarjeta', titulo: null, destacado: 'em_tipo', campos: ['em_anio_fabricacion', 'em_serie_chasis', 'em_horometro'], fotosReferencia: ['eq_frontal', 'eq_posterior'], sinFoto: 'Sin foto' },
         { tipo: 'resultado', titulo: 'Resultado', mostrarOrigen: true, mostrarEmision: true, mostrarReglas: true, sinVeredicto: 'Pendiente de calificación' },
         { tipo: 'hallazgos', titulo: 'Hallazgos relevantes', reglas: 'SIRIUS_EQUIPOS.hallazgos', textoSinHallazgos: 'Sin hallazgos relevantes: valores en rango, documentación al día y seguridad completa.' },
         { tipo: 'valores', titulo: 'Valores', mostrarValorReal: true, mostrarFuente: true, mostrarExplicacion: true, ejemploDanio: 50000,
@@ -157,7 +157,7 @@ window.SIRIUS_DOCUMENTOS_PDF = {
     { id: 'em-resumen', plantilla: 'Equipo y maquinaria v1', nombre: 'Resumen de inspección de equipo', destino: 'Bróker (APS) y cliente', estado: 'Vigente', version: 1, base: true, paginas: 'Una',
       secciones: [
         { tipo: 'encabezado', logos: ['compania', 'proveedor'], titulo: 'Resumen de inspección de equipo', datosCabecera: ['Caso {caso.numero}', 'Inspección {em_fecha_hora_inspeccion}', 'Código {documento.codigo}'] },
-        { tipo: 'tarjeta', destacado: 'em_tipo', campos: ['em_anio_fabricacion', 'em_serie_pin'], fotosReferencia: ['eq_frontal', 'eq_posterior'], sinFoto: 'Sin foto' },
+        { tipo: 'tarjeta', destacado: 'em_tipo', campos: ['em_anio_fabricacion', 'em_serie_chasis'], fotosReferencia: ['eq_frontal', 'eq_posterior'], sinFoto: 'Sin foto' },
         { tipo: 'resultado', titulo: 'Resultado de la inspección', mostrarOrigen: false, mostrarEmision: false, mostrarReglas: false, sinVeredicto: 'No disponible: pendiente de calificación' },
         { tipo: 'hallazgos', titulo: 'Hallazgos', reglas: ['infraseguro', 'sobreseguro', 'sinMatricula', 'licencia', 'extintor', 'sinGps', 'hidraulico', 'pernocta', 'sinMantenimiento', 'antiguedad'], textoSinHallazgos: 'Sin hallazgos: documentación al día, seguridad completa y suma asegurada acorde al valor del equipo.' },
         { tipo: 'valores', titulo: 'Suma asegurada', mostrarValorReal: false, mostrarFuente: false, mostrarExplicacion: false, recomendacion: 'Se recomienda actualizar la suma asegurada al VRN.' },
