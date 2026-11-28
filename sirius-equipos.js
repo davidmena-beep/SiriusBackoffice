@@ -72,7 +72,7 @@
 
   // ---------- Plantilla «Equipo y maquinaria v1» ----------
   function plantilla() {
-    var Q = D(), C = Q.categorias || [], MM = Q.marcasModelos || [], SINO = ['Sí', 'No'];
+    var Q = D(), C = Q.categorias || [], MM = Q.marcasModelos || [], SINO = ['Sí', 'No'], VM = { k: 'em_matricula', v: 'Sí' };
     var F = function (k, l, t, o) { return Object.assign({ k: k, l: l, t: t }, o || {}); };
     var tipos = [].concat.apply([], C.map(function (c) { return c.tipos; })), marcas = MM.map(function (m) { return m.marca; }), modelos = [].concat.apply([], MM.map(function (m) { return m.modelos; }));
     var campos = {
@@ -84,11 +84,14 @@
         F('em_color', 'Color', 'Texto'), F('em_anio_fabricacion', 'Año de fabricación', 'Número', { req: 'PV', src: ['Extracción automática'], help: 'Placa del fabricante.' }),
         F('em_anio_servicio', 'Año de puesta en servicio', 'Número', { req: 'PV', help: (Q.identificacion || {}).anios || '' }), F('em_pais', 'País de origen', 'Texto'),
         F('em_serie_chasis', 'Número de serie o chasis', 'Texto', { req: 'PV', src: ['Extracción automática'], help: 'Número de serie o de chasis de la máquina, tal como figura en la placa del fabricante, grabado en el bastidor o en la matrícula. Sin formato fijo: se escribe en mayúsculas, sin espacios.' }),
-        F('em_numero_motor', 'Número de motor', 'Texto'), F('em_capacidad', 'Capacidad', 'Texto', { help: 'Valor y unidad: t, kg, kW o m³.' }), F('em_peso_operativo', 'Peso operativo (kg)', 'Número', { src: ['Extracción automática'] }),
+        F('em_numero_motor', 'Número de motor', 'Texto'), F('em_marca_motor', 'Marca del motor', 'Texto', { src: ['Extracción automática'] }), F('em_potencia', 'Potencia (HP)', 'Número', { src: ['Extracción automática'] }), F('em_capacidad', 'Capacidad', 'Texto', { help: 'Valor y unidad: t, kg, kW o m³.' }), F('em_peso_operativo', 'Peso operativo (kg)', 'Número', { src: ['Extracción automática'] }),
         F('em_horometro', 'Horómetro (h)', 'Número', { req: 'PV', src: ['Extracción automática'], help: (Q.identificacion || {}).horometro || '' }),
         F('em_horas_anio', 'Horas por año', 'Cálculo', { f: '{em_horometro} ÷ años desde la puesta en servicio' })],
       eqd: [F('em_matricula', 'Matrícula o registro', 'Opción única', { req: 'PV', opts: ['Sí', 'No', 'En trámite'] }), F('em_numero_matricula', 'Número de matrícula', 'Texto', { req: 'PV', vis: { k: 'em_matricula', v: 'Sí' } }),
-        F('em_fecha_tramite', 'Fecha del trámite', 'Fecha', { req: 'PV', vis: { k: 'em_matricula', v: 'En trámite' } }), F('em_documento_propiedad', 'Documento de propiedad', 'Opción única', { opts: ['Factura', 'Contrato'] }),
+        F('em_fecha_tramite', 'Fecha del trámite', 'Fecha', { req: 'PV', vis: { k: 'em_matricula', v: 'En trámite' } }),
+        F('em_anio_matricula', 'Año de la matrícula', 'Número', { src: ['Extracción automática'], vis: Object.assign({}, VM) }), F('em_vigencia_matricula', 'Caducidad de la matrícula', 'Fecha', { src: ['Extracción automática'], vis: Object.assign({}, VM) }), F('em_especie_matricula', 'Número de especie', 'Texto', { src: ['Extracción automática'], vis: Object.assign({}, VM) }),
+        F('em_propietario', 'Propietario según la matrícula', 'Texto', { src: ['Extracción automática'], vis: Object.assign({}, VM) }), F('em_identificacion_propietario', 'Cédula o RUC del propietario', 'Texto', { src: ['Extracción automática'], vis: Object.assign({}, VM) }), F('em_avaluo_matricula', 'Avalúo según la matrícula', 'Moneda', { src: ['Extracción automática'], vis: Object.assign({}, VM) }),
+        F('em_condicion_matricula', 'Condición de la matrícula', 'Texto', { src: ['Extracción automática'], vis: VM, help: 'Por ejemplo: RESERVA DE DOMINIO.' }), F('em_documento_propiedad', 'Documento de propiedad', 'Opción única', { opts: ['Factura', 'Contrato'] }),
         F('em_licencia', 'Licencia del operador', 'Sí/No', { req: 'PV', opts: SINO }), F('em_tipo_licencia', 'Tipo de licencia', 'Catálogo', { opts: ['E', 'G'], vis: { k: 'em_licencia', v: 'Sí' }, src: ['Extracción automática'] }),
         F('em_vigencia_licencia', 'Vigencia de la licencia', 'Fecha', { vis: { k: 'em_licencia', v: 'Sí' }, src: ['Extracción automática'] }), F('em_permiso_operacion', 'Permiso de operación', 'Opción única', { opts: ['Sí', 'No', 'No aplica'] }),
         F('em_ficha_tecnica', 'Ficha técnica o catálogo', 'Sí/No', { opts: SINO }), F('em_contrato_arrendamiento', 'Contrato de arrendamiento', 'Sí/No', { opts: SINO, vis: { k: 'em_uso', v: 'Alquiler a terceros' } })],
@@ -118,10 +121,13 @@
         F('em_observacion_general', 'Observación general', 'Texto'), F('em_firma_atiende', 'Firma de quien atiende', 'Foto', { req: 'P' })] };
     var secciones = (Q.formulario || {}).secciones.map(function (s) { return [s.id, s.titulo]; });
     var EX = { eq_placa_fabricante: ['Placa del fabricante'], eq_tablero: ['Horómetro'], eq_doc_licencia_f: ['Licencia del operador'], eq_doc_matricula: ['Matrícula del equipo'] };
+    // DEC-307: los dos pasos de la matrícula y los campos que cada uno alimenta (la lectura con IA los llena; el mapeo de «lectura» lo trae la base).
+    var FX = { eq_doc_matricula: ['em_matricula', 'em_numero_matricula', 'em_fecha_tramite', 'em_anio_matricula', 'em_vigencia_matricula', 'em_propietario', 'em_identificacion_propietario', 'em_avaluo_matricula', 'em_condicion_matricula'],
+      eq_doc_matricula_maquina: ['em_especie_matricula', 'em_tipo', 'em_marca', 'em_modelo', 'em_serie_chasis', 'em_anio_fabricacion', 'em_marca_motor', 'em_numero_motor', 'em_potencia'] };
     var SEC = { Exteriores: ['eqc', 'eqa'], Cabina: ['eqc'], Identificación: ['eqi'], Equipamiento: ['eqc'], Seguridad: ['eqs'], Daños: ['eqa'], Documentos: ['eqd'] };
     var pasos = (Q.pasosFoto || []).map(function (p) { var rep = p[0] === 'eq_danos';
-      return { id: p[0], group: p[2], name: p[1], req: { P: !!p[3], V: !!p[4], A: false, D: false }, min: p[3] || p[4] ? 1 : 0, max: rep ? 30 : 1, rep: rep, ex: EX[p[0]] || [], feedsX: [], link: rep ? 'em_averias' : '',
-        guide: 'Marco de encuadre · ' + p[1].toLowerCase(), sec: p[0] === 'eq_tablero' ? ['eqi', 'eqc'] : (SEC[p[2]] || []), doc: p[0] === 'eq_doc_matricula' ? 'Matrícula del equipo' : p[0] === 'eq_doc_licencia_f' ? 'Licencia del operador' : p[0] === 'eq_placa_fabricante' ? 'Placa del fabricante' : '',
+      return { id: p[0], group: p[2], name: p[1], req: { P: !!p[3], V: !!p[4], A: false, D: false }, min: p[3] || p[4] ? 1 : 0, max: rep ? 30 : 1, rep: rep, ex: EX[p[0]] || [], feedsX: (FX[p[0]] || []).slice(), link: rep ? 'em_averias' : '',
+        guide: 'Marco de encuadre · ' + p[1].toLowerCase(), sec: p[0] === 'eq_tablero' ? ['eqi', 'eqc'] : p[0] === 'eq_doc_matricula_maquina' ? ['eqd', 'eqi'] : (SEC[p[2]] || []), doc: p[0] === 'eq_doc_matricula' ? 'Matrícula del equipo' : p[0] === 'eq_doc_matricula_maquina' ? 'Matrícula de la máquina' : p[0] === 'eq_doc_licencia_f' ? 'Licencia del operador' : p[0] === 'eq_placa_fabricante' ? 'Placa del fabricante' : '',
         pd: /licencia/.test(p[0]), vis: p[0] === 'eq_gps' ? { k: 'em_gps', v: 'Sí' } : null }; });
     var F0 = Q.formulario || {};
     return { nombre: F0.ramo || RAMO, version: F0.version || 1, estado: F0.estado || 'Vigente', desde: '2026-10-14', mod: '2026-10-13', by: 'Andrea Salazar', composicion: F0.composicion || 'Equipo móvil', tipoObjeto: 'Equipo móvil',

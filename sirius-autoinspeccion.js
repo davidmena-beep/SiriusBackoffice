@@ -69,7 +69,9 @@
     if (form === 'em') { const Q = P.maquinaria || {};
       out.activos = (Q.activos || []).map(a => ({ id: a.id, nombre: NOMBRES[a.id] || '', seccion: 'Mapa', pos: a.pos || null, ocr: a.ocr || '', ayuda: a.ayuda || '', texto: '', guia: guiaDe(GUIA_EM[a.id] || 'marco libre'), nuevo: !!a.nuevo, reemplaza: a.reemplaza || [] }));
       out.activos.forEach(a => (a.reemplaza || []).forEach(id => out.desactivados.push({ id, motivo: 'Repetía la silueta: un solo ' + (/izq/.test(id) ? 'lateral izquierdo' : 'lateral derecho') })));
-      out.docs = ['eq_doc_matricula', 'eq_doc_licencia_f', 'eq_doc_licencia_p', 'eq_doc_ficha']; }
+      out.docs = ['eq_doc_matricula', 'eq_doc_matricula_maquina', 'eq_doc_licencia_f', 'eq_doc_licencia_p', 'eq_doc_ficha'];
+      // DEC-307: los dos pasos de la matrícula (texto para el cliente; la hoja de la máquina va en horizontal).
+      out.docsCfg = { eq_doc_matricula: { texto: 'La parte de la matrícula con «República del Ecuador»: matrícula, propietario, fechas y avalúo. Si tu matrícula es una sola hoja, toma aquí la mitad izquierda y en el siguiente paso la derecha. También vale la constancia del trámite.' }, eq_doc_matricula_maquina: { texto: 'La parte de la matrícula con «Matrícula de maquinaria pesada y equipo caminero»: clase, marca, modelo, serie, motor y potencia.', orientacion: 'horizontal' } }; }
     return out; }
 
   // Aplica la configuración a los pasos de una versión (los modifica). ctx: { exmap(ex) → claves alimentadas }.
@@ -81,7 +83,7 @@
       s.req = Object.assign({}, s.req, { A: true }); if (a.nombre && s.nuevo) s.name = a.nombre;
       s.guia = Object.assign({}, a.guia, s.guia && s.guia.texto ? { texto: s.guia.texto } : {}); if (a.texto) s.guia.texto = a.texto;
       s.auto = { seccion: a.seccion, pos: a.pos ? a.pos.slice() : null, ocr: a.ocr || '', ayuda: a.ayuda || '', texto: a.texto || '', reemplaza: (a.reemplaza || []).slice(), nota: a.nota || '', valida: validaDe(a, s.guia, form) }; delete s.autoDes; });
-    C.docs.forEach(id => { const s = find(id); if (!s) return; s.req = Object.assign({}, s.req, { A: true }); s.auto = { seccion: 'Documentos', pos: null, ocr: '', ayuda: '', texto: '', valida: { tipo: 'ninguna' } }; s.guia = Object.assign({}, s.guia || {}, { tipo: 'marco', marco: 'documento', orientacion: 'vertical' }); });
+    C.docs.forEach(id => { const s = find(id); if (!s) return; const dc = (C.docsCfg || {})[id] || {}; s.req = Object.assign({}, s.req, { A: true }); s.auto = { seccion: 'Documentos', pos: null, ocr: '', ayuda: '', texto: dc.texto || '', valida: { tipo: 'ninguna' } }; s.guia = Object.assign({}, s.guia || {}, { tipo: 'marco', marco: 'documento', orientacion: dc.orientacion || 'vertical' }); if (dc.texto) s.guia.texto = dc.texto; });
     // Etapa 12d-1b · DEC-155 v1.7: los pasos retirados que no existen en la plantilla (volante, tablero de instrumentos, asientos) se crean
     // desactivados, con su configuración guardada para poder reactivarlos con motivo.
     if (form === 'veh') C.desactivados.forEach(d => { if (find(d.id) || !DES_PASOS[d.id]) return; const x = DES_PASOS[d.id], g = GRUPO(d.id), gu = guiaDe(x.guia); if (x.texto) gu.texto = x.texto;
@@ -104,6 +106,9 @@
   function modelo(steps, form, carr, ver) { const C = config(form) || { activos: [] }, ix = (id) => { const k = C.activos.findIndex(a => a.id === id); return k < 0 ? 999 : k; };
     const U = window.SiriusSiluetasUI, usaV = !!(ver && U && U.posDe && U.ordenModo && U.esDoc), OA = usaV && Array.isArray(ver.ordenA) ? U.ordenModo(steps || [], ver.ordenA, 'A') : null, idsF = usaV ? (steps || []).filter(s => !U.esDoc(s)).map(s => s.id) : [];
     const ord = (st) => OA ? (OA.indexOf(st.id) < 0 ? 999 : OA.indexOf(st.id)) : (st.auto && st.auto.orden != null) ? st.auto.orden : ix(st.id); /* L-7: el orden de Autoinspección guardado en la versión (ordenA) */ const L = (steps || []).filter(s => s.req && s.req.A && s.auto).map((s, k) => [s, k]).sort((x, y) => (ord(x[0]) - ord(y[0])) || (x[1] - y[1])).map(x => x[0]), tipo = carr || (form === 'em' ? 'cargadora' : form === 'moto' ? 'moto' : 'sedan');
+    if (deForm(form) && usaV) { const F = listaForm(steps, form, ver.ordenA); /* AU-1 · DEC-311: los pasos del formulario, como el Mapa de captura */
+      const mapaF = F.act.map((s, k) => ({ s, k, pos: U.posDe(ver.mapaPos || {}, tipo, s.id, idsF) })).filter(x => x.pos).map(x => ({ paso: x.s.id, nombre: x.s.name, pos: x.pos, n: x.k + 1, guia: x.s.guia, ocr: x.s.auto.ocr }));
+      return { tipo, mapa: mapaF, interior: [], docs: F.docs.map(s => ({ paso: s.id, nombre: s.name })), extras: [], conExtras: false, des: F.desRec.concat(F.desDoc).map(s => ({ paso: s.id, nombre: s.name, motivo: s.autoDes.motivo })), total: F.act.length }; }
     const posOf = (s) => usaV ? U.posDe(ver.mapaPos || {}, tipo, s.id, idsF) : s.auto.pos ? px(tipo, s.auto.pos) : null; /* L-7: la posición guardada por carrocería (mapaPos) o la sugerida, como el editor */
     const mapa = L.filter(s => s.auto.seccion === 'Mapa').map((s, k) => ({ s, k, pos: posOf(s) })).filter(x => x.pos).map((x, i) => ({ paso: x.s.id, nombre: x.s.name, pos: x.pos, n: usaV ? x.k + 1 : i + 1 /* L-7: el número de su fila (un paso sin ubicar no corre la numeración, como en el editor) */, guia: x.s.guia, ocr: x.s.auto.ocr }));
     const interior = L.filter(s => s.auto.seccion === 'Interior').map(s => ({ paso: s.id, nombre: s.name, texto: s.auto.texto || (s.guia || {}).texto || '' }));
@@ -183,6 +188,22 @@
   function defecto(s, form) { if (s.group === 'Documentos') return { seccion: 'Documentos', pos: null, ocr: '', ayuda: '', texto: '' }; const m = mapaPrev(s, form), t = form === 'em' ? 'cargadora' : form === 'moto' ? 'moto' : 'sedan', c = caja(t);
     const pos = m ? [clamp((m.pos[0] - c[0]) / c[2]), clamp((m.pos[1] - c[1]) / c[3])] : null; const ocr = /placa/.test(s.id) ? 'placa' : /vin|chasis/.test(s.id) ? 'vin' : '';
     return { seccion: s.group === 'Interiores' && form === 'veh' ? 'Interior' : 'Mapa', pos: pos || [.5, .5], ocr, ayuda: '', texto: '', valida: validaDe({ valida: ocr === 'vin' ? 'vin' : '' }, guiaPrev(s, form), form) }; }
+
+  // Etapa AU-1 · DEC-311: en Equipo y maquinaria la lista de la pestaña Autoinspección sale de los PASOS DEL FORMULARIO, como el Mapa de captura, la base y la app:
+  // activos = pasos con la columna Autoinspección (req.A) fuera de Documentos, en el orden del recorrido de Autoinspección (ordenA, con la regla de ordenModo);
+  // documentos = los del grupo Documentos con req.A; desactivados = los pasos con foto sin req.A (no se borran). La posición la pone modelo() con posDe, igual que el Mapa.
+  // SIRIUS_AUTOINSPECCION.pasos.maquinaria ya no arma esta lista (se conserva para las otras lecturas). Un paso sin «auto» (p. ej. el asiento que trae la base) se muestra
+  // con su configuración por defecto, sin escribirla en el paso hasta que se edite.
+  const esDocP = (s) => !!s && (s.group === 'Documentos' || /^documentos_|^eq_doc/.test(String(s.id || '')));
+  const deForm = (form) => form === 'em';
+  function conAuto(s, form) { if (s.auto && s.auto.seccion) return s; const U = window.SiriusSiluetasUI, g = s.guia || (U && U.guiaDeTexto ? U.guiaDeTexto(s.guide) : null) || guiaPrev(s, form); /* la guía que muestra el Mapa de captura (del texto guide) */
+    return Object.assign({}, s, { guia: g, auto: Object.assign(defecto(s, form), s.auto || {}, { seccion: esDocP(s) ? 'Documentos' : 'Mapa' }) }); }
+  function listaForm(steps, form, ordenA) { const U = window.SiriusSiluetasUI, L = steps || [], byId = {}; L.forEach(s => { byId[s.id] = s; });
+    const O = U && U.ordenModo ? U.ordenModo(L, ordenA || null, 'A') : L.filter(s => s.req && s.req.A).map(s => s.id), A = O.map(id => byId[id]).filter(Boolean);
+    const act = A.filter(s => !esDocP(s)).map(s => conAuto(s, form)), docs = A.filter(esDocP).map(s => conAuto(s, form));
+    const desRec = L.filter(s => !esDocP(s) && !(s.req && s.req.A)).map(s => s.autoDes ? s : Object.assign({}, s, { autoDes: { motivo: 'Sin la columna Autoinspección en el formulario' } }));
+    const desDoc = L.filter(s => esDocP(s) && !(s.req && s.req.A) && s.autoDes);
+    return { act, docs, desRec, desDoc, orden: O }; }
 
   function Crear(p) { const v = p.val, set = (k) => (x) => p.set(Object.assign({}, v, { [k]: x })), md = R().useState(false), pide = md[0], setPide = md[1], tr = R().useState(false), tried = tr[0], setTried = tr[1], pre = p.pre + '-n';
     const err = !String(v.nombre).trim() ? 'Escribe el nombre del paso.' : '';
@@ -511,21 +532,23 @@
     const verMP = p.mapaPos || p.ordenA ? { mapaPos: p.mapaPos || {}, ordenA: p.ordenA || null } : null; /* L-7: posiciones y orden de la versión (Formularios) */
     const M = modelo(steps, form, carr, verMP), C = config(form) || { activos: [] }, ixC = (id) => { const k = C.activos.findIndex(a => a.id === id); return k < 0 ? 999 : k; };
     const OAt = verMP && Array.isArray(verMP.ordenA) && U && U.ordenModo ? U.ordenModo(steps, verMP.ordenA, 'A') : null, ord = (s) => OAt ? (OAt.indexOf(s.id) < 0 ? 999 : OAt.indexOf(s.id)) : (s.auto && s.auto.orden != null) ? s.auto.orden : ixC(s.id);
-    const act = steps.filter(s => s.req && s.req.A && s.auto && (s.auto.seccion === 'Mapa' || s.auto.seccion === 'Interior')).sort((a, b) => ({ Mapa: 0, Interior: 1 }[a.auto.seccion] - { Mapa: 0, Interior: 1 }[b.auto.seccion]) || (ord(a) - ord(b)));
-    const docs = steps.filter(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Documentos'), des = steps.filter(s => s.autoDes), desRec = des.filter(s => s.group !== 'Documentos'), desDoc = des.filter(s => s.group === 'Documentos');
+    const FL = deForm(form) && verMP && U && U.ordenModo ? listaForm(steps, form, verMP.ordenA) : null; /* AU-1 · DEC-311: Equipo y maquinaria, desde los pasos del formulario */
+    const OAx = OAt || (FL ? FL.orden.slice() : null);
+    const act = FL ? FL.act : steps.filter(s => s.req && s.req.A && s.auto && (s.auto.seccion === 'Mapa' || s.auto.seccion === 'Interior')).sort((a, b) => ({ Mapa: 0, Interior: 1 }[a.auto.seccion] - { Mapa: 0, Interior: 1 }[b.auto.seccion]) || (ord(a) - ord(b)));
+    const docs = FL ? FL.docs : steps.filter(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Documentos'), desRec = FL ? FL.desRec : steps.filter(s => s.autoDes && s.group !== 'Documentos'), desDoc = FL ? FL.desDoc : steps.filter(s => s.autoDes && s.group === 'Documentos'), des = FL ? desRec.concat(desDoc) : steps.filter(s => s.autoDes);
     const conExtras = steps.some(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Extras'), extras = conExtras ? extrasDe(carr) : [];
-    const pSel = steps.find(s => s.id === selId) || null;
+    const pSel = (FL && FL.act.concat(FL.docs).find(s => s.id === selId)) || steps.find(s => s.id === selId) || null;
     const cambiar = (fn, what, motivo) => { if (ro || !p.onCambio) return; p.onCambio(fn, what ? { what, motivo } : null); };
     const abrir = (id, tab) => { retRef.current = document.activeElement; setNuevo(null); setSel(id); if (tab) setPtab(tab); setTimeout(() => { const el = panelRef.current; if (el) { const t = el.querySelector('h2'); if (t) t.focus(); } }, 30); };
     const cerrar = () => { setSel(null); setNuevo(null); const r = retRef.current; setTimeout(() => { if (r && r.focus && document.contains(r)) r.focus(); }, 0); };
     R().useEffect(() => { if (!pSel && !nuevo) return; const k = (e) => { if (e.key === 'Escape' && !document.querySelector('.ads-modal__scrim')) { e.preventDefault(); cerrar(); } }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [selId, !!nuevo]);
     const mover = (s, d) => { const sec = act.filter(x => x.auto.seccion === s.auto.seccion), i = sec.indexOf(s), j = i + d; if (j < 0 || j >= sec.length) return; const orden = sec.map(x => x.id); orden.splice(i, 1); orden.splice(j, 0, s.id);
-      cambiar((ss, vv) => { orden.forEach((id, k) => { const x = ss.find(y => y.id === id); if (x) x.auto = Object.assign({}, x.auto, { orden: (x.auto.seccion === 'Interior' ? 100 : 0) + k }); });
-        if (vv && OAt) { const pos = OAt.map((id, k) => orden.indexOf(id) >= 0 ? k : -1).filter(k => k >= 0), nv = OAt.slice(); pos.forEach((k, i) => { nv[k] = orden[i]; }); vv.ordenA = nv; } }, /* L-7: también el orden de Autoinspección de la versión (ordenA), el que usa el editor de Pasos de foto */ 'Movió «' + s.name + '» al lugar ' + (j + 1) + ' de ' + s.auto.seccion, 'Orden del recorrido en el portal del cliente'); setTimeout(() => { const el = document.getElementById('at-row-' + s.id); if (el) el.focus(); }, 30); };
+      cambiar((ss, vv) => { orden.forEach((id, k) => { const x = ss.find(y => y.id === id); if (x) { const a0 = x.auto || (FL ? conAuto(x, form).auto : {}); x.auto = Object.assign({}, a0, { orden: (a0.seccion === 'Interior' ? 100 : 0) + k }); } });
+        if (vv && OAx) { const pos = OAx.map((id, k) => orden.indexOf(id) >= 0 ? k : -1).filter(k => k >= 0), nv = OAx.slice(); pos.forEach((k, i) => { nv[k] = orden[i]; }); vv.ordenA = nv; } }, /* AU-1: en Equipo, sin ordenA guardado, se guarda el orden que mostraba el Mapa */ /* L-7: también el orden de Autoinspección de la versión (ordenA), el que usa el editor de Pasos de foto */ 'Movió «' + s.name + '» al lugar ' + (j + 1) + ' de ' + s.auto.seccion, 'Orden del recorrido en el portal del cliente'); setTimeout(() => { const el = document.getElementById('at-row-' + s.id); if (el) el.focus(); }, 30); };
     const moverA = (id, destId) => { const s = act.find(x => x.id === id), t = act.find(x => x.id === destId); if (!s || !t || s === t || s.auto.seccion !== t.auto.seccion) return; const sec = act.filter(x => x.auto.seccion === s.auto.seccion); mover(s, sec.indexOf(t) - sec.indexOf(s)); };
     const desactivar = (s, m) => cambiar((ss) => { const x = ss.find(y => y.id === s.id); if (!x) return; x.autoPrev = x.auto; delete x.auto; x.req = Object.assign({}, x.req, { A: false }); x.autoDes = { motivo: m, by: p.usuario || '', at: hoy() }; }, 'Desactivó «' + s.name + '» para autoinspección', m);
     const reactivar = (s, m) => cambiar((ss) => { const x = ss.find(y => y.id === s.id); if (!x) return; x.auto = x.autoPrev || defecto(x, form); delete x.autoPrev; delete x.autoDes; x.req = Object.assign({}, x.req, { A: true }); if (!x.guia) x.guia = guiaPrev(x, form); }, 'Reactivó «' + s.name + '» para autoinspección', m);
-    const setA = (id) => (patch) => cambiar((ss) => { const x = ss.find(y => y.id === id); if (!x) return; x.auto = Object.assign({}, x.auto, patch); if (patch.texto != null) x.guia = Object.assign({}, x.guia || {}, { texto: patch.texto }); if (patch.ocr != null) { const ex = OCR_EX[patch.ocr] || []; x.ex = Array.from(new Set((x.ex || []).filter(e => !['Placa', 'VIN', 'Kilometraje', 'Placa del fabricante'].includes(e)).concat(ex))); } }, null);
+    const setA = (id) => (patch) => cambiar((ss) => { const x = ss.find(y => y.id === id); if (!x) return; x.auto = Object.assign({}, x.auto || (FL ? conAuto(x, form).auto : {}), patch); if (patch.texto != null) x.guia = Object.assign({}, x.guia || {}, { texto: patch.texto }); if (patch.ocr != null) { const ex = OCR_EX[patch.ocr] || []; x.ex = Array.from(new Set((x.ex || []).filter(e => !['Placa', 'VIN', 'Kilometraje', 'Placa del fabricante'].includes(e)).concat(ex))); } }, null);
     const setG = (id) => (patch) => cambiar((ss) => { const x = ss.find(y => y.id === id); if (x) x.guia = Object.assign({}, x.guia || {}, patch); }, null);
     const nTotal = act.length, mapaN = act.filter(s => s.auto.seccion === 'Mapa').length, intN = act.filter(s => s.auto.seccion === 'Interior').length;
     const editarTxt = p.editarTxt ? p.editarTxt.replace(/^Editar: (crea|abre) /, (m0, v) => 'Editar (' + v + ' ') + ')' : '';
@@ -621,7 +644,7 @@
               lab('Tipo de guía', pre + '-gt', sel(pre + '-gt', g.tipo, [['silueta', 'Silueta'], ['marco', 'Marco']], (v) => setG(s.id)(v === 'silueta' ? { tipo: v, vista: g.vista || 'frente' } : { tipo: v, marco: g.marco || 'libre' }), why)),
               g.tipo === 'silueta' ? lab('Vista', pre + '-gv', sel(pre + '-gv', g.vista || 'frente', [['frente', 'Frente'], ['lateral_izq', 'Lateral izquierdo'], ['lateral_der', 'Lateral derecho'], ['posterior', 'Posterior']], (v) => setG(s.id)({ vista: v }), why))
                 : lab('Marco', pre + '-gm', sel(pre + '-gm', g.marco || 'libre', [['libre', 'Libre'], ['circulo', 'Círculo'], ['franja', 'Franja'], ['tablero', 'Tablero'], ['placa', 'Placa'], ['documento', 'Documento']], (v) => setG(s.id)({ marco: v }), why)),
-              lab('Orientación', pre + '-go', inp(pre + '-go', a.seccion === 'Documentos' ? 'Vertical (documento)' : 'Horizontal', () => {}, 'Todas las fotos del vehículo o equipo van en horizontal; los documentos, en vertical')),
+              lab('Orientación', pre + '-go', inp(pre + '-go', a.seccion === 'Documentos' ? (g.orientacion === 'horizontal' ? 'Horizontal (documento)' : 'Vertical (documento)') : 'Horizontal', () => {}, 'Todas las fotos del vehículo o equipo van en horizontal; los documentos, en vertical')),
               lab('Zona objetivo', pre + '-gz', inp(pre + '-gz', g.zona || '', (v) => setG(s.id)({ zona: v }), why, { placeholder: 'Por ejemplo: Placa aquí' }))),
             h('div', null, btn('Ver en el simulador', () => simular(form, 'cam:' + s.id, carr), { id: 'atp-sim', aria: 'Ver la cámara de ' + s.name + ' en el simulador del portal' })))
         : ptab === 'Validación' ? (a.seccion === 'Documentos' ? h('p', { style: { margin: 0, fontSize: 14, color: 'var(--text-muted)' } }, 'Los documentos no tienen validación de contenido en el celular; los lee el motor de lectura de documentos.') : h(ValidaBloque, { paso: s, form, why, setA: setA(s.id), compacto: true }))
@@ -648,7 +671,7 @@
   // Bienvenida del portal (v1.8): documentos activos del recorrido, sin la cédula.
   function docsBienvenida(form, steps) { const C = config(form || 'veh') || { docs: [], desactivados: [] }, off = (C.desactivados || []).map(d => d.id);
     const ids = steps ? steps.filter(s => s.req && s.req.A && s.auto && s.auto.seccion === 'Documentos').map(s => s.id) : (C.docs || []).filter(id => off.indexOf(id) < 0);
-    const N = [[/^documentos_matricula/, 'Matrícula del vehículo (frente y reverso)'], [/^documentos_licencia/, 'Licencia de conducir (frente y reverso)'], [/^eq_doc_matricula/, 'Matrícula o trámite de matrícula'], [/^eq_doc_licencia/, 'Licencia del operador (frente y reverso)'], [/^eq_doc_ficha/, 'Ficha técnica del equipo']];
+    const N = [[/^documentos_matricula/, 'Matrícula del vehículo (frente y reverso)'], [/^documentos_licencia/, 'Licencia de conducir (frente y reverso)'], [/^eq_doc_matricula/, 'Matrícula en sus dos partes (propietario y máquina) o constancia del trámite'], [/^eq_doc_licencia/, 'Licencia del operador (frente y reverso)'], [/^eq_doc_ficha/, 'Ficha técnica del equipo']];
     const out = []; ids.filter(id => !/cedula/.test(id)).forEach(id => { const n = (N.find(x => x[0].test(id)) || [0, NOMBRES[id] || id])[1]; if (out.indexOf(n) < 0) out.push(n); }); return out; }
   function MensajesTipo(p) { const s = p.paso; if (!s) return null; return h(ValidaBloque, { paso: s, form: p.form, why: 'Vista de los mensajes', setA: () => {}, soloMensajes: true }); }
   // Pestaña OCR del panel: dato que lee el paso, «si no se lee, solo avisa» y la política de la v1.8 con una prueba de lectura.
@@ -663,7 +686,7 @@
   // Copia de los extras del archivo: el selector de escenas la repone (lo editado en Catálogos vive solo en la sesión).
   const BASE_EXTRAS = AI() && AI().extras ? clone(AI().extras.atributos || []) : null;
   function reset() { const A = AI(); if (A && A.extras && BASE_EXTRAS) A.extras.atributos = clone(BASE_EXTRAS); APAR = null; AHIST.length = 0; }
-  window.SiriusAuto = { reset, contraste, mensajeExtras, validaDe, compara, docsBienvenida, config, aplicar, modelo, extrasDe, guiaDe, guiaTxt, px, caja, lugaresDe, ayudaSvg, SiriusAutoPasos, SiriusAutoPaso, SiriusAyudaVin };
+  window.SiriusAuto = { reset, contraste, mensajeExtras, validaDe, compara, docsBienvenida, config, aplicar, modelo, listaForm, extrasDe, guiaDe, guiaTxt, px, caja, lugaresDe, ayudaSvg, SiriusAutoPasos, SiriusAutoPaso, SiriusAyudaVin };
   window.SiriusAutoPasos = SiriusAutoPasos; window.SiriusAutoPaso = SiriusAutoPaso; window.SiriusAyudaVin = SiriusAyudaVin;
   window.SiriusAutoExtras = SiriusAutoExtras; window.SiriusAutoConfig = SiriusAutoConfig; window.SiriusPromptsPaso = SiriusPromptsPaso; window.SiriusAutoTaller = SiriusAutoTaller;
 })();

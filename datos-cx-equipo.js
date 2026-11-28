@@ -1,9 +1,11 @@
-// SIRIUS · Informe conectado de Equipo y maquinaria con la conexión simulada (v1.0 · provisional · etapa L-7 · 27/11/2026)
+// SIRIUS · Informe conectado de Equipo y maquinaria con la conexión simulada (v1.1 · provisional · etapas L-7 y LP-0b · 28/11/2026)
 // En la base, el informe del caso trae plantillaClave «Equipo y maquinaria · Autoinspección» y su versión; el formulario (secciones, campos y pasos) sale de lo publicado
 // en Formularios (SIRIUS_FORMULARIOS: pasos sin «sec», con los campos que alimentan en feeds). Esta base simulada solo sirve a las escenas de pantallas:
 //   infequipo (caso 50075 · Informe por completar: secciones reales, procedencia, fotos por sección y avance) · infequipobandeja (la Bandeja › Informes por completar; al abrir el caso va a Informe).
 // El formulario «Equipo y maquinaria» v3 se arma con la plantilla del prototipo (sirius-equipos.js) en la forma que publica Formularios; las respuestas y las fotos son de demostración,
 // no las de la base real (allí: 11 secciones y 67 campos).
+// LP-0b · DEC-307: el formulario trae los dos pasos de la matrícula (con su «lectura» de demostración) y los 9 campos nuevos (propietario, avalúo, especie, marca del motor, potencia…);
+// el 50075 los muestra vacíos: la lectura con IA de la base es la que los llenará.
 (function () {
   const A = window.SIRIUS_CX_AUTO; if (!A || !A.cxSim) return;
   const ESC = { infequipo: ['50075', 'interno', 'ejecutivo'], infequipobandeja: ['50075', 'interno', 'ejecutivo'] };
@@ -14,11 +16,13 @@
   const tplEM = () => { const SE = window.SiriusEquipos; if (!SE || !SE.construir) return null; const real = window.SIRIUS_EJEMPLO, stub = { plantillas: {}, casos: [{ id: '20204' }] }; let T = null;
     try { window.SIRIUS_EJEMPLO = stub; SE.construir(); T = stub.plantillas['Equipo y maquinaria v1'] || null; } catch (e) { T = null; } finally { window.SIRIUS_EJEMPLO = real; } return T; };
   // Versión publicada (forma de Formularios): en Autoinspección se piden los mismos campos que en Presencial; los pasos no traen «sec».
+  // Propiedad «lectura» de los pasos de la matrícula tal como la deja la base (aquí, valores de ejemplo); el informe conectado no la usa, solo debe respetarla.
+  const LEC = { eq_doc_matricula: { lector: 'matricula_propietario', mapeo: { numero: 'em_numero_matricula', propietario: 'em_propietario' } }, eq_doc_matricula_maquina: { lector: 'matricula_maquina', mapeo: { serie: 'em_serie_chasis', motor: 'em_numero_motor' } } };
   const version = (T) => { const C = T.campos || {};
     const secs = (T.secciones || []).map((sc) => ({ id: sc[0], label: sc[1], fields: (C[sc[0]] || []).map((f) => { const r = f.req || '', p = r.indexOf('P') >= 0;
       return { key: f.k, label: f.l, type: f.t, req: { P: p, V: r.indexOf('V') >= 0, A: p && ['Grilla', 'Cálculo', 'Foto'].indexOf(f.t) < 0 && !f.locked, D: r.indexOf('D') >= 0 }, by: { P: 'Inspector', V: 'Inspector', A: 'Cliente', D: 'Back-office' },
         src: f.src || [], help: f.help || '', fmt: f.fmt || 'Ninguno', opts: f.opts || [], vis: f.vis || null, cols: f.cols || [], rows: f.rows || [], locked: !!f.locked, formula: f.f || '' }; }) }));
-    const steps = (T.pasos || []).map((s) => { const o = Object.assign({}, s, { req: Object.assign({}, s.req, { A: true }), feeds: (s.sec || []).map((sid) => ((C[sid] || [])[0] || {}).k).filter(Boolean) }); delete o.sec; return o; });
+    const steps = (T.pasos || []).map((s) => { const o = Object.assign({}, s, { req: Object.assign({}, s.req, { A: true }), feeds: (s.sec || []).map((sid) => ((C[sid] || [])[0] || {}).k).filter(Boolean) }); delete o.sec; if (LEC[o.id]) o.lectura = JSON.parse(JSON.stringify(LEC[o.id])); return o; });
     return { n: VER, estado: 'Vigente', desde: '2026-11-20', vigenteDesde: '2026-11-20', by: 'Andrea Salazar', motivo: 'Autoinspección de equipos', secs, steps, ordenA: steps.map((s) => s.id) }; };
   const baseF = A.formularios;
   A.formularios = function (E) { const r = baseF(E); if (!r || !ESC[esc0()]) return r; const T = tplEM(); if (!T) return r;

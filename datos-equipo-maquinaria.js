@@ -4,7 +4,7 @@
 // Referencia: caso real 51574 de SIAERP e informe de Eurosurvey (datos del ejemplo FICTICIOS por LOPDP).
 // Decisiones: DEC-141 (grupos y composiciones), DEC-142 (VRN), DEC-143 (formulario, hallazgos y niveles).
 window.SIRIUS_EQUIPOS = {
-  version: '1.2', vigencia: 'Provisional',
+  version: '1.3', vigencia: 'Provisional',
 
   // ---------- Grupos de ramo y composiciones (DEC-141) ----------
   // Van a Catálogos maestros › Grupos de ramo (editable: agregar, editar, inactivar). Un ramo tiene grupo + tipo de objeto
@@ -76,10 +76,10 @@ window.SIRIUS_EQUIPOS = {
     ['eq_implemento', 'Implemento (cucharón, horquillas, brazo)', 'Equipamiento', true, true], ['eq_rodaje', 'Neumáticos u orugas', 'Equipamiento', true, true],
     ['eq_extintor', 'Extintor con su etiqueta', 'Seguridad', true, false], ['eq_gps', 'Dispositivo de rastreo', 'Seguridad', false, false],
     ['eq_danos', 'Averías (una por daño)', 'Daños', false, false],
-    ['eq_doc_matricula', 'Matrícula o constancia del trámite', 'Documentos', true, true], ['eq_doc_licencia_f', 'Licencia del operador (frente)', 'Documentos', true, true],
+    ['eq_doc_matricula', 'Matrícula: datos del propietario', 'Documentos', true, true], ['eq_doc_matricula_maquina', 'Matrícula: datos de la máquina', 'Documentos', true, true], ['eq_doc_licencia_f', 'Licencia del operador (frente)', 'Documentos', true, true],
     ['eq_doc_licencia_p', 'Licencia del operador (reverso)', 'Documentos', true, true], ['eq_doc_ficha', 'Ficha técnica o catálogo', 'Documentos', false, false],
   ],
-  extraccion: ['Placa del fabricante: serie o chasis, modelo, año y peso', 'Tablero: horómetro', 'Licencia del operador: tipo y vigencia', 'Matrícula: número y fecha'],
+  extraccion: ['Placa del fabricante: serie o chasis, modelo, año y peso', 'Tablero: horómetro', 'Licencia del operador: tipo y vigencia', 'Matrícula: datos de la máquina y del propietario'],
 
   // ---------- Valor de reposición a nuevo (DEC-142) ----------
   valores: {

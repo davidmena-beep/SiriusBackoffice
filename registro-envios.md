@@ -4,6 +4,125 @@ Respuestas finales completas de cada envío, la más reciente primero. Fecha = r
 
 ---
 
+## 18/10/2026 · 20:30 — ENVÍO AU-1 · La lista de pasos de Autoinspección sale de los pasos del formulario (DEC-311)
+
+Publiqué la versión 428 de SIRIUS. Los archivos subieron en la 427 y esta versión cierra el registro con el tiempo de la etapa.
+
+En Equipo y maquinaria, la pestaña Autoinspección ya arma su recorrido con los pasos del formulario, como el Mapa de captura, la base y la app. Con un paso marcado en Autoinspección sin configuración propia (el asiento de la v3), las dos pantallas muestran ahora los mismos pasos, en el mismo orden y en el mismo lugar. Vehículos livianos, Motos y Pesados no cambian; abajo dejo la comparación para F-23.
+
+### Mapa de impacto
+
+- **`sirius-autoinspeccion.js`:** `listaForm(steps, form, ordenA)` arma activos, documentos y desactivados desde los pasos (req.A, `ordenModo(…, 'A')`). La pestaña Autoinspección (`SiriusAutoTaller`) y `modelo()` con la versión la usan solo para Equipo y maquinaria; un paso sin «auto» se muestra con su configuración por defecto y la guía de su texto «guide» (la misma que lee el Mapa), sin escribirla en el paso hasta que se edite. Mover un paso guarda `ordenA` aunque la versión no tuviera uno.
+- **`Formularios.dc.html`:** `autoLista(v, fid)` hace que la cabecera («Autoinspección: N pasos y N documentos») y la nota de Pasos de foto («N pasos activos y N desactivados») de Equipo cuenten con la misma lista; escenas autopasosem y autoform.
+- **`datos-escenas.js` y `SIRIUS Back-office.dc.html`:** escena formautoform (873) y descripción de autopasosem.
+- **Sin cambios:** la base, la app, el Mapa de captura, el diseño de la pestaña, `SIRIUS_AUTOINSPECCION.pasos.maquinaria` (sigue para `aplicar()`, el portal del prototipo y el mapa antiguo), la propiedad «lectura» de los pasos, `sirius-conexion.js` (70 bytes), `datos-motores-ia.js`, `sirius-lectura.js` y `sirius-lectura-worker.js`.
+
+### Qué cambió (Equipo y maquinaria)
+
+- **Activos:** los pasos con la columna Autoinspección fuera de Documentos, en el orden del recorrido de Autoinspección del Mapa de captura. En la escena, como la v3 de la base: Frente, Posterior, Lateral izquierdo, Lateral derecho, Cabina por dentro (asiento y cinturón), Tablero, Placa del fabricante, Motor, Implemento y Neumáticos (10). Antes la pestaña mostraba 9 sin el asiento y con otro orden (el de `SIRIUS_AUTOINSPECCION.pasos.maquinaria`: Frente, Lateral izquierdo, Posterior, Lateral derecho…).
+- **Posición:** la del paso en el Mapa de captura para cada equipo (`posDe`); los laterales sin punto quedan en la lista sin dibujo, igual que en el Mapa.
+- **Desactivados:** todos los pasos con foto sin la columna Autoinspección, no solo los 4 que tenían motivo: 9 en la escena (las 4 diagonales con su motivo y Cabina por fuera, Mandos, Extintor, Dispositivo de rastreo y Averías con «Sin la columna Autoinspección en el formulario»). Se reactivan con motivo como hoy.
+- **Simulador del portal (Formularios):** para Equipo usa la misma lista; ahora pide la cámara del asiento.
+
+### Prueba
+
+- **Escena formautoform (borrador v2 con el asiento marcado como en la base):** para Montacargas, Excavadora y Cargadora, la pestaña Autoinspección y Pasos de foto › Mapa de captura › Autoinspección muestran los mismos 10 pasos en el mismo orden y los mismos 8 puntos, con el mismo número y la misma posición. Antes, con el mismo borrador y el código anterior, la pestaña mostraba 9 pasos y 7 puntos y el Mapa 10 y 8 (le faltaba el asiento).
+- **Reactivar «Cabina por fuera» en Autoinspección:** el Mapa pasa de «Autoinspección · 15 pasos» a 16; la pestaña, de 10 a 11 pasos y de 9 a 8 desactivados; listas y puntos siguen iguales en los tres equipos.
+- **formautomapa (Montacargas con 4 puntos movidos):** mismos 9 pasos y 7 puntos, con las mismas posiciones en los dos lugares.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola.
+
+### Regresión (línea base contra la nueva, 1440×900 y 1280×720)
+
+- autopasos, autopasosmoto, autotaller, autotallerpaso, autotallervalida, autotallerdocs, simulador, simuladorcamara, mapacaptura, formem e infequipo: mismo texto.
+- formautomapa, formautomapapasos, formemmatricula y mapacapturaem: solo cambia el contador de desactivados de Equipo (de 4 a 10). autopasosem: el asiento entra en la lista (10 pasos) y los desactivados pasan a 9.
+
+### Vehículos livianos, Motos y Pesados (sin cambios; para F-23)
+
+Calculé la lista desde los pasos del formulario (columna Autoinspección, orden de `ordenModo(…, 'A')`) y la comparé con la que muestra hoy la pestaña.
+
+- **Vehículos livianos (v1 a v5; vigente v4, borrador v5): con diferencias.** Hoy 10 pasos: Frontal › Lateral izquierdo › Posterior › Lateral derecho › Habitáculo del motor › VIN grabado › Kilometraje › Tablero completo › Tablero central con radio › Llanta de emergencia. Desde el formulario 11: Frontal › Posterior › Lateral izquierdo › Lateral derecho › (igual) › Llanta de emergencia › Extras. Cambian el orden de los laterales y el paso «Extras» (hoy va aparte, como extras declarados). Documentos iguales (4). Desactivados: hoy 16; pasos con foto sin la columna Autoinspección, 37 en v4 y v5 (35 en v1 a v3).
+- **Motos (v1 y v2): con diferencias de orden.** Los mismos 7 pasos y 4 documentos. Hoy: Frente › Lateral izquierdo › Posterior › Lateral derecho › Kilometraje › Habitáculo del motor › VIN grabado. Desde el formulario: Frente › Posterior › Lateral izquierdo › Lateral derecho › Habitáculo del motor › VIN grabado › Kilometraje. Desactivados: hoy 12; sin la columna, 36 en v2 (33 en v1).
+- **Pesados (v1 y v2): con diferencias.** No tiene pestaña Autoinspección (0 pasos hoy), pero su formulario marca 13 pasos con foto y 7 documentos en la columna Autoinspección: Frontal, Posterior, Parabrisas, los cuatro laterales, Habitáculo del motor, Placa delantera, Placa trasera, Chasis en relieve, Sticker VIN y Plaqueta panorámica VIN; Matrícula (2), Contrato de compraventa, Cédula (2) y Licencia (2).
+
+### No verificado
+
+- **Base real:** la v3 de Equipo con la conexión; lo reproduje en la escena con el asiento marcado sin «auto», no con los datos de la base.
+- **La app de autoinspección y el portal del prototipo:** no cambian; siguen con su propia lista.
+- Firefox y Safari.
+
+### Diferencias
+
+- **Contador de desactivados:** sube (de 4 a 9 o 10) porque cuenta todos los pasos con foto sin la columna Autoinspección, como dice DEC-311; los que no tenían motivo muestran «Sin la columna Autoinspección en el formulario».
+- **Orden por defecto:** sin `ordenA` guardado, el recorrido sigue el orden del formulario (el del Mapa) y no el de `SIRIUS_AUTOINSPECCION.pasos.maquinaria`.
+- **Simulador del portal en Formularios:** también usa la lista del formulario para Equipo (pide la cámara del asiento).
+- **Cabecera y nota de Pasos de foto de Equipo:** cuentan con la misma lista, para que no contradigan a la pestaña.
+
+### Escenas
+
+- **formautoform** (nueva) y **autopasosem** (con el asiento marcado como en la base); 873 escenas.
+
+Tiempo de la etapa: inicio 28/11/2026 00:37 · fin 28/11/2026 00:51 · 14 min
+---
+
+## 18/10/2026 · 20:30 — ENVÍO LP-0b · Matrícula de maquinaria: dos pasos y campos del propietario y de la máquina (DEC-307)
+
+Publiqué la versión 426 de SIRIUS. Los archivos subieron en la 425 y esta versión cierra el registro con el tiempo de la etapa.
+
+Formularios › Equipo y maquinaria ya tiene la misma definición que la base (SQL 107): dos pasos de matrícula, 9 campos nuevos y un guardado de pasos que no pierde su «lectura». No cambié ninguna otra regla ni el diseño del PDF.
+
+### Mapa de impacto
+
+- **`datos-equipo-maquinaria.js` (1.3):** `eq_doc_matricula` se llama «Matrícula: datos del propietario»; nuevo `eq_doc_matricula_maquina` («Matrícula: datos de la máquina») justo después, con las mismas marcas (Presencial y Virtual); «extraccion» dice «Matrícula: datos de la máquina y del propietario».
+- **`sirius-equipos.js`:** 7 campos nuevos en Documentación, después de «Fecha del trámite», visibles con «Matrícula o registro» = Sí; «Marca del motor» y «Potencia (HP)» después de «Número de motor». Los dos pasos declaran en `feedsX` los 9 campos que alimenta cada uno; el nuevo paso se asocia a las secciones Documentación e Identificación.
+- **`sirius-autoinspeccion.js`:** la configuración de Equipo agrega el paso nuevo a los documentos de la columna Autoinspección y le da su texto (`docsCfg`): el del propietario con «República del Ecuador» y el de la máquina con «Matrícula de maquinaria pesada y equipo caminero», este último con la hoja en horizontal (el panel del paso dice «Horizontal (documento)»). La frase del portal «Ten a mano tu…» junta los dos pasos en «matrícula en sus dos partes (propietario y máquina) o constancia del trámite».
+- **`Formularios.dc.html`:** `upd(fn)` guarda la propiedad «lectura» de cada paso antes de aplicar cualquier cambio y la devuelve si el cambio la dejó sin valor, igual que se conserva «feeds»; escena `emmatricula` (nombre del selector: formemmatricula).
+- **`datos-siluetas.js`:** `documentosMaquinaria` incluye el paso nuevo (sin esto el mapa de captura no lo listaba entre los documentos). Cambio de una línea que no estaba en la lista.
+- **`datos-cx-equipo.js` (1.1):** el formulario del 50075 trae los dos pasos con su «lectura» de ejemplo y los campos nuevos; el caso los muestra vacíos.
+- **`datos-escenas.js`, `SIRIUS Back-office.dc.html`:** escena formemmatricula (872) y descripciones de formem, autopasosem, mapacapturaem y emfotos.
+- **Sin cambios:** `sirius-conexion.js` (70 bytes), `datos-motores-ia.js`, `sirius-lectura.js`, `sirius-lectura-worker.js`, el diseño del PDF y las demás reglas.
+
+### Qué cambió
+
+- **Formularios › Equipo y maquinaria:** de 21 a 22 pasos de foto y de 67 a 76 campos. Presencial pasa de 18 a 19 pasos, Virtual guiada de 15 a 16 y Autoinspección de 13 a 14; los documentos de Autoinspección, de 4 a 5.
+- **Los 9 campos nuevos:** Informativos, con fuente «Extracción automática», sin obligatoriedad. Los 7 de la matrícula están en Documentación (posiciones 4 a 10, antes de «Documento de propiedad») y los 2 del motor en Identificación (después de «Número de motor»).
+- **Pasos:** «Matrícula: datos del propietario» alimenta `em_matricula`, `em_numero_matricula`, `em_fecha_tramite`, `em_anio_matricula`, `em_vigencia_matricula`, `em_propietario`, `em_identificacion_propietario`, `em_avaluo_matricula` y `em_condicion_matricula`. «Matrícula: datos de la máquina» alimenta `em_especie_matricula`, `em_tipo`, `em_marca`, `em_modelo`, `em_serie_chasis`, `em_anio_fabricacion`, `em_marca_motor`, `em_numero_motor` y `em_potencia`.
+- **Demostraciones de Equipo (20204):** cada equipo gana una foto en Presencial (19 en lugar de 18), la del paso nuevo.
+
+### Prueba
+
+- **Formularios › Equipo y maquinaria (borrador v2, escena formemmatricula):** los 9 campos y los dos pasos de matrícula están, con 9 campos alimentados cada uno; el simulador del portal muestra «Matrícula: datos del propietario» y «Matrícula: datos de la máquina» en Documentos.
+- **«Lectura» en el JSON del paso:** con la publicación simulada (SiriusPublicar) edité la guía de «Matrícula: datos de la máquina» y guardé. La carga trae el cambio de la guía y la «lectura» (`lector: matricula_maquina` y su mapeo de 9 claves) intacta, igual que la del paso del propietario. Una prueba aparte de la misma lógica, con un cambio que reemplaza el paso entero sin «lectura», la devuelve.
+- **datos-cx-equipo (50075):** con la conexión simulada el informe sigue abriendo («14 de 52 campos aplicables», antes 50: «Marca del motor» y «Potencia (HP)» entran como campos sin dato) y los campos de la matrícula quedan ocultos hasta que «Matrícula o registro» sea Sí.
+- **1440×900 y 1280×720:** sin desplazamiento horizontal, sin `[object Object]`, `undefined` ni vacíos y sin errores de consola en 20 escenas (un error de consola salió una vez en autopasosmoto y no volvió en 3 repeticiones).
+
+### Regresión (línea base contra la nueva, 1440×900 y 1280×720)
+
+- autopasos, autopasosmoto, autotaller, emsolicitud, mapacaptura, mapaeditar, pasoguia, presencial19 y simulador: mismo texto.
+- mapacapturaem, autopasosem, formem, formautomapa, formautomapapasos, formbase, formayudaserie, grillaeditor, infequipo e infequipobandeja: solo cambian los números y nombres de Equipo (pasos, documentos, campos y los dos pasos de la matrícula).
+
+### No verificado
+
+- **Base real:** SQL 107 y que el formulario publicado traiga estos pasos y campos con esas claves; la «lectura» (lector y mapeo) de la escena es de ejemplo, no la de la base.
+- **Lectura con IA:** el prototipo no lee la matrícula; los campos quedan vacíos.
+- **Guardado contra la base:** probé la carga de publicación simulada, no una publicación real.
+- **Informe de 20204 al abrir la escena:** como en LP-0, en mi arnés abre con «Secciones 0 de 0» hasta forzar `SiriusEquipos.construir()` (igual con la copia anterior).
+- Firefox y Safari.
+
+### Diferencias
+
+- **`datos-siluetas.js`:** lo toqué (una línea) aunque no estaba en la lista, para que el mapa de captura muestre el paso nuevo con los documentos.
+- **Foto extra en las demostraciones:** como el paso nuevo es obligatorio en Presencial, los equipos de 20204 y el 50075 tienen una foto más.
+- **Informes con «lectura» solo de ejemplo:** el prototipo no define lectores; los valores de la escena no son los de la base.
+- **Sección del paso nuevo:** lo asocié a Documentación e Identificación para sus fotos en el informe; la definición no lo indicaba.
+- **Texto del portal:** «Ten a mano tu matrícula en sus dos partes (propietario y máquina) o constancia del trámite»: lo redacté yo al juntar los dos pasos en una sola mención.
+
+### Escenas
+
+- **formemmatricula** (nueva) y descripciones al día de formem, autopasosem, mapacapturaem y emfotos; 872 escenas.
+
+Tiempo de la etapa: inicio 28/11/2026 00:10 · fin 28/11/2026 00:30 · 20 min
+---
+
 ## 18/10/2026 · 20:30 — ENVÍO LP-0 · Número de serie o chasis en Equipo y maquinaria (DEC-305)
 
 Publiqué la versión 424 de SIRIUS. Los archivos subieron en la 423 y esta versión cierra el registro con el tiempo de la etapa.

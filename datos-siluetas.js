@@ -4538,6 +4538,7 @@ window.SIRIUS_SILUETAS = {
   ],
   "documentosMaquinaria": [
    "eq_doc_matricula",
+   "eq_doc_matricula_maquina",
    "eq_doc_licencia_f",
    "eq_doc_licencia_p",
    "eq_doc_ficha"

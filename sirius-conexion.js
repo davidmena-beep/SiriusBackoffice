@@ -324,7 +324,13 @@
       //   SIRIUS_CONEXION.resolverSugerenciaCatalogo(id, estado) → Promise<{ ok, mensaje? }> (solo Administrador); recarga la lista y avisa a las pantallas.
       CX.catalogoSugerencias = [];
       var cargarSug = function () { return rpc('catalogo_sugerencias_lista', {}).then(function (l) { if (Array.isArray(l)) { var h = JSON.stringify(l); if (h !== JSON.stringify(CX.catalogoSugerencias)) { CX.catalogoSugerencias = l; avisar(); } } }).catch(function () {}); };
-      CX.resolverSugerenciaCatalogo = function (id, estado) { return rpc('catalogo_sugerencia_resolver', { p_id: id, p_estado: estado }).then(function (r) { return cargarSug().then(function () { return r; }); }).catch(function (e) { return { ok: false, mensaje: e.message }; }); };
+      // 28/11/2026 · SQL 108 (DEC-308): si la recomendación se agregó a un catálogo maestro (r.agregado), se vuelve a leer SIRIUS_CATALOGOS_MAESTROS
+      //   y se aplica como publicado desde Administración, para que las listas lo muestren sin recargar la página. Respuesta: { ok, agregado, catalogo, mensaje }.
+      var recargarMaestros = function () { return rpc('configuracion_vigente', {}).then(function (c) { var d = c && c.SIRIUS_CATALOGOS_MAESTROS; if (d) publicado({ clave: 'SIRIUS_CATALOGOS_MAESTROS', datos: d, version: d.version }); })
+        .catch(function (e) { console.warn('[SIRIUS] no se pudo releer el catálogo maestro:', e.message); }); };
+      CX.resolverSugerenciaCatalogo = function (id, estado) { return rpc('catalogo_sugerencia_resolver', { p_id: id, p_estado: estado })
+        .then(function (r) { return Promise.all([cargarSug(), r && r.agregado ? recargarMaestros() : null]).then(function () { return r; }); })
+        .catch(function (e) { return { ok: false, mensaje: e.message }; }); };
       cargarSug(); setInterval(cargarSug, 300000);
       (window.ort ? Promise.resolve() : cargarScript('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.wasm.min.js'))
         .then(function () { return window.SiriusLectura ? null : cargarScript(BASE_JS + 'sirius-lectura.js?v=102'); })
